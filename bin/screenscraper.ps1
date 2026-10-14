@@ -2,21 +2,25 @@
     Xsegon - fetch video snaps from ScreenScraper, in the background.
 
         powershell -File bin\screenscraper.ps1 -Job data\screenscraper-job.json -Account data\screenscraper.json
+                                               [-Shared data\screenscraper-shared.dat]
 
     Started by api\screenscraper.php. Each game is asked for by name on its
     console, else by ROM file name, and taken only when the names agree (a
     wrong snap is worse than none); its video is saved as <dir>\<game id>.mp4.
     A game already saved is skipped, so a stopped job carries on. One question
     at a time with a pause between: a free account is allowed one thread.
+    -Shared is Xsegon's own developer ID as includes\screenscraper.php keeps it.
 
-    The logins reach curl through its standard input, never its command line,
-    where any program on the PC could read them, and are never written to the
-    job file or the log. A refused login or a spent quota ends the whole job.
+    The logins reach curl in a file in the job's own temp folder, deleted once
+    curl has read it, never on its command line, where any program on the PC
+    could read them; never in the job file or the log either. A refused login
+    or a spent quota ends the whole job.
 #>
 
 param(
     [Parameter(Mandatory = $true)][string] $Job,
-    [Parameter(Mandatory = $true)][string] $Account
+    [Parameter(Mandatory = $true)][string] $Account,
+    [string] $Shared = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -42,18 +46,47 @@ function Rom-Title([string] $file) {
     return (([IO.Path]::GetFileNameWithoutExtension($file)) -replace '\([^)]*\)|\[[^\]]*\]', ' ').Trim()
 }
 
-<#  One address fetched into a file. The address goes in on standard input
-    as a curl config line, so no login is ever on a command line. Answers
+<#  One address fetched into a file. The address goes to curl as a config
+    line in a file, so no login is ever on a command line. Answers
     @{ exit; http }: curl's own exit code, and the status the server gave.  #>
 function Get-Url([string] $url, [string] $to) {
     $ErrorActionPreference = 'Continue'
     if (Test-Path -LiteralPath $to) { Remove-Item -LiteralPath $to -Force }
-    $line = 'url = "' + ($url.Replace('\', '\\').Replace('"', '\"')) + '"'
-    $said = $line | & $curl '-K' '-' '-g' '-L' '--silent' '--retry' '2' '--connect-timeout' '20' `
-                            '--speed-limit' '1024' '--speed-time' '60' '-o' $to '-w' '%{http_code}' 2>$null
+    # Not piped: on a UTF-8 console PowerShell puts a byte order mark first, and curl refuses the line.
+    $cfg = Join-Path $tmp 'ask.cfg'
+    [IO.File]::WriteAllText($cfg, 'url = "' + ($url.Replace('\', '\\').Replace('"', '\"')) + '"', $utf8)
+    $said = & $curl '-K' $cfg '-g' '-L' '--silent' '--retry' '2' '--connect-timeout' '20' `
+                    '--speed-limit' '1024' '--speed-time' '60' '-o' $to '-w' '%{http_code}' 2>$null
+    $code = $LASTEXITCODE
+    Remove-Item -LiteralPath $cfg -Force -ErrorAction SilentlyContinue
     $http = 0
     [void][int]::TryParse(("$said").Trim(), [ref] $http)
-    return @{ exit = $LASTEXITCODE; http = $http }
+    return @{ exit = $code; http = $http }
+}
+
+<#  Xsegon's own developer ID as includes\screenscraper.php keeps it: AES-256-CBC
+    under an HMAC, keyed to this computer and Windows user. $null when it does not open.  #>
+function Open-Kept([string] $path) {
+    try {
+        $sha   = [Security.Cryptography.SHA256]::Create()
+        $bytes = { param([string] $s) [Text.Encoding]::UTF8.GetBytes($s) }
+        $ascii = { param([string] $s) $s -replace '[^\x20-\x7E]', '' }
+        $hex   = 'f63807d197f8ad93' + 'bab30783da0dd9f8' + 'c1b59077910be438' + '6732257fcc4def84'
+        $raw   = [byte[]] (0..31 | ForEach-Object { [Convert]::ToByte($hex.Substring($_ * 2, 2), 16) })
+        $site  = $sha.ComputeHash([byte[]] ($raw + (& $bytes 'xs-ss-1')))
+        $key   = $sha.ComputeHash([byte[]] ($site + (& $bytes ('|' + (& $ascii $env:COMPUTERNAME) + '|' + (& $ascii $env:USERNAME)))))
+        $all   = [Convert]::FromBase64String(([string] (ConvertFrom-Json ([IO.File]::ReadAllText($path, $utf8))).sealed).Trim())
+        if ($all.Length -lt 64) { return $null }
+        $body  = [byte[]] $all[0..($all.Length - 33)]
+        $mac   = New-Object Security.Cryptography.HMACSHA256 (, $sha.ComputeHash([byte[]] ((& $bytes 'mac|') + $key)))
+        if ([Convert]::ToBase64String($mac.ComputeHash($body)) -ne [Convert]::ToBase64String([byte[]] $all[($all.Length - 32)..($all.Length - 1)])) { return $null }
+        $aes   = [Security.Cryptography.Aes]::Create()
+        $aes.Key = $sha.ComputeHash([byte[]] ((& $bytes 'enc|') + $key))
+        $aes.IV  = [byte[]] $body[0..15]
+        $d     = ConvertFrom-Json ([Text.Encoding]::UTF8.GetString($aes.CreateDecryptor().TransformFinalBlock($body, 16, $body.Length - 16)))
+        if (-not $d.devid -or -not $d.devpassword) { return $null }
+        return $d
+    } catch { return $null }
 }
 
 # What an answer means: ScreenScraper says each refusal with a status of its own.
@@ -101,7 +134,10 @@ function Ask([string] $url, [string] $file) {
         # Not ConvertFrom-Json: Windows PowerShell's stops at 2 MB, and thirty
         # games with every picture and every language listed can pass that.
         $json = $script:reader.DeserializeObject([IO.File]::ReadAllText($file, $utf8))
-    } catch { $script:asked = 'failed'; return $null }
+    } catch { $json = $null }
+    # Every address in an answer carries both logins, so it is not left lying for the run.
+    Remove-Item -LiteralPath $file -Force -ErrorAction SilentlyContinue
+    if ($null -eq $json) { $script:asked = 'failed'; return $null }
     $script:asked = 'ok'
     return $json
 }
@@ -145,6 +181,13 @@ try {
     $j = Read-Job
     Set-Field $j 'pid' $PID; Save-Job $j      # so the server can ask Windows if this is alive
     $acc = ConvertFrom-Json ([IO.File]::ReadAllText($Account, $utf8))
+    if ($Shared) {
+        $dev = Open-Kept $Shared
+        if (-not $dev) { throw "Xsegon's own developer ID did not open on this computer; press Check the login in the ScreenScraper window, then start it again" }
+        foreach ($f in 'devid', 'devpassword', 'softname') { Set-Field $acc $f ([string] $dev.$f) }
+        $Halts.devlogin = "ScreenScraper refused Xsegon's own developer ID and its password"
+        $Halts.blocked  = "ScreenScraper says Xsegon's own developer ID may not be used any more"
+    }
     New-Item -ItemType Directory -Force -Path $j.dir | Out-Null
     $tmp = Join-Path $env:TEMP ('xsegon-screenscraper-' + [guid]::NewGuid().ToString('N'))
     New-Item -ItemType Directory -Path $tmp | Out-Null
@@ -224,8 +267,8 @@ try {
         if (-not $url) { $g.state = 'novideo'; Save-Job $j; continue }
 
         $g.state = 'fetching'; Save-Job $j
-        # The address comes back with the member login left blank; filled in,
-        # the download counts as this person's and runs at their speed.
+        # An address that comes back with the member login blank gets it filled
+        # in, so the download counts as this person's and runs at their speed.
         $url = $url.Replace('ssid=&sspassword=', $mine)
         $got = Meaning (Get-Url $url $part) $part
         if ($Halts.ContainsKey($got) -and $got -ne 'busy') {

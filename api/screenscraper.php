@@ -6,6 +6,8 @@
  *                               video, and the job if there is one
  *   POST {"account": {...}}     save the logins, then ask ScreenScraper who that is
  *   POST {"check": true}        ask again with what is stored
+ *                               (both, and a fetch, first ask the website for Xsegon's
+ *                               own developer ID when none of the person's own is typed)
  *   POST {"forget": true}       delete the stored logins
  *   POST {"ids": [...]}         fetch snaps for these games, in the background
  *   POST {..., "dry": true}     the plan, nothing started
@@ -51,9 +53,10 @@ if (is_array($body['account'] ?? null) || !empty($body['check'])) {
         }
         xs_log('SSCR', 'logins saved');           // never what they are
     }
-    $check = xs_ss_check(xs_ss_account());
+    $use   = xs_ss_account_in_use(true, $devWhy);
+    $check = xs_ss_check($use, $devWhy);
     xs_log('SSCR', $check['ok']
-        ? 'login accepted: ' . $check['today'] . ' of ' . $check['max'] . ' requests used today'
+        ? 'login accepted' . ($use['shared'] ? " with Xsegon's own developer ID" : '') . ': ' . $check['today'] . ' of ' . $check['max'] . ' requests used today'
         : 'login check: ' . $check['error']);
     xs_json(['ok' => true, 'account' => xs_ss_account_public(), 'check' => $check]);
 }
@@ -62,8 +65,12 @@ $job = xs_ss_job();
 if (is_array($job) && ($job['state'] ?? '') === 'running' && empty($body['dry'])) {
     xs_fail('snaps are already being fetched; that has to finish first', 409);
 }
-if (!xs_ss_ready(xs_ss_account())) {
+$use = xs_ss_account_in_use(true, $devWhy);
+if ($use['user'] === '' || $use['password'] === '') {
     xs_fail('the ScreenScraper logins are not filled in yet', 409);
+}
+if (!xs_ss_ready($use)) {
+    xs_fail((string) $devWhy, 409);
 }
 $want = array_flip(array_map('strval', (array) ($body['ids'] ?? [])));
 $pick = array_values(array_filter(xs_ss_games($s, $lib),
@@ -87,7 +94,9 @@ if (!empty($body['dry'])) {
 }
 xs_write_or_fail(xs_ss_job_path(), $plan);
 $script = XS_ROOT . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'screenscraper.ps1';
-if (!xs_spawn_ps(xs_ps_call($script, ['Job' => xs_ss_job_path(), 'Account' => xs_ss_account_path()]))) {
+// The fetcher opens the kept copy of Xsegon's own developer ID itself; it is never on a command line.
+$args = ['Job' => xs_ss_job_path(), 'Account' => xs_ss_account_path(), 'Shared' => $use['shared'] ? xs_ss_shared_path() : null];
+if (!xs_spawn_ps(xs_ps_call($script, $args))) {
     xs_fail('the snap fetcher could not be started', 500);
 }
 xs_log('SSCR', 'fetch asked for ' . count($pick) . ' snaps');
