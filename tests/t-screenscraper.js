@@ -16,6 +16,9 @@ const { api, sleep, Guard } = require("./lib");
 const key = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
 // Every character that could break an address or a curl config line.
 const LOGIN = { devid: "StandInDev77", devpassword: 'dev "p&ss\\w+rd% $1', user: "Test Member", password: "m&mber=p@ss #2" };
+// Xsegon's own developer ID as the website serves it, and the one it is swapped for.
+const SHARED = { devid: "XsegonOwnDev1", devpassword: 'own "s&cr\\t+% $9' };
+const SHARED2 = { devid: "XsegonOwnDev2", devpassword: "swapped=p@ss #3" };
 // An mp4's first bytes: a box length, then "ftyp".
 const mp4 = (words) => Buffer.concat([Buffer.from([0, 0, 0, 24]), Buffer.from("ftypmp42"), Buffer.alloc(12), Buffer.from(words)]);
 
@@ -53,19 +56,27 @@ module.exports = async function (b, check) {
 
   // ---- the stand-in ----
   const asked = [];
-  const say = { search: {}, rom: {}, media: {}, refuse: null };
+  const say = { search: {}, rom: {}, media: {}, refuse: null, shared: null };
+  let siteAsked = 0;
   const quota = { requeststoday: "12", maxrequestsperday: "20000", maxthreads: "1", id: LOGIN.user };
   const server = http.createServer((req, res) => {
     const u = new URL(req.url, "http://127.0.0.1");
     const q = Object.fromEntries(u.searchParams);
     asked.push({ path: u.pathname, q });
     const send = (code, body, type) => { res.writeHead(code, { "Content-Type": type || "text/plain; charset=utf-8" }); res.end(body); };
+    // The website's copy of Xsegon's own developer ID, not ScreenScraper's.
+    if (u.pathname === "/shared.json") {
+      siteAsked++;
+      return say.shared ? send(200, say.shared, "application/json") : send(404, "Not Found");
+    }
     if (say.refuse) { return send(say.refuse.status, say.refuse.body); }
     if (u.pathname.startsWith("/media/")) {
       const m = say.media[path.basename(u.pathname)];
       return m ? send(200, m, Buffer.isBuffer(m) ? "video/mp4" : "text/plain") : send(404, "NOMEDIA");
     }
-    if (q.devid !== LOGIN.devid || q.devpassword !== LOGIN.devpassword) { return send(403, "Erreur de login : Vérifier vos identifiants développeur !"); }
+    if (![LOGIN, SHARED, SHARED2].some((d) => q.devid === d.devid && q.devpassword === d.devpassword)) {
+      return send(403, "Erreur de login : Vérifier vos identifiants développeur !");
+    }
     if (q.ssid !== LOGIN.user || q.sspassword !== LOGIN.password) { return send(403, "Erreur de login : Vérifier les identifiants utilisateurs !"); }
     const json = (response) => send(200, JSON.stringify({ header: { success: "true" }, response: Object.assign({ ssuser: quota }, response) }), "application/json");
     if (u.pathname === "/ssuserInfos.php") { return json({}); }
@@ -110,7 +121,7 @@ module.exports = async function (b, check) {
   const vdir = path.join(DATA, "videos-screenscraper");
   const own = path.join(DATA, "video-own");
   const jobFile = path.join(DATA, "screenscraper-job.json");
-  const guard = new Guard(["screenscraper-job.json", "screenscraper.json"]);
+  const guard = new Guard(["screenscraper-job.json", "screenscraper.json", "screenscraper-shared.dat"]);
   const ids = [A, B, C, D, E, F].map((g) => g.id);
   let ownMade = null;
   const finished = async () => {
@@ -240,7 +251,7 @@ module.exports = async function (b, check) {
     await b.until(`document.querySelectorAll("#editor .sv-row").length`, st.games.length);
     const rowOf = (id) => `[...document.querySelectorAll("#editor .sv-row")].find(r => r.querySelector("input").value === ${JSON.stringify(id)})`;
     check("a game with its snap saved says so and cannot be selected", await b.ev(`(r => [r.querySelector(".sv-state").textContent, r.querySelector("input").disabled])(${rowOf(A.id)})`), ["saved", true]);
-    check("the stored logins are named, never shown", await b.ev(`(() => { const t = document.querySelector("#editor .ss-acct").textContent; return [t.includes(${JSON.stringify(LOGIN.user)}), t.includes(${JSON.stringify(LOGIN.devid)}), t.includes(${JSON.stringify(LOGIN.password)}), !!document.querySelector("#editor .ss-form")]; })()`), [true, true, false, false]);
+    check("the stored login is named, its password never shown, and no developer ID", await b.ev(`(() => { const t = document.querySelector("#editor .ss-acct").textContent; return [t.includes(${JSON.stringify(LOGIN.user)}), t.includes(${JSON.stringify(LOGIN.devid)}), t.includes(${JSON.stringify(LOGIN.password)}), !!document.querySelector("#editor .ss-form")]; })()`), [true, false, false, false]);
     check("a run that stopped says why", await b.ev(`/stopped: ScreenScraper refused the developer ID/.test(document.querySelector("#editor .group-help").textContent)`), true);
     check("selecting one console selects only its games", await b.ev(`(() => {
       const s = document.querySelector("#editor .ss-pick"), want = ${JSON.stringify("p:" + C.platform)};
@@ -256,10 +267,73 @@ module.exports = async function (b, check) {
     await b.key("Escape");
     check("Esc says no and starts nothing", await b.until(`!document.querySelector(".setup-confirm")`) && fs.readFileSync(jobFile, "utf8") === jobBefore, true);
     await b.ev(`[...document.querySelectorAll("#editor .ss-btns button")].find(x => /Change/.test(x.textContent)).click()`);
-    check("Change shows the boxes, the passwords hidden and empty", await b.ev(`[...document.querySelectorAll("#editor .ss-form input")].map(i => i.type + ":" + i.value)`),
-      ["text:" + LOGIN.devid, "password:", "text:" + LOGIN.user, "password:"]);
+    check("Change shows the member's two boxes only, the password hidden and empty", await b.ev(`[...document.querySelectorAll("#editor .ss-form input")].map(i => i.type + ":" + i.value)`),
+      ["text:" + LOGIN.user, "password:"]);
     await b.key("Escape");
     await b.until(`document.getElementById("editor").hidden`);
+
+    // ---- Xsegon's own developer ID, from the website ----
+    check("with a developer ID of your own, the website is never asked", siteAsked, 0);
+    const phpExe = ((await api("api/status.php")).build || {}).phpExe;
+    const siteFile = (dev) => require("child_process").execFileSync(phpExe, [path.join(__dirname, "ss-seal.php")], { input: JSON.stringify(dev), encoding: "utf8" });
+    const keptFile = path.join(DATA, "screenscraper-shared.dat");
+    const told = (text, d) => text.includes(d.devid) || text.includes(d.devpassword)
+      || text.includes(encodeURIComponent(d.devpassword)) || text.includes(JSON.stringify(d.devpassword).slice(1, -1));
+    const lastWho = () => asked.filter((a) => a.path === "/ssuserInfos.php").pop() || { q: {} };
+    // The developer ID box emptied: its stored password stays, so only the ID decides.
+    const memberOnly = { devid: "", devpassword: "", user: LOGIN.user, password: "" };
+
+    const none = await api("api/screenscraper.php", { account: memberOnly });
+    check("a member login alone, with the website down and nothing kept, says why", [none.check.ok, /could not be fetched.*none is kept/.test(none.check.error || ""), none.account.ready], [false, true, false]);
+    say.shared = siteFile(SHARED);
+    asked.length = 0;
+    const fromSite = await api("api/screenscraper.php", { check: true });
+    check("with the website up, Xsegon's own developer ID is fetched and accepted", [fromSite.check.ok, fromSite.account.shared, fromSite.account.ready], [true, true, true]);
+    check("the question goes out with it exactly, and the member's own login", [lastWho().q.devid, lastWho().q.devpassword, lastWho().q.ssid, lastWho().q.softname], [SHARED.devid, SHARED.devpassword, LOGIN.user, "Xsegon"]);
+    check("the page is never told it", told(JSON.stringify(fromSite), SHARED) || told(JSON.stringify(await api("api/screenscraper.php")), SHARED), false);
+    const keptText = fs.existsSync(keptFile) ? fs.readFileSync(keptFile, "utf8") : "";
+    check("the kept copy holds it sealed, not as text", [keptText.length > 60, told(keptText, SHARED)], [true, false]);
+    say.shared = null;
+    const offline = await api("api/screenscraper.php", { check: true });
+    check("with the website down, the kept copy is used", [offline.check.ok, offline.account.shared, lastWho().q.devid], [true, true, SHARED.devid]);
+    say.shared = siteFile(SHARED2);
+    const swapped = await api("api/screenscraper.php", { check: true });
+    check("a new one on the website is used at the next check", [swapped.check.ok, lastWho().q.devid, lastWho().q.devpassword], [true, SHARED2.devid, SHARED2.devpassword]);
+
+    // The fetcher opens the kept copy itself.
+    say.media["c.mp4"] = mp4("fetched with Xsegon's own developer ID");
+    say.search[C.system + "-" + key(C.title)] = [named(C, [video("c.mp4")])];
+    asked.length = 0;
+    await api("api/screenscraper.php", { ids: [C.id] });
+    const viaShared = await finished();
+    check("a fetch with Xsegon's own developer ID saves the snap", [viaShared.job.state, viaShared.job.games.map((g) => g.state), fs.existsSync(path.join(vdir, C.id + ".mp4"))], ["done", ["done"], true]);
+    const searched = asked.filter((a) => a.path === "/jeuRecherche.php");
+    check("its questions carry the kept one, exactly", searched.length > 0 && searched.every((a) => a.q.devid === SHARED2.devid && a.q.devpassword === SHARED2.devpassword), true);
+    const logsNow = fs.readdirSync(path.join(DATA, "log")).map((f) => fs.readFileSync(path.join(DATA, "log", f), "utf8")).join("\n");
+    check("neither shared one is in the job file or the log", [SHARED, SHARED2].some((d) => told(fs.readFileSync(jobFile, "utf8"), d) || told(logsNow, d)), false);
+    check("the log says where it came from", /SSCR Xsegon's own developer ID fetched from the website \(a new one\)/.test(logsNow) && /SSCR Xsegon's own developer ID: the website gave none \(it answered 404\); the kept copy is used/.test(logsNow), true);
+
+    await b.goto();
+    await b.setView("grid");
+    await b.openBar("media");
+    await b.menuItem(/ScreenScraper videos/);
+    await b.until(title, "SCREENSCRAPER VIDEOS");
+    check("with Xsegon's own developer ID the window names only the member, never the ID",
+      await b.until(`(document.querySelector("#editor .ss-who") || {}).textContent === "ScreenScraper login stored: member " + ${JSON.stringify(LOGIN.user)} + "."`) &&
+      await b.ev(`!/developer/i.test(document.querySelector("#editor .ss-acct").textContent)`), true);
+    await b.key("Escape");
+    await b.until(`document.getElementById("editor").hidden`);
+
+    // A kept copy made on another computer, or changed, does not open.
+    fs.writeFileSync(keptFile, JSON.stringify({ v: 1, sealed: Buffer.alloc(80, 7).toString("base64") }));
+    say.shared = null;
+    const foreign = await api("api/screenscraper.php", { check: true });
+    check("a kept copy that does not open here is not used", [foreign.check.ok, foreign.account.shared, /none is kept/.test(foreign.check.error || "")], [false, false, true]);
+    say.shared = siteFile(SHARED);
+    const before = siteAsked;
+    asked.length = 0;
+    const mine = await api("api/screenscraper.php", { account: LOGIN });
+    check("a developer ID of your own wins, and the website is not asked", [mine.check.ok, mine.account.shared, lastWho().q.devid, siteAsked - before], [true, false, LOGIN.devid, 0]);
 
     const gone = await api("api/screenscraper.php", { forget: true });
     check("Forget deletes the stored logins", [gone.ok, gone.account.ready, fs.existsSync(path.join(DATA, "screenscraper.json"))], [true, false, false]);

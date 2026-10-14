@@ -85,6 +85,7 @@ function xs_backup_skipped(): array
         ['path' => 'documents',      'why' => 'manuals and maps fetched for your games, often over a gigabyte: they can be fetched again'],
         ['path' => 'extras',         'why' => 'box sides, cartridges and discs fetched for your games: they can be fetched again'],
         ['path' => 'screenscraper.json', 'why' => 'your ScreenScraper logins: passwords are never put in an archive, type them in again'],
+        ['path' => 'screenscraper-shared.dat', 'why' => "Xsegon's own ScreenScraper developer ID, sealed to this computer: fetched again at the next check"],
         ['path' => 'emulators',      'why' => 'the RetroArch Xsegon downloaded for you, and its cores: Settings > Emulators gets them again'],
         ['path' => 'sounds',         'why' => 'a copy of the sound packs: a pull brings them back'],
         ['path' => 'sounds-staged',  'why' => 'a sound you chose, for the moment it is being checked'],

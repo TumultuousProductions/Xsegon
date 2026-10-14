@@ -504,8 +504,11 @@ body.no-anim .ctx { animation: none; }
   font: 12px/1.5 var(--mono); color: var(--mute); background: var(--panel-2); padding: 8px 12px; border-radius: 8px; }
 .ss-plat { color: var(--mute); font-size: 11.5px; white-space: nowrap; }
 .ss-plat { overflow: hidden; text-overflow: ellipsis; }
-.ss .sv-rows { max-height: calc(100vh - 440px - var(--strip-h)); min-height: 140px; }
-.ss.ss-typing .sv-rows { max-height: calc(100vh - 660px - var(--strip-h)); }
+/* Never taller than the screen: what is above the list keeps its height, and the list
+   scrolls in the rest. Its own overflow, since .sc-rows (later) would hide the rows. */
+.panel-inner.ss { max-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; }
+.panel-inner.ss > * { flex: none; }
+.panel-inner.ss > .sv-rows { flex: 1 1 auto; min-height: 140px; max-height: none; overflow-y: auto; }
 .setup-prog.bad { color: var(--bad) !important; }
 button.danger {
   border-color: rgba(248, 113, 113, .6); color: var(--bad);
@@ -4683,17 +4686,17 @@ body:not(.badge-favourite) .rcard.fav .rcard-cap::before { content: none; }
 body.no-glow .rcard.sel { box-shadow: none; }
 .rcard.sel .rcard-cap { color: var(--ink); }
 
-/* The bar: the list's, on the rows (up and down). */
-.rows-list { scrollbar-width: auto; scrollbar-color: auto; }
-.rows-list::-webkit-scrollbar { display: block; width: 10px; }
-.rows-list::-webkit-scrollbar-track { background: rgba(var(--well-rgb), .55); border-left: 1px solid var(--rule); }
-.rows-list::-webkit-scrollbar-thumb {
+/* The bar: the list's, on the rows (up and down), and the ScreenScraper window's games. */
+.rows-list, .panel-inner.ss > .sv-rows { scrollbar-width: auto; scrollbar-color: auto; }
+.rows-list::-webkit-scrollbar, .panel-inner.ss > .sv-rows::-webkit-scrollbar { display: block; width: 10px; }
+.rows-list::-webkit-scrollbar-track, .panel-inner.ss > .sv-rows::-webkit-scrollbar-track { background: rgba(var(--well-rgb), .55); border-left: 1px solid var(--rule); }
+.rows-list::-webkit-scrollbar-thumb, .panel-inner.ss > .sv-rows::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, rgba(var(--cyan-rgb), .8), rgba(var(--cyan-rgb), .5));
   background-clip: padding-box; border: 2px solid transparent; min-height: 48px;
 }
-.rows-list::-webkit-scrollbar-thumb:hover { background: var(--cyan); background-clip: padding-box; }
+.rows-list::-webkit-scrollbar-thumb:hover, .panel-inner.ss > .sv-rows::-webkit-scrollbar-thumb:hover { background: var(--cyan); background-clip: padding-box; }
 @supports not selector(::-webkit-scrollbar) {
-  .rows-list { scrollbar-width: thin; scrollbar-color: rgba(var(--cyan-rgb), .7) rgba(var(--well-rgb), .55); }
+  .rows-list, .panel-inner.ss > .sv-rows { scrollbar-width: thin; scrollbar-color: rgba(var(--cyan-rgb), .7) rgba(var(--well-rgb), .55); }
 }
 
 /* No bar under each row: a row with more past an edge FADES at that edge
