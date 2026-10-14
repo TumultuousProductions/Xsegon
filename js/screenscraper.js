@@ -20,8 +20,8 @@ var WORDS = {
   waiting: "waiting", asking: "asking ScreenScraper...", fetching: "downloading...", done: "saved",
   none: "not found on ScreenScraper", novideo: "ScreenScraper has no video of it", failed: "could not be fetched"
 };
+// The developer ID is Xsegon's own (includes\screenscraper.php), so only the member's login is asked.
 var FIELDS = [
-  ["devid", "Developer ID", "text"], ["devpassword", "Developer password", "password"],
   ["user", "Member name", "text"], ["password", "Member password", "password"]
 ];
 
@@ -78,7 +78,7 @@ export function openScreenScraper() {
         : "Not accepted: " + check.error + ".");
     }
     if (a.ready && !editing) {
-      acct.appendChild(el("p", "ss-who", "ScreenScraper logins stored: member " + a.user + ", developer ID " + a.devid + "."));
+      acct.appendChild(el("p", "ss-who", "ScreenScraper login stored: member " + a.user + "."));
       var btns = el("div", "ss-btns");
       [["Check the login", function () { send({ check: true }, "asking ScreenScraper..."); }],
        ["Change...", function () { editing = true; paintAccount(a, null); }],
@@ -93,7 +93,7 @@ export function openScreenScraper() {
       return;
     }
     acct.appendChild(el("p", "group-help",
-      "ScreenScraper asks for two logins: a member account, free at screenscraper.fr, and a developer ID with its password, which ScreenScraper gives to an application when asked on its forum. " +
+      "ScreenScraper asks for a member account, free at screenscraper.fr: type its name and password here. " +
       "They are kept in data\\screenscraper.json on this computer, and never go into a backup, a problem report or the log."));
     var form = el("div", "ss-form");
     var inputs = {};

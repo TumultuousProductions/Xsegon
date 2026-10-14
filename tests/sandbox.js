@@ -45,8 +45,9 @@ const FRESH = ["log", "backups", "reports"];
 /* libretro: the lists and picture indexes fetched from libretro, a cache the
    libretro group must never see: it serves its own stand-ins through
    XSEGON_LIBRETRO_*, but a cached list is read before any fetch. */
-/* screenscraper.json: the person's real ScreenScraper logins. Never copied:
-   the tests type stand-in ones, and ask a stand-in the group serves itself.
+/* screenscraper.json, screenscraper-shared.dat: the person's real ScreenScraper
+   logins and the kept copy of Xsegon's own developer ID. Never copied: the
+   tests type stand-in ones, and ask a stand-in the group serves itself.
    videos, documents, extras: scraped snaps, manuals and spare pictures,
    gigabytes of them and nothing a test reads; without the snaps the copy
    also keeps games with no video, which the trailer and snap groups need.
@@ -56,7 +57,7 @@ const FRESH = ["log", "backups", "reports"];
    ra-remaps: the button files the person's last real launches staged. A
    launch writes its own there, and the settings group must find the one it
    staged, not a game's file left by a real play. */
-const LEFT_OUT = /^(main-busy|phone\.json|phone-(stop|seen|closed)|browser-profile.*|emulators|videos|documents|extras|videos-steam|sounds-own|sounds-staged|ra-remaps|steamvid-job\.json|fill-(job|look)\.json|fill-stop|videos-screenscraper|screenscraper(-job)?\.json|log|backups|reports|server\.log|gamesdb\.sqlite(-wal|-shm|\.part\d+)?|gamesdb-update|libretro)$/i;
+const LEFT_OUT = /^(main-busy|phone\.json|phone-(stop|seen|closed)|browser-profile.*|emulators|videos|documents|extras|videos-steam|sounds-own|sounds-staged|ra-remaps|steamvid-job\.json|fill-(job|look)\.json|fill-stop|videos-screenscraper|screenscraper(-job)?\.json|screenscraper-shared\.dat|log|backups|reports|server\.log|gamesdb\.sqlite(-wal|-shm|\.part\d+)?|gamesdb-update|libretro)$/i;
 const HARD_LINKED = ["gamesdb.sqlite"];
 
 function php() {
@@ -273,6 +274,7 @@ function fixtures(ssPort) {
   return {
     XSEGON_SKRAPER: skraper,
     XSEGON_SS_API: "http://127.0.0.1:" + ssPort + "/",
+    XSEGON_SS_SHARED: "http://127.0.0.1:" + ssPort + "/shared.json",   // the website's copy of Xsegon's own developer ID
     XSEGON_RA_SYSTEM: raSys,
     XSEGON_BIOS_SUMS: biosSums,
     XSEGON_LIBRETRO_THUMBS: url(path.join(lr, "thumbs")),

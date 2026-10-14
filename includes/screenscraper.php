@@ -3,13 +3,18 @@
  * Xsegon - video snaps from ScreenScraper (screenscraper.fr), asked by the
  * game's title and console for the games that have no video.
  *
- * Their API wants a member account and a developer ID on every call. Neither
- * is Xsegon's to ship, so each person types their own:
+ * Their API wants a member account and a developer ID on every call. The
+ * member account is each person's own, typed in:
  *
- *     data\screenscraper.json           the four words, on this computer only
+ *     data\screenscraper.json           the logins typed, on this computer only
+ *     data\screenscraper-shared.dat     Xsegon's own developer ID, sealed to this computer
+ *
+ * Xsegon's own developer ID comes from Xsegon's website on a press, never in
+ * the public code; one the person types is used instead. The sealing stops a
+ * casual look only: ScreenScraper puts the developer password in every address it answers with.
  *
  * Kept apart from settings.json on purpose: that file goes into a problem
- * report and a backup whole, and this one goes into neither. The page is told
+ * report and a backup whole, and these go into neither. The page is told
  * the names and whether a password is stored, never the passwords.
  *
  * Each snap is saved as data\videos-screenscraper\<game id>.mp4 and found
@@ -33,6 +38,11 @@ function xs_ss_job_path(): string
 function xs_ss_account_path(): string
 {
     return xs_data_path('screenscraper.json');
+}
+
+function xs_ss_shared_path(): string
+{
+    return xs_data_path('screenscraper-shared.dat');
 }
 
 /** The snap saved for this game, or null. */
@@ -136,16 +146,35 @@ function xs_ss_ready(array $a): bool
     return $a['devid'] !== '' && $a['devpassword'] !== '' && $a['user'] !== '' && $a['password'] !== '';
 }
 
-/** What the page may know: the names, and whether each password is stored. */
+/**
+ * The logins a question goes out with: the person's own developer ID when both
+ * its boxes are filled, else Xsegon's own ('shared' true). $pull as xs_ss_shared.
+ */
+function xs_ss_account_in_use(bool $pull = false, ?string &$why = null): array
+{
+    $why = null;
+    $a   = xs_ss_account();
+    $a['shared'] = false;
+    if ($a['devid'] !== '' && $a['devpassword'] !== '') {
+        return $a;
+    }
+    // The site is asked only when there is a member login to go with what it gives.
+    $dev = xs_ss_shared($pull && $a['user'] !== '' && $a['password'] !== '', $why);
+    return $dev === null ? $a : array_merge($a, $dev, ['shared' => true]);
+}
+
+/** What the page may know: the names, whether each password is stored, and whether Xsegon's own developer ID is in use. */
 function xs_ss_account_public(): array
 {
-    $a = xs_ss_account();
+    $a   = xs_ss_account();
+    $use = xs_ss_account_in_use();
     return [
         'devid'       => $a['devid'],
         'user'        => $a['user'],
         'devpassword' => $a['devpassword'] !== '',
         'password'    => $a['password'] !== '',
-        'ready'       => xs_ss_ready($a),
+        'shared'      => $use['shared'],
+        'ready'       => xs_ss_ready($use),
     ];
 }
 
@@ -178,6 +207,109 @@ function xs_ss_account_forget(): bool
 {
     $p = xs_ss_account_path();
     return !is_file($p) || @unlink($p);
+}
+
+// ---- Xsegon's own developer ID ----------------------------------------------
+
+/** Where the website serves it. Tests point it at a stand-in (XSEGON_SS_SHARED), honoured only beside XSEGON_DATA. */
+function xs_ss_shared_url(): string
+{
+    $test = getenv('XSEGON_SS_SHARED');
+    return is_string($test) && $test !== '' && getenv('XSEGON_DATA') ? $test : 'https://tumultuousproductions.site/xsegon/ss.json';
+}
+
+/** The website copy's key. bin\screenscraper.ps1 builds the same one. */
+function xs_ss_site_key(): string
+{
+    return hash('sha256', hex2bin('f63807d197f8ad93' . 'bab30783da0dd9f8' . 'c1b59077910be438' . '6732257fcc4def84') . 'xs-ss-1', true);
+}
+
+/** The kept copy's key: the website's with this computer and Windows user, so a copied data folder does not open it. */
+function xs_ss_pc_key(): string
+{
+    // ASCII only: PHP and PowerShell may read a name with other letters in different encodings.
+    $ascii = static fn (string $name): string => (string) preg_replace('/[^\x20-\x7E]/', '', (string) getenv($name));
+    return hash('sha256', xs_ss_site_key() . '|' . $ascii('COMPUTERNAME') . '|' . $ascii('USERNAME'), true);
+}
+
+/** AES-256-CBC under an HMAC, as base64 of the IV, the text and the HMAC. */
+function xs_ss_seal(string $plain, string $key): string
+{
+    $iv = random_bytes(16);
+    $ct = (string) openssl_encrypt($plain, 'aes-256-cbc', hash('sha256', 'enc|' . $key, true), OPENSSL_RAW_DATA, $iv);
+    return base64_encode($iv . $ct . hash_hmac('sha256', $iv . $ct, hash('sha256', 'mac|' . $key, true), true));
+}
+
+/** The text sealed with this key, or null when another key sealed it or it was changed since. */
+function xs_ss_unseal(string $sealed, string $key): ?string
+{
+    $all = base64_decode(trim($sealed), true);
+    if ($all === false || strlen($all) < 64) {
+        return null;
+    }
+    $body = substr($all, 0, -32);
+    if (!hash_equals(hash_hmac('sha256', $body, hash('sha256', 'mac|' . $key, true), true), substr($all, -32))) {
+        return null;
+    }
+    $plain = openssl_decrypt(substr($body, 16), 'aes-256-cbc', hash('sha256', 'enc|' . $key, true), OPENSSL_RAW_DATA, substr($body, 0, 16));
+    return $plain === false ? null : $plain;
+}
+
+/** A developer ID read back from sealed text: devid, devpassword, softname; null when it is not one. */
+function xs_ss_dev_read(?string $plain): ?array
+{
+    $d = $plain === null ? null : json_decode($plain, true);
+    if (!is_array($d) || !is_string($d['devid'] ?? null) || !is_string($d['devpassword'] ?? null)
+        || trim($d['devid']) === '' || $d['devpassword'] === '') {
+        return null;
+    }
+    $soft = is_string($d['softname'] ?? null) && trim($d['softname']) !== '' ? trim($d['softname']) : 'Xsegon';
+    return ['devid' => trim($d['devid']), 'devpassword' => $d['devpassword'], 'softname' => $soft];
+}
+
+/** The file the website serves for this developer ID. Only the maker writes one. */
+function xs_ss_site_file(array $dev): string
+{
+    $plain = (string) json_encode(['devid' => $dev['devid'], 'devpassword' => $dev['devpassword'], 'softname' => $dev['softname'] ?? 'Xsegon']);
+    return json_encode(['v' => 1, 'sealed' => xs_ss_seal($plain, xs_ss_site_key())]) . "\n";
+}
+
+/**
+ * Xsegon's own developer ID, or null with $why. $pull asks the website first
+ * and keeps what comes, sealed to this computer; without it, or when the
+ * website gives none, the kept copy is used.
+ */
+function xs_ss_shared(bool $pull = false, ?string &$why = null): ?array
+{
+    $why  = null;
+    $path = xs_ss_shared_path();
+    $kept = xs_read_json($path, null);
+    $have = is_array($kept) && is_string($kept['sealed'] ?? null) ? xs_ss_dev_read(xs_ss_unseal($kept['sealed'], xs_ss_pc_key())) : null;
+    if ($pull) {
+        $got  = xs_ss_fetch(xs_ss_shared_url(), 10);
+        $site = $got !== null && $got['status'] === 200 ? json_decode(xs_strip_bom($got['body']), true) : null;
+        $new  = is_array($site) && is_string($site['sealed'] ?? null) ? xs_ss_dev_read(xs_ss_unseal($site['sealed'], xs_ss_site_key())) : null;
+        if ($new !== null) {
+            if ($new !== $have) {
+                // The fetcher opens the kept copy itself, so one that cannot be kept is a failure.
+                if (!xs_write_json($path, ['v' => 1, 'sealed' => xs_ss_seal((string) json_encode($new), xs_ss_pc_key())], $wrote)) {
+                    $why = (string) $wrote;
+                    xs_log('SSCR', "Xsegon's own developer ID came, and could not be kept: " . $why);
+                    return null;
+                }
+                xs_log('SSCR', "Xsegon's own developer ID fetched from the website" . ($have !== null ? ' (a new one)' : ''));
+            }
+            return $new;
+        }
+        $said = $got === null ? 'no answer' : ($got['status'] !== 200 ? 'it answered ' . $got['status'] : 'its answer did not open');
+        xs_log('SSCR', "Xsegon's own developer ID: the website gave none (" . $said . ')'
+            . ($have !== null ? '; the kept copy is used' : (is_file($path) ? '; the kept copy does not open on this computer' : '; none is kept')));
+    }
+    if ($have === null) {
+        $why = "Xsegon's own developer ID could not be fetched from tumultuousproductions.site (it may be down, or this computer offline), "
+             . 'and none is kept here yet; try again later';
+    }
+    return $have;
 }
 
 // ---- where it asks ----------------------------------------------------------
@@ -214,22 +346,15 @@ function xs_ss_auth(array $a): string
          . '&ssid=' . rawurlencode($a['user']) . '&sspassword=' . rawurlencode($a['password']);
 }
 
-/**
- * Ask ScreenScraper who this is. ['ok' => true, 'today' => n, 'max' => n,
- * 'threads' => n] or ['ok' => false, 'error' => a sentence naming which login was refused].
- */
-function xs_ss_check(array $a): array
+/** One GET: ['status' => n, 'body' => text], or null when nothing answered. */
+function xs_ss_fetch(string $url, int $timeout): ?array
 {
-    if (!xs_ss_ready($a)) {
-        return ['ok' => false, 'error' => 'fill in all four boxes first'];
-    }
-    $url = str_replace('{auth}', xs_ss_auth($a), xs_ss_sources()['user']);
-    $ctx = stream_context_create(['http' => ['timeout' => 20, 'user_agent' => 'Xsegon', 'ignore_errors' => true],
+    $ctx = stream_context_create(['http' => ['timeout' => $timeout, 'user_agent' => 'Xsegon', 'ignore_errors' => true],
                                   'ssl'  => ['verify_peer' => true]]);
     // Only extend a limit that exists: the fetch worker runs with none, and
-    // re-arming one here would give it a 40 second wall clock.
+    // re-arming one here would give it a wall clock.
     if ((int) ini_get('max_execution_time') > 0) {
-        set_time_limit(40);
+        set_time_limit($timeout + 20);
     }
     // The status is read from the last response's headers, so an earlier
     // request's must not be standing there (the fast lane check makes one).
@@ -238,7 +363,7 @@ function xs_ss_check(array $a): array
     }
     $raw = @file_get_contents($url, false, $ctx);
     if ($raw === false) {
-        return ['ok' => false, 'error' => 'could not reach ScreenScraper; it may be down, or this computer offline'];
+        return null;
     }
     $status = 200;
     $heads  = function_exists('http_get_last_response_headers') ? (http_get_last_response_headers() ?? []) : [];
@@ -247,8 +372,27 @@ function xs_ss_check(array $a): array
             $status = (int) $m[1];
         }
     }
-    if ($status !== 200) {
-        return ['ok' => false, 'error' => xs_ss_refusal($status, $raw)];
+    return ['status' => $status, 'body' => $raw];
+}
+
+/**
+ * Ask ScreenScraper who this is. ['ok' => true, 'today' => n, 'max' => n,
+ * 'threads' => n] or ['ok' => false, 'error' => a sentence naming which login was refused].
+ * $devWhy is why there is no developer ID, from xs_ss_account_in_use.
+ */
+function xs_ss_check(array $a, ?string $devWhy = null): array
+{
+    if (!xs_ss_ready($a)) {
+        return ['ok' => false, 'error' => $a['user'] === '' || $a['password'] === ''
+            ? 'fill in the member name and password first' : ($devWhy ?? 'fill in the developer ID and its password')];
+    }
+    $got = xs_ss_fetch(str_replace('{auth}', xs_ss_auth($a), xs_ss_sources()['user']), 20);
+    if ($got === null) {
+        return ['ok' => false, 'error' => 'could not reach ScreenScraper; it may be down, or this computer offline'];
+    }
+    $raw = $got['body'];
+    if ($got['status'] !== 200) {
+        return ['ok' => false, 'error' => xs_ss_refusal($got['status'], $raw, !empty($a['shared']))];
     }
     $json = json_decode(xs_strip_bom($raw), true);
     $u    = is_array($json) ? ($json['response']['ssuser'] ?? null) : null;
@@ -271,16 +415,16 @@ function xs_ss_words(string $raw): string
 }
 
 /** A refusal in the person's words. bin\screenscraper.ps1 says the same ones. */
-function xs_ss_refusal(int $status, string $body): string
+function xs_ss_refusal(int $status, string $body, bool $shared = false): string
 {
     $lower = strtolower($body);
     return match (true) {
         $status === 403 && (str_contains($lower, 'veloppeur') || str_contains($lower, 'developer'))
-            => 'ScreenScraper refused the developer ID and its password',
+            => 'ScreenScraper refused ' . ($shared ? "Xsegon's own developer ID" : 'the developer ID') . ' and its password',
         $status === 403 => 'ScreenScraper refused the member name and password',
         $status === 430, $status === 431 => "today's ScreenScraper quota is used up; it starts again tomorrow",
         $status === 401, $status === 423 => 'ScreenScraper is closed to free accounts right now (it does that when it is busy); try again later',
-        $status === 426 => 'ScreenScraper says this developer ID may not be used any more',
+        $status === 426 => 'ScreenScraper says ' . ($shared ? "Xsegon's own developer ID" : 'this developer ID') . ' may not be used any more',
         $status === 429 => 'ScreenScraper says too many requests; try again in a minute',
         default => 'ScreenScraper answered ' . $status . ': ' . xs_ss_words($body),
     };

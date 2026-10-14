@@ -44,7 +44,7 @@ Groups:
 | offline | the server not answering, faked by blocking the status request: one miss says nothing, three bring the screen, and it clears itself |
 | setup   | Getting started and Set it all up, Get RetroArch and cores against stand-ins, and What's new; the Setting up list, Skip on the Runs check, a stopped pictures pass tried again and not called a failure meanwhile, and a bar on every line |
 | steamvid | Pictures & Videos > Steam trailers, against stand-ins for Steam's store and video server |
-| screenscraper | Pictures & Videos > ScreenScraper videos, against a stand-in the group serves itself; the person's logins are never copied in |
+| screenscraper | Pictures & Videos > ScreenScraper videos, against a stand-in the group serves itself, and Xsegon's own developer ID from a stand-in website (its file made by tests/ss-seal.php); the person's logins are never copied in |
 | skraper | Stage for Skraper on that window (D9): the picked games staged by the helper, Skraper followed open to closed, the check run by itself, restore; against a stand-in helper in the test copy's own fixtures |
 | libretro | names and pictures from libretro, against stand-ins laid out like libretro's servers |
 | filecheck | the file check: what a game's file really is by its checksum, against stand-in lists and stand-in game files; the closed line in details and Games > Check game files |
