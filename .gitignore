@@ -1,0 +1,73 @@
+# Xsegon's own data: settings, library, logs and pictures
+data/*
+
+# The console pictures you choose (data/platform-art/) are yours, not the
+# repo's: the Backup tool (Settings > Library) saves them.
+
+# The packed Games Database: built by tools\build-gamesdb.php, published on its
+# own GitHub release and put in the download by tools\make-test-copy.js;
+# never in the repo, where each refresh would add 70 MB to the history.
+gamesdb/gamesdb.sqlite.bz2*
+gamesdb/gamesdb.json
+
+# 7-Zip's small extractor and its licence: fetched by version and checked
+# against its hash (tools\get-7zr.js), carried by every package, not kept here
+bin/7zr.exe
+bin/7zr.exe.part
+bin/7zr-LICENSE.txt
+
+# ffmpeg, the video cutter for World of Longplays recordings, the same way
+# (tools\get-ffmpeg.js): the pinned official build, carried by every package
+bin/ffmpeg.exe
+bin/ffmpeg-LICENSE.txt
+
+# Ovani Sound's five sounds of the built-in set: bought, and not to be handed
+# out on their own. tools\get-ovani-sounds.js puts them here from the pack,
+# and every package carries them.
+sounds/Xsegon/Move.wav
+sounds/Xsegon/Select.wav
+sounds/Xsegon/Back.wav
+sounds/Xsegon/Ok.wav
+sounds/Xsegon/Startup.wav
+
+# never
+roms/
+*.lpl
+# the Games folder a copy with no games folder makes for itself on its first
+# start (includes\scan.php), when it is run from a checkout
+/Games/
+
+# test output (screenshots of failures, browser profiles)
+tests/out/
+
+# The docs are the maker's own: plans, notes, the wiki and its pages. Only the
+# changelog (What's new reads it, every package carries it) and the README's
+# pictures are public.
+doc/*
+!doc/CHANGELOG.md
+!doc/screens/
+
+# The maker's own parts: the wiki, the display guard, Find videos from Package
+# and the privacy scan's word list. Xsegon runs without them.
+private/
+
+# stray logs from other tools (log_screens is a Skraper run log: ROM paths
+# and file names from this machine)
+log_screens
+*.log
+
+# editor, Windows and leftover files
+.vscode/
+# this machine's own Claude Code permissions (pre-approved test commands)
+.claude/settings.local.json
+Microsoft/
+Thumbs.db
+desktop.ini
+*.bak
+*.orig
+*.tmp
+*.before-*
+
+# PHP as a download carries it (tools\make-test-copy.js puts it in the
+# package); never part of a checkout
+/runtime/

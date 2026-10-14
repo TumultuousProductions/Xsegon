@@ -1,0 +1,24 @@
+{
+  "format": 1,
+  "name": "Dracula blacker",
+  "colours": {
+    "ground": "#0c0c10",
+    "panel": "#131419",
+    "panelRaised": "#1b1c24",
+    "words": "#f8f8f2",
+    "wordsSecond": "#b3b8d4",
+    "wordsThird": "#8f95b8",
+    "highlight": "#bd93f9",
+    "highlightSecond": "#ff79c6"
+  },
+  "has": { "glow": false, "scanlines": false },
+  "texture": { "kind": "quilt", "strength": 60 },
+  "mark": "bat",
+  "highContrast": {
+    "ground": "#070709",
+    "panel": "#111216",
+    "panelRaised": "#1b1c24",
+    "wordsSecond": "#dfe2f0",
+    "wordsThird": "#c3c7dd"
+  }
+}

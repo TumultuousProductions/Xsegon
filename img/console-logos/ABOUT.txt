@@ -1,0 +1,438 @@
+Xsegon's console name logos
+===========================
+
+The name logo each console wears on the wheel's rim, when you have not
+chosen one yourself.
+
+They are trademarks, and not Xsegon's
+------------------------------------
+Every name and logo here belongs to the company named beside it below.
+Xsegon shows them for one purpose: to say which console a game is for.
+Xsegon is not made, sponsored, approved or endorsed by Nintendo, Sony
+Interactive Entertainment, Microsoft, Sega, Atari, SNK, the MAME team or
+anyone else whose console or program it names, and has no connection
+with any of them.
+
+Where they come from
+--------------------
+Wikimedia Commons, one file each, fetched by tools\get-console-logos.php.
+Each file's page there marks it Public domain or CC0: Commons' view is
+that a plain wordmark is too simple for copyright to cover, or its
+drawer has given the drawing away. That is its editors' judgement of
+each file, not a ruling, and it says nothing about trademark, which is a
+separate right and still applies. The tool reads the mark off each page
+every time it runs and stops at any other.
+
+sources.json holds the same for each file as data: its page, the mark and
+the ground Commons gives for it, whose trademark it is, who Commons names
+as its author and source, the original's SHA-1 and this file's SHA-256.
+
+What was changed
+----------------
+Commons drew each SVG as a PNG; the empty margins were cut away and the
+picture made no larger than 900 by 270. Logos drawn in black or dark
+colours for white paper are lightened to read on Xsegon's dark screen:
+black becomes white and dark colours are lifted, their hue kept. Where a
+white sheet was drawn behind one it is taken away, and that logo's entry
+says so. Nothing else is redrawn, added or taken away.
+
+To take one out
+---------------
+Delete its file here and the wheel writes that console's name in words.
+An owner who wants one gone has only to ask: help@tumultuousproductions.site
+
+A logo of your own
+------------------
+Right-click a console > Change Pictures, or put a file named
+<console>-clearlogo.png in Xsegon\data\platform-art. Yours comes first,
+and these files are never changed by it.
+
+Each logo
+---------
+Atari - 2600
+    A trademark of Atari.
+    https://commons.wikimedia.org/wiki/File:Atari_2600_logo-01-05.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Atari, Inc.
+    Lightened here for a dark screen; its shape is unchanged.
+
+Atari - 5200
+    A trademark of Atari.
+    https://commons.wikimedia.org/wiki/File:Atari%205200%20logo.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Atari, Inc.
+    Shown as drawn, made smaller.
+
+Atari - 7800
+    A trademark of Atari.
+    https://commons.wikimedia.org/wiki/File:Atari_7800_logo-01.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Atari, Inc.
+    Lightened here for a dark screen; its shape is unchanged.
+
+Atari - Jaguar
+    A trademark of Atari.
+    https://commons.wikimedia.org/wiki/File:Atari%20Jaguar%20logo.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: JustDanPatrick
+    Shown as drawn, made smaller.
+
+Atari - Lynx
+    A trademark of Atari.
+    https://commons.wikimedia.org/wiki/File:Atari%20Lynx%20logo-01.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Atari Inc.
+    Shown as drawn, made smaller.
+
+Bandai - WonderSwan
+    A trademark of Bandai.
+    https://commons.wikimedia.org/wiki/File:Bandai%20WonderSwan%20horizontal%20logo.svg
+    Marked CC0 there (CC-Zero). No credit is asked for.
+    Commons names as its author: https://commons.wikimedia.org/wiki/User:JustDanPatrick
+    Lightened here for a dark screen; its shape is unchanged.
+
+Bandai - WonderSwan Color
+    A trademark of Bandai.
+    https://commons.wikimedia.org/wiki/File:Wonderswan-Color-Logo.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: JustDanPatrick
+    Lightened here for a dark screen; its shape is unchanged.
+
+Coleco - ColecoVision
+    A trademark of Coleco Holdings.
+    https://commons.wikimedia.org/wiki/File:COLECO%20VISION%20LOGO.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Coleco
+    Shown as drawn, made smaller.
+
+Commodore - 64
+    A trademark of Commodore.
+    https://commons.wikimedia.org/wiki/File:Commodore%2064%20logo%20%282%29.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Commodore Business Machines
+    Lightened here for a dark screen; its shape is unchanged.
+
+Commodore - Amiga
+    A trademark of Amiga Corporation.
+    https://commons.wikimedia.org/wiki/File:Commodore%20Amiga%20logo-03.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Commodore International
+    Lightened here for a dark screen; its shape is unchanged.
+
+FBNeo - Arcade Games
+    A trademark of Gregory Ember (MAME).
+    https://commons.wikimedia.org/wiki/File:MAMELogo.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: MAME team
+    Lightened here for a dark screen; its shape is unchanged.
+    The name arcade game sets go by. Xsegon starts Arcade in FinalBurn Neo
+    unless a MAME is added; see MAME below.
+
+Fairchild - Channel F
+    A trademark of Fairchild, its maker, or whoever holds the name now.
+    https://commons.wikimedia.org/wiki/File:Channel%20F%20Logo.svg
+    Marked Public domain there (CC-BY-SA-4.0, PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Schnurrikowski
+    Lightened here for a dark screen; its shape is unchanged.
+    Its drawer also offers this drawing under CC BY-SA 4.0, should the
+    Public domain mark not hold: this copy is offered the same way. The
+    white sheet behind it is taken away here.
+
+GCE - Vectrex
+    A trademark of Smith Engineering, its maker.
+    https://commons.wikimedia.org/wiki/File:Vectrex%20logo%20%28rest%20of%20the%20world%29.svg
+    Marked Public domain there (PD other reasons, PD other reasons new). No credit is asked for.
+    Commons names as its author: Smith Engineering, Inc.
+    Lightened here for a dark screen; its shape is unchanged.
+    The ground Commons gives: that the Vectrex's makers gave its material
+    away.
+
+MAME
+    A trademark of Gregory Ember (MAME).
+    https://commons.wikimedia.org/wiki/File:MAMELogo.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: MAME team
+    Lightened here for a dark screen; its shape is unchanged.
+    The drawing is CC0 in MAME's own repository
+    (docs/source/images/MAMElogo.svg). MAME's legal page,
+    mamedev.org/legal.html, asks that its name and logo be used with
+    permission.
+
+Mattel - Intellivision
+    A trademark of Atari, who bought the Intellivision name in 2024.
+    https://commons.wikimedia.org/wiki/File:Intellivision-logo.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Mattel Electronics
+    Lightened here for a dark screen; its shape is unchanged.
+    The small line above the name, Mattel Electronics, is Mattel's.
+
+Microsoft - MSX
+    A trademark of MSX Licensing Corporation.
+    https://commons.wikimedia.org/wiki/File:MSX-Logo.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Unknown authorUnknown author
+    Shown as drawn, made smaller.
+
+Microsoft - Xbox
+    A trademark of Microsoft.
+    https://commons.wikimedia.org/wiki/File:Xbox_Logo.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Microsoft Corporation.
+    Lightened here for a dark screen; its shape is unchanged.
+
+Microsoft - Xbox 360
+    A trademark of Microsoft.
+    https://commons.wikimedia.org/wiki/File:Xbox_360_logo.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Microsoft. This version: CoolKid1993 at en.wikipedia
+    Shown as drawn, made smaller.
+
+NEC - PC Engine - TurboGrafx 16
+    A trademark of NEC and Konami.
+    https://commons.wikimedia.org/wiki/File:PC%20engine%20logo%20red.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: NEC
+    Lightened here for a dark screen; its shape is unchanged.
+    The console's name in Japan: no free logo of its American name was
+    found.
+
+NEC - PC Engine CD - TurboGrafx-CD
+    A trademark of NEC and Konami.
+    https://commons.wikimedia.org/wiki/File:Super%20CD-ROM2%20logo.png
+    Marked CC0 there (CC-Zero). No credit is asked for.
+    Commons names as its author: 哥麿会
+    Shown as drawn, made smaller.
+    The mark its CD games carry.
+
+Nintendo - Family Computer Disk System
+    A trademark of Nintendo.
+    https://commons.wikimedia.org/wiki/File:Family%20Computer%20Disk%20System%20logo.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Nintendo
+    Lightened here for a dark screen; its shape is unchanged.
+
+Nintendo - Game Boy
+    A trademark of Nintendo.
+    https://commons.wikimedia.org/wiki/File:Gameboy_logo.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Nintendo Corporation, Uploaded and converted by User:Nmnogueira on 15:33, 7 December 2006 en:File:Microsoft_wordmark.svg
+    Lightened here for a dark screen; its shape is unchanged.
+
+Nintendo - Game Boy Advance
+    A trademark of Nintendo.
+    https://commons.wikimedia.org/wiki/File:Game_Boy_Advance_logo.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Nuno Nogueira (Nmnogueira)
+    Lightened here for a dark screen; its shape is unchanged.
+
+Nintendo - Game Boy Color
+    A trademark of Nintendo.
+    https://commons.wikimedia.org/wiki/File:Game_Boy_Color_logo.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Nintendo
+    Lightened here for a dark screen; its shape is unchanged.
+
+Nintendo - GameCube
+    A trademark of Nintendo.
+    https://commons.wikimedia.org/wiki/File:Nintendo_GameCube_Official_Logo.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: JustDanPatrick
+    Lightened here for a dark screen; its shape is unchanged.
+
+Nintendo - Nintendo 3DS
+    A trademark of Nintendo.
+    https://commons.wikimedia.org/wiki/File:Nintendo_3DS_logo.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Nintendo
+    Lightened here for a dark screen; its shape is unchanged.
+
+Nintendo - Nintendo 64
+    A trademark of Nintendo.
+    https://commons.wikimedia.org/wiki/File:Nintendo_64_wordmark.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Nintendo
+    Lightened here for a dark screen; its shape is unchanged.
+
+Nintendo - Nintendo DS
+    A trademark of Nintendo.
+    https://commons.wikimedia.org/wiki/File:Nintendo_DS_Logo.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Nintendo
+    Lightened here for a dark screen; its shape is unchanged.
+
+Nintendo - Nintendo Entertainment System
+    A trademark of Nintendo.
+    https://commons.wikimedia.org/wiki/File:NES_logo.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: The original uploader was Anomie at English Wikipedia.
+    Lightened here for a dark screen; its shape is unchanged.
+
+Nintendo - Nintendo Switch
+    A trademark of Nintendo.
+    https://commons.wikimedia.org/wiki/File:Nintendo_Switch_logo.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Nintendo
+    Shown as drawn, made smaller.
+
+Nintendo - Super Nintendo Entertainment System
+    A trademark of Nintendo.
+    https://commons.wikimedia.org/wiki/File:Super_Nintendo_Entertainment_System_logo.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Apollolux
+    Lightened here for a dark screen; its shape is unchanged.
+
+Nintendo - Virtual Boy
+    A trademark of Nintendo.
+    https://commons.wikimedia.org/wiki/File:Virtualboy%20logo.svg
+    Marked Public domain there (PD text), with its trademark notice. No credit is asked for.
+    Commons names as its author: Nintendo
+    Lightened here for a dark screen; its shape is unchanged.
+
+Nintendo - Wii
+    A trademark of Nintendo.
+    https://commons.wikimedia.org/wiki/File:Wii.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Nintendo
+    Shown as drawn, made smaller.
+
+Nintendo - Wii U
+    A trademark of Nintendo.
+    https://commons.wikimedia.org/wiki/File:WiiU.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Nintendo
+    Shown as drawn, made smaller.
+
+SNK - Neo Geo
+    A trademark of SNK.
+    https://commons.wikimedia.org/wiki/File:Neo_Geo_logo.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Shad-dim SNK
+    Shown as drawn, made smaller.
+
+SNK - Neo Geo CD
+    A trademark of SNK.
+    https://commons.wikimedia.org/wiki/File:NEOGEO%20CD%20logo.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Namcokid47, SNK
+    Lightened here for a dark screen; its shape is unchanged.
+
+SNK - Neo Geo Pocket
+    A trademark of SNK.
+    https://commons.wikimedia.org/wiki/File:Neo_Geo_Pocket_logo.svg
+    Marked CC0 there (CC-Zero). No credit is asked for.
+    Commons names as its author: Namcokid47
+    Lightened here for a dark screen; its shape is unchanged.
+
+SNK - Neo Geo Pocket Color
+    A trademark of SNK.
+    https://commons.wikimedia.org/wiki/File:Neo%20Geo%20Pocket%20Color%20logo.svg
+    Marked Public domain there (PD shape, PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Namcokid47
+    Lightened here for a dark screen; its shape is unchanged.
+
+Sega - 32X
+    A trademark of Sega.
+    https://commons.wikimedia.org/wiki/File:Sega%2032X%20logo.svg
+    Marked Public domain there (PD text), with its trademark notice. No credit is asked for.
+    Commons names as its author: Sega
+    Shown as drawn, made smaller.
+
+Sega - Dreamcast
+    A trademark of Sega.
+    https://commons.wikimedia.org/wiki/File:Dreamcast_logo.svg
+    Marked Public domain there (PD shape, PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Sega - Kenji Eno
+    Lightened here for a dark screen; its shape is unchanged.
+
+Sega - Game Gear
+    A trademark of Sega.
+    https://commons.wikimedia.org/wiki/File:Game%20gear%20eu%20logo.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: SEGA
+    Lightened here for a dark screen; its shape is unchanged.
+
+Sega - Master System - Mark III
+    A trademark of Sega.
+    https://commons.wikimedia.org/wiki/File:Master%20System%20Logo.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: All copyrights and trademarks owned by Sega Corporation (KK Sega)
+    Lightened here for a dark screen; its shape is unchanged.
+
+Sega - Mega Drive - Genesis
+    A trademark of Sega.
+    https://commons.wikimedia.org/wiki/File:Sega_genesis_logo.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: SEGA
+    Shown as drawn, made smaller.
+
+Sega - Mega-CD - Sega CD
+    A trademark of Sega.
+    https://commons.wikimedia.org/wiki/File:Sega%20CD%20Logo%20%28USA%29.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: JustDanPatrick
+    Shown as drawn, made smaller.
+
+Sega - SG-1000
+    A trademark of Sega.
+    https://commons.wikimedia.org/wiki/File:SG-1000%20Logo.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Trademarks and copyrights own by Sega Corporation (KK Sega)
+    Lightened here for a dark screen; its shape is unchanged.
+
+Sega - Saturn
+    A trademark of Sega.
+    https://commons.wikimedia.org/wiki/File:Sega_Saturn_USA_logo.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: JustDanPatrick
+    Shown as drawn, made smaller.
+
+Sony - PlayStation
+    A trademark of Sony Interactive Entertainment.
+    https://commons.wikimedia.org/wiki/File:PlayStation_logo.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Sony Interactive Entertainment
+    Lightened here for a dark screen; its shape is unchanged.
+
+Sony - PlayStation 2
+    A trademark of Sony Interactive Entertainment.
+    https://commons.wikimedia.org/wiki/File:PlayStation_2_logo.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Ssolbergj at en.wikipedia
+    Lightened here for a dark screen; its shape is unchanged.
+
+Sony - PlayStation 3
+    A trademark of Sony Interactive Entertainment.
+    https://commons.wikimedia.org/wiki/File:PS3-Logo.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Unknown authorUnknown author
+    Lightened here for a dark screen; its shape is unchanged.
+
+Sony - PlayStation Portable
+    A trademark of Sony Interactive Entertainment.
+    https://commons.wikimedia.org/wiki/File:PSP_Logo.svg
+    Marked Public domain there (PD shape, PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Afrank99 @ German Wikipedia
+    Lightened here for a dark screen; its shape is unchanged.
+
+Sony - PlayStation Vita
+    A trademark of Sony Interactive Entertainment.
+    https://commons.wikimedia.org/wiki/File:PlayStation_Vita_logo.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: Sony Computer Entertainment (vectorization:Tokyoship, Cbabb7)
+    Lightened here for a dark screen; its shape is unchanged.
+
+Steam (icon)
+    A trademark of Valve.
+    https://commons.wikimedia.org/wiki/File:Steam%20icon%20logo.svg
+    Marked Public domain there (PD shape), with its trademark notice. No credit is asked for.
+    Commons names as its author: Steam
+    Shown as drawn, made smaller.
+    An icon, not a name logo: shown small in the sidebar and the console
+    picker, where the other consoles wear RetroArch's icons.
+
+The 3DO Company - 3DO
+    A trademark of the holders of The 3DO Company's rights.
+    https://commons.wikimedia.org/wiki/File:3DO%20Logo.svg
+    Marked Public domain there (PD textlogo), with its trademark notice. No credit is asked for.
+    Commons names as its author: unbekannt3DO/Panasonic
+    Shown as drawn, made smaller.

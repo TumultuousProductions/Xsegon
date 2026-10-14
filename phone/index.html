@@ -1,0 +1,195 @@
+<!doctype html>
+<!-- The phone page: the library on a phone, Play on the TV. Served by
+     router-phone.php only, as one file, so the phone server hands out one
+     thing that is not an answer. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b1220">
+<title>Xsegon</title>
+<style>
+  :root { --ground: #0b1220; --sheet: #121c30; --rule: #263a5c; --ink: #dbe7f5; --mute: #8fa3bb; --cyan: #5ee0ff; --good: #7ee787; --bad: #ff8f8f; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--ground); color: var(--ink); font: 16px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { position: sticky; top: 0; z-index: 5; background: var(--ground); padding: 10px 12px 8px; border-bottom: 1px solid var(--rule); }
+  .top { display: flex; align-items: baseline; gap: 10px; }
+  h1 { margin: 0; font-size: 19px; letter-spacing: .18em; color: var(--cyan); }
+  #who { color: var(--mute); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .find { display: flex; gap: 8px; margin-top: 8px; }
+  input, select, button { font: inherit; color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; padding: 10px; }
+  #q { flex: 1 1 auto; min-width: 0; }
+  #console { flex: 0 1 44%; min-width: 0; }
+  #now { display: none; margin-top: 8px; padding: 8px 10px; border: 1px solid var(--good); border-radius: 8px; color: var(--good); font-size: 14px; }
+  #now.on { display: block; }
+  #said { padding: 22px 16px; color: var(--mute); }
+  #said.bad { color: var(--bad); }
+  #list { list-style: none; margin: 0; padding: 0; }
+  #list li { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-bottom: 1px solid var(--rule); min-height: 64px; }
+  #list li.cannot .t { color: var(--mute); }
+  .art { flex: none; width: 40px; height: 54px; object-fit: contain; background: #000; border-radius: 3px; }
+  .t { display: block; }
+  .p { display: block; color: var(--mute); font-size: 13px; }
+  #more { padding: 18px; text-align: center; color: var(--mute); }
+  #sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 9; display: none; background: var(--sheet); border-top: 1px solid var(--cyan);
+           padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); }
+  #sheet.on { display: block; }
+  #s-title { font-size: 18px; margin: 0 0 2px; }
+  #s-sub { color: var(--mute); margin: 0 0 12px; font-size: 14px; }
+  #s-said { min-height: 1.4em; margin: 10px 0 0; font-size: 14px; color: var(--mute); }
+  #s-said.bad { color: var(--bad); }
+  #s-said.good { color: var(--good); }
+  .row { display: flex; gap: 10px; }
+  #s-play { flex: 1 1 auto; background: var(--cyan); color: var(--ground); border-color: var(--cyan); font-weight: 700; padding: 14px; }
+  #s-play:disabled { opacity: .45; }
+  #s-shut { flex: none; padding: 14px 18px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="top"><h1>XSEGON</h1><span id="who"></span></div>
+  <div class="find" id="find" hidden>
+    <input id="q" type="search" placeholder="Search your games" autocomplete="off" spellcheck="false">
+    <select id="console" aria-label="Console"><option value="">All consoles</option></select>
+  </div>
+  <div id="now"></div>
+</header>
+<p id="said">Asking the PC...</p>
+<ul id="list"></ul>
+<div id="more" hidden></div>
+<div id="sheet">
+  <p id="s-title"></p>
+  <p id="s-sub"></p>
+  <div class="row"><button id="s-play" type="button">Play on the TV</button><button id="s-shut" type="button">Close</button></div>
+  <p id="s-said"></p>
+</div>
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var LOT = 200, games = [], total = 0, asked = 0, chosen = null, busy = false, consolesIn = false, timer = 0;
+
+  // Every question to the PC: the cookie goes by itself, and the header says this page sent it.
+  function ask(path, body) {
+    var opts = { credentials: "same-origin", cache: "no-store", headers: { "X-Xsegon-Phone": "1" } };
+    if (body) { opts.method = "POST"; opts.headers["Content-Type"] = "application/json"; opts.body = JSON.stringify(body); }
+    return fetch(path, opts).then(function (r) {
+      return r.json().then(function (a) { a.status = r.status; return a; }, function () { return { ok: false, status: r.status, error: "the PC answered with something that is not Xsegon's" }; });
+    }, function () { return { ok: false, status: 0, error: "The PC is not answering. Is Xsegon open, and is this phone on the home Wi-Fi?" }; });
+  }
+  function say(words, bad) { $("said").textContent = words; $("said").className = bad ? "bad" : ""; $("said").hidden = !words; }
+
+  function row(g) {
+    var li = document.createElement("li"), words = document.createElement("div"), t = document.createElement("span"), p = document.createElement("span");
+    if (g.hasArt) {
+      var img = document.createElement("img");
+      img.className = "art"; img.alt = ""; img.loading = "lazy"; img.decoding = "async";
+      img.src = "/p/art?id=" + encodeURIComponent(g.id);
+      img.onerror = function () { img.style.visibility = "hidden"; };
+      li.appendChild(img);
+    } else {
+      var gap = document.createElement("span"); gap.className = "art"; li.appendChild(gap);
+    }
+    t.className = "t"; t.textContent = g.title;
+    p.className = "p"; p.textContent = g.platform;
+    words.appendChild(t); words.appendChild(p);
+    li.appendChild(words);
+    if (!g.playable) { li.className = "cannot"; }
+    li.addEventListener("click", function () { open(g); });
+    return li;
+  }
+
+  function load(fresh) {
+    if (busy) { return; }
+    busy = true;
+    var mine = ++asked, from = fresh ? 0 : games.length;
+    ask("/p/list?q=" + encodeURIComponent($("q").value.trim()) + "&platform=" + encodeURIComponent($("console").value) + "&from=" + from).then(function (a) {
+      if (mine !== asked) { return; }           // a newer ask is out: it lets go of busy, not this one
+      busy = false;
+      if (a.status === 401) { notIn(a.error); return; }
+      if (!a.ok) { say(a.error || "The list could not be read.", true); return; }
+      if (fresh) { games = []; $("list").textContent = ""; window.scrollTo(0, 0); }
+      total = a.count;
+      a.games.forEach(function (g) { games.push(g); $("list").appendChild(row(g)); });
+      if (!consolesIn && a.consoles.length) {
+        consolesIn = true;
+        a.consoles.forEach(function (c) { var o = document.createElement("option"); o.value = c.name; o.textContent = c.name + " (" + c.count + ")"; $("console").appendChild(o); });
+      }
+      say(total ? "" : "No game matches that.", false);
+      $("more").hidden = games.length >= total;
+      $("more").textContent = games.length + " of " + total + " shown: scroll for more";
+    });
+  }
+
+  function open(g) {
+    chosen = g;
+    $("s-title").textContent = g.title;
+    $("s-sub").textContent = g.platform;
+    $("s-play").disabled = !g.playable;
+    $("s-said").className = "";
+    $("s-said").textContent = g.playable ? "" : "This one cannot start on the PC as it stands. Xsegon on the TV says why.";
+    $("sheet").className = "on";
+  }
+  function shut() { chosen = null; $("sheet").className = ""; }
+
+  function play() {
+    if (!chosen) { return; }
+    var g = chosen;
+    $("s-play").disabled = true;
+    $("s-said").className = ""; $("s-said").textContent = "Asking the PC to start it...";
+    ask("/p/play", { id: g.id }).then(function (a) {
+      if (chosen !== g) { return; }
+      $("s-play").disabled = false;
+      if (a.status === 401) { shut(); notIn(a.error); return; }
+      $("s-said").className = a.ok ? "good" : "bad";
+      $("s-said").textContent = a.ok ? "Starting on the TV." : (a.error || "It did not start.");
+      if (a.ok) { setTimeout(now, 3000); }
+    });
+  }
+
+  // What plays on the TV, asked while this page is in sight.
+  function now() {
+    if (document.hidden) { return; }
+    ask("/p/now").then(function (a) {
+      var r = a.ok && a.running;
+      $("now").className = r ? "on" : "";
+      $("now").textContent = r ? "Playing on the TV: " + r.title : "";
+    });
+  }
+
+  function notIn(why) {
+    clearInterval(timer);
+    $("find").hidden = true; $("list").textContent = ""; $("more").hidden = true; $("who").textContent = "";
+    say(why || "This phone has not been let in. On the TV, open the round X's menu, then Connect a phone..., and point this phone's camera at the square.", true);
+  }
+  function start(name) {
+    $("who").textContent = name;
+    $("find").hidden = false;
+    load(true);
+    now();
+    timer = setInterval(now, 5000);
+  }
+
+  var wait = 0;
+  $("q").addEventListener("input", function () { clearTimeout(wait); wait = setTimeout(function () { busy = false; load(true); }, 300); });
+  $("console").addEventListener("change", function () { busy = false; load(true); });
+  $("s-play").addEventListener("click", play);
+  $("s-shut").addEventListener("click", shut);
+  window.addEventListener("scroll", function () {
+    if (!$("more").hidden && window.innerHeight + window.scrollY > document.body.offsetHeight - 900) { load(false); }
+  }, { passive: true });
+  document.addEventListener("visibilitychange", function () { if (!document.hidden && !$("find").hidden) { now(); } });
+
+  // A link from the square carries a code: it is handed in once, and taken out of the address so a bookmark is clean.
+  var code = (/[?&]c=([0-9a-f]{16})(?:&|$)/.exec(location.search) || [])[1];
+  if (location.search) { try { history.replaceState(null, "", "/"); } catch (e) { /* the address stays as it is */ } }
+  (code ? ask("/p/join", { code: code }) : Promise.resolve(null)).then(function (joined) {
+    ask("/p/me").then(function (me) {
+      if (me.ok) { start(me.name); return; }
+      notIn(me.status === 401 ? (joined && !joined.ok && joined.error ? joined.error : me.error) : me.error);
+    });
+  });
+}());
+</script>
+</body>
+</html>

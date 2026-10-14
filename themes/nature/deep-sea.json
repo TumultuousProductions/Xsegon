@@ -1,0 +1,24 @@
+{
+  "format": 1,
+  "name": "Deep sea",
+  "colours": {
+    "ground": "#020a0f",
+    "panel": "#06141b",
+    "panelRaised": "#0b202a",
+    "words": "#e2f6fb",
+    "wordsSecond": "#9ec5d1",
+    "wordsThird": "#7ea8b5",
+    "highlight": "#19b8c9",
+    "highlightSecond": "#9ff3ff"
+  },
+  "has": { "glow": true, "scanlines": false },
+  "texture": { "kind": "bubbles", "strength": 100 },
+  "surface": "sheer",
+  "highContrast": {
+    "ground": "#01070a",
+    "panel": "#07171f",
+    "panelRaised": "#0e2732",
+    "wordsSecond": "#d2e8ee",
+    "wordsThird": "#b0ced7"
+  }
+}

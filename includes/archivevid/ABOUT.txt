@@ -1,0 +1,28 @@
+sets.json: sets of game videos on the Internet Archive (archive.org), one console each.
+
+Xsegon carries this list of sets and nothing of what is in them: no video and no
+file name. At a press (Pictures & Videos > Videos from online archives) it asks
+the Archive for each set's own list of files, finds the video that is surely a
+game's, and fetches that one file for a game that has none.
+
+A game the sets leave without is tried against World of Longplays
+(longplays.org): recordings of whole games played by its members, each on the
+Archive under the collection worldoflongplays and naming its player. Xsegon
+keeps the first 30 seconds of the recording's smaller copy as the game's video
+(bin\ffmpeg.exe reads only that much, never the whole file) and writes the
+player's name in the log. Credit to both is in README.md under Credits.
+
+Each entry:
+  id         the set's name on the Archive (archive.org/details/<id>)
+  folder     the console, by the short name the video matcher knows (includes\videomatch.php)
+  whose      a short mark for who put the set up and when
+  hevc       true where the videos are H.265, which not every browser plays
+  videos, mb how many videos it held and their size, when the list was made
+  title      the set's title on the Archive
+
+Made 2026-10-11 from the 97 sets found on 2026-10-09 (doc\ideas\43-videos-for-everyone.md).
+Left out: four sets that come packed (.zip, .rar, .7z), which cannot be taken one
+video at a time, and one for a console Xsegon's matcher does not know.
+Left out for good: every set whose own page says it is a paid service's pack
+put up again by someone else. None of those is to be added.
+No set states a licence but one, and that mark is its uploader's own.

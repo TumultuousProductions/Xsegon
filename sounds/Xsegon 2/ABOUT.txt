@@ -1,0 +1,27 @@
+Xsegon 2, the second of Xsegon's built-in interface sound sets
+==============================================================
+
+Move.ogg, Select.wav, Back.wav and Ok.wav. Choose "Xsegon 2" in
+Settings > Sound to hear them. Move plays as you go from one thing to the
+next, Select when you choose, Back when you leave, and Ok when a download
+or a fetch finishes.
+
+Where they come from
+--------------------
+Made by Tumultuous Productions, Xsegon's maker. They are part of Xsegon,
+under its licence (the LICENSE file at the top of Xsegon).
+
+    Move.ogg      first named Hover4.ogg
+    Select.wav    Select.wav
+    Back.wav      first named Pause3.wav
+    Ok.wav        Select.wav
+
+A pack of your own
+------------------
+Make a folder in Xsegon\data\sounds with three files named Move, Select
+and Back (each a .wav, .ogg or .mp3), then choose it in Settings > Sound.
+An Ok file is optional: without one, Select plays when something finishes.
+A Hover file is optional too: it plays as the mouse pointer comes onto a
+game. Without one, the built-in Hover plays (the set named Xsegon's, which
+this set plays as well).
+This built-in set is never changed by that, and never changes yours.

@@ -1,0 +1,4 @@
+#!/bin/sh
+# Xsegon: nothing of this PC's is pushed. tools/privacy-scan.js reads what the
+# push sends (one line a ref, on stdin) and stops the push on a finding.
+exec node tools/privacy-scan.js --push

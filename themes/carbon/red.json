@@ -1,0 +1,23 @@
+{
+  "format": 1,
+  "name": "Dark red",
+  "colours": {
+    "ground": "#140608",
+    "panel": "#1e090c",
+    "panelRaised": "#2c0d11",
+    "words": "#d8d0ce",
+    "wordsSecond": "#a89c9a",
+    "wordsThird": "#8f8381",
+    "highlight": "#ff4d4d",
+    "highlightSecond": "#b4bfcc"
+  },
+  "has": { "glow": false, "scanlines": false },
+  "texture": { "kind": "carbon", "strength": 60 },
+  "highContrast": {
+    "ground": "#0a0304",
+    "panel": "#1c080b",
+    "panelRaised": "#2e0c12",
+    "wordsSecond": "#e2d8d6",
+    "wordsThird": "#c4b8b6"
+  }
+}

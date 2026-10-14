@@ -1,0 +1,24 @@
+{
+  "format": 1,
+  "name": "Space with trees",
+  "colours": {
+    "ground": "#03060a",
+    "panel": "#091016",
+    "panelRaised": "#111b23",
+    "words": "#e6f2f5",
+    "wordsSecond": "#a5bcc4",
+    "wordsThird": "#869fa8",
+    "highlight": "#3fb6a8",
+    "highlightSecond": "#a8e6ff"
+  },
+  "has": { "glow": true, "scanlines": false },
+  "texture": { "kind": "stars-trees", "strength": 100 },
+  "surface": "sheer",
+  "highContrast": {
+    "ground": "#020407",
+    "panel": "#0a1218",
+    "panelRaised": "#142029",
+    "wordsSecond": "#d5e4ea",
+    "wordsThird": "#b6cad2"
+  }
+}

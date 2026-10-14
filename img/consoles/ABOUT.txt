@@ -1,0 +1,38 @@
+Xsegon's console icons
+======================
+
+The icons the platform sidebar and the console picker show for each
+console, and the wheel and the carousel where a console has no other
+picture, when you have not chosen one yourself.
+
+Where they come from
+--------------------
+RetroArch's menu icons, the XMB "retrosystem" theme, by the libretro team
+and contributors: https://github.com/libretro/retroarch-assets
+Taken unchanged from commit d9f969054dc7fbb6fa89519036d2b971e0855b51,
+xmb/retrosystem/png, and used under the Creative Commons Attribution 4.0 International
+licence: https://creativecommons.org/licenses/by/4.0/
+
+They are not covered by Xsegon's MIT licence (the LICENSE file at the top
+of Xsegon). Under CC-BY 4.0 you may share and change them, also
+commercially, as long as you credit them as above. The consoles' names
+and logos are trademarks of their owners; the licence covers the
+drawings only.
+
+sources.json lists each file with its SHA-256, as fetched by
+tools\get-console-icons.js. This one comes from another of the same
+repository's themes, under the same licence, saved under the console's name:
+    Sony - PlayStation Portable is xmb/daite/png/Sony - PlayStation Portable.png
+
+The All games picture
+---------------------
+img\all-games.png, which the console picker and the sidebar show for All
+games, is made from three of these icons laid over each other, two of them
+tilted, by tools\make-all-games-icon.ps1 (which names the three). It is a
+changed copy of their drawings, under the same licence and credit.
+
+A picture of your own
+---------------------
+Right-click a console > Change Pictures, or put a file named
+<console>-icon.png in Xsegon\data\platform-art. Yours comes first, and
+these files are never changed by it.

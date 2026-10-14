@@ -1,0 +1,957 @@
+{
+    "source": "https://commons.wikimedia.org/wiki/File:<commons>",
+    "licences": "Public domain or CC0 only; checked on Commons when fetched",
+    "files": {
+        "Atari - 2600.png": {
+            "commons": "Atari_2600_logo-01-05.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Atari_2600_logo-01-05.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Atari",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Atari, Inc.",
+            "sourceOnCommons": "Vectorization by Dan Patrick",
+            "originalSha1": "7a9e03416c4c124d8f5d258b5bdf37fd39138ded",
+            "width": 864,
+            "height": 270,
+            "sha256": "58316c8c86099b02759afbf7d1613c498c32e875fd7932b3263e7b9272a7edbf",
+            "bytes": 25877,
+            "turnedForDark": true
+        },
+        "Atari - 5200.png": {
+            "commons": "Atari 5200 logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Atari%205200%20logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Atari",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Atari, Inc.",
+            "sourceOnCommons": "Own vectorization, based on https://ia801702.us.archive.org/3/items/atari-5200-controller-box/Atari%205200%20Controller%20-%20Box%20Back.jpg",
+            "originalSha1": "8a4654c64ed76ffc0605f4a99dd348b0a85988f1",
+            "width": 867,
+            "height": 270,
+            "sha256": "ec0baa73147964fcf32c2e3b8a15e6ed92f791e98001e2f0aca9e5357f50ed92",
+            "bytes": 35719
+        },
+        "Atari - 7800.png": {
+            "commons": "Atari_7800_logo-01.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Atari_7800_logo-01.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Atari",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Atari, Inc.",
+            "sourceOnCommons": "Vectorization by Dan Patrick",
+            "originalSha1": "432f3b665b6cda33647f2f93bf2268898f114cb7",
+            "width": 900,
+            "height": 198,
+            "sha256": "575eac3a8b8c1941ed391790f8bda43b4ee9fa18762b1aed5eb35ae5277077ac",
+            "bytes": 32454,
+            "turnedForDark": true
+        },
+        "Atari - Jaguar.png": {
+            "commons": "Atari Jaguar logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Atari%20Jaguar%20logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Atari",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "JustDanPatrick",
+            "sourceOnCommons": "https://atariage.com/forums/topic/205405-official-atari-jaguar-packaging-templates-available-here/ https://forums.launchbox-app.com/files/file/3402-platform-...",
+            "originalSha1": "3172378e5a9427edae025ac0d6dfb8abf9332c09",
+            "width": 762,
+            "height": 270,
+            "sha256": "84ce48e5d2d2f894d6ad0cd53586c324eeb7573e16e4a5369e633c388068ba36",
+            "bytes": 60377
+        },
+        "Atari - Lynx.png": {
+            "commons": "Atari Lynx logo-01.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Atari%20Lynx%20logo-01.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Atari",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Atari Inc.",
+            "sourceOnCommons": "Vectorization by Dan Patrick",
+            "originalSha1": "83f3188dc81c8126d05087257e3e8f42c685a9af",
+            "width": 900,
+            "height": 192,
+            "sha256": "a2ab05fb468572e89103f15983b10895c356b36b0ebbddee0cc46e7fe670819f",
+            "bytes": 22191
+        },
+        "Bandai - WonderSwan.png": {
+            "commons": "Bandai WonderSwan horizontal logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Bandai%20WonderSwan%20horizontal%20logo.svg",
+            "licence": "CC0",
+            "grounds": [
+                "CC-Zero"
+            ],
+            "trademarkOf": "Bandai",
+            "markedTrademarkOnCommons": false,
+            "creditedOnCommons": "https://commons.wikimedia.org/wiki/User:JustDanPatrick",
+            "sourceOnCommons": "https://commons.wikimedia.org/wiki/File:Bandai_WonderSwan_logo.svg",
+            "originalSha1": "f91c5493e37109b36e0217c02db9b14e12817dab",
+            "width": 900,
+            "height": 116,
+            "sha256": "184ba169c2c10049ea23b258b7e41c596ae46b1394c79b2ecaea5f0ad4baa7be",
+            "bytes": 17449,
+            "turnedForDark": true
+        },
+        "Bandai - WonderSwan Color.png": {
+            "commons": "Wonderswan-Color-Logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Wonderswan-Color-Logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Bandai",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "JustDanPatrick",
+            "sourceOnCommons": "Wonderswan Color Product Box https://www.genkivideogames.com/wonderswan-color-crystal-orange-no-manual-bandai-bandai-hardware/swj777c1d https://forums.launch...",
+            "originalSha1": "28496bf8ec20c8789f8bfa4183e15b0cca337322",
+            "width": 333,
+            "height": 270,
+            "sha256": "c0d94408b4cd2db4789e380c74f78f2443f7faf243a207492637c828e67fc206",
+            "bytes": 18866,
+            "turnedForDark": true
+        },
+        "Coleco - ColecoVision.png": {
+            "commons": "COLECO VISION LOGO.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:COLECO%20VISION%20LOGO.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Coleco Holdings",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Coleco",
+            "sourceOnCommons": "https://en.wikipedia.org/wiki/File:COLECO_VISION_LOGO.svg",
+            "originalSha1": "8c11ff78a04318ce8903c079a84cf8d54ad7ce73",
+            "width": 826,
+            "height": 270,
+            "sha256": "6448dd853f0654c75bc11e99731f2fbe0db7d376dd1ceb8dd7c9b1b7e1b8d64b",
+            "bytes": 48281
+        },
+        "Commodore - 64.png": {
+            "commons": "Commodore 64 logo (2).svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Commodore%2064%20logo%20%282%29.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Commodore",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Commodore Business Machines",
+            "sourceOnCommons": "Vectorization by Dan Patrick",
+            "originalSha1": "3a70ab7be7a19a487d29b364c98e2baf115b8621",
+            "width": 867,
+            "height": 270,
+            "sha256": "6efde478fc44b72019a1779969c02e69e3dbaeb3d8aa837366954c19f24f73d4",
+            "bytes": 44614,
+            "turnedForDark": true
+        },
+        "Commodore - Amiga.png": {
+            "commons": "Commodore Amiga logo-03.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Commodore%20Amiga%20logo-03.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Amiga Corporation",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Commodore International",
+            "sourceOnCommons": "Vectorization by Dan Patrick",
+            "originalSha1": "868b0d6b8ba0ed5881dec2783b20d9f01e6b8976",
+            "width": 818,
+            "height": 270,
+            "sha256": "2b7c1421699ecf9a22ad81afd8ebe8805ba9d9baafcb6c49d5ef57dce9d933a7",
+            "bytes": 56796,
+            "turnedForDark": true
+        },
+        "FBNeo - Arcade Games.png": {
+            "commons": "MAMELogo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:MAMELogo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Gregory Ember (MAME)",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "MAME team",
+            "sourceOnCommons": "https://docs.mamedev.org/",
+            "originalSha1": "a447c9fa3b3c66ac16059f55bdf8a9c06ab8afae",
+            "width": 900,
+            "height": 255,
+            "sha256": "2b4eae4d613ed911e4bf6eb0e5a028122ba3045e052f5eecacd89a105bb24838",
+            "bytes": 43538,
+            "turnedForDark": true,
+            "note": "The name arcade game sets go by. Xsegon starts Arcade in FinalBurn Neo unless a MAME is added; see MAME below."
+        },
+        "Fairchild - Channel F.png": {
+            "commons": "Channel F Logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Channel%20F%20Logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "CC-BY-SA-4.0",
+                "PD textlogo"
+            ],
+            "trademarkOf": "Fairchild, its maker, or whoever holds the name now",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Schnurrikowski",
+            "sourceOnCommons": "Own work",
+            "originalSha1": "b1f2e55ea02713f7645186c3b13d68599a356480",
+            "width": 900,
+            "height": 157,
+            "sha256": "150d449038a732b777b026d245ac779d2f2487a98acc0ab78a29ba288188ffcf",
+            "bytes": 23733,
+            "turnedForDark": true,
+            "whiteGroundTakenAway": true,
+            "note": "Its drawer also offers this drawing under CC BY-SA 4.0, should the Public domain mark not hold: this copy is offered the same way. The white sheet behind it is taken away here."
+        },
+        "GCE - Vectrex.png": {
+            "commons": "Vectrex logo (rest of the world).svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Vectrex%20logo%20%28rest%20of%20the%20world%29.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD other reasons",
+                "PD other reasons new"
+            ],
+            "trademarkOf": "Smith Engineering, its maker",
+            "markedTrademarkOnCommons": false,
+            "creditedOnCommons": "Smith Engineering, Inc.",
+            "sourceOnCommons": "https://seeklogo.com/vector-logo/147848/vectrex",
+            "originalSha1": "504046b1e4c9b3e7b0ac6abfe16e5ac3a1cab940",
+            "width": 900,
+            "height": 226,
+            "sha256": "cb13f9458a3953d2365d9eb9366700e5106c34139f6f6eb1430a30fec122aef0",
+            "bytes": 33314,
+            "turnedForDark": true,
+            "note": "The ground Commons gives: that the Vectrex's makers gave its material away."
+        },
+        "MAME.png": {
+            "commons": "MAMELogo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:MAMELogo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Gregory Ember (MAME)",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "MAME team",
+            "sourceOnCommons": "https://docs.mamedev.org/",
+            "originalSha1": "a447c9fa3b3c66ac16059f55bdf8a9c06ab8afae",
+            "width": 900,
+            "height": 255,
+            "sha256": "2b4eae4d613ed911e4bf6eb0e5a028122ba3045e052f5eecacd89a105bb24838",
+            "bytes": 43538,
+            "turnedForDark": true,
+            "note": "The drawing is CC0 in MAME's own repository (docs/source/images/MAMElogo.svg). MAME's legal page, mamedev.org/legal.html, asks that its name and logo be used with permission."
+        },
+        "Mattel - Intellivision.png": {
+            "commons": "Intellivision-logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Intellivision-logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Atari, who bought the Intellivision name in 2024",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Mattel Electronics",
+            "sourceOnCommons": "This vector image was created by converting the Encapsulated PostScript file available at Brands of the World (view • download). Remember not all content the...",
+            "originalSha1": "ec8a3f78cd5581ee247c0048fdd594a417d95de5",
+            "width": 900,
+            "height": 143,
+            "sha256": "0f3e43103e9e1e36f1f4fd323f1002c27ebd612550b510980c94295394bc4b65",
+            "bytes": 19998,
+            "turnedForDark": true,
+            "note": "The small line above the name, Mattel Electronics, is Mattel's."
+        },
+        "Microsoft - MSX.png": {
+            "commons": "MSX-Logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:MSX-Logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "MSX Licensing Corporation",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Unknown authorUnknown author",
+            "sourceOnCommons": "http://de.wikipedia.org/wiki/Datei:MSX-Logo.svg",
+            "originalSha1": "ea506ae84a6011cb1331d406791d866ef717e0d1",
+            "width": 651,
+            "height": 270,
+            "sha256": "f32f51284107e54967fc139ec4556d6ad437b7a525448e461f32db16a654e19e",
+            "bytes": 22836
+        },
+        "Microsoft - Xbox.png": {
+            "commons": "Xbox_Logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Xbox_Logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Microsoft",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Microsoft Corporation.",
+            "sourceOnCommons": "Own work",
+            "originalSha1": "1642543df6937f877b739aa420229c6cc1f4bf69",
+            "width": 269,
+            "height": 270,
+            "sha256": "6e9b3eceb20c48498ab26fe927400eddaf0c2e7b1104f80915747f748795af72",
+            "bytes": 9982,
+            "turnedForDark": true
+        },
+        "Microsoft - Xbox 360.png": {
+            "commons": "Xbox_360_logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Xbox_360_logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Microsoft",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Microsoft. This version: CoolKid1993 at en.wikipedia",
+            "sourceOnCommons": "Transferred from en.wikipedia to Commons.",
+            "originalSha1": "bb45601d09e1520bf609071975932fccc5b847ef",
+            "width": 900,
+            "height": 153,
+            "sha256": "fe16d4a430b5d34f99b49600ad7f3cd6a4cb39492a8d2ec279772ca8702e2fa1",
+            "bytes": 41770
+        },
+        "NEC - PC Engine - TurboGrafx 16.png": {
+            "commons": "PC engine logo red.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:PC%20engine%20logo%20red.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "NEC and Konami",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "NEC",
+            "sourceOnCommons": "https://fr.wikipedia.org/wiki/Fichier:PC-Engine_Logo.svg",
+            "originalSha1": "fb2c644890f7ef5c0ba775234c5488d3be1737d0",
+            "width": 557,
+            "height": 270,
+            "sha256": "21d9162ae49cd0e5da107217cff45c4bb8b9912342d46f8bd1d0662ab68da016",
+            "bytes": 43318,
+            "turnedForDark": true,
+            "note": "The console's name in Japan: no free logo of its American name was found."
+        },
+        "NEC - PC Engine CD - TurboGrafx-CD.png": {
+            "commons": "Super CD-ROM2 logo.png",
+            "page": "https://commons.wikimedia.org/wiki/File:Super%20CD-ROM2%20logo.png",
+            "licence": "CC0",
+            "grounds": [
+                "CC-Zero"
+            ],
+            "trademarkOf": "NEC and Konami",
+            "markedTrademarkOnCommons": false,
+            "creditedOnCommons": "哥麿会",
+            "sourceOnCommons": "Own work",
+            "originalSha1": "e42cf870fe2f3cc3a9b30b08876022f58f0ff682",
+            "width": 500,
+            "height": 86,
+            "sha256": "b56e1b899f867a0c5997c99e515d15e76e9dbc025a3b5ef39a30bd75e52054c9",
+            "bytes": 8650,
+            "note": "The mark its CD games carry."
+        },
+        "Nintendo - Family Computer Disk System.png": {
+            "commons": "Family Computer Disk System logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Family%20Computer%20Disk%20System%20logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Nintendo",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Nintendo",
+            "sourceOnCommons": "Own Work (traced from )",
+            "originalSha1": "b468240b4ad896891341c25434f78c0d38fa1733",
+            "width": 900,
+            "height": 234,
+            "sha256": "76e3a4ba90fd4dad6e54567b70bc3be71648724af20cc1d98a5c75bc63f3e677",
+            "bytes": 44289,
+            "turnedForDark": true
+        },
+        "Nintendo - Game Boy.png": {
+            "commons": "Gameboy_logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Gameboy_logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Nintendo",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Nintendo Corporation, Uploaded and converted by User:Nmnogueira on 15:33, 7 December 2006 en:File:Microsoft_wordmark.svg",
+            "sourceOnCommons": "Converted to SVG format from http://www.brandsoftheworld.com/search/?query_id=4570346&page=2&mtype=&brand_id=48390",
+            "originalSha1": "e5984e52cb9de4ad52a356f420168c37050b5f85",
+            "width": 900,
+            "height": 151,
+            "sha256": "ca91d1cde5e28fd268b9a1a1f740ce769dced18776dcca5c37f040bd7849b7d9",
+            "bytes": 25065,
+            "turnedForDark": true
+        },
+        "Nintendo - Game Boy Advance.png": {
+            "commons": "Game_Boy_Advance_logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Game_Boy_Advance_logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Nintendo",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Nuno Nogueira (Nmnogueira)",
+            "sourceOnCommons": "Transferred from en.wikipedia to Commons by Atomicbeachball using CommonsHelper.",
+            "originalSha1": "37ea6a2404729f2fac848ce55a6c39715293c068",
+            "width": 900,
+            "height": 105,
+            "sha256": "1c28340d20f5654c2f3b25dd1a4e66842b4eb0e81d6a5622040088154f50424f",
+            "bytes": 33928,
+            "turnedForDark": true
+        },
+        "Nintendo - Game Boy Color.png": {
+            "commons": "Game_Boy_Color_logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Game_Boy_Color_logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Nintendo",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Nintendo",
+            "sourceOnCommons": "Nintendo",
+            "originalSha1": "73a32cf1dd76ebef104101704f16fe512e31fd7d",
+            "width": 661,
+            "height": 270,
+            "sha256": "584cd8da1271721cb35199849c60347636adc9e01eeb8ed07b3758827961a32a",
+            "bytes": 39190,
+            "turnedForDark": true
+        },
+        "Nintendo - GameCube.png": {
+            "commons": "Nintendo_GameCube_Official_Logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Nintendo_GameCube_Official_Logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Nintendo",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "JustDanPatrick",
+            "sourceOnCommons": "https://www.nintendo.com/consumer/manuals/gcn.jsp https://forums.launchbox-app.com/files/file/3402-platform-logos-professionally-redrawn-official-versions-ne...",
+            "originalSha1": "7623653f2dfb23e3d72c8a8c9279f57ac3c27030",
+            "width": 900,
+            "height": 203,
+            "sha256": "a8c013542cd7d6bed9dc455c61215bdbcfb536da9fdee2986da0b3cd89355973",
+            "bytes": 20731,
+            "turnedForDark": true
+        },
+        "Nintendo - Nintendo 3DS.png": {
+            "commons": "Nintendo_3DS_logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Nintendo_3DS_logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Nintendo",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Nintendo",
+            "sourceOnCommons": "https://www.nintendo.co.jp/common/v2/img/ncommon/_common/logo/3ds.svg",
+            "originalSha1": "4ff887c52e6cee3024d97cc8ae1eb6ff55afb1c8",
+            "width": 900,
+            "height": 107,
+            "sha256": "a5e70a50ac9f0487057a0c1080e2f1615af395637c6481a7169f99f435a0aba3",
+            "bytes": 15792,
+            "turnedForDark": true
+        },
+        "Nintendo - Nintendo 64.png": {
+            "commons": "Nintendo_64_wordmark.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Nintendo_64_wordmark.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Nintendo",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Nintendo",
+            "sourceOnCommons": "",
+            "originalSha1": "3989d55459d33bee2ac89e74fc8775fdab3c52cb",
+            "width": 900,
+            "height": 130,
+            "sha256": "3c92b6afe5ab937f7c861ff95bebd804426c1c59388621fd870507ac52691da2",
+            "bytes": 15097,
+            "turnedForDark": true
+        },
+        "Nintendo - Nintendo DS.png": {
+            "commons": "Nintendo_DS_Logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Nintendo_DS_Logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Nintendo",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Nintendo",
+            "sourceOnCommons": "Logo taken from this PDF version of the Nintendo DS Instruction Booklet, available from nintendo.com.",
+            "originalSha1": "d21178dafe99b8ee877ec2b73185ae444175f9fd",
+            "width": 900,
+            "height": 125,
+            "sha256": "82bbce41296e3cf5b1ffa62646ac598989aefc73b0c602b1721c7b910bae89b0",
+            "bytes": 18386,
+            "turnedForDark": true
+        },
+        "Nintendo - Nintendo Entertainment System.png": {
+            "commons": "NES_logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:NES_logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Nintendo",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "The original uploader was Anomie at English Wikipedia.",
+            "sourceOnCommons": "Transferred from en.wikipedia to Commons by Rocket000 using CommonsHelper.",
+            "originalSha1": "ba856c60048494e69daa1fd62b381927fdf44390",
+            "width": 730,
+            "height": 270,
+            "sha256": "0b9d21cd6da62ae4e4dee621d5f38d6925a6eea4d8b649a429e4e8698ed2b0ad",
+            "bytes": 23425,
+            "turnedForDark": true
+        },
+        "Nintendo - Nintendo Switch.png": {
+            "commons": "Nintendo_Switch_logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Nintendo_Switch_logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Nintendo",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Nintendo",
+            "sourceOnCommons": "https://www.nintendo.co.jp/common/v2/img/ncommon/_common/logo/switch.svg",
+            "originalSha1": "da564486648e57901ef27ad71019c202b18083cc",
+            "width": 270,
+            "height": 270,
+            "sha256": "0816d681463788bd98a2a61f7c46b725ac32793e1c34fac653e8ae9772cd3747",
+            "bytes": 12557
+        },
+        "Nintendo - Super Nintendo Entertainment System.png": {
+            "commons": "Super_Nintendo_Entertainment_System_logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Super_Nintendo_Entertainment_System_logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Nintendo",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Apollolux",
+            "sourceOnCommons": "Own work",
+            "originalSha1": "bfe7b3be6c05cee34316ca70284c62e3ebbe919c",
+            "width": 894,
+            "height": 227,
+            "sha256": "994193cccdf4fc3a3b23eb32116bdd1d4efcac246fc9d8d7550181e3f62fb92c",
+            "bytes": 44496,
+            "turnedForDark": true
+        },
+        "Nintendo - Virtual Boy.png": {
+            "commons": "Virtualboy logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Virtualboy%20logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD text"
+            ],
+            "trademarkOf": "Nintendo",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Nintendo",
+            "sourceOnCommons": "selbst mit Inkscape erstellt; Vorlage",
+            "originalSha1": "1fe302cd5be692c5e614413ea98f09fc0f94b33e",
+            "width": 900,
+            "height": 227,
+            "sha256": "f1ac4def576d4106f7ae8b1506995d1c57f5741e47de1ab001ff9c01a5b790d4",
+            "bytes": 20896,
+            "turnedForDark": true
+        },
+        "Nintendo - Wii.png": {
+            "commons": "Wii.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Wii.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Nintendo",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Nintendo",
+            "sourceOnCommons": "Extracted from https://www.nintendo.com/consumer/downloads/WiiChEng.pdf",
+            "originalSha1": "93e300320ce87ba6cd07f454b7591c4a6127dd34",
+            "width": 620,
+            "height": 270,
+            "sha256": "06a54ce2e95e24a44716d90253ba28ffb63f8a28581d2a388563dd69ad3051a3",
+            "bytes": 18313
+        },
+        "Nintendo - Wii U.png": {
+            "commons": "WiiU.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:WiiU.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Nintendo",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Nintendo",
+            "sourceOnCommons": "Extracted from Japanese Nintendo website",
+            "originalSha1": "4e8946f1feff1af548df2291b3905a828fc4c279",
+            "width": 900,
+            "height": 255,
+            "sha256": "4fc722f0c2f16bfcd2c5ff6f75f3baf6a232e6b017cfa1d6664e06d82cca6924",
+            "bytes": 23599
+        },
+        "SNK - Neo Geo.png": {
+            "commons": "Neo_Geo_logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Neo_Geo_logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "SNK",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Shad-dim SNK",
+            "sourceOnCommons": "https://de.wikipedia.org/wiki/Datei:Neo-geo-logo2.svg, http://www.seeklogo.com/files/S/SNK_NeoGeo-vector-logo-2F5EF2CEAC-seeklogo.com.zip",
+            "originalSha1": "67200ef651e1ab227a87991d89d075c77f673ef3",
+            "width": 270,
+            "height": 270,
+            "sha256": "29aa26e52061181a48066650196fd7161fc7a1e6c957586a28969357e48ec99a",
+            "bytes": 27091
+        },
+        "SNK - Neo Geo CD.png": {
+            "commons": "NEOGEO CD logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:NEOGEO%20CD%20logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "SNK",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Namcokid47, SNK",
+            "sourceOnCommons": "https://en.wikipedia.org/wiki/File:Neo_Geo_CD_logo.svg",
+            "originalSha1": "df3f050205f3e816c750cf6377523b63bcd7cebc",
+            "width": 422,
+            "height": 270,
+            "sha256": "a9bb421880a3200b9930ac021d62344109fac8b90b5c3fbb44b475df6834a2fd",
+            "bytes": 22004,
+            "turnedForDark": true
+        },
+        "SNK - Neo Geo Pocket.png": {
+            "commons": "Neo_Geo_Pocket_logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Neo_Geo_Pocket_logo.svg",
+            "licence": "CC0",
+            "grounds": [
+                "CC-Zero"
+            ],
+            "trademarkOf": "SNK",
+            "markedTrademarkOnCommons": false,
+            "creditedOnCommons": "Namcokid47",
+            "sourceOnCommons": "File:Neo_Geo_Pocket_Color_logo.svg",
+            "originalSha1": "9b1152a9ee52578ac5d755b871d4ecaa945f6ef1",
+            "width": 900,
+            "height": 191,
+            "sha256": "7da3caf04a2c54ab14447841a9b096778762d0d37b7d78ae6f69f960eba2211d",
+            "bytes": 26857,
+            "turnedForDark": true
+        },
+        "SNK - Neo Geo Pocket Color.png": {
+            "commons": "Neo Geo Pocket Color logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Neo%20Geo%20Pocket%20Color%20logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD shape",
+                "PD textlogo"
+            ],
+            "trademarkOf": "SNK",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Namcokid47",
+            "sourceOnCommons": "SNK Corporation",
+            "originalSha1": "df1dbfe51698870b1c8e30e272fd32bcc487ee43",
+            "width": 900,
+            "height": 257,
+            "sha256": "b74bc41136d4975d613394c48e6ff350754574777c25bc17e8621e3bd91b31a8",
+            "bytes": 40320,
+            "turnedForDark": true
+        },
+        "Sega - 32X.png": {
+            "commons": "Sega 32X logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Sega%2032X%20logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD text"
+            ],
+            "trademarkOf": "Sega",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Sega",
+            "sourceOnCommons": "Sega",
+            "originalSha1": "5be05613d3e30d23aefbfc73e7c9e020c3454c71",
+            "width": 896,
+            "height": 244,
+            "sha256": "aa5b0361c5cccfe0e316263a9e8745b558c44bbc7295737f88576da0e1391502",
+            "bytes": 23680
+        },
+        "Sega - Dreamcast.png": {
+            "commons": "Dreamcast_logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Dreamcast_logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD shape",
+                "PD textlogo"
+            ],
+            "trademarkOf": "Sega",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Sega - Kenji Eno",
+            "sourceOnCommons": "Transferred from the English Wikipedia",
+            "originalSha1": "473be7db3057cd0628bb11170d262de82cd713b1",
+            "width": 357,
+            "height": 270,
+            "sha256": "44d20311ea0025364aaa14419acfa044949104ad6335158745e4e795d8ecdf4e",
+            "bytes": 23028,
+            "turnedForDark": true
+        },
+        "Sega - Game Gear.png": {
+            "commons": "Game gear eu logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Game%20gear%20eu%20logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Sega",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "SEGA",
+            "sourceOnCommons": "Brandsoftheworld.com",
+            "originalSha1": "4eec1caedb7356e284f4b01744109cc0d69aa13f",
+            "width": 900,
+            "height": 113,
+            "sha256": "47adc6a6daa793cd53892fffc0482fe5597e0eb5c229e3ed4c886f7821d100f5",
+            "bytes": 37431,
+            "turnedForDark": true
+        },
+        "Sega - Master System - Mark III.png": {
+            "commons": "Master System Logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Master%20System%20Logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Sega",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "All copyrights and trademarks owned by Sega Corporation (KK Sega)",
+            "sourceOnCommons": "Unofficial, fan-made",
+            "originalSha1": "b8cb758d7045f9942ce35e9322fcf623970b1e9c",
+            "width": 900,
+            "height": 149,
+            "sha256": "1ea6c400d3cc0249a09ce86eae6cf6ed032690c9bc7631ffbce74e0ea81a1ede",
+            "bytes": 27046,
+            "turnedForDark": true
+        },
+        "Sega - Mega Drive - Genesis.png": {
+            "commons": "Sega_genesis_logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Sega_genesis_logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Sega",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "SEGA",
+            "sourceOnCommons": "Brandsoftheworld.com",
+            "originalSha1": "c563abb6d561407a4774f8826239d519cfba1723",
+            "width": 900,
+            "height": 216,
+            "sha256": "fd870309b27b95ced7d97623c4265b8a92fecebde375518acd86629905831c91",
+            "bytes": 29203
+        },
+        "Sega - Mega-CD - Sega CD.png": {
+            "commons": "Sega CD Logo (USA).svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Sega%20CD%20Logo%20%28USA%29.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Sega",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "JustDanPatrick",
+            "sourceOnCommons": "https://forums.launchbox-app.com/files/file/3402-platform-logos-professionally-redrawn-official-versions-new-bigbox-defaults/",
+            "originalSha1": "0f135a1838e1f7ec7a85fff8357b7be24a6b2580",
+            "width": 900,
+            "height": 131,
+            "sha256": "363d64f23fa8f6569ae0b20843df8e0f96a6bd8a602df66348495abc58564c7a",
+            "bytes": 24431
+        },
+        "Sega - SG-1000.png": {
+            "commons": "SG-1000 Logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:SG-1000%20Logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Sega",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Trademarks and copyrights own by Sega Corporation (KK Sega)",
+            "sourceOnCommons": "Sega Corporation (KK Sega)",
+            "originalSha1": "3c7875f47c66073a7c8381d905e4f48613ecd922",
+            "width": 900,
+            "height": 130,
+            "sha256": "af774e7cbf2ce9acc12d4d48b00fab31c75fc303092a1ab91727fbbf72ede2e1",
+            "bytes": 5938,
+            "turnedForDark": true
+        },
+        "Sega - Saturn.png": {
+            "commons": "Sega_Saturn_USA_logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Sega_Saturn_USA_logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Sega",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "JustDanPatrick",
+            "sourceOnCommons": "https://forums.launchbox-app.com/files/file/3402-platform-logos-professionally-redrawn-official-versions-new-bigbox-defaults/",
+            "originalSha1": "e783adef8138f5ebae4b2b5b429a81ce3e38dcf4",
+            "width": 900,
+            "height": 137,
+            "sha256": "061fca4f215c38b43ae6be9bd4320d1fff13cbe447753c096f3e1aec51ecd29e",
+            "bytes": 108421
+        },
+        "Sony - PlayStation.png": {
+            "commons": "PlayStation_logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:PlayStation_logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Sony Interactive Entertainment",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Sony Interactive Entertainment",
+            "sourceOnCommons": "http://www.playstation.com",
+            "originalSha1": "98758fc9b207ad4bebb1898d5bee151f95f66ea6",
+            "width": 350,
+            "height": 270,
+            "sha256": "07ac1d6e5479ce52a28dc01a285566d307dc6abeba1ab25ade82a65de5db8991",
+            "bytes": 11778,
+            "turnedForDark": true
+        },
+        "Sony - PlayStation 2.png": {
+            "commons": "PlayStation_2_logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:PlayStation_2_logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Sony Interactive Entertainment",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Ssolbergj at en.wikipedia",
+            "sourceOnCommons": "Transferred from en.wikipedia to Commons.",
+            "originalSha1": "a885a9e3e636fa92973918db27d271bc5c890fc2",
+            "width": 900,
+            "height": 269,
+            "sha256": "ab38e4ba3944cbacf7ad253a37e2e7abcbcfeddce446d99e1e1513deae8b898d",
+            "bytes": 13150,
+            "turnedForDark": true
+        },
+        "Sony - PlayStation 3.png": {
+            "commons": "PS3-Logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:PS3-Logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Sony Interactive Entertainment",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Unknown authorUnknown author",
+            "sourceOnCommons": "Own work (Original text: selbst erstellt)",
+            "originalSha1": "9aba2e11a955693548d6b5aed63c29822b84f755",
+            "width": 900,
+            "height": 162,
+            "sha256": "9b1f756d38a63442d0bca79a29dd0864249b08f20d1d2c19a715b6b61a833e1c",
+            "bytes": 1372,
+            "turnedForDark": true
+        },
+        "Sony - PlayStation Portable.png": {
+            "commons": "PSP_Logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:PSP_Logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD shape",
+                "PD textlogo"
+            ],
+            "trademarkOf": "Sony Interactive Entertainment",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Afrank99 @ German Wikipedia",
+            "sourceOnCommons": "PlaystationPortable-Logo.svg @ German Wikipedia",
+            "originalSha1": "d4c9f2e7a39bdef89759c3891ad9e4806c8a2a63",
+            "width": 879,
+            "height": 270,
+            "sha256": "4e945d019db7ba44fe017cb9072a053e782c3a8185cf746410df09f6861064e2",
+            "bytes": 14670,
+            "turnedForDark": true
+        },
+        "Sony - PlayStation Vita.png": {
+            "commons": "PlayStation_Vita_logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:PlayStation_Vita_logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "Sony Interactive Entertainment",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Sony Computer Entertainment (vectorization:Tokyoship, Cbabb7)",
+            "sourceOnCommons": "http://www.scei.co.jp/corporate/release/110607a_e.html",
+            "originalSha1": "66a0ccffc47cd708befd5d8460d9be68ffd644df",
+            "width": 861,
+            "height": 247,
+            "sha256": "0ece51627e294a13b219b3df1f5aab5e1c9fb4495a6aa76ad67fc6c772a23a62",
+            "bytes": 15423,
+            "turnedForDark": true
+        },
+        "Steam (icon).png": {
+            "commons": "Steam icon logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:Steam%20icon%20logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD shape"
+            ],
+            "trademarkOf": "Valve",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "Steam",
+            "sourceOnCommons": "Combination of en:File:Steam_Icon_2014.png and File:Steam logo.svg",
+            "originalSha1": "3fe402adcfc131c7f2428799fec5703a96a42c69",
+            "width": 270,
+            "height": 270,
+            "sha256": "d0f053b0f3eb8aa64d14b20e875c52903f06877ae8ca83e8834ef0f23dd28f67",
+            "bytes": 20123,
+            "note": "An icon, not a name logo: shown small in the sidebar and the console picker, where the other consoles wear RetroArch's icons."
+        },
+        "The 3DO Company - 3DO.png": {
+            "commons": "3DO Logo.svg",
+            "page": "https://commons.wikimedia.org/wiki/File:3DO%20Logo.svg",
+            "licence": "Public domain",
+            "grounds": [
+                "PD textlogo"
+            ],
+            "trademarkOf": "the holders of The 3DO Company's rights",
+            "markedTrademarkOnCommons": true,
+            "creditedOnCommons": "unbekannt3DO/Panasonic",
+            "sourceOnCommons": "Brandsoftheworld.com",
+            "originalSha1": "6ed64efacd1348a2db108a3b27eb889b9644ca0d",
+            "width": 154,
+            "height": 270,
+            "sha256": "eb5967f35f992c6c33ce36edcb071087aa8772fd275cd983228a25f6365d0f83",
+            "bytes": 8324
+        }
+    }
+}

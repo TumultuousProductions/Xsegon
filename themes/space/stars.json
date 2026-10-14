@@ -1,0 +1,24 @@
+{
+  "format": 1,
+  "name": "Space",
+  "colours": {
+    "ground": "#03040a",
+    "panel": "#090b15",
+    "panelRaised": "#111425",
+    "words": "#e9ecff",
+    "wordsSecond": "#a9b0d6",
+    "wordsThird": "#8990b8",
+    "highlight": "#6f7dff",
+    "highlightSecond": "#9ad7ff"
+  },
+  "has": { "glow": true, "scanlines": false },
+  "texture": { "kind": "stars", "strength": 100 },
+  "surface": "sheer",
+  "highContrast": {
+    "ground": "#020308",
+    "panel": "#0a0c18",
+    "panelRaised": "#14182b",
+    "wordsSecond": "#d9ddf2",
+    "wordsThird": "#bcc2e0"
+  }
+}

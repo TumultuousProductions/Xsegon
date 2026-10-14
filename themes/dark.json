@@ -1,0 +1,22 @@
+{
+  "format": 1,
+  "name": "Dark",
+  "colours": {
+    "ground": "#0e0e0e",
+    "panel": "#131313",
+    "panelRaised": "#1a1a1a",
+    "words": "#cccccc",
+    "wordsSecond": "#a0a0a0",
+    "wordsThird": "#8a8a8a",
+    "highlight": "#4daafc",
+    "highlightSecond": "#c586c0"
+  },
+  "has": { "glow": false, "scanlines": false },
+  "highContrast": {
+    "ground": "#070707",
+    "panel": "#121212",
+    "panelRaised": "#1d1d1d",
+    "wordsSecond": "#d6d6d6",
+    "wordsThird": "#b8b8b8"
+  }
+}

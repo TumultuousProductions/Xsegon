@@ -1,0 +1,14 @@
+#!/bin/sh
+# Xsegon: a commit that changes code must say so in doc/CHANGELOG.md, which
+# is also what Help > What's new shows. Installed with:
+#   git config core.hooksPath tools/hooks
+# A commit that truly needs no entry: git commit --no-verify
+code=$(git diff --cached --name-only --diff-filter=ACMRD | grep -E '\.(js|php|ps1|css)$' | grep -v '^tests/')
+[ -z "$code" ] && exit 0
+if git diff --cached --name-only | grep -qx 'doc/CHANGELOG.md'; then
+    exit 0
+fi
+echo "Xsegon: this commit changes code but not doc/CHANGELOG.md:"
+echo "$code" | sed 's/^/  /'
+echo "Add a line under today's date, or commit with --no-verify if it needs none."
+exit 1

@@ -1,0 +1,24 @@
+{
+  "format": 1,
+  "name": "Storm",
+  "colours": {
+    "ground": "#07090c",
+    "panel": "#0e1217",
+    "panelRaised": "#171d24",
+    "words": "#e6ebf2",
+    "wordsSecond": "#a6b1c0",
+    "wordsThird": "#8893a3",
+    "highlight": "#5b9bd5",
+    "highlightSecond": "#c7d6e8"
+  },
+  "has": { "glow": false, "scanlines": false },
+  "texture": { "kind": "storm", "strength": 100 },
+  "surface": "sheer",
+  "highContrast": {
+    "ground": "#040608",
+    "panel": "#0d1116",
+    "panelRaised": "#181f27",
+    "wordsSecond": "#d8dfe8",
+    "wordsThird": "#bac4d0"
+  }
+}

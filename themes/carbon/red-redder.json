@@ -1,0 +1,29 @@
+{
+  "format": 1,
+  "name": "Dark red redder",
+  "colours": {
+    "ground": "#1c0509",
+    "panel": "#2a080d",
+    "panelRaised": "#3c0c13",
+    "words": "#d8d0ce",
+    "wordsSecond": "#a89c9a",
+    "wordsThird": "#8f8381",
+    "highlight": "#ff4d4d",
+    "highlightSecond": "#b4bfcc"
+  },
+  "has": {
+    "glow": false,
+    "scanlines": false
+  },
+  "texture": {
+    "kind": "carbon",
+    "strength": 60
+  },
+  "highContrast": {
+    "ground": "#0e0305",
+    "panel": "#26070c",
+    "panelRaised": "#3a0b12",
+    "wordsSecond": "#e2d8d6",
+    "wordsThird": "#c4b8b6"
+  }
+}
