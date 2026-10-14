@@ -1,0 +1,25 @@
+{
+  "format": 1,
+  "name": "Winter",
+  "colours": {
+    "ground": "#05080d",
+    "panel": "#0b121b",
+    "panelRaised": "#121c28",
+    "words": "#e8f3fb",
+    "wordsSecond": "#a9c0d3",
+    "wordsThird": "#8aa3b8",
+    "highlight": "#1e9bff",
+    "highlightSecond": "#bfe6ff"
+  },
+  "has": { "glow": true, "scanlines": false },
+  "texture": { "kind": "snow", "strength": 58 },
+  "surface": "gloss",
+  "corner": "round",
+  "highContrast": {
+    "ground": "#030508",
+    "panel": "#0b131d",
+    "panelRaised": "#16222f",
+    "wordsSecond": "#d5e4f0",
+    "wordsThird": "#b6cadb"
+  }
+}

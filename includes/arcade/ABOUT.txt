@@ -1,0 +1,20 @@
+The names of arcade sets
+========================
+
+names.tsv.gz is the list Scan for Games reads to know what an arcade
+game's file is: kof2003.zip is "The King of Fighters 2003", neogeo.zip is
+a BIOS set and not a game. Four facts a machine: its short name, its
+title, what kind of thing it is, and its parent.
+
+Where it comes from
+-------------------
+MAME's own list of machines (mame -listxml), MAME 0.238 (mame0238).
+MAME is made by the MAME team, https://www.mamedev.org, and distributed
+under the GNU General Public License, version 2 or later, with most of
+its source under the BSD 3-Clause licence. MAME is a registered trademark
+of Gregory Ember. Xsegon comes with no MAME and no arcade games.
+
+43999 machines: 20261 games, 73 BIOS sets, 5460 devices,
+15440 mechanical machines, 2765 computers and consoles.
+
+A newer list: php tools\get-arcade-names.php --mame <a newer mame.exe>

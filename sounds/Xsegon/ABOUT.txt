@@ -1,0 +1,23 @@
+Xsegon's built-in interface sounds
+==================================
+
+This is the set a new copy of Xsegon starts on, and the sounds it plays
+when the set chosen in Settings > Sound is not on this PC. Move plays as
+you go from one thing to the next, Select when you choose, Back when you
+leave, Ok when a download or a fetch finishes, and Hover as the mouse
+pointer comes onto a game. Hover is also what a sound set with no Hover of
+its own plays.
+
+Hover.wav is Xsegon's own, made by Tumultuous Productions, Xsegon's maker
+(first named "soft hover low pitch 4 xsegon"), and is under Xsegon's MIT
+licence like the rest of Xsegon. A copy run from the source code plays the
+sounds of Xsegon 2 for the others.
+
+A pack of your own
+------------------
+Make a folder in Xsegon\data\sounds with three files named Move, Select
+and Back (each a .wav, .ogg or .mp3), then choose it in Settings > Sound.
+An Ok file is optional: without one, Select plays when something finishes.
+A Hover file is optional too: it plays as the mouse pointer comes onto a
+game. Without one, the built-in Hover plays.
+This built-in set is never changed by that, and never changes yours.

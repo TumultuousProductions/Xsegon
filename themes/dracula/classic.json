@@ -1,0 +1,24 @@
+{
+  "format": 1,
+  "name": "Dracula",
+  "colours": {
+    "ground": "#191a21",
+    "panel": "#21222c",
+    "panelRaised": "#282a36",
+    "words": "#f8f8f2",
+    "wordsSecond": "#b3b8d4",
+    "wordsThird": "#8f95b8",
+    "highlight": "#bd93f9",
+    "highlightSecond": "#ff79c6"
+  },
+  "has": { "glow": false, "scanlines": false },
+  "texture": { "kind": "quilt", "strength": 70 },
+  "mark": "bat",
+  "highContrast": {
+    "ground": "#0b0b0f",
+    "panel": "#14151b",
+    "panelRaised": "#1f2029",
+    "wordsSecond": "#dfe2f0",
+    "wordsThird": "#c3c7dd"
+  }
+}

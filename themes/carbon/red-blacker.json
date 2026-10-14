@@ -1,0 +1,29 @@
+{
+  "format": 1,
+  "name": "Dark red blacker",
+  "colours": {
+    "ground": "#080606",
+    "panel": "#141010",
+    "panelRaised": "#1c1616",
+    "words": "#d8d0ce",
+    "wordsSecond": "#a89c9a",
+    "wordsThird": "#8f8381",
+    "highlight": "#ff4d4d",
+    "highlightSecond": "#b4bfcc"
+  },
+  "has": {
+    "glow": false,
+    "scanlines": false
+  },
+  "texture": {
+    "kind": "carbon",
+    "strength": 45
+  },
+  "highContrast": {
+    "ground": "#070505",
+    "panel": "#130f0f",
+    "panelRaised": "#1e1818",
+    "wordsSecond": "#e2d8d6",
+    "wordsThird": "#c4b8b6"
+  }
+}

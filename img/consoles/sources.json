@@ -1,0 +1,221 @@
+{
+  "source": "https://github.com/libretro/retroarch-assets/tree/d9f969054dc7fbb6fa89519036d2b971e0855b51/xmb/retrosystem/png",
+  "commit": "d9f969054dc7fbb6fa89519036d2b971e0855b51",
+  "theme": "retrosystem",
+  "licence": "CC-BY-4.0",
+  "files": {
+    "Atari - 2600.png": {
+      "sha256": "fe98c4eae8c43b0f5ca4d96bde5c08ffecd9443c4db4668524147c0cbd5c129b",
+      "bytes": 10781
+    },
+    "Atari - 5200.png": {
+      "sha256": "56c01bc503c29963065af088f80710005269177105ab1b8f0572a65feee6a890",
+      "bytes": 3188
+    },
+    "Atari - 7800.png": {
+      "sha256": "5188527d54770d6fcdcabb8494afa151f44a2a8099776281483376e92e5dc7bf",
+      "bytes": 5799
+    },
+    "Atari - Jaguar.png": {
+      "sha256": "04e25239ca7801f5dd23fb00b2d66553a2436f5a1fef354407421759ca7d631c",
+      "bytes": 5985
+    },
+    "Atari - Lynx.png": {
+      "sha256": "2bdae1f3de15c4f2488fd79575d11d5c908d646ec832a750549ca09053955134",
+      "bytes": 4998
+    },
+    "Bandai - WonderSwan.png": {
+      "sha256": "ad71a47d37ea6ed97738e8e9d8f45f477faac2d84893ce8db8254a3d12d3984b",
+      "bytes": 6273
+    },
+    "Bandai - WonderSwan Color.png": {
+      "sha256": "1614e26afe38ea0d5f902e053424691b5599b9f04383b0640221afe6ee63c546",
+      "bytes": 7575
+    },
+    "Coleco - ColecoVision.png": {
+      "sha256": "b25c58c73345a35d4592e4038f021571df3efa17ed475428e597923b61971377",
+      "bytes": 2354
+    },
+    "Commodore - 64.png": {
+      "sha256": "5c1451baaa49b86deb45492460536dc1d1e06485eed6277ca6bf289153d9c76f",
+      "bytes": 1720
+    },
+    "Commodore - Amiga.png": {
+      "sha256": "fdae87b4e585a9e5b90e213d7dc922dcfb21b38f069b9532feafa4e7e3cad35e",
+      "bytes": 1630
+    },
+    "FBNeo - Arcade Games.png": {
+      "sha256": "07edc316e51bd0015748e46545285f926a816a9b2e54b643e317f47d0ce60307",
+      "bytes": 5524
+    },
+    "Fairchild - Channel F.png": {
+      "sha256": "8b4d283c7d2732e1a00ad0c06ff2237d73badb3d0b6ff5d07d5ffd7b7ae72dd1",
+      "bytes": 1468
+    },
+    "GCE - Vectrex.png": {
+      "sha256": "bdcf800ce706be1c8b47eb7e392ec3cb04f748a2de3eec9881357cea438890f8",
+      "bytes": 2545
+    },
+    "MAME.png": {
+      "sha256": "82068ca30f6244984e9df05a3f9ef69d1c671a7e0d9fb60b33c0cf354fc5b7a8",
+      "bytes": 2506
+    },
+    "Mattel - Intellivision.png": {
+      "sha256": "40941823cd68ace610d086589a4eaf0a67e14677b90a187acdcfc40c16fddb2b",
+      "bytes": 6600
+    },
+    "Microsoft - MSX.png": {
+      "sha256": "9d7b5bb9b9d9d48799937cef9339902ea3500a02ddcf5db5217d33da2e5ea871",
+      "bytes": 1498
+    },
+    "Microsoft - MSX2.png": {
+      "sha256": "3d1256104cdaef46ae6618f4d80a2343aa8a4561463b9c9507f6034ddb2b7dd4",
+      "bytes": 1649
+    },
+    "Microsoft - Xbox.png": {
+      "sha256": "96375863d8e83eaca3c9a66cdd8910f73cf169b2148ac9ed2357f98e2440ce5e",
+      "bytes": 10319
+    },
+    "Microsoft - Xbox 360.png": {
+      "sha256": "11c4d184cb82c6d98b2f49929f1eea8a49a764a347ffe47ee0460e72b5996bcd",
+      "bytes": 9038
+    },
+    "NEC - PC Engine - TurboGrafx 16.png": {
+      "sha256": "767606fe40e25f6346d76c20fc3b4ae026ffcbeb4dec90ab52c20a38c5e1f4b2",
+      "bytes": 7563
+    },
+    "NEC - PC Engine CD - TurboGrafx-CD.png": {
+      "sha256": "1b18499867381b9dff0b39f3c4f54a80c5c8fb2f54eba411a6bf425363f75a65",
+      "bytes": 3714
+    },
+    "Nintendo - Family Computer Disk System.png": {
+      "sha256": "93106fdb4412d37acbd9696c216ee5e5cad4d7e8be435e041e890ffd8b73e1d5",
+      "bytes": 3178
+    },
+    "Nintendo - Game Boy.png": {
+      "sha256": "bc7533fa1b6e0effce931c2f3ccdbb7fc7b19ac44bfb0dc898d9762570f71139",
+      "bytes": 5736
+    },
+    "Nintendo - Game Boy Advance.png": {
+      "sha256": "5482e9c8e76b0b79e1ae3a0c16bb3fb504651409a2c5361fae8819a30ebcf1b1",
+      "bytes": 9310
+    },
+    "Nintendo - Game Boy Color.png": {
+      "sha256": "6db68a5c98916c1804061c2f9d0c66a2fc4955bf7c2170e5e2863755b1b8d395",
+      "bytes": 4930
+    },
+    "Nintendo - GameCube.png": {
+      "sha256": "cb7d1ebeaec331c9752a15b9492d5a99b03d7bc265d2dcb942f9c8172e7ea9e9",
+      "bytes": 16789
+    },
+    "Nintendo - Nintendo 3DS.png": {
+      "sha256": "68f9c072dc496bf12c8c93504033b5800140b8fb6aab627f2c7776d37b96732b",
+      "bytes": 3896
+    },
+    "Nintendo - Nintendo 64.png": {
+      "sha256": "772301c69b36e57f4152689c374abdb4518801591d29b61f349783dd06d84711",
+      "bytes": 14859
+    },
+    "Nintendo - Nintendo DS.png": {
+      "sha256": "c920654aee06f2f96db41237416c06a39fa9cdb61e474e1961708a565e531039",
+      "bytes": 2396
+    },
+    "Nintendo - Nintendo Entertainment System.png": {
+      "sha256": "e3af7437cace408487ba548e6813a6bb6cb0707fbb71dec748df357408c58473",
+      "bytes": 3332
+    },
+    "Nintendo - Super Nintendo Entertainment System.png": {
+      "sha256": "95a7bc05b60bcc6f032498989e802c38cdf35523582546038ce3c0a7c6685c0c",
+      "bytes": 9586
+    },
+    "Nintendo - Switch.png": {
+      "sha256": "c71f71c6d4b8c464f467c579dd8a333720273d7eeaf9441440a12a45ba44d251",
+      "bytes": 6504
+    },
+    "Nintendo - Virtual Boy.png": {
+      "sha256": "1330e00fc95892b0cbe743d25fa4d7da79638a6742d49bfa0410a19db2aae03d",
+      "bytes": 7152
+    },
+    "Nintendo - Wii.png": {
+      "sha256": "3a0758f1aaaeb254386e59362a22a4cba35cedcc8e49abf0068a30d9e188b682",
+      "bytes": 1697
+    },
+    "Nintendo - Wii U.png": {
+      "sha256": "3c9af6bff563ac527d3c43a74f08361981425b4911c2dbbf5961c2bbc9768312",
+      "bytes": 4408
+    },
+    "SNK - Neo Geo.png": {
+      "sha256": "44ea44488c29f0f365492fd8cb72c71c8bef16f00fdf1144b3ca5ede7780ac41",
+      "bytes": 4311
+    },
+    "SNK - Neo Geo CD.png": {
+      "sha256": "79b91db4518bf8b3b61d29cfcd8e20b6285f6ce66e6d73f4920498c6a442ca88",
+      "bytes": 6220
+    },
+    "SNK - Neo Geo Pocket.png": {
+      "sha256": "1c6ed3af0c44d6e602c664f20669229c78283b37107e97d98ef64bd1db23a997",
+      "bytes": 4627
+    },
+    "SNK - Neo Geo Pocket Color.png": {
+      "sha256": "e5fbd8cd54de7caca6acb0b72cf4e2fee810efb2461e0abd96f7915180a65995",
+      "bytes": 5794
+    },
+    "Sega - 32X.png": {
+      "sha256": "b53aac832beaed4bf889211e25984f0562b05fe2edfead2c3b97fcb99660a9c9",
+      "bytes": 5166
+    },
+    "Sega - Dreamcast.png": {
+      "sha256": "ddf79e44765ff68edbdb4da7f9b686c503d7b473ab7a4f45cb82957d090fa056",
+      "bytes": 13788
+    },
+    "Sega - Game Gear.png": {
+      "sha256": "52342208e720b2b194173b471abaebd50e97148bce936f84e7c0711101ea7d8a",
+      "bytes": 7001
+    },
+    "Sega - Master System - Mark III.png": {
+      "sha256": "b2326e02faccdc02616f198fb4f42fe9a1e931becaa800f73930be6633ced650",
+      "bytes": 4456
+    },
+    "Sega - Mega Drive - Genesis.png": {
+      "sha256": "a4fa8d94b764c8493aa3b1e7ba7db4efb32fc30745e255692610f73d16cace69",
+      "bytes": 4910
+    },
+    "Sega - Mega-CD - Sega CD.png": {
+      "sha256": "81291622b81ed7fbb5af992161a548aa110bfca6e6700bfb52996fd0d330ad18",
+      "bytes": 6626
+    },
+    "Sega - SG-1000.png": {
+      "sha256": "a730243485bf006b84e65ed129e49fc3f7941dddf110e264e895a5840c0f2ff6",
+      "bytes": 3951
+    },
+    "Sega - Saturn.png": {
+      "sha256": "b69ce7b394e356c7f99cf074bb654c6c8227b77424e0cc774e8e1c069207e90f",
+      "bytes": 9406
+    },
+    "Sony - PlayStation.png": {
+      "sha256": "3f3d3c49f6475a64a39ec6dce191e688f0afc824abc98b76a6f9d2d730b36de1",
+      "bytes": 10236
+    },
+    "Sony - PlayStation 2.png": {
+      "sha256": "469f870fe2bb3ee63f6eb26efaa42e37349ce5778ae094dc4f5febf28b48ce7b",
+      "bytes": 6956
+    },
+    "Sony - PlayStation 3.png": {
+      "sha256": "54605c4f7f048b6432cb0ac91365616431b3b6c564c85f00fa09d3767744ce25",
+      "bytes": 6835
+    },
+    "Sony - PlayStation Portable.png": {
+      "sha256": "7487317385064e7a9c264cb06c937f1ab3742426b883520e1242db7f44247f5f",
+      "bytes": 4709,
+      "from": "xmb/daite/png/Sony - PlayStation Portable.png"
+    },
+    "Sony - PlayStation Vita.png": {
+      "sha256": "85ee7a498c0d5bf1531404d3f245801902112ec52783ddfcd6173f0c73e3d624",
+      "bytes": 4954
+    },
+    "The 3DO Company - 3DO.png": {
+      "sha256": "420edf3aa95bcbe48a0dc0eb4f93d254c4124b951b365e8c9a95b0dd03dfbf14",
+      "bytes": 4718
+    }
+  }
+}

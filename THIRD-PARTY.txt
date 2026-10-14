@@ -1,0 +1,68 @@
+Xsegon: the parts that are not Xsegon's own
+===========================================
+
+Xsegon itself is under the MIT licence (LICENSE). The download also carries,
+or fetches on your PC when you ask, the parts below. Each keeps its own
+licence; where the licence must travel with it, it is beside the file.
+
+Programs carried in the download, unchanged
+-------------------------------------------
+PHP (runtime\php)
+    The PHP Group, php.net. The PHP License v3.01: runtime\php\license.txt.
+    Xsegon is a set of PHP pages; this is the PHP that runs them.
+
+RetroArch (runtime\RetroArch\RetroArch.7z)
+    libretro, retroarch.com. GNU GPL v3. The licence, the pinned version and
+    where its source code is: runtime\RetroArch\RetroArch-LICENSE.txt.
+    Setup unpacks it into data\emulators\RetroArch; Xsegon starts it as a
+    separate program and links nothing of it.
+
+7-Zip's 7zr.exe (bin\7zr.exe)
+    Igor Pavlov, 7-zip.org. GNU LGPL: bin\7zr-LICENSE.txt. Unpacks RetroArch.
+
+ffmpeg.exe (bin\ffmpeg.exe)
+    The FFmpeg project, ffmpeg.org; the Windows build by Gyan Doshi, gyan.dev.
+    GNU GPL v3, with where its source is: bin\ffmpeg-LICENSE.txt. Keeps the
+    first 30 seconds of a game's recording as its video.
+
+Data and pictures carried in the download
+-----------------------------------------
+The LaunchBox Games Database (gamesdb\)
+    LaunchBox (launchbox-app.com) and the people who add to it. Game names,
+    details and which pictures exist; all credit to them (gamesdb\README.md).
+    The pictures themselves are fetched from LaunchBox's picture server one
+    game at a time, when you ask, and libretro's thumbnails stand in when that
+    server does not answer.
+
+Console icons (img\consoles)
+    RetroArch's menu icons, by the libretro team and contributors, from
+    retroarch-assets. CC-BY 4.0: img\consoles\ABOUT.txt.
+
+Console name logos and photos (img\console-logos, img\console-photos)
+    From Wikimedia Commons, each marked Public domain or CC0 there. The names
+    and logos are still their owners' trademarks: img\console-logos\ABOUT.txt
+    and the README's Trademarks section.
+
+The list of controllers (includes\padlist)
+    SDL_GameControllerDB. zlib licence: includes\padlist\LICENSE.txt.
+
+The names of arcade games (includes\arcade)
+    From MAME's own list of its machines, by the MAME team:
+    includes\arcade\ABOUT.txt. Xsegon comes with no MAME and no arcade games.
+
+The controller outlines (js\padpic.js)
+    The Xbox 360 gamepad by Grumbel (CC0) and the DualShock 4 layout by
+    Tokyoship (CC BY 3.0), both on Wikimedia Commons; the outline only.
+
+The Dracula themes' colours
+    The Dracula palette, Copyright (c) 2023 Dracula Theme, MIT licence.
+
+Fetched on your PC when you ask, never carried
+----------------------------------------------
+RetroArch's cores, from buildbot.libretro.com, each under its own licence.
+libretro's thumbnails, names and cheat lists (libretro on GitHub).
+Videos from the Internet Archive, World of Longplays and the Arcade Database
+(the README's Credits name them and their makers).
+Pictures from the LaunchBox Games Database's picture server.
+
+Xsegon comes with no games, no BIOS files and no keys.

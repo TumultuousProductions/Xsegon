@@ -1,0 +1,23 @@
+{
+  "format": 1,
+  "name": "Synthwave",
+  "colours": {
+    "ground": "#120a22",
+    "panel": "#1b1132",
+    "panelRaised": "#281a47",
+    "words": "#f4eeff",
+    "wordsSecond": "#bcabdd",
+    "wordsThird": "#9a88bf",
+    "highlight": "#ff4fd8",
+    "highlightSecond": "#36f9f6"
+  },
+  "has": { "glow": true, "scanlines": false },
+  "texture": { "kind": "horizon", "strength": 100 },
+  "highContrast": {
+    "ground": "#08040f",
+    "panel": "#150d27",
+    "panelRaised": "#20153a",
+    "wordsSecond": "#e6dcf7",
+    "wordsThird": "#cbbde8"
+  }
+}

@@ -1,0 +1,273 @@
+/* Pictures & Videos > ScreenScraper videos (includes\screenscraper.php, bin\screenscraper.ps1).
+ *
+ * Against a stand-in for ScreenScraper's API served from this process, on the
+ * port tests\sandbox.js told the test server about. It checks logins the way
+ * the real one does (a 403 naming which pair was wrong) and writes down every
+ * question. Each way a game can end is fetched through the background worker.
+ * Nothing is asked of ScreenScraper. Against --live only the read-only first
+ * check runs, and the person's own logins are never read.
+ */
+"use strict";
+const fs = require("fs");
+const http = require("http");
+const path = require("path");
+const { api, sleep, Guard } = require("./lib");
+
+const key = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+// Every character that could break an address or a curl config line.
+const LOGIN = { devid: "StandInDev77", devpassword: 'dev "p&ss\\w+rd% $1', user: "Test Member", password: "m&mber=p@ss #2" };
+// An mp4's first bytes: a box length, then "ftyp".
+const mp4 = (words) => Buffer.concat([Buffer.from([0, 0, 0, 24]), Buffer.from("ftypmp42"), Buffer.alloc(12), Buffer.from(words)]);
+
+module.exports = async function (b, check) {
+  const lib = require("./lib");
+  const DATA = lib.DATA, BASE = lib.BASE;
+  const first = await api("api/screenscraper.php");
+  check("the list answers, and the account by name only (a password is yes or no)",
+    first.ok && Array.isArray(first.games) && typeof first.account.devpassword === "boolean" && typeof first.account.password === "boolean", true);
+  const fx = path.join(DATA, "fixtures", "ss");
+  if (!fs.existsSync(fx)) {
+    check("(live server: the fetch half is left to the test server)", true);
+    return;
+  }
+  check("the test copy starts with no logins: the real ones are never copied", [first.account.ready, fs.existsSync(path.join(DATA, "screenscraper.json"))], [false, false]);
+  check("every game listed has no video", first.games.every((g) => !g.has) && first.missing === first.games.length, true);
+  const libAll = await api("api/library.php");
+  const shown = new Map(libAll.games.map((g) => [g.id, g]));
+  check("and the library agrees", first.games.filter((g) => shown.has(g.id) && shown.get(g.id).hasVideo).map((g) => g.title), []);
+
+  // Six games on consoles ScreenScraper knows, no two of one name on one
+  // console (the stand-in files its answers by console and name).
+  const seen = new Set(), free = [];
+  for (const g of first.games) {
+    const k = g.system + "-" + key(g.title);
+    if (g.system > 0 && !g.has && key(g.title) && !seen.has(k)) { seen.add(k); free.push(g); }
+  }
+  const withRom = free.filter((g) => g.rom && key(g.rom) !== key(g.title)).slice(0, 3);
+  const rest = free.filter((g) => !withRom.includes(g)).slice(0, 3);
+  if (withRom.length < 3 || rest.length < 3) {
+    check("(fewer than six games without a video on this machine: the fetch half steps aside)", true);
+    return;
+  }
+  const [B, C, F] = withRom, [A, D, E] = rest;
+
+  // ---- the stand-in ----
+  const asked = [];
+  const say = { search: {}, rom: {}, media: {}, refuse: null };
+  const quota = { requeststoday: "12", maxrequestsperday: "20000", maxthreads: "1", id: LOGIN.user };
+  const server = http.createServer((req, res) => {
+    const u = new URL(req.url, "http://127.0.0.1");
+    const q = Object.fromEntries(u.searchParams);
+    asked.push({ path: u.pathname, q });
+    const send = (code, body, type) => { res.writeHead(code, { "Content-Type": type || "text/plain; charset=utf-8" }); res.end(body); };
+    if (say.refuse) { return send(say.refuse.status, say.refuse.body); }
+    if (u.pathname.startsWith("/media/")) {
+      const m = say.media[path.basename(u.pathname)];
+      return m ? send(200, m, Buffer.isBuffer(m) ? "video/mp4" : "text/plain") : send(404, "NOMEDIA");
+    }
+    if (q.devid !== LOGIN.devid || q.devpassword !== LOGIN.devpassword) { return send(403, "Erreur de login : Vérifier vos identifiants développeur !"); }
+    if (q.ssid !== LOGIN.user || q.sspassword !== LOGIN.password) { return send(403, "Erreur de login : Vérifier les identifiants utilisateurs !"); }
+    const json = (response) => send(200, JSON.stringify({ header: { success: "true" }, response: Object.assign({ ssuser: quota }, response) }), "application/json");
+    if (u.pathname === "/ssuserInfos.php") { return json({}); }
+    if (u.pathname === "/jeuRecherche.php") {
+      const jeux = say.search[q.systemeid + "-" + key(q.recherche)];
+      return jeux ? json({ jeux }) : send(404, "Erreur : Jeu non trouvé !");
+    }
+    if (u.pathname === "/jeuInfos.php") {
+      const jeu = say.rom[q.systemeid + "-" + key(q.romnom)];
+      return jeu ? json({ jeu }) : send(404, "Erreur : Rom/Iso/Dossier non trouvée !");
+    }
+    send(400, "Erreur");
+  });
+  const port = Number(fs.readFileSync(path.join(fx, "port.txt"), "utf8"));
+  await new Promise((ok, no) => { server.once("error", no); server.listen(port, "127.0.0.1", ok); });
+  // As ScreenScraper hands an address back: the developer's login in it, the member's left blank.
+  const media = (name) => "http://127.0.0.1:" + port + "/media/" + name + "?devid=x&devpassword=y&softname=z&ssid=&sspassword=&media=video";
+  const named = (g, medias) => ({ id: "1", noms: [{ region: "jp", text: "Some Other Name" }, { region: "us", text: g.title.toUpperCase().replace(/[^A-Z0-9]+/g, " - ") }], medias });
+  const video = (name, type) => ({ type: type || "video", url: media(name), format: "mp4" });
+
+  say.media["a-norm.mp4"] = mp4("the normalised snap");
+  say.media["a-plain.mp4"] = mp4("the plain snap");
+  say.media["wrong.mp4"] = mp4("another game's snap");
+  say.media["b.mp4"] = mp4("found by its ROM");
+  say.media["e.mp4"] = "NOMEDIA";
+  // A: two answers, the first another game entirely; its own has both kinds of video.
+  say.search[A.system + "-" + key(A.title)] = [
+    { id: "9", noms: [{ region: "us", text: A.title + " Championship Edition II" }], medias: [video("wrong.mp4")] },
+    named(A, [{ type: "ss", url: media("shot.png"), format: "png" }, video("a-plain.mp4"), video("a-norm.mp4", "video-normalized")]),
+  ];
+  // B: the name finds nothing; its ROM's name does, and the answer is the same game.
+  say.rom[B.system + "-" + key(B.rom)] = named(B, [video("b.mp4")]);
+  // C: an empty answer the way ScreenScraper gives one, and nothing by ROM either.
+  say.search[C.system + "-" + key(C.title)] = [{}];
+  // D: the game is there, with pictures and no video.
+  say.search[D.system + "-" + key(D.title)] = [named(D, [{ type: "ss", url: media("shot.png"), format: "png" }])];
+  // E: a video is listed, and what comes down is not one.
+  say.search[E.system + "-" + key(E.title)] = [named(E, [video("e.mp4")])];
+  // F: its ROM's name answers with some other game, video and all.
+  say.rom[F.system + "-" + key(F.rom)] = { id: "7", noms: [{ region: "us", text: "A Different Game Altogether" }], medias: [video("wrong.mp4")] };
+
+  const vdir = path.join(DATA, "videos-screenscraper");
+  const own = path.join(DATA, "video-own");
+  const jobFile = path.join(DATA, "screenscraper-job.json");
+  const guard = new Guard(["screenscraper-job.json", "screenscraper.json"]);
+  const ids = [A, B, C, D, E, F].map((g) => g.id);
+  let ownMade = null;
+  const finished = async () => {
+    let st = null;
+    for (const end = Date.now() + 60000; Date.now() < end;) {
+      st = await api("api/screenscraper.php");
+      if (st.job && st.job.state !== "running") { break; }
+      await sleep(200);
+    }
+    return st;
+  };
+  try {
+    // ---- the logins ----
+    const early = await api("api/screenscraper.php", { ids });
+    check("a fetch with no logins is refused, saying so", [early.ok, /logins/.test(early.error || "")], [false, true]);
+    const badDev = await api("api/screenscraper.php", { account: Object.assign({}, LOGIN, { devpassword: "wrong" }) });
+    check("a wrong developer password is said to be that", [badDev.ok, badDev.check.ok, /developer ID/.test(badDev.check.error)], [true, false, true]);
+    const badUser = await api("api/screenscraper.php", { account: Object.assign({}, LOGIN, { password: "wrong" }) });
+    check("and a wrong member password to be that", [badUser.check.ok, /member name/.test(badUser.check.error)], [false, true]);
+    const good = await api("api/screenscraper.php", { account: LOGIN });
+    check("the right ones are accepted, with today's count", [good.check.ok, good.check.today, good.check.max, good.account.ready], [true, 12, 20000, true]);
+    const leak = (text) => text.includes(LOGIN.devpassword) || text.includes(LOGIN.password)
+      || text.includes(JSON.stringify(LOGIN.devpassword).slice(1, -1)) || text.includes(encodeURIComponent(LOGIN.password));
+    check("the answer never carries a password", leak(JSON.stringify(good)) || leak(JSON.stringify(await api("api/screenscraper.php"))), false);
+    const kept = await api("api/screenscraper.php", { account: { devid: LOGIN.devid, devpassword: "", user: LOGIN.user, password: "" } });
+    check("an empty password box keeps the stored password", kept.check.ok, true);
+    check("softname says who is asking", asked.filter((a) => a.path === "/ssuserInfos.php").every((a) => a.q.softname === "Xsegon" && a.q.output === "json"), true);
+
+    // ---- the plan ----
+    const dry = await api("api/screenscraper.php", { ids: ids.concat(["not-a-game"]), dry: true });
+    check("a dry run plans only games without a video", dry.ok && dry.plan.games.map((g) => g.id).sort(), ids.slice().sort());
+    check("holds no login", leak(JSON.stringify(dry)) || JSON.stringify(dry).includes(LOGIN.devid), false);
+    check("and starts nothing", fs.existsSync(jobFile), false);
+
+    // ---- the fetch ----
+    asked.length = 0;
+    const go = await api("api/screenscraper.php", { ids });
+    check("fetching starts in the background", [go.ok, go.count], [true, 6]);
+    const st = await finished();
+    const states = Object.fromEntries(((st.job && st.job.games) || []).map((g) => [g.id, g.state]));
+    check("and finishes", st.job && st.job.state, "done");
+    check("a game found by its name is saved", states[A.id], "done");
+    const fileA = path.join(vdir, A.id + ".mp4");
+    check("the normalised video, and not the other game's", fs.existsSync(fileA) && fs.readFileSync(fileA).toString("latin1").endsWith("the normalised snap"), true);
+    check("a game found only by its ROM's name is saved", [states[B.id], fs.existsSync(path.join(vdir, B.id + ".mp4"))], ["done", true]);
+    check("one ScreenScraper does not have is said, not failed", states[C.id], "none");
+    check("one it has with no video is its own answer", states[D.id], "novideo");
+    check("a download that is not a video is failed and not kept", [states[E.id], fs.existsSync(path.join(vdir, E.id + ".mp4"))], ["failed", false]);
+    check("a ROM-name answer for another game is turned away", [states[F.id], fs.existsSync(path.join(vdir, F.id + ".mp4"))], ["none", false]);
+    check("nothing half-downloaded is left", fs.readdirSync(vdir).filter((f) => !f.endsWith(".mp4")), []);
+    const byName = asked.find((a) => a.path === "/jeuRecherche.php" && a.q.recherche === A.title);
+    check("the game's name arrives whole, with its console's number", byName && byName.q.systemeid, String(A.system));
+    const byRom = asked.find((a) => a.path === "/jeuInfos.php" && a.q.romnom === B.rom);
+    check("and so does a ROM's file name", byRom && [byRom.q.systemeid, byRom.q.romtype], [String(B.system), "rom"]);
+    check("every question carries both logins, exactly as typed",
+      asked.filter((a) => !a.path.startsWith("/media/")).every((a) => a.q.devpassword === LOGIN.devpassword && a.q.sspassword === LOGIN.password), true);
+    const down = asked.find((a) => a.path === "/media/a-norm.mp4");
+    check("the download is made as the member", down && [down.q.ssid, down.q.sspassword], [LOGIN.user, LOGIN.password]);
+    check("the other game's video was never asked for", asked.some((a) => a.path === "/media/wrong.mp4"), false);
+    check("the day's count is passed on", [st.job.used, st.job.allowed], [12, 20000]);
+    const logs = fs.readdirSync(path.join(DATA, "log")).map((f) => fs.readFileSync(path.join(DATA, "log", f), "utf8")).join("\n");
+    check("no password in the job file or the log", leak(fs.readFileSync(jobFile, "utf8")) || leak(logs), false);
+    check("and the log says how it went", /SSCR snaps: 2 saved, 2 not on ScreenScraper, 1 there with no video, 1 failed/.test(logs), true);
+
+    const rowA = st.games.find((g) => g.id === A.id);
+    check("the saved snap is now that game's video", rowA && rowA.has, true);
+    check("and two fewer are missing", st.missing, first.missing - 2);
+    const served = await fetch(BASE + "/api/video.php?id=" + encodeURIComponent(A.id));
+    check("it plays as the game's video snap", [served.status, (served.headers.get("content-type") || "").split(";")[0]], [200, "video/mp4"]);
+    const libA = (await api("api/library.php")).games.find((g) => g.id === A.id);
+    if (libA) {
+      const hover = libA.videoUrl ? await fetch(BASE + "/" + libA.videoUrl, { headers: { Range: "bytes=0-9" } }) : { status: 0, headers: new Map() };
+      check("and the address hover plays from answers with the video", [libA.hasVideo, hover.status, (hover.headers.get("content-type") || "").split(";")[0]], [true, 206, "video/mp4"]);
+    }
+    const again = await api("api/screenscraper.php", { ids: [A.id] });
+    check("a game that has a video is never fetched again", again.ok, false);
+
+    fs.mkdirSync(own, { recursive: true });
+    ownMade = path.join(own, B.id + ".mp4");
+    fs.writeFileSync(ownMade, "a video chosen by hand\r\n");
+    const withOwn = await api("api/screenscraper.php");
+    check("a video you chose wins, and its game leaves this list", withOwn.games.some((g) => g.id === B.id), false);
+    fs.rmSync(ownMade, { force: true });
+    ownMade = null;
+
+    // ---- versions of one game share a name: asked once, the snap copied ----
+    const taken = new Set([A, B, C, D, E, F].map((g) => g.system + "-" + key(g.title)));
+    const sameName = {};
+    for (const g of first.games) {
+      const k = g.system + "-" + key(g.title);
+      if (g.system > 0 && key(g.title) && !taken.has(k)) { (sameName[k] = sameName[k] || []).push(g); }
+    }
+    const twins = (Object.values(sameName).find((v) => v.length > 1) || []).slice(0, 2);
+    if (twins.length === 2) {
+      say.media["t.mp4"] = mp4("one snap for both versions");
+      say.search[twins[0].system + "-" + key(twins[0].title)] = [named(twins[0], [video("t.mp4")])];
+      asked.length = 0;
+      await api("api/screenscraper.php", { ids: twins.map((g) => g.id) });
+      const both = await finished();
+      const files = twins.map((g) => path.join(vdir, g.id + ".mp4"));
+      check("two versions of one game are both saved", both.job.games.map((g) => g.state), ["done", "done"]);
+      check("with the same snap", files.every((f) => fs.existsSync(f)) && fs.readFileSync(files[0]).equals(fs.readFileSync(files[1])), true);
+      check("and ScreenScraper asked once, not twice", [asked.filter((a) => a.path === "/jeuRecherche.php").length, asked.filter((a) => a.path === "/media/t.mp4").length], [1, 1]);
+    } else {
+      check("(no two versions of one game without a video here: the shared snap steps aside)", true);
+    }
+
+    // ---- a reason that would be the same for every game ends the run ----
+    say.refuse = { status: 430, body: "Votre quota de scrape est dépassé pour aujourd'hui !" };
+    await api("api/screenscraper.php", { ids: [C.id, D.id] });
+    const spent = await finished();
+    check("a spent quota stops the run and says so", [spent.job.state, /quota/.test(spent.job.error || "")], ["failed", true]);
+    check("with the games it did not reach still waiting", spent.job.games.map((g) => g.state), ["waiting", "waiting"]);
+    say.refuse = { status: 403, body: "Erreur de login : Vérifier vos identifiants développeur !" };
+    await api("api/screenscraper.php", { ids: [C.id] });
+    const refused = await finished();
+    check("a login refused half way stops it the same way, naming which", [refused.job.state, /developer ID/.test(refused.job.error || "")], ["failed", true]);
+    say.refuse = null;
+
+    /* ---- the screen ---- */
+    await b.goto();
+    await b.setView("grid");
+    await b.openBar("media");
+    await b.menuItem(/ScreenScraper videos/);
+    const title = `(document.querySelector("#editor .panel-title") || {}).textContent || ""`;
+    check("Pictures & Videos > ScreenScraper videos opens the list", await b.until(title, "SCREENSCRAPER VIDEOS"), "SCREENSCRAPER VIDEOS");
+    await b.until(`document.querySelectorAll("#editor .sv-row").length`, st.games.length);
+    const rowOf = (id) => `[...document.querySelectorAll("#editor .sv-row")].find(r => r.querySelector("input").value === ${JSON.stringify(id)})`;
+    check("a game with its snap saved says so and cannot be selected", await b.ev(`(r => [r.querySelector(".sv-state").textContent, r.querySelector("input").disabled])(${rowOf(A.id)})`), ["saved", true]);
+    check("the stored logins are named, never shown", await b.ev(`(() => { const t = document.querySelector("#editor .ss-acct").textContent; return [t.includes(${JSON.stringify(LOGIN.user)}), t.includes(${JSON.stringify(LOGIN.devid)}), t.includes(${JSON.stringify(LOGIN.password)}), !!document.querySelector("#editor .ss-form")]; })()`), [true, true, false, false]);
+    check("a run that stopped says why", await b.ev(`/stopped: ScreenScraper refused the developer ID/.test(document.querySelector("#editor .group-help").textContent)`), true);
+    check("selecting one console selects only its games", await b.ev(`(() => {
+      const s = document.querySelector("#editor .ss-pick"), want = ${JSON.stringify("p:" + C.platform)};
+      s.value = want; s.dispatchEvent(new Event("change"));
+      const on = [...document.querySelectorAll("#editor .sv-row input:checked")];
+      return on.length > 0 && on.every(i => "p:" + i.dataset.platform === want) && /^Fetch \\d+ snaps?\\.\\.\\.$/.test(document.querySelector("#editor .ss-bar button").textContent);
+    })()`), true);
+    await b.ev(`document.querySelector("#editor .ss-bar button").click()`);
+    const ask = `(document.querySelector(".setup-confirm h2") || {}).textContent || ""`;
+    check("Fetch asks first, saying how many", await b.until(`/^Fetch \\d+ snaps?\\?$/.test(${ask})`), true);
+    check("with from where, as whom and into which folder", await b.ev(`(() => { const t = document.querySelector(".setup-confirm").textContent; return /screenscraper\\.fr/.test(t) && t.includes(${JSON.stringify(LOGIN.user)}) && t.includes(${JSON.stringify(vdir)}); })()`), true);
+    const jobBefore = fs.readFileSync(jobFile, "utf8");
+    await b.key("Escape");
+    check("Esc says no and starts nothing", await b.until(`!document.querySelector(".setup-confirm")`) && fs.readFileSync(jobFile, "utf8") === jobBefore, true);
+    await b.ev(`[...document.querySelectorAll("#editor .ss-btns button")].find(x => /Change/.test(x.textContent)).click()`);
+    check("Change shows the boxes, the passwords hidden and empty", await b.ev(`[...document.querySelectorAll("#editor .ss-form input")].map(i => i.type + ":" + i.value)`),
+      ["text:" + LOGIN.devid, "password:", "text:" + LOGIN.user, "password:"]);
+    await b.key("Escape");
+    await b.until(`document.getElementById("editor").hidden`);
+
+    const gone = await api("api/screenscraper.php", { forget: true });
+    check("Forget deletes the stored logins", [gone.ok, gone.account.ready, fs.existsSync(path.join(DATA, "screenscraper.json"))], [true, false, false]);
+  } finally {
+    if (ownMade) { fs.rmSync(ownMade, { force: true }); }
+    fs.rmSync(vdir, { recursive: true, force: true });
+    if (server.closeAllConnections) { server.closeAllConnections(); }
+    await new Promise((r) => server.close(r));
+    guard.restore();
+  }
+};

@@ -1,0 +1,394 @@
+{
+    "source": "https://commons.wikimedia.org/wiki/File:<commons>",
+    "licences": "Public domain or CC0 only; checked on Commons when fetched",
+    "files": {
+        "Atari - 2600.webp": {
+            "commons": "Atari-2600-Wood-4Sw-Set.png",
+            "licence": "Public domain",
+            "originalSha1": "f2baafd18621edd139ecf5d3a9742da064e4be3e",
+            "width": 800,
+            "height": 489,
+            "sha256": "65119ab47dde185bd91015ed0c14b9e50a8c0098eda4446084eca97c35bdfbab",
+            "bytes": 33080
+        },
+        "Atari - 5200.webp": {
+            "commons": "Atari-5200-Console-Set.png",
+            "licence": "Public domain",
+            "originalSha1": "9aec1bfbe443302785c201eca656bb895a6a16c7",
+            "width": 800,
+            "height": 498,
+            "sha256": "599da5383d87014e374f889973f03b431e2e913216cdf7412a89724a75ad6cbe",
+            "bytes": 26494
+        },
+        "Atari - 7800.webp": {
+            "commons": "Atari-7800-Euro-Console-FL.png",
+            "licence": "Public domain",
+            "originalSha1": "676d1ea8efcd4ebb18cfc11730052e984019c7f0",
+            "width": 800,
+            "height": 503,
+            "sha256": "6c3194cff657a8918a72e656eb104bfcaf7e4704f4b3e29585b919d3e4923993",
+            "bytes": 25758
+        },
+        "Atari - Jaguar.webp": {
+            "commons": "Atari-Jaguar-Bare-HL.png",
+            "licence": "Public domain",
+            "originalSha1": "bb790a83e46a6ea9947103056d7976fab666af19",
+            "width": 800,
+            "height": 545,
+            "sha256": "db47649da0166a1c524fe3450767d2c5045bcb89b78d8dd754bf205409c8bfbd",
+            "bytes": 23206
+        },
+        "Atari - Lynx.webp": {
+            "commons": "Atari-Lynx-II-Handheld-Angled.png",
+            "licence": "Public domain",
+            "originalSha1": "fca94e0b494ba83838e0d801103e196fc4b02e0b",
+            "width": 800,
+            "height": 498,
+            "sha256": "c5e53e56d4fa9c5dfe17206b5c849c1888bbd496ac44ef9e68eedf0ddac2e455",
+            "bytes": 27470
+        },
+        "Bandai - WonderSwan.webp": {
+            "commons": "WonderSwan-Black-Left.png",
+            "licence": "CC0",
+            "originalSha1": "451cd338c24f7c043b9c59deed7a66c2f1361ef6",
+            "width": 800,
+            "height": 567,
+            "sha256": "a8ee231a8e7a5b4c9a99f61f91a711ae2ba064dceef9a1cd682f61ece2d156f8",
+            "bytes": 34626
+        },
+        "Bandai - WonderSwan Color.webp": {
+            "commons": "WonderSwan-Color-Blue-Left.png",
+            "licence": "CC0",
+            "originalSha1": "728ac201056d93e27a450d801bd4f4ed4158bbec",
+            "width": 800,
+            "height": 562,
+            "sha256": "749b4567e6990a7d9fe61fcb29a286b55b622d2a2bc6659454b4633e087c9b78",
+            "bytes": 49830
+        },
+        "Coleco - ColecoVision.webp": {
+            "commons": "ColecoVision-wController-L.png",
+            "licence": "CC0",
+            "originalSha1": "93901616fa328c0a9c33094edd6488899d1588f7",
+            "width": 800,
+            "height": 364,
+            "sha256": "7f84d621dc5bfcdea857616c3e898b26f884b9835134fad44f795b687b4d55bb",
+            "bytes": 29010
+        },
+        "Commodore - 64.webp": {
+            "commons": "Commodore-64-Computer-FL.png",
+            "licence": "Public domain",
+            "originalSha1": "b19c6c3d7f112026fc86f092b42378094e114f85",
+            "width": 800,
+            "height": 453,
+            "sha256": "96b3ba35a6d98f675666f4ac5c36a3ec2730ccc4c48b21c4b28a74205736e11b",
+            "bytes": 28034
+        },
+        "Fairchild - Channel F.webp": {
+            "commons": "Fairchild-Channel-F-System-II-Console.png",
+            "licence": "Public domain",
+            "originalSha1": "85e26dd1573565dfd2ec14967972671cc05c4921",
+            "width": 800,
+            "height": 445,
+            "sha256": "a0e2cb8638b17253691689a21b96060d04e3bd23e20fba68961f6a9ef66a3e57",
+            "bytes": 33848
+        },
+        "Microsoft - Xbox.webp": {
+            "commons": "Xbox-Console-Set.png",
+            "licence": "Public domain",
+            "originalSha1": "c51726a3542454a3155f8e52a24d10c7f0a7f1d9",
+            "width": 800,
+            "height": 367,
+            "sha256": "c2394d0aa3a77edc27b49eac760dea4afa4ff59fb4e9251716bef2b07387da62",
+            "bytes": 28516
+        },
+        "Microsoft - Xbox 360.webp": {
+            "commons": "Microsoft-Xbox-360-Pro-Flat-wController-L.png",
+            "licence": "Public domain",
+            "originalSha1": "449a24fa4c20e5aea299a00c59a175524f283701",
+            "width": 800,
+            "height": 413,
+            "sha256": "e74e50bad6d35013d54c0221b70f28c086588cbc54b89be9fc878564fc1cad7b",
+            "bytes": 19358
+        },
+        "NEC - PC Engine - TurboGrafx 16.webp": {
+            "commons": "TurboGrafx16-Console-Set.png",
+            "licence": "Public domain",
+            "originalSha1": "1d80a1bdf2892f81cdfb3c3254fc05f80dc4963e",
+            "width": 800,
+            "height": 517,
+            "sha256": "46707e70160ec6a1554f748018ccc54f8c0a876cb22a4d7ad4baf36da808306e",
+            "bytes": 31334
+        },
+        "NEC - PC Engine CD - TurboGrafx-CD.webp": {
+            "commons": "NEC-TurboGrafx-16-CD-FL.png",
+            "licence": "Public domain",
+            "originalSha1": "ea612c38c978ff74f6b3a938d7203b57f4092677",
+            "width": 764,
+            "height": 600,
+            "sha256": "7c025d4cd6b4e70b1a088159fd5b94e1ae847efec2ae992579fdaa7b9a6cfec3",
+            "bytes": 25938
+        },
+        "Nintendo - Family Computer Disk System.webp": {
+            "commons": "Nintendo-Famicom-Disk-System.png",
+            "licence": "Public domain",
+            "originalSha1": "9919d0be2d48778a2b7bb189f4e79d5807f13071",
+            "width": 676,
+            "height": 600,
+            "sha256": "6446fcc4d53b88aa9d9594e01af7d7ea99e1b79278d31dcd6a625f38a0e3762a",
+            "bytes": 31402
+        },
+        "Nintendo - Game Boy.webp": {
+            "commons": "Game-Boy-FL.png",
+            "licence": "Public domain",
+            "originalSha1": "06c220b7a3727f723078b4c4df9cd00418be7d84",
+            "width": 495,
+            "height": 600,
+            "sha256": "79a75eb247c0f3db0653f7a3690fc53141d11d406ae16247d624e007eccc6c12",
+            "bytes": 16782
+        },
+        "Nintendo - Game Boy Advance.webp": {
+            "commons": "Nintendo-Game-Boy-Advance-Purple-FL.png",
+            "licence": "Public domain",
+            "originalSha1": "72f480f011f1f5d2e499cb5a87c54937dd0c59b9",
+            "width": 800,
+            "height": 553,
+            "sha256": "7fe8e017d6782aaadf9830d9b22514caac5f6b5975fbc6ff374428a44718165d",
+            "bytes": 24580
+        },
+        "Nintendo - Game Boy Color.webp": {
+            "commons": "Nintendo-Game-Boy-Color-FL.png",
+            "licence": "Public domain",
+            "originalSha1": "41a29743cea933fdb1f54ab0649069d99ef40bbe",
+            "width": 441,
+            "height": 600,
+            "sha256": "afdf9799194bfb5d585132d920e8817cd4d4c087b2596d6806cac37531d3310d",
+            "bytes": 22324
+        },
+        "Nintendo - GameCube.webp": {
+            "commons": "GameCube-Console-Set.png",
+            "licence": "Public domain",
+            "originalSha1": "5a5102cb7101ec89bc04b033b5407f2eae85c59d",
+            "width": 800,
+            "height": 449,
+            "sha256": "cc7a167480dc4293f6208c9928a8a22e40536b05b599c35f50f16b5c56fbd60b",
+            "bytes": 31402
+        },
+        "Nintendo - Nintendo 3DS.webp": {
+            "commons": "Nintendo-3DS-XL-angled.png",
+            "licence": "Public domain",
+            "originalSha1": "f9c31f605df4ac859a67529196234f14ae3d7986",
+            "width": 752,
+            "height": 600,
+            "sha256": "3259d37163af3355598f9ddf969e8c397eb4b15dd08242de5af8464623a5e45e",
+            "bytes": 19960
+        },
+        "Nintendo - Nintendo 64.webp": {
+            "commons": "N64-Console-Set.png",
+            "licence": "Public domain",
+            "originalSha1": "2704ab26caa7664fd7b8388d36155d5665ab98e1",
+            "width": 800,
+            "height": 431,
+            "sha256": "d66fa5b17dd168fe4ea662892c5deaaabffb638b83b660023f498913f79acee6",
+            "bytes": 28680
+        },
+        "Nintendo - Nintendo DS.webp": {
+            "commons": "Nintendo-DS-Fat-Blue.png",
+            "licence": "Public domain",
+            "originalSha1": "43d1f54644e9d04a0bb792ae19d198a4b2934285",
+            "width": 660,
+            "height": 600,
+            "sha256": "10831c823686bf1522bba15a249a23cb11d8d22803731c3b6704ea03007b40f7",
+            "bytes": 35134
+        },
+        "Nintendo - Nintendo Entertainment System.webp": {
+            "commons": "NES-Console-Set.png",
+            "licence": "Public domain",
+            "originalSha1": "2ebccb1974babe4d69ee2acc96958e936eefb461",
+            "width": 800,
+            "height": 434,
+            "sha256": "d82eee1726a7307d251b9ce37ff86fd5252f832bc7cb5c0f1ae4015103aec940",
+            "bytes": 21854,
+            "whiteCut": true
+        },
+        "Nintendo - Super Nintendo Entertainment System.webp": {
+            "commons": "SNES-Model-2-Set.png",
+            "licence": "Public domain",
+            "originalSha1": "8b608ef59fc66efd261fdf6f24b415df4788c206",
+            "width": 800,
+            "height": 358,
+            "sha256": "4aeaec1f7fe2c9a0eaae083bb06493bfad386ba73472515de42d06f67594bb2d",
+            "bytes": 20182
+        },
+        "Nintendo - Virtual Boy.webp": {
+            "commons": "Virtual-Boy-Set.png",
+            "licence": "Public domain",
+            "originalSha1": "fbd14a547d6bbf0cd87cb97e90d117c7c87feaed",
+            "width": 472,
+            "height": 600,
+            "sha256": "0f186b6775afe3438d859e77c44fe949607e3f11606307467f3343b9a96f981d",
+            "bytes": 34888
+        },
+        "Nintendo - Wii.webp": {
+            "commons": "Wii-Console.png",
+            "licence": "Public domain",
+            "originalSha1": "4ae9e710616cade4050101795cdf0b7f9ad99b77",
+            "width": 600,
+            "height": 600,
+            "sha256": "562f9cd006754ebd96074d87ba502d07e15e283a0f6942a80dccd8ad08697bfe",
+            "bytes": 22144
+        },
+        "SNK - Neo Geo.webp": {
+            "commons": "Neo-Geo-AES-FL.png",
+            "licence": "Public domain",
+            "originalSha1": "4729734c7683cacda1ccee41c811abc10a7a010f",
+            "width": 800,
+            "height": 499,
+            "sha256": "a362f060344a72a9e6bd32a6b52343266cf0ce5bfa6f987dcbf90f6c29da21d9",
+            "bytes": 17506
+        },
+        "SNK - Neo Geo CD.webp": {
+            "commons": "Neo-Geo-CD-TL-FL.png",
+            "licence": "Public domain",
+            "originalSha1": "5b42c745fec58e98ff1a30a03f8c813ebe293cbe",
+            "width": 800,
+            "height": 533,
+            "sha256": "e1ce182f790be0e04d43ce3fd8c07fcfbe176abf2a599ae29c58236898ee3712",
+            "bytes": 19356
+        },
+        "SNK - Neo Geo Pocket.webp": {
+            "commons": "Neo-Geo-Pocket-Anthra-Left.png",
+            "licence": "CC0",
+            "originalSha1": "0b6096cdaab1a7bbfd5d1d07009aa569f771dec9",
+            "width": 800,
+            "height": 568,
+            "sha256": "fbd9dbff86af37cb1a163aa49ec3ae916137fd7843af031eac7ec19028ee4ef9",
+            "bytes": 42744
+        },
+        "SNK - Neo Geo Pocket Color.webp": {
+            "commons": "Neo-Geo-Pocket-Color-Blue-Left.png",
+            "licence": "CC0",
+            "originalSha1": "c3b439fcc1def629074e401681bd1764fdc47a0c",
+            "width": 800,
+            "height": 582,
+            "sha256": "f9d987e7f1ad4148a040cb345f84e840049cc4363e5bb28792a7291aaf304755",
+            "bytes": 30206
+        },
+        "Sega - 32X.webp": {
+            "commons": "Sega-Genesis-Model2-32X.png",
+            "licence": "Public domain",
+            "originalSha1": "53b645c78731d1aa83400f82e105a5d0b7847f01",
+            "width": 755,
+            "height": 600,
+            "sha256": "bf6853277f9bf9cf62208bb29e99deec3884b70e009b61f3a72fe2cb5bbe4097",
+            "bytes": 33892
+        },
+        "Sega - Dreamcast.webp": {
+            "commons": "Sega-Dreamcast-Console-FL.png",
+            "licence": "Public domain",
+            "originalSha1": "353569c4635f303b94e9d04eda27b2221a5dc70f",
+            "width": 800,
+            "height": 562,
+            "sha256": "a2e5e905c49992442c5f9ec08aeac06e0b44e817378d14606fbb03c9223ac356",
+            "bytes": 16920
+        },
+        "Sega - Game Gear.webp": {
+            "commons": "Sega-Game-Gear-WB.png",
+            "licence": "Public domain",
+            "originalSha1": "126ab3510561e31a070398a7fe8f2c529eaa4d61",
+            "width": 800,
+            "height": 536,
+            "sha256": "55f9082429e2ac2c83eea5ef581f4e1144d244fbc6f7ff3d13eedb2ffc2a9cb7",
+            "bytes": 23594
+        },
+        "Sega - Master System - Mark III.webp": {
+            "commons": "Sega-Master-System-Set.png",
+            "licence": "Public domain",
+            "originalSha1": "6701cb4e51aa2b19032428504132563e392cc9b2",
+            "width": 800,
+            "height": 440,
+            "sha256": "b89a37f887251216cd42f0b8b5fec45899c35d89d8cd2accaee95d46ea4a4939",
+            "bytes": 42482
+        },
+        "Sega - Mega Drive - Genesis.webp": {
+            "commons": "Sega-Genesis-Mod1-Set.png",
+            "licence": "Public domain",
+            "originalSha1": "91f0dd1c95c56586a09d9aea5bc7c2b169d71008",
+            "width": 800,
+            "height": 345,
+            "sha256": "e047d59b3592dc3f040f4bca7e1dc0bb2240bc1fad439ebb9e1f05ce2f84f0f8",
+            "bytes": 27862
+        },
+        "Sega - Mega-CD - Sega CD.webp": {
+            "commons": "Sega-CD-Model2-Set.png",
+            "licence": "Public domain",
+            "originalSha1": "8df7cebd246aca34d4db27bef5fb0c6328636ba6",
+            "width": 800,
+            "height": 475,
+            "sha256": "86dc6e4e27e518df757130b3060ca8d28c8d6b1b5cceb8dfe1fca6f85d9038f7",
+            "bytes": 25940
+        },
+        "Sega - Saturn.webp": {
+            "commons": "Sega-Saturn-Console-Set-Mk1.png",
+            "licence": "Public domain",
+            "originalSha1": "5b1cdb54f3a8b0d199ac840d3d2f731bbab4917c",
+            "width": 800,
+            "height": 443,
+            "sha256": "25972bd970cdf3cf6003adf6e744936dee0b9688f0f9657dd325b7aa8127205a",
+            "bytes": 26024
+        },
+        "Sony - PlayStation.webp": {
+            "commons": "PSX-Console-wController.png",
+            "licence": "Public domain",
+            "originalSha1": "6871cf4baba9e03be0e5dd0049fd1f89d84a9faa",
+            "width": 800,
+            "height": 368,
+            "sha256": "1bb85574235e8762032c3c679b1ee581e6a591f4e1d2d923e77141eb19906753",
+            "bytes": 22474
+        },
+        "Sony - PlayStation 2.webp": {
+            "commons": "PS2-Fat-Console-Set.png",
+            "licence": "Public domain",
+            "originalSha1": "99acfc87fddb23e5b7bfd525a64f17a8acfdd785",
+            "width": 494,
+            "height": 600,
+            "sha256": "8c59d29cd01ac30f26547109389fd2e686af40b1dfaa998ccc72995db05a9dfe",
+            "bytes": 18098
+        },
+        "Sony - PlayStation 3.webp": {
+            "commons": "PS3-slim-console.png",
+            "licence": "Public domain",
+            "originalSha1": "5a2e38bcfed1e3aad301bfe9b6b2deb5cd2543b9",
+            "width": 800,
+            "height": 388,
+            "sha256": "77a2ddaa53cda2b517540a83db22f0042ee9152dcfb7f4ca630839544b66a0ec",
+            "bytes": 15774
+        },
+        "Sony - PlayStation Portable.webp": {
+            "commons": "PSP-2000-trans.png",
+            "licence": "Public domain",
+            "originalSha1": "3a2a8c890eaa3b59e9f6412c9bc53ae050ffea63",
+            "width": 800,
+            "height": 450,
+            "sha256": "d02e62c6db2b4455fa9f83ff36fd9e7b0d2784390bbed4ae2dfb9b52eb55ef1e",
+            "bytes": 24138
+        },
+        "Sony - PlayStation Vita.webp": {
+            "commons": "PlayStation-Vita-1101-FL.png",
+            "licence": "Public domain",
+            "originalSha1": "82df6436017726cfa9c64c64b5af696e0ca513c6",
+            "width": 800,
+            "height": 488,
+            "sha256": "40ac7c34769c892ba8d5d9d6e4171bd6369c04798e8727e37fe6a7169dd9636e",
+            "bytes": 20734
+        },
+        "The 3DO Company - 3DO.webp": {
+            "commons": "3DO-FZ-1-Console-FL.png",
+            "licence": "Public domain",
+            "originalSha1": "c5ee4a5c5a9557db40f87f4a035d6e7541ce270e",
+            "width": 800,
+            "height": 538,
+            "sha256": "7b3ecdb0e18c92bb1ed7f30864baa1e1ddcd2236e455186d89e17aeaebb82bb2",
+            "bytes": 19526
+        }
+    }
+}

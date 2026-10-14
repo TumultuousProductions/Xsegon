@@ -1,0 +1,24 @@
+{
+  "format": 1,
+  "name": "Matrix",
+  "colours": {
+    "ground": "#010402",
+    "panel": "#040a05",
+    "panelRaised": "#060f08",
+    "words": "#cdf5d3",
+    "wordsSecond": "#86cf91",
+    "wordsThird": "#62a86d",
+    "highlight": "#00cc35",
+    "highlightSecond": "#a8ffbf"
+  },
+  "has": { "glow": true, "scanlines": false },
+  "texture": { "kind": "rain", "strength": 100 },
+  "surface": "sheer",
+  "highContrast": {
+    "ground": "#010301",
+    "panel": "#06110a",
+    "panelRaised": "#0d1f12",
+    "wordsSecond": "#c9f2cf",
+    "wordsThird": "#a5dbad"
+  }
+}
