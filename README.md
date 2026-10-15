@@ -56,6 +56,8 @@ The first time, Xsegon opens one window, **Set everything up**:
    Each one can be had later from the menus.
 3. Press **Set it up**. Nothing more is asked.
 
+![The Set everything up window](doc/screens/setup.jpg)
+
 **Set up by hand** opens **Getting started** instead: every step, one at a
 time, with a button for each.
 
@@ -70,9 +72,10 @@ are. You can look around while it works.
 ![The list saying Ready to play](doc/screens/ready.jpg)
 
 Not sure where to put your games? Xsegon made a **Games** folder beside
-itself, with a folder inside for each console. Getting started says where it
-is, and **Open the folder** opens it. Drop your games in, then press **Set it
-all up**.
+itself, with a folder inside for each console. Press **Set it up** anyway:
+Xsegon sets up the rest, then says where that folder is, with a button that
+opens it. Drop your games in, come back to Xsegon, and they come in by
+themselves.
 
 ## 4. Getting around
 
@@ -93,6 +96,10 @@ You do not have to remember any of it: the bar along the bottom of the
 screen always shows what the keys do right now, and with a controller it
 shows that controller's own buttons.
 
+The menus (Games, Pictures & Videos, Emulators, Help) open from the Xsegon
+logo at the top left, on every screen, with Settings, the controller, Connect
+a phone and the themes beneath them.
+
 ![A console's games on the wheel](doc/screens/wheel.jpg)
 
 ![A game's own page: its story, your saves, cheats and notes](doc/screens/details.jpg)
@@ -101,6 +108,8 @@ shows that controller's own buttons.
 
 - **Six ways to look at your games**, from the wheel to a list with the
   columns you choose.
+- **New games come in by themselves.** Put games in your games folder, come
+  back to Xsegon, and they are there.
 - **Names, descriptions and box art filled in** from a copy of the LaunchBox
   Games Database that comes with Xsegon. If its picture server ever stops
   answering, libretro's thumbnails fill in instead.
@@ -110,6 +119,9 @@ shows that controller's own buttons.
 - **Themes**, some that move: a sky of stars, the deep sea, a storm.
 - **Saves, cheats and versions.** Pick up where you left off, turn a cheat on
   in one press, and choose which version of a game plays.
+- **Pictures and videos your way.** A game's Media tab copies another game's
+  box art, logo, screenshot, background or video onto it; Change Pictures and
+  Replace Video take your own, or clear them.
 - **Any controller.** The bar names your controller's own buttons, and the
   Controller check lights up what you press.
 - **Steam games and programs of your own** in the same library.
@@ -117,6 +129,8 @@ shows that controller's own buttons.
   your games and your own play data across, once. Nothing of LaunchBox's
   pictures, videos or sounds comes with them, and LaunchBox's folder is
   never changed.
+
+![A game's Media tab: another game's pictures beside its own](doc/screens/media.jpg)
 
 ![Connect a phone](doc/screens/phone.jpg)
 
