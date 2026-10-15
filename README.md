@@ -4,6 +4,10 @@ Xsegon shows your games like a console menu and starts them for you. It is
 made for a TV and a controller, and it is just as happy with a keyboard and
 mouse. It runs on your own Windows PC, needs no account, and is free.
 
+**[Download Xsegon](https://github.com/TumultuousProductions/Xsegon/releases/latest)**
+· [Install](#2-install) · [Set it up](#3-set-it-up) · [Themes](#5-themes)
+· [What else it does](#6-what-else-it-does)
+
 ![The consoles screen](doc/screens/consoles.jpg)
 
 > **Download Xsegon from the [Releases page](https://github.com/TumultuousProductions/Xsegon/releases/latest),
@@ -23,10 +27,12 @@ Xsegon does not come with any games, BIOS files or keys. You bring your own.
   cores your consoles need, and your games' names and pictures).
 - A controller, if you have one. It works as soon as you press a button on it.
 
-## 2. Start it
+## 2. Install
+
+Nothing is installed into Windows: Xsegon runs from the folder you unzip it to.
 
 1. Open the [latest release](https://github.com/TumultuousProductions/Xsegon/releases/latest)
-   and, under **Assets**, download **Xsegon-*version*.zip**.
+   and, under **Assets**, download **Xsegon-*version*.zip** (about 350 MB).
 2. Right-click the zip, choose **Properties**, select **Unblock** at the
    bottom if it is there, and press OK. Then right-click it again, choose
    **Extract All...**, and put it somewhere simple, like Documents. Not in
@@ -40,7 +46,7 @@ Xsegon opens full screen. To close it, use the X at its top right (it asks
 first), or press Alt+F4. The folder also has **Welcome to Xsegon.html**: the
 same tour as below, with more pictures, to open in your browser.
 
-## 3. Let it set itself up
+## 3. Set it up
 
 The first time, Xsegon opens one window, **Set everything up**:
 
@@ -104,7 +110,37 @@ a phone and the themes beneath them.
 
 ![A game's own page: its story, your saves, cheats and notes](doc/screens/details.jpg)
 
-## 5. What else it does
+## 5. Themes
+
+Press the Xsegon logo at the top left: under **Themes** there are folders, and
+some of the themes move. **Space** has a sky of drifting stars, with one
+falling now and then, and the same sky over a wood of firs. **Nature** has the
+Deep sea with its bubbles, a Storm, and Winter with snow. **Neon** has Matrix
+and Synthwave. Carbon has embers, and in the Dracula ones a bat crosses the
+screen every minute or two. **Xsegon theme** goes back to how it came.
+
+<p>
+  <img src="doc/screens/theme-space.jpg" width="49%" alt="The Space theme">
+  <img src="doc/screens/theme-trees.jpg" width="49%" alt="The Space with trees theme">
+</p>
+
+*Space, and Space with trees.*
+
+<p>
+  <img src="doc/screens/theme-deepsea.jpg" width="49%" alt="The Deep sea theme">
+  <img src="doc/screens/theme-storm.jpg" width="49%" alt="The Storm theme">
+</p>
+
+*Deep sea, and Storm.*
+
+<p>
+  <img src="doc/screens/theme-synthwave.jpg" width="49%" alt="The Synthwave theme">
+  <img src="doc/screens/theme-dracula.jpg" width="49%" alt="The Dracula theme">
+</p>
+
+*Synthwave, and Dracula.*
+
+## 6. What else it does
 
 - **Six ways to look at your games**, from the wheel to a list with the
   columns you choose.
@@ -116,12 +152,13 @@ a phone and the themes beneath them.
 - **Your games on your phone.** Look through them on the phone, tap one, and
   it starts on the PC. Same Wi-Fi, nothing installed on the phone.
 - **Videos for your games**, from free online archives, arcade games included.
-- **Themes**, some that move: a sky of stars, the deep sea, a storm.
+- **Themes**, some that move: a sky of stars, the deep sea, a storm
+  ([see them above](#5-themes)).
 - **Saves, cheats and versions.** Pick up where you left off, turn a cheat on
   in one press, and choose which version of a game plays.
-- **Pictures and videos your way.** A game's Media tab copies another game's
-  box art, logo, screenshot, background or video onto it; Change Pictures and
-  Replace Video take your own, or clear them.
+- **Pictures and videos your way.** A game's Media tab shows its box art,
+  logo, screenshot, background and video: change any of them, clear them, or
+  copy another game's onto it.
 - **Any controller.** The bar names your controller's own buttons, and the
   Controller check lights up what you press.
 - **Steam games and programs of your own** in the same library.
@@ -130,15 +167,25 @@ a phone and the themes beneath them.
   pictures, videos or sounds comes with them, and LaunchBox's folder is
   never changed.
 
-![A game's Media tab: another game's pictures beside its own](doc/screens/media.jpg)
+![A game's video playing beside the wheel](doc/screens/video.jpg)
 
-![Connect a phone](doc/screens/phone.jpg)
+*A game's video plays as you rest on it.*
 
-![The Space theme](doc/screens/theme-space.jpg)
+<p>
+  <img src="doc/screens/cheats.jpg" width="49%" alt="A game's Cheats tab with two cheats on">
+  <img src="doc/screens/media.jpg" width="49%" alt="A game's Media tab: another game's pictures beside its own">
+</p>
 
-![The Controller check](doc/screens/controller-check.jpg)
+*Cheats in one press, and a game's Media tab copying another game's pictures.*
 
-## 6. If something goes wrong
+<p>
+  <img src="doc/screens/phone.jpg" width="49%" alt="Connect a phone">
+  <img src="doc/screens/controller-check.jpg" width="49%" alt="The Controller check">
+</p>
+
+*Connect a phone, and the Controller check.*
+
+## 7. If something goes wrong
 
 - **Stuck somewhere?** Press Esc a few times. It always backs out one step.
 - **Still stuck?** Close Xsegon and start it again. Nothing is lost: it keeps
