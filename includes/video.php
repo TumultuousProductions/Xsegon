@@ -42,24 +42,7 @@ function video_index(array $s): array
     if ($cache !== null) {
         return $cache;
     }
-    $types = video_types();
     $index = [];
-
-    $take = static function (string $dir, string $pKey) use (&$index, $types): void {
-        foreach (@scandir($dir) ?: [] as $f) {
-            $ext = strtolower(pathinfo($f, PATHINFO_EXTENSION));
-            if (!isset($types[$ext])) {
-                continue;
-            }
-            $key = art_key_from_filename($f);
-            // First one found wins: roots are walked best first, and a file
-            // directly in the platform folder is walked before its subfolders.
-            if ($key !== '' && !isset($index[$pKey][$key])) {
-                $index[$pKey][$key] = $dir . DIRECTORY_SEPARATOR . $f;
-            }
-        }
-    };
-
     foreach (video_roots($s) as $root) {
         foreach (@scandir($root) ?: [] as $platformDir) {
             $pPath = $root . DIRECTORY_SEPARATOR . $platformDir;
@@ -67,16 +50,56 @@ function video_index(array $s): array
                 continue;
             }
             $pKey = art_key($platformDir);
-            $take($pPath, $pKey);
-            foreach (@scandir($pPath) ?: [] as $sub) {
-                $subPath = $pPath . DIRECTORY_SEPARATOR . $sub;
-                if ($sub !== '.' && $sub !== '..' && is_dir($subPath)) {
-                    $take($subPath, $pKey);
-                }
-            }
+            $index[$pKey] ??= [];
+            video_take_folder($pPath, $index[$pKey]);
         }
     }
     return $cache = $index;
+}
+
+/**
+ * One console folder's videos into $into [titleKey => path]. First one found
+ * wins: roots are walked best first, and a file directly in the platform
+ * folder is walked before its subfolders.
+ */
+function video_take_folder(string $pPath, array &$into): void
+{
+    $types = video_types();
+    $take = static function (string $dir) use (&$into, $types): void {
+        foreach (@scandir($dir) ?: [] as $f) {
+            $ext = strtolower(pathinfo($f, PATHINFO_EXTENSION));
+            if (!isset($types[$ext])) {
+                continue;
+            }
+            $key = art_key_from_filename($f);
+            if ($key !== '' && !isset($into[$key])) {
+                $into[$key] = $dir . DIRECTORY_SEPARATOR . $f;
+            }
+        }
+    };
+    $take($pPath);
+    foreach (@scandir($pPath) ?: [] as $sub) {
+        $subPath = $pPath . DIRECTORY_SEPARATOR . $sub;
+        if ($sub !== '.' && $sub !== '..' && is_dir($subPath)) {
+            $take($subPath);
+        }
+    }
+}
+
+/** One console's videos by name, read from the disk now: for a fetch that has been at work for minutes. */
+function video_console_now(array $s, string $platform): array
+{
+    $want = art_key($platform);
+    $out  = [];
+    foreach (video_roots($s) as $root) {
+        foreach (@scandir($root) ?: [] as $platformDir) {
+            $pPath = $root . DIRECTORY_SEPARATOR . $platformDir;
+            if ($platformDir !== '.' && $platformDir !== '..' && art_key($platformDir) === $want && is_dir($pPath)) {
+                video_take_folder($pPath, $out);
+            }
+        }
+    }
+    return $out;
 }
 
 /**
@@ -144,6 +167,18 @@ function video_allowed_roots(array $s): array
     return array_merge(video_roots($s), [video_own_dir(), media_dir(), xs_steamvid_dir(), xs_ss_dir()]);
 }
 
+/** Whether a realpath()'d file is inside one of video_allowed_roots. */
+function video_in_allowed_root(array $s, string $real): bool
+{
+    foreach (video_allowed_roots($s) as $root) {
+        $r = realpath($root);
+        if ($r !== false && xs_inside($real, $r)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /**
  * The one question every caller asks: which video, if any, is this game's?
  * Chosen in Xsegon, then the copy in data\media (includes\media.php),
@@ -159,4 +194,157 @@ function video_for_game(array $s, array $game): ?string
                      (string) ($game['sourceKey'] ?? $game['key']), $game['romPath'] ?? null)
         // Last (includes\screenscraper.php): a snap dropped into a folder afterwards is the one shown.
         ?? xs_ss_for((string) $game['id']);
+}
+
+// ---- Clear video: every video a game could play, deleted --------------------
+
+/**
+ * Every video file this game could play, in video_for_game's order:
+ * [['from' => own|media|steam|name|screenscraper, 'path']]. By name, every
+ * file under its title or its ROM's name, subfolders too: one cleared alone
+ * would only bring the next to the front.
+ */
+function video_layers(array $s, array $game): array
+{
+    $id    = (string) $game['id'];
+    $exts  = array_keys(video_types());
+    $found = [];
+    $add   = static function (string $from, string $path) use (&$found): void {
+        clearstatcache(true, $path);
+        if (is_file($path) && !isset($found[mb_strtolower($path)])) {
+            $found[mb_strtolower($path)] = ['from' => $from, 'path' => $path];
+        }
+    };
+    foreach ($exts as $e) {
+        $add('own', video_own_dir() . DIRECTORY_SEPARATOR . $id . '.' . $e);
+    }
+    $media = media_index()[$id]['video'] ?? null;
+    if ($media !== null) {
+        foreach ($exts as $e) {
+            $add('media', dirname($media) . DIRECTORY_SEPARATOR . $id . '-video.' . $e);
+        }
+    }
+    $add('steam', xs_steamvid_dir() . DIRECTORY_SEPARATOR . $id . '.mp4');
+    $keys = array_values(array_filter([(string) ($game['sourceKey'] ?? $game['key'] ?? ''),
+        art_key(pathinfo(str_replace('\\', '/', (string) ($game['romPath'] ?? '')), PATHINFO_FILENAME))]));
+    $want = art_key((string) $game['platform']);
+    foreach ($keys ? video_roots($s) : [] as $root) {
+        foreach (@scandir($root) ?: [] as $platformDir) {
+            $pPath = $root . DIRECTORY_SEPARATOR . $platformDir;
+            if ($platformDir === '.' || $platformDir === '..' || art_key($platformDir) !== $want || !is_dir($pPath)) {
+                continue;
+            }
+            $dirs = [$pPath];
+            foreach (@scandir($pPath) ?: [] as $sub) {
+                if ($sub !== '.' && $sub !== '..' && is_dir($pPath . DIRECTORY_SEPARATOR . $sub)) {
+                    $dirs[] = $pPath . DIRECTORY_SEPARATOR . $sub;
+                }
+            }
+            foreach ($dirs as $dir) {
+                foreach (@scandir($dir) ?: [] as $f) {
+                    if (isset(video_types()[strtolower(pathinfo($f, PATHINFO_EXTENSION))])
+                        && in_array(art_key_from_filename($f), $keys, true)) {
+                        $add('name', $dir . DIRECTORY_SEPARATOR . $f);
+                    }
+                }
+            }
+        }
+    }
+    $add('screenscraper', xs_ss_dir() . DIRECTORY_SEPARATOR . $id . '.mp4');
+    return array_values($found);
+}
+
+/** Where the video this game plays came from: own, media, steam, name or screenscraper; null for none. */
+function video_from(array $s, array $game, ?array $layers = null): ?string
+{
+    $now = video_for_game($s, $game);
+    if ($now === null) {
+        return null;
+    }
+    foreach ($layers ?? video_layers($s, $game) as $l) {
+        if (strcasecmp($l['path'], $now) === 0) {
+            return $l['from'];
+        }
+    }
+    return 'name';
+}
+
+/** Other games on the console that play one of these files now, each as "Title (its file)": a file found by name can serve two versions. */
+function video_shared_with(array $s, array $game, array $layers): array
+{
+    $mine = [];
+    foreach ($layers as $l) {
+        if ($l['from'] === 'name') {
+            $mine[mb_strtolower($l['path'])] = true;
+        }
+    }
+    if (!$mine) {
+        return [];
+    }
+    $want = art_key((string) $game['platform']);
+    $out  = [];
+    foreach (xs_library()['games'] ?? [] as $g) {
+        if ((string) $g['id'] === (string) $game['id'] || art_key((string) $g['platform']) !== $want) {
+            continue;
+        }
+        $v = video_for_game($s, $g);
+        if ($v !== null && isset($mine[mb_strtolower($v)])) {
+            $rom   = basename(str_replace('\\', '/', (string) ($g['romPath'] ?? '')));
+            $out[] = (string) $g['title'] . ($rom !== '' ? ' (' . $rom . ')' : '');
+        }
+    }
+    return $out;
+}
+
+/** Null when this file may be deleted: inside Xsegon's own video folders, and on a test copy not behind a link to the real data. */
+function video_may_delete(array $s, string $path): ?string
+{
+    $real = realpath($path);
+    if ($real === false) {
+        return null;
+    }
+    $inside = static fn (string $file, string $dir): bool => ($dir = realpath($dir)) !== false && xs_inside($file, $dir);
+    // The media copy is deleted in only when it is data\media, not a folder paths.mediaDir names elsewhere (includes\media.php).
+    if ($inside($real, media_dir()) && !xs_inside(media_dir(), xs_data_dir())) {
+        return basename($path) . ' is in a media folder outside Xsegon\'s own data folder, so it is not deleted';
+    }
+    if (xs_test_copy() && !$inside($real, xs_data_dir())) {
+        return basename($path) . ' is in a folder this test copy shares with the real Xsegon, so it is not deleted';
+    }
+    if (video_in_allowed_root($s, $real)) {
+        return null;
+    }
+    return basename($path) . ' is outside Xsegon\'s own video folders, so it is not deleted';
+}
+
+/**
+ * Clear video: every file video_layers finds, deleted, or none when one may
+ * not be. ['gone' => paths deleted, 'why' => null, or why a video still plays].
+ */
+function video_clear(array $s, array $game): array
+{
+    $layers = video_layers($s, $game);
+    foreach ($layers as $l) {
+        $why = video_may_delete($s, $l['path']);
+        if ($why !== null) {
+            return ['gone' => [], 'why' => $why];
+        }
+    }
+    $gone = [];
+    foreach ($layers as $l) {
+        // The page stops the player first, but the request that served it can hold the file a moment longer.
+        for ($try = 0; $try < 8; $try++) {
+            if (@unlink($l['path']) || !is_file($l['path'])) {
+                break;
+            }
+            usleep(200000);
+            clearstatcache(true, $l['path']);
+        }
+        clearstatcache(true, $l['path']);
+        if (is_file($l['path'])) {
+            return ['gone' => $gone, 'why' => basename($l['path']) . ' could not be deleted (' . xs_file_error_reason() . ')'];
+        }
+        $gone[] = $l['path'];
+    }
+    return ['gone' => $gone, 'why' => null];
 }

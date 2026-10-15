@@ -1,3 +1,4 @@
+import { confirmWindow } from "./confirm.js";
 import { reloadKeeping, setEditorOnClose, toolFrame } from "./editors.js";
 import { pick, showStrip } from "./launch.js";
 import { load, setPlatformArtRev } from "./library.js";
@@ -6,7 +7,7 @@ import { snapVolume, stopVideo } from "./snap.js";
 import { muted, sound } from "./sound.js";
 import { $editor, hasGamesDb } from "./state.js";
 import { renderSystems } from "./systems.js";
-import { el } from "./util.js";
+import { el, namesAnd, plural } from "./util.js";
 import { row } from "./views.js";
 
 // ---------- replace images ----------
@@ -155,6 +156,22 @@ export function openArtEditor(g) {
       });
       inner.appendChild(grid);
 
+      // Clear all: every picture and the video show nothing. The window says what is deleted first.
+      var showing = Object.keys(res.kinds).some(function (kind) { return res.kinds[kind].has || res.kinds[kind].replaced; });
+      if (showing || (res.video && res.video.has)) {
+        var all = el("div", "art-btns art-clear");
+        var clear = el("button", null, "Clear all...");
+        // Repainted either way: a video that stays still leaves the pictures cleared.
+        clear.addEventListener("click", function () {
+          askClearAll(g, res, function (err) {
+            dirty = true;
+            paint().then(function () { if (err) { showStrip(err, true); } });
+          });
+        });
+        all.appendChild(clear);
+        inner.appendChild(all);
+      }
+
       $editor.appendChild(inner);
       $editor.hidden = false;
     });
@@ -280,7 +297,48 @@ export function openPlatformArtEditor(p) {
 // ---------- replace video ----------
 /* One slot. The chosen video is filed under the game (data\video-own), so it outranks
    a snap found by name and survives a rename; "Reset" deletes it. MP4 and WebM only:
-   what a browser plays. */
+   what a browser plays. Clear video deletes every video the game could play. */
+
+// Where the video a game plays comes from, as the window says it (video_from, includes\video.php).
+var VIDEO_FROM = { name: "found by name", media: "from your media copy", steam: "from Steam", screenscraper: "from ScreenScraper" };
+
+// What Clear video deletes, for both asking windows: v is {file, files, shared}.
+function videoClearLines(box, v) {
+  var more = (v.files || 1) - 1;
+  box.appendChild(el("p", null, "The video is deleted: " + v.file +
+    (more ? " (and " + plural(more, "more file", "more files") + " it could play)" : "") + "."));
+  if (v.shared && v.shared.length) {
+    box.appendChild(el("p", null, namesAnd(v.shared) + (v.shared.length === 1 ? " plays" : " play") +
+      " the same file and " + (v.shared.length === 1 ? "loses" : "lose") + " it too."));
+  }
+  box.appendChild(el("p", "mt-note", "A later Videos from online archives may fetch a new one."));
+}
+
+/* Clear all in Change Pictures: pictures stored in Xsegon are deleted, originals hidden
+   (each comes back with Use the original again), and the video deleted. done(error or null). */
+function askClearAll(g, res, done) {
+  var kinds = Object.keys(res.kinds).map(function (kind) { return res.kinds[kind]; });
+  var gone = kinds.filter(function (k) { return k.replaced; }).length;
+  var hide = kinds.filter(function (k) { return k.replaced ? k.hadOne && !k.hidden : k.has; }).length;
+  var video = res.video || {};
+  confirmWindow("Clear all of " + res.title + "?", function (box) {
+    if (gone) {
+      box.appendChild(el("p", null, plural(gone, "picture", "pictures") + " stored in Xsegon " + (gone === 1 ? "is" : "are") + " deleted."));
+    }
+    if (hide) {
+      box.appendChild(el("p", null, plural(hide, "original picture", "original pictures") + (hide === 1 ? " is" : " are") +
+        " hidden: the file stays on your disk, and Use the original again brings " + (hide === 1 ? "it" : "each one") + " back."));
+    }
+    if (video.has) { videoClearLines(box, video); }
+  }, { label: "Clear all", run: function () {
+    stopVideo();
+    api("api/art.php?id=" + encodeURIComponent(g.id) + "&clear=1", { method: "POST" }).then(function (r) {
+      L("ED", "clear all " + g.title + ": " + (r.ok ? r.deleted + " deleted, " + r.hidden + " hidden, " + r.videos + " videos" : r.error));
+      sound(r.ok ? "ok" : "back");
+      done(r.ok ? null : (r.error || "it could not be cleared"));
+    });
+  } });
+}
 
 export function openVideoEditor(g) {
   L("ED", "video " + g.title);
@@ -297,8 +355,9 @@ export function openVideoEditor(g) {
 
       var slot = el("div", "art-slot vid-slot" + (res.replaced ? " replaced" : ""));
       var frame = el("div", "vid-frame");
+      var v = null;
       if (res.has) {
-        var v = el("video");
+        v = el("video");
         v.controls = true;
         v.preload = "metadata";
         v.volume = snapVolume();
@@ -312,7 +371,7 @@ export function openVideoEditor(g) {
 
       var state = el("div", "art-state",
         res.replaced ? "chosen in Xsegon"
-                     : (res.has ? "found by name  ·  " + res.file : "this game has no video yet"));
+                     : (res.has ? (VIDEO_FROM[res.from] || VIDEO_FROM.name) + "  ·  " + res.file : "this game has no video yet"));
       slot.appendChild(state);
 
       var pick = el("input");
@@ -342,7 +401,7 @@ export function openVideoEditor(g) {
       choose.addEventListener("click", function () { pick.click(); });
       btns.appendChild(choose);
       if (res.replaced) {
-        var reset = el("button", null, res.hadOne ? "Reset to the one found by name" : "Remove");
+        var reset = el("button", null, res.hadOne ? "Reset to the one " + (VIDEO_FROM[res.under] || VIDEO_FROM.name) : "Remove");
         reset.addEventListener("click", function () {
           api("api/video-own.php?id=" + encodeURIComponent(g.id) + "&reset=1", { method: "POST" })
             .then(function (r) {
@@ -352,6 +411,23 @@ export function openVideoEditor(g) {
             });
         });
         btns.appendChild(reset);
+      }
+      if (res.has) {
+        var wipe = el("button", null, "Clear video...");
+        wipe.addEventListener("click", function () {
+          confirmWindow("Clear the video of " + res.title + "?", function (box) { videoClearLines(box, res); }, { label: "Clear video", run: function () {
+            // The player lets go of the file first: a video being played cannot be deleted.
+            if (v) { v.pause(); v.removeAttribute("src"); v.load(); }
+            stopVideo();
+            api("api/video-own.php?id=" + encodeURIComponent(g.id) + "&clear=1", { method: "POST" }).then(function (r) {
+              L("ED", "clear video " + g.title + ": " + (r.ok ? r.gone + " deleted" : r.error));
+              sound(r.ok ? "ok" : "back");
+              dirty = true;
+              paint().then(function () { if (!r.ok) { showStrip(r.error || "the video could not be cleared", true); } });
+            });
+          } });
+        });
+        btns.appendChild(wipe);
       }
       slot.appendChild(btns);
       slot.appendChild(pick);

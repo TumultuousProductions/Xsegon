@@ -229,6 +229,43 @@ module.exports = async function (b, check) {
       check("(no two versions of one game without a video here: the shared snap steps aside)", true);
     }
 
+    // ---- not found by its name nor its file: its name as a file name (as ES-DE asks), then one word of it (roadmap AO) ----
+    const longest = (t) => String(t).split(/[^\p{L}\p{N}]+/u).filter((w) => w.length >= 3 && !/^\d+$/.test(w) && !["the", "and"].includes(w.toLowerCase()))
+      .reduce((best, w) => (w.length > best.length ? w : best), "");
+    const used = new Set([A, B, C, D, E, F].concat(twins).map((g) => g.id));
+    const spare = free.filter((g) => !used.has(g.id));
+    const G = spare.find((g) => (!g.rom || key(g.rom) !== key(g.title)) && !say.rom[g.system + "-" + key(g.title)]);
+    const H = spare.find((g) => g !== G && key(longest(g.title)) && key(longest(g.title)) !== key(g.title) && !say.search[g.system + "-" + key(longest(g.title))]
+      && new Set(g.title.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w && !["the", "a", "an", "and"].includes(w))).size >= 2);
+    if (!G || !H) {
+      check("(not two more games without a video here: the last two ways step aside)", true);
+    } else {
+      say.media["g.mp4"] = mp4("found by its name as a file name");
+      say.media["h.mp4"] = mp4("found by one word");
+      say.rom[G.system + "-" + key(G.title)] = named(G, [video("g.mp4")]);
+      const word = longest(H.title);
+      // Its own page has its words in another order; the first answer only shares the word.
+      say.search[H.system + "-" + key(word)] = [
+        { id: "8", noms: [{ region: "us", text: word + " Deluxe Edition" }], medias: [video("wrong.mp4")] },
+        { id: "6", noms: [{ region: "us", text: H.title.split(/\s+/).reverse().join(" ") }], medias: [video("h.mp4")] },
+      ];
+      asked.length = 0;
+      await api("api/screenscraper.php", { ids: [G.id, H.id] });
+      const late = await finished();
+      const row = (g) => ((late.job && late.job.games) || []).find((x) => x.id === g.id) || {};
+      check("a game its name and file name do not find is found by its name as a file name, as ES-DE asks",
+        [row(G).state, row(G).by, asked.some((a) => a.path === "/jeuInfos.php" && a.q.romnom === G.title && a.q.systemeid === String(G.system))],
+        ["done", "title as a file name", true]);
+      check("and one only a word of its name finds, its words in another order, by its longest word",
+        [row(H).state, row(H).by, asked.some((a) => a.path === "/jeuRecherche.php" && a.q.recherche === word)], ["done", "one word", true]);
+      check("the snaps are theirs, and the game that only shares the word is turned away",
+        [fs.readFileSync(path.join(vdir, G.id + ".mp4")).toString("latin1").endsWith("found by its name as a file name"),
+         fs.readFileSync(path.join(vdir, H.id + ".mp4")).toString("latin1").endsWith("found by one word"),
+         asked.some((a) => a.path === "/media/wrong.mp4")], [true, true, false]);
+      const logsLate = fs.readdirSync(path.join(DATA, "log")).map((f) => fs.readFileSync(path.join(DATA, "log", f), "utf8")).join("\n");
+      check("the log says how each was found", /SSCR snaps: 2 saved, 0 not on ScreenScraper, 0 there with no video, 0 failed; found by (title as a file name 1, one word 1|one word 1, title as a file name 1)/.test(logsLate), true);
+    }
+
     // ---- a reason that would be the same for every game ends the run ----
     say.refuse = { status: 430, body: "Votre quota de scrape est dépassé pour aujourd'hui !" };
     await api("api/screenscraper.php", { ids: [C.id, D.id] });

@@ -131,18 +131,24 @@ module.exports = async function (b, check) {
     const guideTitle = `(document.querySelector("#editor .panel-title") || {}).textContent || ""`;
     const stepsNow = `[...document.querySelectorAll("#editor .gd-step")].map(s => s.querySelector(".gd-mark").textContent + " " + s.querySelector(".gd-title").textContent + " " + (s.classList.contains("done") ? "done" : "todo"))`;
     await b.goto();
-    /* The first start asks one short question while Set it all up is on
-       offer (js\autosetup.js firstCards); its second answer is the guide. */
-    const cardNow = `(w => !!w && [w.querySelector("h2").textContent, [...w.querySelectorAll(".confirm-bar button")].map(x => x.textContent + (x.classList.contains("primary") ? "*" : "")).join("|"),
-      document.activeElement && document.activeElement.textContent])(document.querySelector(".ask-card"))`;
-    check("with no RetroArch, the first start asks one short question: neither answer lit, Enter on the one that starts nothing",
-          await b.until(cardNow, ["Set everything up for you?", "Yes|Set up by hand", "Set up by hand"], 8000), ["Set everything up for you?", "Yes|Set up by hand", "Set up by hand"]);
-    check("saying what it sets up and how big, in two lines",
-          await b.ev(`(w => [...w.querySelectorAll(".ask-line")].map(p => p.textContent.replace(/\\d+ MB/, "N MB")))(document.querySelector(".ask-card"))`),
-          ["RetroArch, the cores your consoles need, and your games' names and pictures.", "RetroArch is N MB from libretro. The cores are 1 to 30 MB each, from libretro."]);
-    await b.ev(`[...document.querySelectorAll(".ask-card .confirm-bar button")].find(x => x.textContent === "Set up by hand").click()`);
-    check("Set up by hand opens the getting started guide, and the question is gone",
-          [await b.until(guideTitle, "GETTING STARTED", 8000), await b.ev(`!document.querySelector(".ask-card")`)], ["GETTING STARTED", true]);
+    /* The first start opens the setup window while Set it all up is on offer
+       (js\setupwin.js): the folder, a switch a part, one press. The copy has new
+       games by themselves off (tests\sandbox.js), and its switch starts as the setting stands. */
+    const suNow = `(w => !!w && [w.querySelector(".panel-title").textContent,
+      [...w.querySelectorAll(".su-bar button")].map(x => x.textContent + (x.classList.contains("primary") ? "*" : "")).join("|"),
+      [...w.querySelectorAll(".opt[data-key]")].filter(r => !r.hidden).map(r => r.dataset.key + (r.querySelector(".tgl").checked ? ":on" : ":off")).join(" ")])(document.querySelector("#editor .su-inner"))`;
+    const suFirst = ["SET EVERYTHING UP", "Set it up|Set up by hand", "pictures:on self:off videos:on cheats:on runs:off"];
+    check("with no RetroArch, the first start opens the setup window: every part on but the games check, neither press lit",
+          await b.until(suNow, suFirst, 10000), suFirst);
+    const suNotes = `[...document.querySelectorAll("#editor .su-inner .opt")].filter(r => !r.hidden).map(r => (r.querySelector(".su-note") || {}).textContent || "")`;
+    check("saying what each takes: RetroArch's download, the videos and the cheat lists in MB or GB, the games check in time",
+          await b.until(`(n => [/^\\d+ MB$/.test(n[1]), /^about [\\d.]+ (MB|GB)$/.test(n[4]), /^\\d+ MB$/.test(n[5]), /^(about [\\d.]+ (minutes?|hours)|under a minute)$/.test(n[6])])(${suNotes})`,
+            [true, true, true, true], 8000), [true, true, true, true]);
+    check("and the games it found, with a way to another folder",
+          await b.until(`(w => !!w && /games? in your library/.test(w.querySelector(".link-row label").textContent) && w.querySelector(".link-row button").textContent)(document.querySelector("#editor .su-inner"))`,
+            "Another folder...", 10000), "Another folder...");
+    await b.ev(`[...document.querySelectorAll("#editor .su-bar button")].find(x => x.textContent === "Set up by hand").click()`);
+    check("Set up by hand opens the getting started guide in its place", await b.until(guideTitle, "GETTING STARTED", 8000), "GETTING STARTED");
     /* The fifth step (Names and pictures) depends on the copy's library, not
        the fixture, so only what the fixture controls is asserted. */
     // "Your games folder" is done only with the ROM drive in; out, it
@@ -204,11 +210,14 @@ module.exports = async function (b, check) {
     await b.settled(1500);
     check("so the next start stays quiet", await b.ev(`document.getElementById("editor").hidden && !document.querySelector(".setup-confirm")`), true);
 
-    /* ---- the one yes, from the page: the guide steps aside ----
-       Set it all up closes the guide, starts the chain, and the corner bar
-       carries the download. The pictures pass is blocked by a faked running
-       one; everything fetched is taken back out, so the road below starts
-       from nothing. */
+    /* ---- the one yes, from the page: the guide's Set it all up opens the window ----
+       All off, then the games check alone: one press starts everything, and
+       nothing is asked after it. The pictures pass is blocked by a faked
+       running one; everything fetched is taken back out, so the road below
+       starts from nothing. Videos and the cheat lists stay off: a test fetches neither. */
+    const suPress = (key) => b.ev(`document.querySelector('#editor .su-inner .opt[data-key="${key}"]').click()`);
+    const suButton = (label) => b.ev(`[...document.querySelectorAll("#editor .su-inner button")].find(x => x.textContent === ${JSON.stringify(label)}).click()`);
+    const suKeys = `(w => !!w && [...w.querySelectorAll(".opt[data-key]")].filter(r => !r.hidden).map(r => r.dataset.key + (r.querySelector(".tgl").checked ? ":on" : ":off")).join(" "))(document.querySelector("#editor .su-inner"))`;
     {
       const fillJobF = path.join(DATA, "fill-job.json");
       const fillW = fs.existsSync(fillJobF) ? fs.readFileSync(fillJobF) : null;
@@ -224,39 +233,17 @@ module.exports = async function (b, check) {
               && /BIOS files and games are never downloaded/.test(n.textContent))(document.querySelector("#editor .gd-lead"))`, true, 8000), true);
       const sjPage = path.join(DATA, "setup.json");
       await b.ev(`[...document.querySelectorAll("#editor .gd-lead button")].find(x => /Set it all up/.test(x.textContent)).click()`);
-      const guideGone = await b.until(`document.getElementById("editor").hidden`, true, 8000);
+      check("its press opens the setup window in the guide's place", await b.until(suNow, suFirst, 10000), suFirst);
+      await suButton("All off");
+      check("All off switches every part off", await b.until(suKeys, "pictures:off self:off videos:off cheats:off runs:off", 3000), "pictures:off self:off videos:off cheats:off runs:off");
+      await suPress("runs");
+      check("and a press on a row switches that one", await b.until(suKeys, "pictures:off self:off videos:off cheats:off runs:on", 3000), "pictures:off self:off videos:off cheats:off runs:on");
+      await suButton("Set it up");
       for (const end = Date.now() + 8000; Date.now() < end && !(readJson(sjPage).auto && fs.existsSync(path.join(DATA, "setup-job.json")));) { await sleep(100); }
-      check("the press is the yes: the guide closes itself and everything starts, with no window between",
-            [guideGone, !!readJson(sjPage).auto, fs.existsSync(path.join(DATA, "setup-job.json")), await b.ev(`!document.querySelector(".setup-confirm:not(.runs-ask)")`)], [true, true, true, true]);
-      /* With the games in, the questions, one card each. Everything else is at
-         work already; nothing is owed until they are answered. */
-      const ask = `document.querySelector(".runs-ask")`;
-      const askNow = `(w => !!w && [w.querySelector("h2").textContent, [...w.querySelectorAll(".confirm-bar button")].map(x => x.textContent + (x.classList.contains("primary") ? "*" : "")).join("|"),
-        document.activeElement && document.activeElement.textContent, [...w.querySelectorAll(".ask-line")].map(p => p.textContent).join(" / ")])(${ask})`;
-      const answer = (label) => b.ev(`[...${ask}.querySelectorAll(".confirm-bar button")].find(x => x.textContent === ${JSON.stringify(label)}).click()`);
-      /* No RetroArch here yet, so no cheat lists, and the copy's games have no
-         videos: both are asked before the games check. */
-      const vidCard = await b.until(`(a => !!a && a[0] === "Videos for your games?" ? a : null)(${askNow})`, undefined, 10000);
-      check("then one question at a time, with the games in sight: videos first, neither answer lit, Enter on No",
-            vidCard && [vidCard[0], vidCard[1], vidCard[2], /^A short video for each game Xsegon is sure of, from archive\.org: free, no account, in the background\. \/ [\d.]+ (MB|GB) for \d+ games?: (about [\d.]+ (minutes?|hours)|under a minute) on a good day\.$/.test(vidCard[3])],
-            ["Videos for your games?", "Yes|No", "No", true]);
-      check("unanswered, no check is owed, and its line says it waits for the answer",
-            [!!readJson(sjPage).runsWanted, !!readJson(sjPage).runsAsk,
-             await b.until(`(r => !!r && r.querySelector(".sl-line").textContent)(document.querySelector('.setup-list .sl-row[data-part="runs"]'))`, "waiting for your answer", 8000)],
-            [false, true, "waiting for your answer"]);
-      await answer("No");
-      check("No brings the next card: the cheat lists, with their size",
-            await b.until(`(a => !!a && [a[0], a[1], a[3]])(${askNow})`, ["Cheat lists for your games?", "Yes|No",
-              "For a game's Cheats tab. None is turned on by itself. / About 35 MB to download, about 230 MB on the disk, from libretro."], 5000),
-            ["Cheat lists for your games?", "Yes|No", "For a game's Cheats tab. None is turned on by itself. / About 35 MB to download, about 230 MB on the disk, from libretro."]);
-      await answer("No");
-      const runCard = await b.until(`(a => !!a && a[0] === "Check which games start?" ? a : null)(${askNow})`, undefined, 5000);
-      check("and last the games check, saying how long, with Later on the one in focus",
-            runCard && [runCard[1], runCard[2], /^Each game is opened for a few seconds to see that it starts\. \/ (About [\d.]+ (minutes?|hours)|Under a minute) for your \d+ games, longer on a slow computer\. \/ Later: Emulators > Runs check, any time\. Your games play without it\.$/.test(runCard[3])],
-            ["Yes|Later", "Later", true]);
-      // the games check alone is answered yes: videos and the cheat lists stay off the list
-      await answer("Yes");
-      check("the last answer takes the cards away", await b.until(`!${ask}`, true, 5000), true);
+      const sj1 = readJson(sjPage);
+      check("Set it up is the yes: the window goes and everything starts, with what was switched on",
+            [await b.ev(`document.getElementById("editor").hidden`), !!sj1.auto, fs.existsSync(path.join(DATA, "setup-job.json")), !!sj1.runsWanted, !!sj1.videosWanted, !!sj1.noPictures, !!sj1.runsAsk],
+            [true, true, true, true, false, true, false]);
       const slRows = `[...document.querySelectorAll(".setup-list .sl-row")]`;
       check("and one list in the corner carries the whole plan: a line and a bar for each part",
             await b.until(`(n => !!n && !n.hidden && !!n.closest("#corner-bars") && ${slRows}.map(r => r.dataset.part + (r.querySelector(".fb-track") ? "+bar" : "")).join(" "))(document.querySelector(".setup-list"))`,
@@ -265,6 +252,8 @@ module.exports = async function (b, check) {
             await b.ev(`[...document.querySelectorAll("#corner-bars > .fill-bar")].every(n => getComputedStyle(n).display === "none")`), true);
       check("the Runs check waits last on it, saying how long it will take, with Skip",
             await b.until(`(r => !!r && r.classList.contains("waiting") && /^last: (about [\\d.]+ (minutes?|hours)|under a minute) for \\d+ games?$/.test(r.querySelector(".sl-line").textContent) && !r.querySelector(".sl-btn").hidden)(document.querySelector('.setup-list .sl-row[data-part="runs"]'))`, true, 8000), true);
+      await sleep(2500);
+      check("nothing is asked after the press", await b.ev(`!document.querySelector(".confirm-wrap")`), true);
       const chainEnd = await jobEnds(120000);
       check("RetroArch arrives and chains the cores, no window, no guide",
             [chainEnd.job.kind, chainEnd.job.state, chainEnd.auto, await b.ev(`document.getElementById("editor").hidden && !document.querySelector(".setup-confirm")`)],
@@ -278,39 +267,41 @@ module.exports = async function (b, check) {
       await b.settled(1500);
     }
 
-    /* ---- the first start's Yes: the rest asked one question at a time ----
-       This copy has its games scanned already, so no folder is asked: the next
-       question is whether new games come in by themselves. No is kept in the
-       settings, and everything starts as from Getting started's own press.
-       The pictures pass is blocked by a faked running one, as above. */
+    /* ---- the first start's window: what is switched is what is done ----
+       This copy has its games scanned already, so the folder row names them and
+       nothing is looked for. Names and pictures switched off goes with the yes,
+       no pass starts and its line says so; new games by themselves switched on
+       is kept in the settings (and put back off at once: the copy never looks). */
     {
       const sjF = path.join(DATA, "setup.json");
       const fillJobF = path.join(DATA, "fill-job.json");
       const fillW = fs.existsSync(fillJobF) ? fs.readFileSync(fillJobF) : null;
-      fs.writeFileSync(fillJobF, JSON.stringify({ state: "running", mode: "all", pid: process.pid, started: Math.floor(Date.now() / 1000) }));
+      fs.rmSync(fillJobF, { force: true });
+      // The page the last block left opens its own window once the offers answer, marking the guide shown first: that lands before setup.json is written.
+      await b.until(`!!document.querySelector("#editor .su-inner")`, true, 5000);
       const sjWas = readJson(sjF);
       delete sjWas.shownGuide;
       delete sjWas.auto;
       fs.writeFileSync(sjF, JSON.stringify(sjWas));
-      await api("api/settings.php", { library: { addNewGames: true } });
       await b.goto();
-      await b.until(cardNow, ["Set everything up for you?", "Yes|Set up by hand", "Set up by hand"], 8000);
-      await b.ev(`[...document.querySelectorAll(".ask-card .confirm-bar button")].find(x => x.textContent === "Yes").click()`);
-      const selfCard = ["Add new games by themselves?", true, "Yes|No", "No"];
-      check("Yes asks next whether new games come in by themselves, naming the folder, neither answer lit",
-            await b.until(`(w => !!w && [w.querySelector("h2").textContent, /^When you put more games in .+, they come in when you come back to Xsegon\\.$/.test(w.querySelector(".ask-line").textContent),
-              [...w.querySelectorAll(".confirm-bar button")].map(x => x.textContent + (x.classList.contains("primary") ? "*" : "")).join("|"), document.activeElement.textContent])(document.querySelector(".ask-card"))`,
-              selfCard, 10000), selfCard);
-      await b.ev(`[...document.querySelectorAll(".ask-card .confirm-bar button")].find(x => x.textContent === "No").click()`);
-      let keptOff = null;
-      for (const end = Date.now() + 5000; Date.now() < end && keptOff !== false;) { keptOff = (await api("api/settings.php")).settings.library.addNewGames; if (keptOff !== false) { await sleep(100); } }
-      check("No is kept in the settings", keptOff, false);
+      await b.until(suNow, suFirst, 10000);
+      await suButton("All off");
+      await suPress("self");
+      check("the first start's window: All off, then new games by themselves on",
+            await b.until(suKeys, "pictures:off self:on videos:off cheats:off runs:off", 3000), "pictures:off self:on videos:off cheats:off runs:off");
+      await suButton("Set it up");
+      let keptOn = null;
+      for (const end = Date.now() + 5000; Date.now() < end && keptOn !== true;) { keptOn = (await api("api/settings.php")).settings.library.addNewGames; if (keptOn !== true) { await sleep(100); } }
+      await api("api/settings.php", { library: { addNewGames: false } });
+      await b.ev(`window.XSEGON.settings.library = Object.assign({}, window.XSEGON.settings.library, { addNewGames: false })`);
+      check("new games by themselves, switched on, is kept in the settings", keptOn, true);
       for (const end = Date.now() + 8000; Date.now() < end && !(readJson(sjF).auto && fs.existsSync(path.join(DATA, "setup-job.json")));) { await sleep(100); }
-      check("and everything starts, as from Getting started's own press", [!!readJson(sjF).auto, fs.existsSync(path.join(DATA, "setup-job.json"))], [true, true]);
-      // With the games in sight the questions about the extras come; Esc is no to them all.
-      if (await b.until(`!!document.querySelector(".runs-ask")`, true, 15000)) { await b.key("Escape"); }
-      check("Esc on those questions takes them all away", await b.until(`!document.querySelector(".confirm-wrap")`, true, 5000), true);
+      check("everything starts, with names and pictures left out as switched", [!!readJson(sjF).auto, fs.existsSync(path.join(DATA, "setup-job.json")), !!readJson(sjF).noPictures], [true, true, true]);
+      check("so the Setting up list says they were left out, and no pass starts",
+            [await b.until(`(r => !!r && r.querySelector(".sl-line").textContent)(document.querySelector('.setup-list .sl-row[data-part="fill"]'))`, "left out: Pictures & Videos > Get Pictures any time", 8000),
+             fs.existsSync(fillJobF)], ["left out: Pictures & Videos > Get Pictures any time", false]);
       await jobEnds(120000);
+      check("and still none after RetroArch and its cores came", fs.existsSync(fillJobF), false);
       await api("api/setup.php", { auto: false });
       if (fillW) { fs.writeFileSync(fillJobF, fillW); } else { fs.rmSync(fillJobF, { force: true }); }
       fs.rmSync(path.join(DATA, "setup-job.json"), { force: true });
@@ -378,31 +369,38 @@ module.exports = async function (b, check) {
         await b.openBar("help");
         await b.menuItem(/Getting started/);
         await b.until(guideTitle, "GETTING STARTED");
-        /* First with the folder window closed and nothing chosen (an empty
-           answer file is a cancel on the test server): that ends the setup,
-           and nothing has been fetched or stored. */
+        /* The guide's Set it all up opens the window, with no folder known yet.
+           First the folder window closed with nothing chosen (an empty answer
+           file is a cancel on the test server): nothing changes and nothing is
+           fetched or stored. */
         const pressLead = `[...document.querySelectorAll("#editor .gd-lead button")].find(x => /Set it all up/.test(x.textContent)).click()`;
+        const folderRow = `(w => !!w && [w.querySelector(".link-row label").textContent, w.querySelector(".link-row button").textContent])(document.querySelector("#editor .su-inner"))`;
         const pickAnswer = path.join(DATA, "pick-answer.txt");
+        await b.ev(pressLead);
+        check("from nothing, the window says no folder is chosen yet, with the way to pick one",
+              await b.until(folderRow, ["Not chosen yet", "Pick the folder..."], 10000), ["Not chosen yet", "Pick the folder..."]);
         fs.writeFileSync(pickAnswer, "");
-        await b.ev(pressLead);
-        check("closing the folder window with nothing chosen ends the setup, and says so",
-              await b.until(`window.__seen.strip.some(t => /^Set it all up was not started: no folder was chosen/.test(t))`, true, 10000), true);
-        check("nothing was fetched or stored, the guide is away and the list is gone again",
-              [fs.existsSync(path.join(DATA, "setup-job.json")), !!readJson(path.join(DATA, "setup.json")).auto,
-               await b.ev(`document.getElementById("editor").hidden`), await b.until(`(n => !n || n.hidden)(document.querySelector(".setup-list"))`, true, 8000)],
-              [false, false, true, true]);
+        await suButton("Pick the folder...");
+        await sleep(1500);
+        check("the folder window closed with nothing chosen changes nothing, and nothing is fetched or stored",
+              [await b.ev(folderRow), fs.existsSync(path.join(DATA, "setup-job.json")), !!readJson(path.join(DATA, "setup.json")).auto],
+              [["Not chosen yet", "Pick the folder..."], false, false]);
         fs.rmSync(pickAnswer, { force: true });
-        await b.openBar("help");
-        await b.menuItem(/Getting started/);
-        await b.until(guideTitle, "GETTING STARTED");
-        await b.ev(pressLead);
-        check("from nothing: the press is the yes, the guide closes and the list shows RetroArch coming",
+        await suButton("Pick the folder...");
+        check("a folder chosen is named in the window, with what it holds",
+              await b.until(`(a => !!a && /fresh-roms: no games in it yet$/.test(a[0]))(${folderRow})`, true, 10000), true);
+        // The names and pictures and the games check on, videos and the cheat lists off: a test fetches neither.
+        await suButton("All off");
+        await suPress("pictures");
+        await suPress("runs");
+        await b.until(suKeys, "pictures:on self:off videos:off cheats:off runs:on", 3000);
+        await suButton("Set it up");
+        check("from nothing: Set it up is the yes, the window goes and the list shows RetroArch coming",
               [await b.until(`document.getElementById("editor").hidden`, true, 8000),
                await b.until(`window.__seen.list.retroarch.some(t => /downloading|checking RetroArch|unpacking|done: ready/.test(t))`, true, 15000)], [true, true]);
         const seenAsk = await b.ev(`window.__seen`);
-        check("while the folder was asked the whole plan was up, its first line asking and every line with a bar",
-              [seenAsk.list.games[0], seenAsk.list.retroarch[0], seenAsk.list.cores[0], seenAsk.list.runs[0], seenAsk.bars],
-              ["running: choose the folder in the window that opened", "waiting: starts once the folder is chosen", "waiting: waiting for RetroArch", "waiting: waiting for your games", 5]);
+        check("the whole plan is up from the press, the games being looked for and every line with a bar",
+              [seenAsk.list.games.includes("running: looking for your games..."), seenAsk.bars], [true, 5]);
         const dayLog = ((await api("api/log.php?tail=600")).lines || []);
         const lastOf = (re) => dayLog.map((l, i) => (re.test(l) ? i : -1)).filter((i) => i >= 0).pop();
         check("nothing is fetched before the folder is answered: the folder is added, then RetroArch is asked for",
@@ -418,27 +416,9 @@ module.exports = async function (b, check) {
         await b.ev(`[...document.querySelectorAll(".nofound button")].find(x => x.textContent === "Scan again").click()`);
         check("with the game put in, Scan again takes it straight in",
               await b.until(`window.__seen.strip.some(t => /^added 1 game/.test(t))`, true, 15000), true);
-        const oneCard = `(w => !!w && [w.querySelector("h2").textContent, [...w.querySelectorAll(".ask-line")].map(p => p.textContent).join(" / ")])(document.querySelector(".runs-ask"))`;
-        const press = (label) => b.ev(`[...document.querySelectorAll(".runs-ask .confirm-bar button")].find(x => x.textContent === ${JSON.stringify(label)}).click()`);
-        const firstAsk = await b.until(`(a => !!a && a[0] === "Videos for your games?" ? a : null)(${oneCard})`, undefined, 15000);
-        check("and with a game in, the questions come at once, for that one game",
-              firstAsk && /for 1 game: /.test(firstAsk[1]), true);
-        check("nothing is owed while they are unanswered",
-              [!!readJson(path.join(DATA, "setup.json")).runsWanted, !!readJson(path.join(DATA, "setup.json")).runsAsk], [false, true]);
-        await press("No");
-        await b.until(`(a => !!a && a[0])(${oneCard})`, "Cheat lists for your games?", 5000);
-        await press("No");
-        check("the games check comes last, for the one game",
-              await b.until(`(a => !!a && a[0] === "Check which games start?" && /^Each game is opened for a few seconds to see that it starts\\. \\/ Under a minute for your game, longer on a slow computer\\./.test(a[1]))(${oneCard})`, true, 5000), true);
-        /* Answered while a read of the list is still on its way back: what it
-           says is from before the answer, and must not bring the question up again. */
-        await b.ev(`window.__seen.slow = 1700`);
-        await sleep(1800);
-        await press("Yes");
-        await sleep(2600);
-        check("answered with an older read still on its way, the question is not asked a second time",
-              [await b.ev(`window.__seen.asks`), await b.ev(`!!document.querySelector(".runs-ask")`), !!readJson(path.join(DATA, "setup.json")).runsAsk], [1, false, false]);
-        await b.ev(`window.__seen.slow = 0`);
+        await sleep(2500);
+        check("with a game in, nothing is asked: the games check switched on is owed for it",
+              [await b.ev(`!window.__seen.asks && !document.querySelector(".confirm-wrap")`), !!readJson(path.join(DATA, "setup.json")).runsWanted], [true, true]);
         const setupEnd = await jobEnds(120000);
         check("RetroArch's core for it follows by itself", [setupEnd.job.kind, setupEnd.job.state, fs.existsSync(snesCore)], ["cores", "done", true]);
         let fj = null;

@@ -4,8 +4,8 @@
  * tests\sandbox.js points the test server at: this group writes one answer
  * per app and one small "trailer" per movie, so each way a game can end is
  * walked for real through the background fetcher: saved, no trailer on
- * Steam, stream only (ffmpeg is switched off on the test server), and a
- * failed ask. Nothing is fetched from Steam. Against --live only the
+ * Steam, stream only (ffmpeg is switched off on the test server), a failed
+ * ask, and a failed download. Nothing is fetched from Steam. Against --live only the
  * read-only first check runs.
  */
 "use strict";
@@ -28,7 +28,7 @@ module.exports = async function (b, check) {
 
   const vdir = path.join(DATA, "videos-steam");
   const own = path.join(DATA, "video-own");
-  const guard = new Guard(["steamvid-job.json"]);
+  const guard = new Guard(["steamvid-job.json", "steamvid-none.json"]);
   const free = first.games.filter((g) => !g.has);
   const [A, B, C, D] = free;
   let ownMade = null;
@@ -63,6 +63,10 @@ module.exports = async function (b, check) {
     const rowA = st.games.find((g) => g.id === A.id);
     check("the saved trailer is now that game's video", [rowA.has, rowA.trailer], [true, true]);
     check("and one fewer is missing", st.missing, first.missing - 1);
+    const tried = (id) => (st.games.find((g) => g.id === id) || {}).tried;
+    check("one with no trailer on Steam, or only a stream, is kept apart; a failed ask is not", [tried(B.id), tried(C.id), tried(D.id)], ["none", "stream", ""]);
+    const kept = await api("api/steamvid.php", { ids: [B.id], dry: true });
+    check("one kept apart can still be asked for again", kept.ok && kept.plan.games.map((g) => g.id), [B.id]);
     const served = await fetch(BASE + "/api/video.php?id=" + encodeURIComponent(A.id));
     check("it plays as the game's video snap", [served.status, (served.headers.get("content-type") || "").split(";")[0]], [200, "video/mp4"]);
     /* The address hover actually plays: the library row's videoUrl, a plain
@@ -91,10 +95,35 @@ module.exports = async function (b, check) {
     await b.menuItem(/Steam trailers/);
     const title = `(document.querySelector("#editor .panel-title") || {}).textContent || ""`;
     check("Pictures & Videos > Steam trailers opens the list", await b.until(title, "STEAM TRAILERS"), "STEAM TRAILERS");
-    await b.until(`document.querySelectorAll("#editor .sv-row").length`, first.games.length);
+    const lacking = withOwn.games.filter((g) => !g.has).map((g) => g.id);
+    check("only the games with no video are listed", await b.until(`[...document.querySelectorAll("#editor .sv-row input")].map(x => x.value).sort().join(",")`, lacking.slice().sort().join(",")),
+      lacking.slice().sort().join(","));
     const rowOf = (id) => `[...document.querySelectorAll("#editor .sv-row")].find(r => r.querySelector("input").value === ${JSON.stringify(id)})`;
-    check("a game with its trailer saved says so and cannot be selected", await b.ev(`(r => [r.querySelector(".sv-state").textContent, r.querySelector("input").disabled])(${rowOf(A.id)})`), ["trailer saved", true]);
-    check("the last run's answers are shown on the rest", await b.ev(`${rowOf(B.id)}.querySelector(".sv-state").textContent`), "no trailer on Steam");
+    check("a game with its trailer saved is not offered", await b.ev(`!${rowOf(A.id)}`), true);
+    const dayB = await b.ev(`new Date(${(st.games.find((g) => g.id === B.id) || {}).triedAt || 0} * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric" })`);
+    check("the last run's answers are shown on the rest, one kept apart with the day it was asked",
+      await b.ev(`[${rowOf(B.id)}, ${rowOf(D.id)}].map(r => r.querySelector(".sv-state").textContent)`), ["no trailer on Steam, asked " + dayB, "could not be fetched"]);
+    const where = (id) => `(r => (t => !t ? "main" : t.hidden ? "apart, folded" : "apart")(r.closest(".st-tried")))(${rowOf(id)})`;
+    check("those with no trailer are listed apart, folded away and not selected", await b.ev(`[${where(B.id)}, ${where(C.id)}, ${where(D.id)}, ${rowOf(B.id)}.querySelector("input").checked]`),
+      ["apart, folded", "apart, folded", "main", false]);
+    await b.ev(`document.querySelector("#editor .st-apart-head button").click()`);
+    check("Show unfolds them", await b.ev(where(B.id)), "apart");
+    check("the window fits the screen and its lists scroll inside it", await b.ev(`(() => { const s = document.querySelector("#editor .st-scroll"), w = document.querySelector("#editor .panel-inner");
+      return [getComputedStyle(s).overflowY, w.getBoundingClientRect().bottom <= document.getElementById("editor").getBoundingClientRect().bottom + 1]; })()`), ["auto", true]);
+    // Rows made tall for a moment, so the lists outgrow the window whatever the copy holds: a list with a height limit of its own cuts rows off.
+    check("however long the lists, no row is cut off, and the area scrolls to the last", await b.ev(`(() => {
+      const tall = document.createElement("style");
+      tall.textContent = "#editor .sv-row { min-height: 100vh; }";
+      document.head.appendChild(tall);
+      try {
+        const s = document.querySelector("#editor .st-scroll");
+        const whole = [...s.querySelectorAll(".sv-rows")].filter(x => !x.hidden).every(x => x.scrollHeight <= x.clientHeight + 1);
+        const shown = [...s.querySelectorAll(".sv-row")].filter(r => r.offsetParent);
+        s.scrollTop = s.scrollHeight;
+        const reached = shown[shown.length - 1].getBoundingClientRect().bottom <= s.getBoundingClientRect().bottom + 1;
+        return [s.scrollHeight > s.clientHeight, whole, reached];
+      } finally { tall.remove(); }
+    })()`), [true, true, true]);
     await b.ev(`[...document.querySelectorAll("#editor .sv-bar button")].find(x => /Fetch/.test(x.textContent)).click()`);
     const ask = `(document.querySelector(".setup-confirm h2") || {}).textContent || ""`;
     check("Fetch asks first, saying how many", await b.until(`/^Fetch \\d+ trailers\\?$/.test(${ask})`), true);
@@ -104,6 +133,24 @@ module.exports = async function (b, check) {
     check("Esc says no and starts nothing", await b.until(`!document.querySelector(".setup-confirm")`) && fs.readFileSync(path.join(DATA, "steamvid-job.json"), "utf8") === jobBefore, true);
     await b.key("Escape");
     await b.until(`document.getElementById("editor").hidden`);
+
+    /* A second fetch where nothing comes: a page that is not Steam's answer, and a trailer Steam names
+       whose download is refused, with a stream beside it and without. Each is a failed fetch, asked again. */
+    fs.writeFileSync(path.join(steamFx, "api", B.appid + ".json"), "<html><body>Sign in to use this Wi-Fi</body></html>");
+    write(C.appid, { success: true, data: { movies: [{ id: 900005, highlight: true, mp4: { max: "http://127.0.0.1:9/movie_max.mp4" }, hls_h264: "http://127.0.0.1:9/none.m3u8" }] } });
+    write(D.appid, { success: true, data: { movies: [{ id: 900006, highlight: true, mp4: { max: "http://127.0.0.1:9/movie_max.mp4" } }] } });
+    const go2 = await api("api/steamvid.php", { ids: [B.id, C.id, D.id] });
+    let st2 = null;
+    for (const end = Date.now() + 30000; go2.ok && Date.now() < end;) {
+      st2 = await api("api/steamvid.php");
+      if (st2.job && st2.job.state !== "running") { break; }
+      await sleep(200);
+    }
+    const states2 = Object.fromEntries(((st2 && st2.job && st2.job.games) || []).map((g) => [g.id, g.state]));
+    check("a page that is not Steam's answer, or a trailer whose download fails, is \"could not be fetched\", never no trailer or needs ffmpeg",
+      [go2.ok, st2 && st2.job && st2.job.state, states2[B.id], states2[C.id], states2[D.id]], [true, "done", "failed", "failed", "failed"]);
+    const tried2 = (id) => ((st2 && st2.games) || []).find((g) => g.id === id) || {};
+    check("and a failed fetch changes nothing kept apart before", [tried2(B.id).tried, tried2(C.id).tried, tried2(D.id).tried], ["none", "stream", ""]);
   } finally {
     if (ownMade) { fs.rmSync(ownMade, { force: true }); }
     fs.rmSync(vdir, { recursive: true, force: true });

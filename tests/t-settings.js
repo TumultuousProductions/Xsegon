@@ -1130,7 +1130,7 @@ module.exports = async function (b, check) {
      One press must not delete settings.json, folders and all, with nothing
      to put back. */
   const curSet = (await api("api/settings.php")).settings;
-  await api("api/settings.php", { feel: { textBrightness: 81 }, paths: { scanFolders: [DATA] } });
+  await api("api/settings.php", { feel: { textBrightness: 81, tipsGone: { logoMenu: true } }, paths: { scanFolders: [DATA] } });
   const foreign = await fetch(BASE + "/api/settings.php?reset=1", { method: "POST", headers: { "Content-Type": "application/json", Origin: "http://example.com" }, body: "{}" });
   check("a reset from another site is refused", [foreign.status >= 400, (await api("api/settings.php")).settings.feel.textBrightness], [true, 81]);
   await b.goto();
@@ -1147,6 +1147,8 @@ module.exports = async function (b, check) {
   const afterReset = (await api("api/settings.php")).settings;
   check("a reset puts the settings back to their defaults", afterReset.feel.textBrightness, 100);
   check("but keeps the folders, so the games are still found", [afterReset.paths.romRoot, afterReset.paths.scanFolders], [curSet.paths.romRoot, [DATA]]);
+  // The logo tip was put away above: a reset must not bring it back.
+  check("and a tip put away for good stays put away", afterReset.feel.tipsGone, { logoMenu: true });
   const copies = fs.existsSync(safetyDir) ? fs.readdirSync(safetyDir).filter((f) => f.startsWith("settings.before-reset-")) : [];
   check("and keeps a copy of what it replaced", copies.length === copiesBefore + 1 && !!resetRes.copy && JSON.parse(fs.readFileSync(resetRes.copy, "utf8")).feel.textBrightness === 81, true);
   await b.key("Escape");

@@ -542,11 +542,16 @@ module.exports = async function (b, check) {
      logoState: is it the X, is it lit, the menu's first three entries, does it hang under it. */
   const logoState = `(() => { const c = document.querySelector(".ctx"), l = document.getElementById("brand-logo"), t = l.getBoundingClientRect(), r = c && c.getBoundingClientRect();
     return [l.classList.contains("as-orb"), l.classList.contains("open"), c ? [...c.querySelectorAll(".ctx-label")].slice(0, 3).map(x => x.textContent).join(", ") : null, !!c && r.top >= t.bottom && Math.abs(r.left - t.left) < 3]; })()`;
-  const X_MENU = [true, true, "Settings..., Controller..., Back up what you made...", true];
+  // Where the bar is not, the logo's menu leads with the bar's four menus (roadmap AL5).
+  const X_MENU = [true, true, "Games, Pictures & Videos, Emulators", true];
   const X_SHUT = [true, false, null, false];
   const shutMenu = async () => { await b.key("Escape"); await b.until(`!document.querySelector(".ctx")`); };
   await b.clickSel("#brand-logo"); await sleep(250);
   check("in a grid a press on the wordmark opens nothing: the round X is on the bar", await b.ev(logoState), [false, false, null, false]);
+  await b.openBar("xsegon");
+  check("and the round X's menu there has no Games row: the bar has Games beside it",
+    await b.ev(`(document.querySelector(".ctx .ctx-label") || {}).textContent`), "Settings...");
+  await shutMenu();
 
   await b.openBar("view"); await b.menuItem(/^Wheel$/);
   check("View menu switches view", await b.until(`document.getElementById("viewsel").value`, "wheel"), "wheel");
@@ -555,7 +560,11 @@ module.exports = async function (b, check) {
   await b.clickSel("#brand-logo");
   check("on the consoles wheel a press on the wordmark opens the round X's menu under it, and lights it", await b.until(logoState, X_MENU, 3000), X_MENU);
   await b.key("ArrowRight"); await sleep(200);
-  check("right, in that menu, opens no menu of a bar that is not on screen", await b.ev(logoState), X_MENU);
+  const subLabels = `[...document.querySelectorAll(".ctx-sub .ctx-label")].slice(0, 2).map(x => x.textContent).join(", ")`;
+  check("right, on its first row, opens the Games box beside it, and no menu of a bar that is not on screen",
+    [await b.ev(logoState), await b.ev(subLabels)], [X_MENU, "Add Games..., Scan for Games..."]);
+  await b.key("ArrowLeft"); await sleep(200);
+  check("and left closes the box, the menu still up", [await b.ev(`!document.querySelector(".ctx-sub")`), await b.ev(logoState)], [true, X_MENU]);
   await b.clickSel("#brand-logo");
   check("a second press puts the menu away", await b.until(logoState, X_SHUT, 3000), X_SHUT);
   await b.openPlatform("Nintendo 64");
@@ -576,6 +585,43 @@ module.exports = async function (b, check) {
   await shutMenu();
   check("the log has the presses", await apiUntil(async () => ((await api("api/log.php?tail=1000")).lines || []).filter((l) => /CLK\s+brand-logo/.test(l)).length >= 5, 6000), true);
   await b.setView("wheel");                 // the consoles wheel again, as the checks below found it
+
+  /* The logo tip (js/logotip.js): beside the logo where it is the menu, until
+     its X or the logo's menu, then never again. A test copy starts with it put
+     away (tests/sandbox.js), so it is brought back here, and put away at the end.
+     tipState: does it name the four menus, stand right of the logo's corner, level with it. */
+  const tipState = `(() => { const t = document.querySelector("header .logo-tip"); if (!t || t.hidden) { return null; }
+    const r = t.getBoundingClientRect(), l = document.querySelector(".brand").getBoundingClientRect(), g = document.getElementById("brand-logo").getBoundingClientRect();
+    return [/Games, Pictures & Videos, Emulators and Help/.test(t.textContent), r.left > l.right, Math.abs((r.top + r.bottom) / 2 - (g.top + g.bottom) / 2) < 4]; })()`;
+  const TIP_UP = [true, true, true];
+  const tipBack = async () => {
+    await api("api/settings.php", { feel: { tipsGone: { logoMenu: false } } });
+    await b.ev(`localStorage.removeItem("xs-tip-logo-gone")`);
+    await b.goto();
+    await b.settled();
+  };
+  const tipKept = async () => !!(await apiUntil(async () => (await api("api/settings.php")).settings.feel.tipsGone.logoMenu === true, 4000));
+  await tipBack();
+  check("on the consoles wheel the logo tip stands beside the logo, level with it, naming the four menus", await b.until(tipState, TIP_UP, 3000), TIP_UP);
+  await b.setView("grid");
+  check("in a grid, where the bar has those menus, it is not there", await b.until(tipState, null, 3000), null);
+  await b.setView("wheel");
+  check("back on a wheel it is", await b.until(tipState, TIP_UP, 3000), TIP_UP);
+  await b.clickSel("header .logo-tip-x");
+  check("its X puts it away for good: gone, kept in the settings and in this browser",
+    [await b.until(tipState, null, 3000), await tipKept(), await b.ev(`localStorage.getItem("xs-tip-logo-gone")`)], [null, true, "1"]);
+  await b.goto();
+  await b.settled();
+  check("and a fresh start does not bring it back", await b.ev(tipState), null);
+  await tipBack();
+  check("brought back for the next check", await b.until(tipState, TIP_UP, 3000), TIP_UP);
+  await b.clickSel("#brand-logo");
+  check("opening the logo's menu puts it away for good too", [await b.until(tipState, null, 3000), await tipKept()], [null, true]);
+  await shutMenu();
+  check("the log says which way each went", await apiUntil(async () => {
+    const lines = (await api("api/log.php?tail=1000")).lines || [];
+    return lines.some((l) => /logo tip put away for good: its X was pressed/.test(l)) && lines.some((l) => /logo tip put away for good: the logo's menu was opened/.test(l));
+  }, 6000), true);
 
   /* Clicking the dark behind a panel closes it on the press, not the release:
      a text selection let go past the panel's edge is a release on the dark. */

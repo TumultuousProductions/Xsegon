@@ -47,6 +47,11 @@ function buildFixture() {
   put("systems/psx/Xsfix Hole (USA) (Disc 2).bin");
   // an archive on a disc console: flagged, never offered
   put("systems/psx/Xsfix Archived (USA).7z");
+  // an empty archive with a browser's part file beside it: a download not finished, named, never offered
+  fs.writeFileSync(path.join(FIX, "systems/psx/Xsfix Unfinished (USA).7z"), "");
+  put("systems/psx/Xsfix Unfinished (USA).k3Rt9pQa.7z.part");
+  const stopped = new Date("2026-10-13T21:21:00");
+  fs.utimesSync(path.join(FIX, "systems/psx/Xsfix Unfinished (USA).k3Rt9pQa.7z.part"), stopped, stopped);
   // a dump that is only its tracks, sheet missing: named in its own tail,
   // never offered, because a track bin with no cue launches nowhere
   put("systems/dreamcast/Xsfix Orphan (USA) (Rev A)/Xsfix Orphan (USA) (Rev A) (Track 1).bin");
@@ -81,6 +86,9 @@ function buildFixture() {
   put("systems/n64/Hack/Xsfix Nested A.zip");
   put("systems/n64/Hack/Xsfix Nested B.zip");
   put("systems/n64/Hack/More/Even more/Xsfix Nested C.zip");
+  // empty archives on a cartridge console, where a .zip is a game: downloads not finished, at the top and on a shelf
+  fs.writeFileSync(path.join(FIX, "systems/n64/Xsfix Cart Unfinished (USA).zip"), "");
+  fs.writeFileSync(path.join(FIX, "systems/n64/Hack/Xsfix Shelf Unfinished (USA).7z"), "");
   put("systems/n64/New/Xsfix Fresh.z64");
   put("systems/saturn/Shelf/Xsfix One.chd");
   put("systems/saturn/Shelf/Xsfix Two.chd");
@@ -140,6 +148,12 @@ function playstationIso(bootLine) {
 function saturnIso() {
   const b = Buffer.alloc(4096);
   b.write("SEGA SEGASATURN ", 0, "latin1");
+  return b;
+}
+// A GameCube .ciso: a 32 KB map, then the disc's first block whole, magic number and all.
+function cubeCiso() {
+  const b = Buffer.alloc(0x8040);
+  b.write("CISO", 0, "latin1"); b.writeUInt32LE(2097152, 4); b.writeUInt32BE(0xC2339F3D, 0x801C);
   return b;
 }
 // A .chd whose own notes say GD-ROM, the Dreamcast's disc.
@@ -205,6 +219,19 @@ module.exports = async function (b, check) {
     check("the trackless dump is named in its own tail, not swallowed",
       r.orphans.length === 1 && r.orphans[0].folder === "Xsfix Orphan (USA) (Rev A)" && /cue sheet/.test(r.orphans[0].why));
     check("the archive is flagged, not offered", r.archives.length === 1 && /Extract it and rescan/.test(r.archives[0].why));
+    const unfPsx = r.unfinished.filter((u) => u.platform === "Sony Playstation");
+    check("an empty archive is a download not finished: named with its part file, never offered to unpack",
+      [unfPsx.map((u) => u.file.split(/[\\/]/).pop()), /stopped part way on .* in Xsfix Unfinished \(USA\)\.k3Rt9pQa\.7z\.part beside it/.test((unfPsx[0] || {}).why)],
+      [["Xsfix Unfinished (USA).7z"], true]);
+    check("on a cartridge console too, at the top of its folder and on a shelf, and never offered as a game",
+      r.unfinished.filter((u) => u.platform === "Nintendo 64").map((u) => u.file.split(/[\\/]/).pop()).sort(),
+      ["Xsfix Cart Unfinished (USA).zip", "Xsfix Shelf Unfinished (USA).7z"]);
+    const packed = path.join(FIX, "systems/psx/Xsfix Archived (USA).7z"), unf = path.join(FIX, "systems/psx/Xsfix Unfinished (USA).7z");
+    check("Clear it refuses an archive that is not empty, and leaves it where it is",
+      [(await api("api/scan.php", { action: "clear", file: packed })).ok, fs.existsSync(packed)], [false, true]);
+    const cleared = await api("api/scan.php", { action: "clear", file: unf });
+    check("Clear it deletes an empty archive and its part file, and says how much came back",
+      [cleared.ok, cleared.freed, fs.existsSync(unf), fs.existsSync(unf.replace(/\.7z$/, ".k3Rt9pQa.7z.part"))], [true, 1, false, false]);
     check("the unrecognised folder is named", r.unknown.some((u) => u.folder === "weirdfolder"));
     /* Folders under a console's folder. The exact list above already holds
        them; these say which rule put each one there. */
@@ -442,6 +469,13 @@ module.exports = async function (b, check) {
     loose("Xsfix_Under_Score_USA.gba", "x");
     // and a folder that IS named for a console, met on the way down
     loose("Old downloads/deeper/gbc/Xsfix Deep (USA).zip", "x");
+    /* In a console's folder the file overrules the folder when it names for sure a console the
+       folder's cannot play (xs_scan_file_says): a PlayStation disc in gc, a .sfc in nes. A GameCube
+       .ciso stays (the PSP uses .ciso too), and a Game Boy game in gba stays: it plays there. */
+    loose("gc/Xsfix Misfiled Fighter (USA).iso", playstationIso("BOOT = cdrom:\\SLUS_006.05;1\r\n"));
+    loose("gc/Xsfix Cube Kart (USA).ciso", cubeCiso());
+    loose("nes/Xsfix Misfiled Plumber (USA).sfc", "x");
+    loose("gba/Xsfix Old Pocket (USA).gb", "x");
     // And a console's own folder, added by itself: its name says which console it is.
     const OWNBASE = FIX + "-own";
     const OWN = path.join(OWNBASE, "gb");
@@ -478,6 +512,12 @@ module.exports = async function (b, check) {
             [placed("Xsfix Saturnine"), placed("Xsfix Dream")], ["Sega Saturn", "Sega Dreamcast"]);
       check("a folder named for a console, three levels down a folder that is not, is read as that console",
             placed("Xsfix Deep"), "Nintendo Game Boy Color");
+      check("in a console's folder, a disc naming a console the folder's cannot play is offered as its own, and so is an ending only one console uses",
+            [placed("Xsfix Misfiled Fighter"), placed("Xsfix Misfiled Plumber")], ["Sony Playstation", "Super Nintendo Entertainment System"]);
+      check("a GameCube .ciso stays GameCube, and a Game Boy game in gba stays: the folder's console plays it",
+            [placed("Xsfix Cube Kart"), placed("Xsfix Old Pocket")], ["Nintendo GameCube", "Nintendo Game Boy Advance"]);
+      check("and a game offered as another console says which console's folder it stands in",
+            ((w2.new || []).find((g) => g.title === "Xsfix Misfiled Fighter") || {}).filedIn, "Nintendo GameCube");
       check("what cannot say is counted where it lies and named by kind, never offered on a guess",
             [(w2.unsure || []).map((u) => u.folder.slice(EXTRA.length + 1).split(path.sep).join("/") + ": " + u.kinds).sort(),
              placed("Xsfix Sealed"), placed("Xsfix Bundle")],

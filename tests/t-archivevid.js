@@ -35,8 +35,8 @@ const GAMES = [
   game(11, "Iota Pilot", "Philips CD-i", "iota.chd"),          // a console the online archives have nothing for
 ];
 const SETS = [
-  { id: "test-psx-a", folder: "psx", whose: "ia-test", videos: 2, hevc: false,
-    files: { "Alpha Game (USA).mp4": "alpha", "sub folder/betaracerusa.mp4": "beta", "Alpha Game (USA).txt": null } },
+  { id: "test-psx-a", folder: "psx", whose: "ia-test", videos: 3, hevc: false,
+    files: { "Alpha Game (USA).mp4": "alpha", "sub folder/betaracerusa.mp4": "beta", "Alpha Game (USA).txt": null, "Mu Runner (USA).mp4": "mu" } },
   { id: "test-snes-a", folder: "snes", whose: "ia-test", videos: 3, hevc: false,
     files: { "Gamma Quest, The (USA).mp4": "gamma", "Delta Force (USA).mp4": "delta", "Epsilon Wars - The Return (USA).mp4": "epsilon's sequel" } },
   { id: "test-n64-gone", folder: "n64", whose: "ia-test", videos: 1, hevc: false, files: null },
@@ -109,7 +109,8 @@ module.exports = async function (b, check) {
   const libRow = async (id) => ((await api("api/library.php?versions=all")).games || []).find((g) => g.id === id) || {};
   const place = (g) => path.join(DATA, "videos", g.platform, g.title + ".mp4");
   const from = (set, name) => fs.readFileSync(path.join(FX, "download", set, name));
-  const mine = [GAMES[0], GAMES[1], GAMES[2], GAMES[3], GAMES[5], GAMES[6], GAMES[8], GAMES[9]].map(place);
+  const mine = [GAMES[0], GAMES[1], GAMES[2], GAMES[3], GAMES[5], GAMES[6], GAMES[8], GAMES[9]].map(place)
+    .concat(["Mu Runner (USA).mp4", "Mu Runner (USA) (Rev 1).mp4", "Mu Runner.mp4"].map((f) => path.join(DATA, "videos", PSX, f)));
 
   try {
     makeAll();
@@ -123,7 +124,7 @@ module.exports = async function (b, check) {
     check("the consoles with games that have no video are counted, with what the online archives have for each",
       [first.ok, first.curl, first.ffmpeg, first.job, con(PSX).need >= 3, con(PSX).sets, con(PSX).videos, con(SNES).sets, con(SNES).videos,
        con("Nintendo Switch").sets, con("Nintendo Switch").wol, con("Philips CD-i").wol],
-      [true, true, true, null, true, 1, 2, 1, 3, 0, true, false]);
+      [true, true, true, null, true, 1, 3, 1, 3, 0, true, false]);
     check("the consoles the online archives have videos for come first",
       (first.consoles || []).map((c) => c.sets > 0 || c.wol).join().replace(/^(true,?)+(false,?)*$/, "in order"), "in order");
     check("a start with no console is refused in words, and so is one for a console the archives have nothing for",
@@ -183,6 +184,22 @@ module.exports = async function (b, check) {
       [(await post({ fetch: [SNES] })).started, ((await ended(60000)).none || []).map((g) => g.title).filter((t) => t === "Delta Force" || t === "Epsilon Wars")],
       [true, ["Delta Force"]]);
     check("the games that had a video kept theirs", fs.readFileSync(place(GAMES[0])).equals(from("test-psx-a", "Alpha Game (USA).mp4")), true);
+
+    /* ---- a fetch never changes the video another game plays (roadmap AN6) ----
+       Two versions of one game: the first plays a video found by its file's name, the second has none.
+       Under the shared title the new video would be found by the first before its own. */
+    const MU = [game(12, "Mu Runner", PSX, "Mu Runner (USA) (Rev 1).cue"), game(13, "Mu Runner", PSX, "Mu Runner (USA).cue")];
+    for (const g of MU) { fs.writeFileSync(g.rom, "not a game, a stand-in"); }
+    const muOwn = path.join(DATA, "videos", PSX, "Mu Runner (USA) (Rev 1).mp4");
+    fs.writeFileSync(muOwn, video("mu's own, found by its file's name"));
+    fs.writeFileSync(path.join(DATA, "scanned-games.json"), JSON.stringify(GAMES.concat(MU)));
+    check("a fetch for the version with none brings it one", [(await post({ fetch: [PSX] })).started, (await ended(60000)).added], [true, 1]);
+    const served = async (g) => Buffer.from(await (await fetch(require("./lib").BASE + "/api/video.php?id=" + g.id, { headers: { Origin: require("./lib").BASE } })).arrayBuffer());
+    check("filed under its own file's name, not the shared title, so each version plays its own",
+      [fs.existsSync(path.join(DATA, "videos", PSX, "Mu Runner.mp4")),
+       (await served(MU[1])).equals(from("test-psx-a", "Mu Runner (USA).mp4")),
+       (await served(MU[0])).equals(video("mu's own, found by its file's name"))], [false, true, true]);
+    fs.writeFileSync(path.join(DATA, "scanned-games.json"), JSON.stringify(GAMES));
 
     /* ---- the window ------------------------------------------------------ */
     if (b) {

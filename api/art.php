@@ -5,9 +5,12 @@
  *   GET  /api/art.php?id=<id>                       what each kind is right now
  *   POST /api/art.php?id=<id>&kind=box&part=0&of=3  body = raw bytes of that piece
  *   POST /api/art.php?id=<id>&kind=box&reset=1      delete the replacement
+ *   POST /api/art.php?id=<id>&clear=1               Clear all: every picture and the video
  *
  * The replacement is a file in data\art; the original is never touched
- * (includes\overrides.php has the arrangement).
+ * (includes\overrides.php has the arrangement). Clear all deletes the
+ * replacements, hides the originals ("Use no picture") and deletes the video
+ * (video_clear, includes\video.php).
  *
  * Pieces, because PHP's upload and POST limits are smaller than a fanart image.
  * Nothing is trusted until the last piece: only a file that decodes as an image,
@@ -16,6 +19,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/import.php';
+require_once __DIR__ . '/../includes/video.php';
 
 const XS_ART_MAX = 40 * 1024 * 1024;
 
@@ -40,10 +44,61 @@ if (in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true)) {
             'hidden'   => in_array($kind, (array) ($hidden[$id] ?? []), true),
         ];
     }
-    xs_json(['ok' => true, 'id' => $id, 'title' => $game['title'], 'rev' => $game['artRev'] ?? 0, 'kinds' => $out]);
+    // The video too, for Clear all's window: what it deletes, and who else plays the same file.
+    $s      = xs_settings();
+    $layers = video_layers($s, $game);
+    $now    = video_for_game($s, $game);
+    $video  = ['has' => $now !== null, 'file' => $now !== null ? basename($now) : null, 'files' => count($layers),
+               'shared' => $now !== null ? video_shared_with($s, $game, $layers) : []];
+    xs_json(['ok' => true, 'id' => $id, 'title' => $game['title'], 'rev' => $game['artRev'] ?? 0, 'kinds' => $out, 'video' => $video]);
 }
 
 xs_local_origin_only();
+
+// Clear all: each replacement deleted, each original hidden, then the video.
+if (($_GET['clear'] ?? '') === '1') {
+    $dir  = xs_own_art_dir();
+    $exts = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
+    $list = (array) ($hidden[$id] ?? []);
+    $deleted = 0;
+    $hid     = 0;
+    foreach (array_keys($kinds) as $kind) {
+        $replaced = array_key_exists($kind, $game['artSource'] ?? []);
+        $original = $replaced ? !empty($game['artSource'][$kind]) : !empty($game['art'][$kind]);
+        if ($replaced) {
+            foreach ($exts as $e) {
+                @unlink($dir . DIRECTORY_SEPARATOR . $id . '-' . $kind . '.' . $e);
+            }
+            foreach ($exts as $e) {
+                if (is_file($dir . DIRECTORY_SEPARATOR . $id . '-' . $kind . '.' . $e)) {
+                    xs_fail('the ' . strtolower($kinds[$kind]) . ' could not be deleted (' . xs_file_error_reason() . '): nothing else was cleared after it', 500);
+                }
+            }
+            $deleted++;
+        }
+        if ($original && !in_array($kind, $list, true)) {
+            $list[] = $kind;
+            $hid++;
+        }
+        foreach (['.jpg', '.png'] as $e) {
+            @unlink(xs_data_path('thumbs' . DIRECTORY_SEPARATOR . $kind . DIRECTORY_SEPARATOR . $id . $e));
+        }
+    }
+    if ($list) {
+        $hidden[$id] = $list;
+    }
+    xs_write_or_fail(xs_data_path('art-hidden.json'), $hidden ?: new stdClass());
+    $s = xs_settings();
+    $shared = video_shared_with($s, $game, video_layers($s, $game));
+    $r = video_clear($s, $game);
+    xs_log('ART', $game['title'] . ': Clear all, ' . $deleted . ' pictures deleted, ' . $hid . ' originals hidden, '
+        . count($r['gone']) . ' videos deleted' . ($shared ? ' (' . implode(', ', $shared) . ' played it too)' : '')
+        . ($r['why'] !== null ? '; the video stays: ' . $r['why'] : ''));
+    if ($r['why'] !== null) {
+        xs_fail('the pictures were cleared, but the video could not be: ' . $r['why'], 500);
+    }
+    xs_json(['ok' => true, 'id' => $id, 'deleted' => $deleted, 'hidden' => $hid, 'videos' => count($r['gone']), 'shared' => $shared]);
+}
 
 $kind = (string) ($_GET['kind'] ?? '');
 if (!isset($kinds[$kind])) {

@@ -3,8 +3,10 @@
  * Xsegon - which console a game file is for, read from the file itself.
  *
  * Used for the files that stand OUTSIDE a console folder. Inside one, the
- * folder's name still decides (includes\scan.php): it is the person's own
- * statement, so a folder called gbc holding .gb games is Game Boy Color.
+ * folder's name decides unless the file names, for sure, a console the
+ * folder's cannot play (xs_scan_file_says, includes\scan.php): a folder called
+ * gbc holding .gb games is still Game Boy Color, and a PlayStation disc in the
+ * gc folder is a PlayStation game.
  *
  * Three answers, kept apart on purpose:
  *
@@ -26,7 +28,8 @@
  *      one game file inside with an ending a console owns says the console.
  *   3. A disc image is asked at the places every console writes its name:
  *      "SEGA SEGASATURN" at the start, the PlayStation's and the PSP's name
- *      in the disc's own label, the GameCube's and the Wii's magic numbers.
+ *      in the disc's own label, the GameCube's and the Wii's magic numbers
+ *      (in a .ciso too, which the GameCube and the PSP both use).
  *      A PlayStation disc is 1 or 2 by the BOOT or BOOT2 line of its
  *      SYSTEM.CNF. A .cue is asked through the file it names, a .m3u through
  *      its first disc.
@@ -55,7 +58,7 @@ function xs_romid_endings(): array
         // discs whose ending is the console's own
         'gdi' => 'Sega Dreamcast', 'cdi' => 'Sega Dreamcast',
         'gcm' => 'Nintendo GameCube', 'wbfs' => 'Nintendo Wii', 'wux' => 'Wii U',
-        'cso' => 'Sony PSP', 'ciso' => 'Sony PSP',
+        'cso' => 'Sony PSP',
         'nsp' => 'Nintendo Switch', 'xci' => 'Nintendo Switch', 'nsz' => 'Nintendo Switch',
         '3ds' => 'Nintendo 3DS', 'cia' => 'Nintendo 3DS', 'cci' => 'Nintendo 3DS',
     ];
@@ -69,9 +72,11 @@ function xs_romid_sealed(): array
 
 /**
  * The console this file is for: its name, false (not a game), or null
- * (cannot be told from the file). See the top of this file.
+ * (cannot be told from the file). See the top of this file. $guess false:
+ * a PlayStation disc with no boot line to read is null, not guessed by its
+ * size (a guess never overrules a console's folder, includes\scan.php).
  */
-function xs_romid(string $file, int $depth = 0): string|false|null
+function xs_romid(string $file, int $depth = 0, bool $guess = true): string|false|null
 {
     $ext  = strtolower((string) pathinfo($file, PATHINFO_EXTENSION));
     $ends = xs_romid_endings();
@@ -99,15 +104,18 @@ function xs_romid(string $file, int $depth = 0): string|false|null
     if ($ext === 'pbp') {
         return xs_romid_pbp($file);
     }
+    if ($ext === 'ciso') {
+        return xs_romid_ciso($file);
+    }
     if ($ext === 'cue' || $ext === 'm3u') {
         if ($depth > 2) {
             return null;
         }
         $inner = $ext === 'cue' ? xs_romid_cue_file($file) : xs_romid_m3u_first($file);
-        return $inner === null ? null : xs_romid($inner, $depth + 1);
+        return $inner === null ? null : xs_romid($inner, $depth + 1, $guess);
     }
     if (in_array($ext, ['iso', 'bin', 'img'], true)) {
-        $disc = xs_romid_disc($file);
+        $disc = xs_romid_disc($file, $guess);
         // An .iso with no ordinary disc label is a console's own format this
         // does not read (an Xbox's, a 3DO's): a game, of a console unknown.
         return $disc === false && $ext === 'iso' && substr(xs_romid_read($file, 0x8000, 6), 0, 6) !== "\x01CD001" ? null : $disc;
@@ -339,6 +347,30 @@ function xs_romid_m3u_first(string $m3u): ?string
     return null;
 }
 
+/**
+ * A .ciso is two consoles' packed disc. The GameCube's and the Wii's keep the
+ * disc's first block whole after a 32 KB map, magic number and all; the PSP's
+ * is compressed from its 24 byte header on.
+ */
+function xs_romid_ciso(string $file): string|false|null
+{
+    $head = xs_romid_read($file, 0, 4);
+    if ($head === '') {
+        return null;
+    }
+    if ($head !== 'CISO') {
+        return false;
+    }
+    $disc = xs_romid_read($file, 0x8018, 8);
+    if (substr($disc, 4, 4) === "\xC2\x33\x9F\x3D") {
+        return 'Nintendo GameCube';
+    }
+    if (substr($disc, 0, 4) === "\x5D\x1C\x9E\xA3") {
+        return 'Nintendo Wii';
+    }
+    return 'Sony PSP';
+}
+
 /** A PSP .pbp: a PlayStation classic or a PSP game, by its own category. */
 function xs_romid_pbp(string $file): string|false|null
 {
@@ -372,11 +404,30 @@ function xs_romid_pbp(string $file): string|false|null
  * A raw disc image (.iso, .bin, .img): which console's disc, false for no
  * console's, null when it cannot be opened.
  */
-function xs_romid_disc(string $file): string|false|null
+function xs_romid_disc(string $file, bool $guess = true): string|false|null
 {
     $start = xs_romid_read($file, 0, 64);
     if ($start === '') {
         return null;
+    }
+    /* A CD is stored either as its 2048 byte sectors alone (.iso) or with
+       each one wrapped in 2352 (.bin): the same words then stand 16 bytes
+       in (mode 1) or 24 (mode 2, the PlayStation's). Sega's consoles sign
+       the first sector; the others are found by the disc's own label in
+       sector 16. Sega's discs first: a Sega CD's also says SEGA MEGA DRIVE
+       at 0x100, where a cartridge signs. */
+    $layouts = [[2048, 0], [2352, 16], [2352, 24]];
+    foreach ($layouts as [$sector, $skip]) {
+        $first = $skip === 0 ? $start : xs_romid_read($file, $skip, 32);
+        if (str_starts_with($first, 'SEGA SEGASATURN')) {
+            return 'Sega Saturn';
+        }
+        if (str_starts_with($first, 'SEGADISCSYSTEM') || str_starts_with($first, 'SEGABOOTDISC') || str_starts_with($first, 'SEGADISC')) {
+            return 'Sega CD';
+        }
+        if (str_starts_with($first, 'SEGA SEGAKATANA')) {
+            return 'Sega Dreamcast';
+        }
     }
     // A cartridge dumped as .bin: the Genesis and the 32X sign at 0x100.
     $sega = xs_romid_read($file, 0x100, 16);
@@ -392,24 +443,6 @@ function xs_romid_disc(string $file): string|false|null
     }
     if (substr($start, 0x18, 4) === "\x5D\x1C\x9E\xA3") {
         return 'Nintendo Wii';
-    }
-    /* A CD is stored either as its 2048 byte sectors alone (.iso) or with
-       each one wrapped in 2352 (.bin): the same words then stand 16 bytes
-       in (mode 1) or 24 (mode 2, the PlayStation's). Sega's consoles sign
-       the first sector; the others are found by the disc's own label in
-       sector 16. */
-    $layouts = [[2048, 0], [2352, 16], [2352, 24]];
-    foreach ($layouts as [$sector, $skip]) {
-        $first = $skip === 0 ? $start : xs_romid_read($file, $skip, 32);
-        if (str_starts_with($first, 'SEGA SEGASATURN')) {
-            return 'Sega Saturn';
-        }
-        if (str_starts_with($first, 'SEGADISCSYSTEM') || str_starts_with($first, 'SEGABOOTDISC') || str_starts_with($first, 'SEGADISC')) {
-            return 'Sega CD';
-        }
-        if (str_starts_with($first, 'SEGA SEGAKATANA')) {
-            return 'Sega Dreamcast';
-        }
     }
     foreach ($layouts as [$sector, $skip]) {
         $pvd = xs_romid_read($file, 16 * $sector + $skip, 190);
@@ -435,7 +468,10 @@ function xs_romid_disc(string $file): string|false|null
                     return 'Sony Playstation';
                 }
             }
-            // No readable boot line: a CD is a PlayStation, a DVD its successor.
+            // No readable boot line: a CD is a PlayStation, a DVD its successor (a guess, when asked for one).
+            if (!$guess) {
+                return null;
+            }
             return (int) @filesize($file) > 900 * 1048576 ? 'Sony Playstation 2' : 'Sony Playstation';
         }
         return false;                        // a disc, of no console known here

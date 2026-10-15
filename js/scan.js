@@ -13,6 +13,7 @@ import { passedTail } from "./scanpassed.js";
 import { stopVideo } from "./snap.js";
 import { sound } from "./sound.js";
 import { $editor, games, sel } from "./state.js";
+import { unfinishedTail } from "./unfinished.js";
 import { unpackAll, unpackTail } from "./unpack.js";
 import { el, plural } from "./util.js";
 import { waitBar } from "./waitbar.js";
@@ -248,7 +249,7 @@ export function openScanTool(onBack) {
         // "Nothing new" only when a game was actually seen: with nothing seen it
         // reads as "you have everything". Otherwise the line says what happened.
         // Folders with nothing in them are not listed, so they are no reason to point below.
-        var skippedAny = (res.archives || []).length || (res.orphans || []).length
+        var skippedAny = (res.archives || []).length || (res.unfinished || []).length || (res.orphans || []).length
                        || (res.gaps || []).length || (res.skippedFolders || []).length || (res.unsure || []).length;
         if (res.alreadyHave > 0) {
           inner.appendChild(el("p", "mt-note good", "Nothing new. Every game found is already in the library."));
@@ -383,6 +384,8 @@ export function openScanTool(onBack) {
       });
       // A disc still in its archive gets a line with a button: looked into, unpacked, added (js/unpack.js).
       unpackTail(inner, res.archives || [], function () { added = true; }, res.archivesDone);
+      // An empty .zip or .7z is a download not finished: how far it got, and Clear it (js/unfinished.js).
+      unfinishedTail(inner, res.unfinished || []);
       // A file taken for a game that is here under another file: named, with a way to add it after all (js/scanpassed.js).
       passedTail(inner, res.passed, function () { added = true; });
       // The same game found in a second folder: the first is the one offered, and the other is named, not left out unseen.

@@ -16,6 +16,7 @@ import { launch } from "./launch.js";
 import { anyFilter, capStrip, clearFilters, filterWords, libraryTotal, load } from "./library.js";
 import { closePicker, listCells, listHead, listMinWidth, listPads, listTemplate, rowClass } from "./list.js";
 import { L, LOG_MOVES } from "./log.js";
+import { logoTip } from "./logotip.js";
 import { askPlayersIcon, openGameMenu } from "./menus.js";
 import { moreCut, moreFill, moreHold } from "./more.js";
 import { noGamesBox } from "./nogames.js";
@@ -90,6 +91,7 @@ export function paintSeg() {
   if ($viewsel && $viewsel.value !== shown) { $viewsel.value = shown; }
   // Where the menu bar is not, the wordmark stands in for its round X (js\menus.js).
   if ($logo) { $logo.classList.toggle("as-orb", shown === "wheel" || shown === "carousel" || shown === "rows"); }
+  logoTip();                               // beside it until it has been opened once (js\logotip.js)
 }
 
 /* The games area emptied while the rows for somewhere new are on their way,

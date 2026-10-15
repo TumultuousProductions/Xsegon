@@ -11,15 +11,13 @@ import { openScanTool, pickWindowsFolder } from "./scan.js";
 import { stopVideo } from "./snap.js";
 import { sound } from "./sound.js";
 import { $editor } from "./state.js";
-import { el } from "./util.js";
+import { el, namesAnd } from "./util.js";
 
 function post(body) {
   return postJson("api/emulators.php", body);
 }
 
 function gamesWord(n) { return n === 0 ? "no games yet" : n + (n === 1 ? " game" : " games"); }
-
-function listed(a) { return a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1]; }
 
 /*  opts.program changes that emulator instead of adding one; opts.after
     runs when the screen closes (Settings opens it and wants to come back). */
@@ -248,7 +246,7 @@ export function openEmuAdd(opts) {
     var mine = st.info.consoles.filter(function (c) { return c.mine; }).map(function (c) { return c.name; });
     confirmWindow("Remove " + st.name + "?", function (box) {
       box.appendChild(el("p", null, mine.length
-        ? listed(mine) + (mine.length === 1 ? " goes" : " go") + " back to what started " + (mine.length === 1 ? "it" : "them") +
+        ? namesAnd(mine) + (mine.length === 1 ? " goes" : " go") + " back to what started " + (mine.length === 1 ? "it" : "them") +
           " before, or to nothing when this was the only one."
         : "No console's games start in it now."));
       box.appendChild(el("p", "mt-note", "Only Xsegon forgets it: the program and its files stay on your disk."));
@@ -258,7 +256,7 @@ export function openEmuAdd(opts) {
         L("EMU", "removed " + r.name);
         sound("ok");
         load();
-        showStrip(r.name + " removed" + (r.bare.length ? ": " + listed(r.bare) + " now " + (r.bare.length === 1 ? "has" : "have") + " no emulator" : ""), false);
+        showStrip(r.name + " removed" + (r.bare.length ? ": " + namesAnd(r.bare) + " now " + (r.bare.length === 1 ? "has" : "have") + " no emulator" : ""), false);
         closeEditor();
       });
     } }, "Keep it");
@@ -288,7 +286,7 @@ export function openEmuAdd(opts) {
     });
     inner.appendChild(rows);
     if (r.left.length) {
-      inner.appendChild(el("p", "mt-note", listed(r.left) + (r.left.length === 1 ? " no longer starts" : " no longer start") +
+      inner.appendChild(el("p", "mt-note", namesAnd(r.left) + (r.left.length === 1 ? " no longer starts" : " no longer start") +
         " in it, and " + (r.left.length === 1 ? "is" : "are") + " back with what started " + (r.left.length === 1 ? "it" : "them") + " before."));
     }
     inner.appendChild(el("p", "mt-note",

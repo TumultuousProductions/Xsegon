@@ -68,11 +68,18 @@ if ($method !== 'POST') {
     xs_log('SCAN', 'walk ' . $where . ': ' . count($found['new']) . ' offered, '
         . $found['alreadyHave'] . ' already known, ' . count($found['archives']) . ' archives (and '
         . $found['archivesDone']['count'] . ' unpacked already, not listed), '
+        . count($found['unfinished']) . ' unfinished downloads, '
         . count($found['gaps']) . ' disc gaps, ' . count($found['unknown']) . ' unknown folders, '
         . count($found['skippedFolders']) . ' skipped, '
         . array_sum(array_column($found['unsure'], 'n')) . ' files no console could be read from, '
         . $found['junk'] . ' junk files, ' . count($found['passed']) . ' other files of known games, '
         . count($found['copies'] ?? []) . ' second copies, in ' . $found['ms'] . 'ms');
+    // A file offered as the console it names, not its folder's (includes\scan.php, xs_scan_file_says).
+    if ($found['refiled']) {
+        xs_log('SCAN', 'offered as the console the file names, not its folder\'s: ' . implode(', ', array_map(static fn ($r) => basename($r['rom'])
+            . ' (' . $r['folder'] . ' folder, ' . $r['platform'] . ')', array_slice($found['refiled'], 0, 12)))
+            . (count($found['refiled']) > 12 ? ' and ' . (count($found['refiled']) - 12) . ' more' : ''));
+    }
     // The screen does not list the folders with no games in them: the log names them.
     if ($found['unknown']) {
         $empty = array_column($found['unknown'], 'folder');
@@ -119,6 +126,23 @@ if ($action === 'remove') {
     xs_news_forget([$id]);
     xs_log('SCAN', 'removed ' . $id);
     xs_json(['ok' => true, 'accepted' => count($kept)]);
+}
+
+/* ---- Clear it: a download that has not finished ------------------------- */
+
+if ($action === 'clear') {
+    $file  = xs_norm_path(trim((string) ($body['file'] ?? '')));
+    $fault = false;
+    $freed = xs_scan_clear_unfinished($file, $why, $fault);
+    if ($freed === null) {
+        if (!$fault) {
+            xs_fail((string) $why, 400);
+        }
+        xs_log('FAIL', 'clearing ' . $file . ': ' . $why);
+        xs_json(['ok' => false, 'error' => (string) $why, 'report' => true], 500);
+    }
+    xs_log('SCAN', 'cleared the unfinished download ' . $file . ', ' . round($freed / 1048576) . ' MB back');
+    xs_json(['ok' => true, 'freed' => $freed]);
 }
 
 /* ---- one playlist for a disc set ---------------------------------------- */
