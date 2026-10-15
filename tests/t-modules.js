@@ -117,7 +117,8 @@ module.exports = async function (b, check) {
      tools\js-imports.js writes. An import in any other form would reach the
      browser unrewritten and stop the page. */
   const odd = files.filter((f) => {
-    const all = (code[f].match(/^import\b/gm) || []).length + (code[f].match(/^export\b[^\n]*\bfrom\b/gm) || []).length;
+    // A string is blanked in code[f], so a re-export ends in "from" and blanks; a parameter named from does not.
+    const all = (code[f].match(/^import\b/gm) || []).length + (code[f].match(/^export\b[^\n]*\bfrom[ \t]+(;|$)/gm) || []).length;
     return all !== (text[f].match(/^import\s+\{[^}]*\}\s+from\s+"\.\/[^"]+";/gm) || []).length;
   });
   check("every import is in the one form the page's loader rewrites", odd.length ? odd.join(", ") : true, true);
