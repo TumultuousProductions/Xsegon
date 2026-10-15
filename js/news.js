@@ -17,6 +17,7 @@ import { openFillTool } from "./fill.js";
 import { showStrip } from "./launch.js";
 import { load } from "./library.js";
 import { L, api, postJson } from "./log.js";
+import { openScanTool } from "./scan.js";
 import { openSkraperHow } from "./skraperhow.js";
 import { sound } from "./sound.js";
 import { setViewMode } from "./state.js";
@@ -143,6 +144,7 @@ var MAIL_GOES = {
   archivevid: ["Videos from online archives...", function () { openArchiveVideos(); }],
   cheatlists: ["Get the cheat lists...", function () { askCheatLists(); }],
   fillcheck: ["Check these games...", function (m) { openFillTool(null, false, (m.ids || []).map(String)); }],
+  scan: ["Scan for Games...", function () { openScanTool(); }],
   skraper: ["How to get them with Skraper", function (m) { openSkraperHow(m); }]
 };
 

@@ -38,7 +38,7 @@ Groups:
 | cheats  | which of RetroArch's cheat files belongs to a game, reading one in pages, the find, cheats kept per game and carried by a dry launch |
 | writes  | saving that cannot lose a file: a damaged file of yours is never written over, disc sets counted, a lookup past its limit stopped and saying so |
 | report  | Report a problem: every check stated, the ROM folder check both ways, and the zip read back |
-| scan    | Games > Scan for Games against a fixture tree in the temp folder, never the real drive: every shape of game, disc sets, folders, what is refused and why; Get Specific Pictures listing the games first and looking up only the selected ones |
+| scan    | Games > Scan for Games against a fixture tree in the temp folder, never the real drive: every shape of game, disc sets, folders, what is refused and why; Get Specific Pictures listing the games first and looking up only the selected ones; new games added by themselves (the look switched off, what it adds and leaves, the mailbox naming the rest once, the least time between looks, never during a game, a file still arriving, more than a hundred at once, and the page looking at its start and when it comes back) |
 | deleted | taking games out of the library, and mostly what that refuses: no confirmation, the wrong number, ids that are not games |
 | news    | what changed while you were away, and the mailbox, against a snapshot the test writes; errors kept there once per game, the Errors and Info filter, deleting a message, and the strip saying a failure once |
 | offline | the server not answering, faked by blocking the status request: one miss says nothing, three bring the screen, and it clears itself |

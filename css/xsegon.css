@@ -430,6 +430,16 @@ body.no-anim .ctx { animation: none; }
 .nofound .confirm { width: min(720px, 100%); }
 .nofound .confirm-bar { flex-wrap: wrap; }
 .nofound .confirm-bar button { white-space: nowrap; }
+/* One question at a time (js\askcards.js): the question large, a few short
+   lines, two answers side by side in the middle, neither lit. */
+.ask-card .confirm { width: min(700px, 100%); text-align: center; padding: 32px 36px 30px; }
+.ask-card .confirm h2 { font-size: calc(26px * var(--fs)); letter-spacing: .05em; color: var(--ink); margin-bottom: 14px; }
+.ask-card .ask-big { font-size: calc(20px * var(--fs)); color: var(--cyan); letter-spacing: .03em; overflow-wrap: anywhere; margin: 4px 0 10px; }
+.ask-card .ask-line { font-size: calc(14px * var(--fs)); }
+.ask-card .ask-note { color: var(--ink); }
+.ask-card .ask-faint { color: var(--faint); font-size: calc(12.5px * var(--fs)); }
+.ask-card .confirm-bar { justify-content: center; gap: 16px; margin-top: 24px; flex-wrap: wrap; }
+.ask-card .confirm-bar button { min-width: 170px; padding: 11px 20px; font-size: calc(14px * var(--fs)); white-space: nowrap; }
 .confirm-list { display: flex; flex-direction: column; gap: 4px; margin: 6px 0 10px; }
 .confirm-pick { font-size: 13px; color: var(--ink); letter-spacing: .03em; cursor: pointer; }
 .setup-prog { color: var(--cyan) !important; }

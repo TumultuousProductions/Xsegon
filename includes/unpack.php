@@ -70,9 +70,10 @@ function xs_unpack_tar(): string
  * when it will not start. The pipe blocks: a non-blocking one on Windows reads
  * only about 2 MB a second. $says: a file for what it complains of.
  */
-function xs_unpack_run(array $cmd, bool $pipe = true, ?string $says = null): ?array
+function xs_unpack_run(array $cmd, bool $pipe = true, ?string $says = null, ?string $prog = null): ?array
 {
-    $out = $pipe ? ['pipe', 'w'] : ['file', 'NUL', 'w'];
+    // $prog: what it prints goes into that file (7zr's percentage, read by xs_7zr_percent)
+    $out = $pipe ? ['pipe', 'w'] : ['file', $prog ?? 'NUL', 'w'];
     $p = @proc_open($cmd, [1 => $out, 2 => ['file', $says ?? 'NUL', 'w']], $pipes, null, null, ['bypass_shell' => true, 'blocking_pipes' => true]);
     if (!is_resource($p)) {
         return null;

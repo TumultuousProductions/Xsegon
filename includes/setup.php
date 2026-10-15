@@ -356,23 +356,10 @@ function xs_setup_write_preset(string $dir): string
     return 'wrote';
 }
 
-/**
- * How far the unpack is, 0 to 100, or null when nothing says. 7zr rewrites
- * one line as it goes (" 47% 8200 - <file>"); the last one in the file's
- * tail is the answer. A percent sign inside a file's name is never at the
- * start of a line, so it is not taken for one.
- */
+/** How far RetroArch's unpack is, 0 to 100, or null when nothing says (xs_7zr_percent). */
 function xs_setup_unpacked(array $job): ?int
 {
-    $file = (string) ($job['prog'] ?? '');
-    if ($file === '' || !is_file($file) || ($fh = @fopen($file, 'rb')) === false) {
-        return null;
-    }
-    $size = (int) (fstat($fh)['size'] ?? 0);
-    fseek($fh, max(0, $size - 600));
-    $tail = (string) fread($fh, 600);
-    fclose($fh);
-    return preg_match_all('/[\r\n][ \t]*(\d{1,3})%/', $tail, $m) ? min(100, (int) end($m[1])) : null;
+    return xs_7zr_percent((string) ($job['prog'] ?? ''));
 }
 
 /** The background job, as the page sees it. Finishes a completed fetch. */

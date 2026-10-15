@@ -71,6 +71,7 @@ import { initListMenu } from "./listmenu.js";
 import { L, LOG_MOVES, bug, initLog } from "./log.js";
 import { initMenus } from "./menus.js";
 import { initMotion } from "./motion.js";
+import { initNewGames } from "./newgames.js";
 import { checkNews, wireMail } from "./news.js";
 import { padsBegin } from "./padfound.js";
 import { initRain } from "./rain.js";
@@ -264,6 +265,8 @@ load({ noDraw: consolesFirst, boot: true }).then(function () {
     firstRunSetup();
     // After an update, a note in the corner once (js\whatsnew.js).
     checkWhatsNew();
+    // New games in the games folders, now and whenever the window comes back (js\newgames.js).
+    initNewGames();
   });
 });
 setInterval(pollStatus, 4000);

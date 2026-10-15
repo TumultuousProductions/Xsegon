@@ -74,6 +74,8 @@ function xs_settings_defaults(): array
             // auto: fetch a newer Games Database at most once a day
             // (bin\gamesdb-update.php); manual: only on Check now.
             'gamesdbUpdates'   => 'auto',
+            // New games in the games folders come in at start and when the window comes back (includes\newgames.php).
+            'addNewGames'      => true,
         ],
 
         'view' => [
@@ -330,6 +332,8 @@ function xs_settings_schema(): array
             'gamesdbUpdates'  => ['label' => 'Games Database updates', 'type' => 'enum', 'section' => 'Names, details and pictures',
                                   'options' => ['auto' => 'Automatic', 'manual' => 'Manual'],
                                   'help' => 'Automatic: once a day at most, Xsegon checks for a newer copy of the LaunchBox Games Database and fetches it in the background (about 70 MB). Manual: only when you press Check now, below.'],
+            'addNewGames'     => ['label' => 'Add new games by themselves', 'section' => 'New games',
+                                  'help' => 'When Xsegon starts, and when you come back to it, it looks in your games folders and adds the new games it is sure of, at most once a minute and never while a game is running. The ones it is not sure of wait for Games > Scan for Games.'],
         ],
         'view' => [
             '_label' => 'View',
