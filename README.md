@@ -42,25 +42,30 @@ same tour as below, with more pictures, to open in your browser.
 
 ## 3. Let it set itself up
 
-The first time, Xsegon opens on **Getting started**. Three presses and you
-are playing:
+The first time, Xsegon asks a few short questions, one at a time:
 
-1. Press **Set it all up**.
-2. Choose the folder your games are in. Any folder works: Xsegon looks inside
-   every folder under it.
-3. Select the extras you want (videos for your games, the cheat lists, and a
-   check that opens each game for a moment to see that it starts), or press
-   **None of these**. Each one can be had later from the menus.
+1. **Set everything up for you?** Press **Yes**.
+2. **Where are your games?** Press **Pick the folder** and choose the folder
+   your games are in. Any folder works: Xsegon looks inside every folder under
+   it. When your games are already in a folder Xsegon looks in, it asks **Are
+   your games here?** instead.
+3. **Add new games by themselves?** With **Yes**, games you put in that
+   folder later show up when you come back to Xsegon.
+4. Then the extras, one question each: videos for your games, the cheat
+   lists, and a check that opens each game for a moment to see that it
+   starts. Answer **Yes** or **No** (**Later** for the check). Each one can be
+   had later from the menus.
 
-![Getting started, with Set it all up at the top](doc/screens/getting-started.jpg)
+**Set up by hand**, on the first question, opens **Getting started** instead:
+every step, one at a time, with a button for each.
+
+![Getting started, for setting up by hand](doc/screens/getting-started.jpg)
 
 Then leave it to it. A small list in the corner shows what it is doing:
 setting up RetroArch (the program that plays the games, which comes with
 Xsegon), fetching the cores your consoles need, finding your games, and
 fetching their names and box art. When the list says **Ready to play**, you
 are. You can look around while it works.
-
-![The three extras to select](doc/screens/setup-extras.jpg)
 
 ![The list saying Ready to play](doc/screens/ready.jpg)
 

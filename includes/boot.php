@@ -1130,6 +1130,24 @@ function xs_spawn_worker(string $script): bool
     return true;
 }
 
+/**
+ * How far a 7zr run is, 0 to 100, from the file its -bsp1 output goes into, or
+ * null when nothing says yet. 7zr rewrites one line as it goes (" 47% 8200 -
+ * <file>"); the last one in the file's tail is the answer. A percent sign inside
+ * a file's name is never at the start of a line, so it is not taken for one.
+ */
+function xs_7zr_percent(string $file): ?int
+{
+    if ($file === '' || !is_file($file) || ($fh = @fopen($file, 'rb')) === false) {
+        return null;
+    }
+    $size = (int) (fstat($fh)['size'] ?? 0);
+    fseek($fh, max(0, $size - 600));
+    $tail = (string) fread($fh, 600);
+    fclose($fh);
+    return preg_match_all('/[\r\n][ \t]*(\d{1,3})%/', $tail, $m) ? min(100, (int) end($m[1])) : null;
+}
+
 /** Windows' own curl.exe, which does the fetching for those workers, or '' where there is none. */
 function xs_curl_exe(): string
 {
