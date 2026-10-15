@@ -48,7 +48,7 @@ if (in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true)) {
     $s      = xs_settings();
     $layers = video_layers($s, $game);
     $now    = video_for_game($s, $game);
-    $video  = ['has' => $now !== null, 'file' => $now !== null ? basename($now) : null, 'files' => count($layers),
+    $video  = ['has' => $now !== null, 'file' => $now !== null ? basename($now) : null, 'path' => $now, 'files' => count($layers),
                'shared' => $now !== null ? video_shared_with($s, $game, $layers) : []];
     xs_json(['ok' => true, 'id' => $id, 'title' => $game['title'], 'rev' => $game['artRev'] ?? 0, 'kinds' => $out, 'video' => $video]);
 }

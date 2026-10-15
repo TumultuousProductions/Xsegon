@@ -3,7 +3,8 @@
  * /api/screenscraper.php - video snaps from ScreenScraper (includes\screenscraper.php).
  *
  *   GET                         the account (names only), every game with no
- *                               video, and the job if there is one
+ *                               video and whether a fetch found none for it
+ *                               before, and the job if there is one
  *   POST {"account": {...}}     save the logins, then ask ScreenScraper who that is
  *   POST {"check": true}        ask again with what is stored
  *                               (both, and a fetch, first ask the website for Xsegon's
@@ -24,6 +25,7 @@ $s   = xs_settings();
 $lib = xs_library();
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+    $job  = xs_ss_job();                // first: an ended fetch's games with no video are kept apart before the rows are read
     $rows = xs_ss_games($s, $lib);
     xs_json([
         'ok'      => true,
@@ -31,7 +33,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
         'games'   => $rows,
         'missing' => count(array_filter($rows, static fn ($r) => !$r['has'])),
         'dir'     => xs_ss_dir(),
-        'job'     => xs_ss_job(),
+        'job'     => $job,
     ]);
 }
 

@@ -59,7 +59,7 @@ const SCREENS = `(() => {
   const shown = (n) => !!n && !n.hidden && n.getClientRects().length > 0;
   const up = (id) => shown(document.getElementById(id));
   const many = (sel) => [...document.querySelectorAll(sel)].filter(shown).length;
-  return { wall: up("syswall"), main: up("main"), toolbar: up("toolbar"), details: up("details"),
+  return { wall: up("syswall"), main: up("main"), toolbar: up("toolbar"), details: up("details"), fanpage: up("fanpage"),
            settings: up("settings"), editor: up("editor"), saver: up("saver"), offline: up("offline"),
            mailbox: up("mailbox"), sidebar: up("sidebar"), consolesBtn: up("btn-systems"),
            menus: many(".ctx:not(.ctx-sub)"), picker: many(".lcols"), confirms: many(".confirm-wrap") };   // a group's box is part of its menu
@@ -79,7 +79,8 @@ const SCREEN_RULES = `(() => {
   if (s.sidebar && !s.main) { bad.push("the platform sidebar without the games view"); }
   if (s.picker && !s.main) { bad.push("the column picker without the list"); }
   if (s.consolesBtn && s.wall) { bad.push("the back arrow on the consoles screen"); }
-  if (!s.wall && !s.main && !s.details && document.getElementById("count").textContent !== "") { bad.push("nothing on screen: no consoles, no games, no details"); }
+  if (s.fanpage && (s.wall || s.main)) { bad.push("the Fan projects page and another screen both showing"); }
+  if (!s.wall && !s.main && !s.details && !s.fanpage && document.getElementById("count").textContent !== "") { bad.push("nothing on screen: no consoles, no games, no details"); }
   return bad;
 })()`;
 

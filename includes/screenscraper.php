@@ -45,6 +45,18 @@ function xs_ss_shared_path(): string
     return xs_data_path('screenscraper-shared.dat');
 }
 
+/** The games a fetch found no video for: {"from": that fetch's start, "games": {id: {at, why}}}. */
+function xs_ss_none_path(): string
+{
+    return xs_data_path('screenscraper-none.json');
+}
+
+function xs_ss_none(): array
+{
+    $none = xs_read_json(xs_ss_none_path(), []);
+    return is_array($none) && is_array($none['games'] ?? null) ? $none['games'] : [];
+}
+
 /** The snap saved for this game, or null. */
 function xs_ss_for(string $id): ?string
 {
@@ -433,13 +445,47 @@ function xs_ss_refusal(int $status, string $body, bool $shared = false): string
 // ---- the list and the job --------------------------------------------------
 
 /**
+ * Keeps, once per ended fetch, the games ScreenScraper does not have or has
+ * no video of, so the list shows them apart. One saved since is let go; a failed ask changes nothing.
+ */
+function xs_ss_keep_none(array $job): void
+{
+    $file    = xs_read_json(xs_ss_none_path(), []);
+    $started = (int) ($job['started'] ?? 0);
+    if (is_array($file) && isset($file['from']) && (int) $file['from'] === $started) {
+        return;
+    }
+    $games = xs_ss_none();
+    $kept  = 0;
+    foreach ($job['games'] ?? [] as $g) {
+        $id    = (string) ($g['id'] ?? '');
+        $state = (string) ($g['state'] ?? '');
+        if ($id !== '' && ($state === 'none' || $state === 'novideo')) {
+            $games[$id] = ['at' => (int) ($job['ended'] ?? time()), 'why' => $state];
+            $kept++;
+        } elseif ($id !== '' && $state === 'done') {
+            unset($games[$id]);
+        }
+    }
+    if (!$games && !is_file(xs_ss_none_path())) {
+        return;
+    }
+    xs_write_json(xs_ss_none_path(), ['from' => $started, 'games' => $games]);
+    if ($kept) {
+        xs_log('SSCR', $kept . ' with no video kept apart, ' . count($games) . ' in all');
+    }
+}
+
+/**
  * Every game with no video, and every game whose video is a snap fetched
- * here before (so a finished run still shows what it did). A game with any
- * other video is not listed: it is not this screen's to touch.
+ * here before (so a running fetch shows what it saved). A game with any
+ * other video is not listed: it is not this screen's to touch. One a fetch
+ * found no video for says so in 'tried', and when in 'triedAt'.
  */
 function xs_ss_games(array $s, array $library): array
 {
     $rows = [];
+    $none = xs_ss_none();
     foreach ($library['games'] ?? [] as $g) {
         $id    = (string) $g['id'];
         $video = video_for_game($s, $g);
@@ -447,6 +493,7 @@ function xs_ss_games(array $s, array $library): array
         if ($video !== null && !$saved) {
             continue;
         }
+        $tried = $video === null ? ($none[$id] ?? null) : null;
         $rows[] = [
             'id'       => $id,
             'title'    => (string) $g['title'],
@@ -454,6 +501,8 @@ function xs_ss_games(array $s, array $library): array
             'system'   => xs_ss_system((string) $g['platform']),
             'rom'      => xs_ss_rom_name((string) ($g['romPath'] ?? '')),
             'has'      => $saved,
+            'tried'    => is_array($tried) ? (string) ($tried['why'] ?? 'none') : '',
+            'triedAt'  => is_array($tried) ? (int) ($tried['at'] ?? 0) : 0,
         ];
     }
     usort($rows, static fn ($a, $b) => strcasecmp($a['platform'], $b['platform']) ?: strcasecmp($a['title'], $b['title']));
@@ -494,6 +543,9 @@ function xs_ss_job(): ?array
         // How the games were found: by name, file, title as a file name, one word (bin\screenscraper.ps1).
         $by = array_count_values(array_filter(array_map(static fn ($g) => (string) ($g['by'] ?? ''), $job['games'] ?? [])));
         xs_log('SSCR', 'snaps: ' . $tally . ($by ? '; found by ' . implode(', ', array_map(static fn ($k, $n) => $k . ' ' . $n, array_keys($by), $by)) : ''));
+    }
+    if (in_array($job['state'] ?? '', ['done', 'failed'], true)) {
+        xs_ss_keep_none($job);
     }
     return $job;
 }

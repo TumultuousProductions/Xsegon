@@ -25,7 +25,9 @@ var HELP = {
   // inside the list of a tab of details (js\detailtabs.js)
   tabrows:  [["↑ ↓", "move"], ["Enter", "select"], ["Type", "find"], ["Esc", "back to the tabs"]],
   settings: [["↑↓", "move"], ["←→", "change"], ["Enter", "open"],
-             ["Esc", "back"], ["Type", "find a setting"]]
+             ["Esc", "back"], ["Type", "find a setting"]],
+  // the Fan projects page (js\fanprojects.js)
+  fanprojects: [["↑↓←→", "choose"], ["Enter", "the panel's first button"], ["Type", "find a project"], ["Esc", "back"]]
 };
 
 /* The same legend in the pad's words. The moment a pad is used
@@ -40,7 +42,8 @@ var HELP_PAD = {
   top:      [["✥", "move"], ["A", "open"], ["B", "back to the games"]],
   details:  [["LB RB", "tabs"], ["▾", "the list"], ["A", "play"], ["Y", "documents"], ["B", "back"]],
   tabrows:  [["✥", "move"], ["A", "select"], ["B", "back to the tabs"]],
-  settings: [["✥", "move"], ["◂▸", "change"], ["A", "open"], ["B", "back"]]
+  settings: [["✥", "move"], ["◂▸", "change"], ["A", "open"], ["B", "back"]],
+  fanprojects: [["✥", "choose"], ["A", "the panel's first button"], ["X", "their page"], ["B", "back"]]
 };
 export var padMode = false;
 var helpCtx = "browse";

@@ -1,6 +1,7 @@
 import { cheatsFact } from "./cheattab.js";
 import { detailTabs, detailTabsOff, openTab, tabPane } from "./detailtabs.js";
 import { openDocs } from "./docs.js";
+import { dropFanPage } from "./fanprojects.js";
 import { openGameButtons } from "./gamebtns.js";
 import { paintHelp } from "./help.js";
 import { launch, launchNow, openStates, showStrip, whenSaved } from "./launch.js";
@@ -11,6 +12,7 @@ import { rowStarsAgain } from "./rowstars.js";
 import { armBrowse, armVideo } from "./snap.js";
 import { sound } from "./sound.js";
 import { $body, $details, $main, $toolbar, games, sel, sysStage } from "./state.js";
+import { startOnAllGames } from "./systems.js";
 import { artUrl, discWords, el, fixMark, fixWords, hhmm, stars, titleText, versionsFact } from "./util.js";
 import { render, setCarNodes, setWheelNodes } from "./views.js";
 
@@ -396,6 +398,8 @@ export function openDetails() {
   if (games[sel]) { L("NAV", "details " + games[sel].title); }
   var g = games[sel];
   if (!g) { return; }
+  // Surprise me from over the Fan projects page: the details stand over every game, never over the page or the consoles.
+  if (dropFanPage() && sysStage === "wall") { startOnAllGames(); }
   sound("select");
 
   buildDetails(g, null);
