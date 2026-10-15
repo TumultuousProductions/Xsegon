@@ -1,4 +1,4 @@
-// Edit Metadata, Change Pictures (use no picture, Find online), Add Video state.
+// Edit Metadata, Change Pictures (use no picture, Find online), Add Video state, the Media tab, Clear video and Clear all.
 "use strict";
 const { sleep, api, apiUntil } = require("./lib");
 
@@ -219,7 +219,160 @@ module.exports = async function (b, check) {
     check("the Rows view's big picture has the same stand-in",
       await b.ev(`(n => !!n && n.classList.contains("can-add"))(document.querySelector("#view .rows-pic .hero-noart"))`), true);
     await b.setView("grid");               // the view this group found, for the groups after it
+
+    /* ---- the Media tab: another game's pictures and video, copied onto this one (roadmap AM1) ----
+       Onto the scratch game alone: a copy drops that game's thumbnails, and the test copy's data\thumbs is the real folder. */
+    const cm = (q, method) => api("api/copy-media.php?id=" + encodeURIComponent(bare.game.id) + q, null, method);
+    const key = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "");
+    const list = await cm("");
+    const firstOther = list.ok ? list.games.findIndex((x) => !x.same) : -1;
+    check("Media: the games to copy from, this console's first, never the game itself, each with something to copy",
+      [list.ok, list.games.length > 0, firstOther < 0 || list.games.slice(firstOther).every((x) => !x.same),
+       list.games.every((x) => x.id !== bare.game.id), list.games.every((x) => x.has.length > 0)],
+      [true, true, true, true, true]);
+    const at = list.games.findIndex((x) => x.has.includes("box"));
+    if (at < 0) {
+      check("Media: no game in the test copy has box art to copy, so nothing more is checked", true);
+    } else {
+      const donor = list.games[at];
+      const word = donor.title.split(/\s+/)[0];
+      const found = await cm("&find=" + encodeURIComponent(word));
+      check("the find box narrows by name", found.ok && found.games.length > 0
+        && found.games.every((x) => key(x.title + " " + (x.variant || "")).includes(key(word))), true);
+      const q = "&from=" + encodeURIComponent(donor.id);
+      const boxRow = (r) => r.rows.find((x) => x.kind === "box");
+      const before = await cm(q);
+      check("a game picked shows its five pictures and its video beside this game's, which has none",
+        [before.ok, before.rows.map((x) => x.kind).join(","), !!boxRow(before).from, boxRow(before).to],
+        [true, "box,box3d,logo,shot,fanart,video", true, null]);
+      await cm(q + "&kind=box");
+      check("a read never copies, whatever it names", boxRow(await cm(q)).to, null);
+      const put = await cm(q + "&kind=box", "POST");
+      check("a press copies the box art, and says so", [put.ok, put.copied, boxRow(put).same, !!put.patch.imgFull.box, put.patch.hasArt],
+        [true, ["box"], true, true, true]);
+      let mine;
+      await apiUntil(async () => { mine = (await api("api/library.php?platform=Nintendo%2064")).games.find((x) => x.id === bare.game.id); return mine && mine.hasArt; }, 6000);
+      check("the library has it as the game's own picture", [!!mine && mine.hasArt, (await api("api/art.php?id=" + bare.game.id)).kinds.box.replaced], [true, true]);
+      const again = await cm(q + "&kind=box", "POST");
+      check("the same picture again is refused, with why", [again.ok, /already shows/.test(again.error || "")], [false, true]);
+      check("a game cannot copy from itself", (await api("api/copy-media.php?id=" + bare.game.id + "&from=" + bare.game.id, null, "POST")).ok, false);
+      check("a kind that is not a kind is refused", (await cm(q + "&kind=nope", "POST")).ok, false);
+      const rest = before.rows.filter((x) => x.from && x.kind !== "box").map((x) => x.kind);
+      const all = await cm(q + "&kind=all", "POST");
+      check("Copy all it has copies the rest, the box art not twice", [all.ok, all.copied, all.rows.filter((x) => x.from).every((x) => x.same)], [true, rest, true]);
+
+      // The tab: second, right after About; a press that would replace a picture asks first.
+      check("the scratch game is on the shelf again", await b.ev(choose), true);
+      await b.ev(`(async () => (await import("/js/details.js")).openDetails())()`);
+      await b.until(`!document.getElementById("details").hidden`, true, 6000);
+      check("Media is the second tab", await b.until(`[...document.querySelectorAll("#details .dtab")].map(n => n.dataset.tab).slice(0, 2).join(",")`, "about,media", 6000), "about,media");
+      await b.ev(`document.querySelector('#details .dtab[data-tab="media"]').click()`);
+      check("it opens on the games, with a find box",
+        await b.until(`document.querySelectorAll("#details .md-game").length > ${at} && !!document.querySelector("#details .md-tab .ch-find input")`, true, 8000), true);
+      await b.ev(`document.querySelectorAll("#details .md-game")[${at}].click()`);
+      const kindsShown = `[...document.querySelectorAll("#details .md-kinds .cr-row")].map(n => n.dataset.kind || (n.className.match(/md-(back|all)/) || [])[1]).join(",")`;
+      check("a game pressed shows Back, Copy all, and a row a kind", await b.until(kindsShown, "back,all,box,box3d,logo,shot,fanart,video", 8000), "back,all,box,box3d,logo,shot,fanart,video");
+      check("the copied box art reads as the same", await b.ev(`document.querySelector('#details .md-kind[data-kind="box"]').classList.contains("on")`), true);
+      const other = list.games.findIndex((x) => x.id !== donor.id && x.has.includes("box"));
+      if (other >= 0) {
+        await b.ev(`document.querySelector("#details .md-back").click()`);
+        await b.until(`document.querySelectorAll("#details .md-game").length > ${other}`, true, 8000);
+        await b.ev(`document.querySelectorAll("#details .md-game")[${other}].click()`);
+        await b.until(`!!document.querySelector('#details .md-kind[data-kind="box"]')`, true, 8000);
+        if (await b.ev(`!document.querySelector('#details .md-kind[data-kind="box"]').classList.contains("on")`)) {
+          await b.ev(`document.querySelector('#details .md-kind[data-kind="box"]').click()`);
+          const asked = `(w => w ? [w.querySelector("h2").textContent, w.querySelectorAll(".md-pair .md-shot").length] : null)(document.querySelector(".confirm"))`;
+          check("a copy that would replace a picture asks first, showing both", await b.until(asked, ["This replaces its box art", 2], 4000), ["This replaces its box art", 2]);
+          await b.ev(`[...document.querySelectorAll(".confirm-bar button")].find(x => x.textContent === "Cancel").click()`);
+          check("and Cancel copies nothing", boxRow(await cm(q)).same, true);
+        }
+      }
+      await b.ev(`(async () => (await import("/js/details.js")).closeDetails())()`);
+    }
   } finally {
+    // What the Media checks copied, taken away again before the game goes.
+    for (const k of ["box", "box3d", "logo", "shot", "fanart"]) { await api("api/art.php?id=" + bare.game.id + "&kind=" + k + "&reset=1", null, "POST"); }
+    await api("api/video-own.php?id=" + bare.game.id + "&reset=1", null, "POST");
     await api("api/local.php", { id: bare.game.id, remove: true }, "POST");
+  }
+
+  /* ---- Clear video, and Clear all in Change Pictures (roadmap AN6) ----
+     On a game made here alone: Clear deletes files, and the test copy's data\media is the real folder. */
+  const wiped = await api("api/local.php", { set: { title: "Xsclear Scratch", platform: "Nintendo 64", url: BASE + "/" } }, "POST");
+  const cq = "?id=" + encodeURIComponent(wiped.game.id);
+  try {
+    const mp4 = Buffer.concat([Buffer.from("00000018667479706d703432", "hex"), Buffer.alloc(8192)]);
+    check("a video of its own goes in", (await send("/api/video-own.php" + cq + "&part=0&of=1", mp4)).ok, true);
+    const had = await api("api/video-own.php" + cq);
+    check("the video window says where it comes from and what Clear video deletes", [had.has, had.from, had.files, had.shared], [true, "own", 1, []]);
+    const gone = await send("/api/video-own.php" + cq + "&clear=1", null);
+    check("Clear video deletes it", [gone.ok, gone.gone, (await api("api/video-own.php" + cq)).has], [true, 1, false]);
+
+    // A media folder a settings file names outside Xsegon's data folder (paths.mediaDir) is never deleted in.
+    const mediaWas = (await api("api/settings.php")).settings.paths.mediaDir;
+    const outside = pathx.join(require("os").tmpdir(), "xs-media-outside-" + process.pid);
+    const outVideo = pathx.join(outside, "Nintendo 64", wiped.game.id + "-video.mp4");
+    fsx.mkdirSync(pathx.dirname(outVideo), { recursive: true });
+    fsx.writeFileSync(outVideo, mp4);
+    try {
+      await api("api/settings.php", { paths: { mediaDir: outside } });
+      const fromOut = await api("api/video-own.php" + cq);
+      const kept = await send("/api/video-own.php" + cq + "&clear=1", null);
+      check("a video in a media folder outside Xsegon's data folder is never deleted: Clear video says why, and the file stays",
+        [fromOut.from, kept.ok, /outside Xsegon's own data folder/.test(kept.error || ""), fsx.existsSync(outVideo)], ["media", false, true, true]);
+    } finally {
+      await api("api/settings.php", { paths: { mediaDir: mediaWas } });
+      fsx.rmSync(outside, { recursive: true, force: true });
+    }
+
+    check("a box art and a video go in again",
+      [(await send("/api/art.php" + cq + "&kind=box&part=0&of=1", png)).ok, (await send("/api/video-own.php" + cq + "&part=0&of=1", mp4)).ok], [true, true]);
+    const pics = await api("api/art.php" + cq);
+    check("Change Pictures has the video too, for Clear all", [pics.kinds.box.replaced, pics.video.has, pics.video.files], [true, true, 1]);
+
+    await b.goto();
+    await b.openPlatform("Nintendo 64");
+    const open = (fn) => `(async () => { const S = await import("/js/state.js"), A = await import("/js/art-editors.js");
+      const g = S.games.find(x => x.id === ${JSON.stringify(wiped.game.id)}); if (!g) { return false; } A.${fn}(g); return true; })()`;
+    const title = `(document.querySelector("#editor .panel-title") || {}).textContent`;
+    const asked = `(w => w ? [w.querySelector("h2").textContent, w.textContent] : null)(document.querySelector(".confirm"))`;
+    const press = (label) => b.ev(`[...document.querySelectorAll(".confirm-bar button")].find(x => x.textContent === ${JSON.stringify(label)}).click()`);
+    check("the scratch game is on the shelf, and Change Pictures opens on it", [await b.ev(open("openArtEditor")), await b.until(title, "CHANGE PICTURES", 6000)], [true, "CHANGE PICTURES"]);
+    const clearAll = `[...document.querySelectorAll("#editor .art-clear button")].find(x => x.textContent === "Clear all...")`;
+    check("it has Clear all", await b.until(`!!${clearAll}`, true, 6000), true);
+    await b.ev(clearAll + ".click()");
+    await b.until(`!!document.querySelector(".confirm")`, true, 4000);
+    const words = await b.ev(asked);
+    check("which asks first, saying what is deleted",
+      [words[0], /1 picture stored in Xsegon is deleted\./.test(words[1]), /The video is deleted: /.test(words[1]), /may fetch a new one/.test(words[1])],
+      ["Clear all of Xsclear Scratch?", true, true, true]);
+    await press("Cancel");
+    check("Cancel clears nothing", [(await api("api/art.php" + cq)).kinds.box.replaced, (await api("api/video-own.php" + cq)).has], [true, true]);
+    await b.ev(clearAll + ".click()");
+    await b.until(`!!document.querySelector(".confirm")`, true, 4000);
+    await press("Clear all");
+    check("Clear all leaves every slot with no image, and no Clear all to press",
+      await b.until(`[...document.querySelectorAll("#editor .art-slot .art-state")].every(n => n.textContent === "no image") && !document.querySelector("#editor .art-clear")`, true, 6000), true);
+    const after = await api("api/art.php" + cq);
+    check("the box art and the video are deleted", [after.kinds.box.replaced, after.kinds.box.has, after.video.has], [false, false, false]);
+    await b.key("Escape");
+    await b.until(`document.getElementById("editor").hidden`, true, 6000);
+
+    check("a video goes in once more", (await send("/api/video-own.php" + cq + "&part=0&of=1", mp4)).ok, true);
+    check("the video window opens on it", [await b.ev(open("openVideoEditor")), await b.until(title, "REPLACE VIDEO", 6000)], [true, "REPLACE VIDEO"]);
+    const wipe = `[...document.querySelectorAll("#editor .art-btns button")].find(x => x.textContent === "Clear video...")`;
+    check("with Clear video beside Replace", await b.until(`!!${wipe}`, true, 6000), true);
+    await b.ev(wipe + ".click()");
+    await b.until(`!!document.querySelector(".confirm")`, true, 4000);
+    check("which asks first, naming the file", (await b.ev(asked))[0], "Clear the video of Xsclear Scratch?");
+    await press("Clear video");
+    check("and leaves the game with no video", await b.until(`(document.querySelector("#editor .art-state") || {}).textContent`, "this game has no video yet", 6000), "this game has no video yet");
+    check("the server says so too", (await api("api/video-own.php" + cq)).has, false);
+    await b.key("Escape");
+    await b.until(`document.getElementById("editor").hidden`, true, 6000);
+  } finally {
+    await send("/api/art.php" + cq + "&kind=box&reset=1", null);
+    await send("/api/video-own.php" + cq + "&reset=1", null);
+    await api("api/local.php", { id: wiped.game.id, remove: true }, "POST");
   }
 };

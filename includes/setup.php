@@ -472,6 +472,13 @@ function xs_setup_auto(): bool
     return is_array($asked) && !empty($asked['auto']);
 }
 
+/** Names and pictures were switched off in the setup window: no pass starts by itself. */
+function xs_setup_pictures_off(): bool
+{
+    $asked = xs_read_json(xs_data_path('setup.json'), []);
+    return is_array($asked) && !empty($asked['noPictures']);
+}
+
 /* The Runs check the one yes owes its games. Set by the yes and the scan's
    accept; api\running.php says when it may start, api\runcheck.php clears it. */
 function xs_setup_runs_want(bool $on): void
@@ -589,6 +596,8 @@ function xs_setup_run_view(): ?array
     }
     if ($fmine) {
         $fill = (array) xs_fill_job_light($fj);          // "again": one more try is owed
+    } elseif (!empty($asked['noPictures'])) {
+        $fill = ['state' => 'skipped'];                   // switched off in the setup window
     } else {
         $fill = $games ? ['state' => 'done', 'none' => true] : ['state' => 'waiting', 'for' => 'games'];
     }

@@ -189,6 +189,8 @@ function xs_settings_defaults(): array
             // The opening screen is drawn from the copy kept when Xsegon
             // last opened, while the library is read (js/bootcopy.js).
             'openFromLast' => true,
+            // A tip put away for good is true here and never shown again (js\logotip.js).
+            'tipsGone'     => ['logoMenu' => false],
         ],
 
         /* Sound in two halves: the app's own noises and a video snap's sound.
@@ -496,6 +498,7 @@ function xs_settings_schema(): array
                                'help' => 'The list skips drawing rows far off screen until you scroll near them, which makes a long list quicker to show and to scroll. Turn off if a row ever looks late to appear.'],
             'openFromLast' => ['label' => 'Open on the copy from last time', 'section' => 'Speed',
                                'help' => 'Xsegon keeps what it showed when it last opened and shows that at once while the library is read, then draws again only if something changed. Turn off to always wait for the library.'],
+            'tipsGone'     => ['type' => 'set'],
         ],
         'video' => [
             '_label' => 'Video',
@@ -718,6 +721,11 @@ function xs_settings(): array
     if (is_array($stored['view']['badges'] ?? null)) {
         $known = xs_settings_defaults()['view']['badges'];
         $defaults['view']['badges'] = array_intersect_key(array_merge($known, $stored['view']['badges']), $known);
+    }
+    // So are the tips put away: one added later still shows to someone who put another away.
+    if (is_array($stored['feel']['tipsGone'] ?? null)) {
+        $known = xs_settings_defaults()['feel']['tipsGone'];
+        $defaults['feel']['tipsGone'] = array_intersect_key(array_merge($known, $stored['feel']['tipsGone']), $known);
     }
     foreach (XS_SETTINGS_MOVED as [$fromGroup, $fromKey, $toGroup, $toKey]) {
         if (!isset($stored[$toGroup][$toKey]) && isset($stored[$fromGroup][$fromKey])) {

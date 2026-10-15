@@ -198,6 +198,42 @@ function xs_scan_extensions(bool $disc): array
            'nsp', 'xci', 'nsz', '3ds', 'cia', 'cci'];
 }
 
+/** Consoles whose emulators play another console's games too: those stay with the folder's console. */
+function xs_scan_also_plays(): array
+{
+    return [
+        'Nintendo Game Boy Color'   => ['Nintendo Game Boy'],
+        'Nintendo Game Boy Advance' => ['Nintendo Game Boy', 'Nintendo Game Boy Color'],
+        'Sega Game Gear'            => ['Sega Master System'],
+        'Sega 32X'                  => ['Sega Genesis'],
+        'Nintendo Wii'              => ['Nintendo GameCube'],
+    ];
+}
+
+/**
+ * The console a file in a console's folder names for sure, when the folder's
+ * console cannot play it: by an ending only one console uses, or on a disc
+ * console by the disc's own label (includes\romid.php, never a guess). Null
+ * leaves it to the folder: a .zip, a .7z, a disc with no label, .md and .gen
+ * (text files have them too), or a game the folder's console plays (.gb in gbc).
+ */
+function xs_scan_file_says(array $row, string $platform, bool $disc): ?string
+{
+    $ext  = strtolower((string) ($row['ext'] ?? ''));
+    $ends = xs_romid_endings();
+    $says = null;
+    if (isset($ends[$ext]) && !in_array($ext, ['md', 'gen', 'vb'], true)) {
+        $says = $ends[$ext];
+    } elseif ($disc && in_array($ext, ['cue', 'm3u', 'iso', 'bin', 'img', 'pbp', 'ciso', 'rvz', 'wia', 'chd'], true)) {
+        $read = xs_romid((string) $row['rom'], 0, false);
+        $says = is_string($read) ? $read : null;
+    }
+    if ($says === null || strcasecmp($says, $platform) === 0 || in_array($says, xs_scan_also_plays()[$platform] ?? [], true)) {
+        return null;
+    }
+    return $says;
+}
+
 /** "Legend of Dragoon, The (USA) (Disc 2).7z" -> "The Legend of Dragoon". */
 function xs_scan_bare(string $name): string
 {
@@ -392,7 +428,7 @@ function xs_scan_one_game(array $files, bool $disc): bool
  * discs of one set), and two keys or more make it a shelf of games.
  *
  *   games     [ {name, rom, ext}, ... ]
- *   archives  [ path, ... ]   a disc in a .zip or .7z: named, never offered
+ *   archives  [ path, ... ]   a disc in a .zip or .7z, or an empty one: named, never offered
  *
  * A folder with a sheet in it (.cue, .gdi, .m3u) has its .bin files left
  * out: they are that sheet's tracks, whatever they are called.
@@ -432,6 +468,10 @@ function xs_scan_candidates(string $dir, bool $disc, int $depth = 0): array
             continue;
         }
         $ext = strtolower((string) pathinfo($n, PATHINFO_EXTENSION));
+        if (($ext === 'zip' || $ext === '7z') && @filesize($full) === 0) {
+            $out['archives'][] = $full;           // a download not finished: the caller names it
+            continue;
+        }
         if (!isset($exts[$ext]) && !xs_scan_cart_bin($full, $ext, $disc)) {
             if ($disc && ($ext === 'zip' || $ext === '7z')) {
                 $out['archives'][] = $full;
@@ -447,6 +487,90 @@ function xs_scan_candidates(string $dir, bool $disc, int $depth = 0): array
         $out['games'][] = ['name' => $n, 'rom' => $full, 'ext' => $ext];
     }
     return $out;
+}
+
+/**
+ * An empty archive's download so far. Firefox makes the archive's name as an
+ * empty file and fills Name.<letters>.7z.part beside it until the end: the
+ * newest such file, or null.
+ */
+function xs_scan_part_of(string $file): ?string
+{
+    $stem = preg_quote((string) pathinfo($file, PATHINFO_FILENAME), '/');
+    $ext  = preg_quote((string) pathinfo($file, PATHINFO_EXTENSION), '/');
+    $part = null;
+    foreach (@scandir(dirname($file)) ?: [] as $n) {
+        if (preg_match('/^' . $stem . '(\.[A-Za-z0-9]{1,12})?\.' . $ext . '\.part$/i', $n)) {
+            $full = dirname($file) . DIRECTORY_SEPARATOR . $n;
+            if (is_file($full) && ($part === null || (int) @filemtime($full) > (int) @filemtime($part))) {
+                $part = $full;
+            }
+        }
+    }
+    return $part;
+}
+
+/** A part file written to in the last two minutes: its download is still going. */
+function xs_scan_part_going(?string $part): bool
+{
+    return $part !== null && time() - (int) @filemtime($part) < 120;
+}
+
+/** Why an empty .zip or .7z holds no game: how far its download got, and when it last moved. */
+function xs_scan_unfinished(string $file, ?string $part): string
+{
+    if ($part === null) {
+        return 'an empty file, so there is no game in it: a download or a copy that did not finish. Fetch it again, then scan again';
+    }
+    require_once __DIR__ . '/jobs.php';
+    $got = xs_jobs_size((int) @filesize($part));
+    $at  = (int) @filemtime($part);
+    if (xs_scan_part_going($part)) {
+        return 'still downloading: ' . $got . ' so far in ' . basename($part) . ' beside it. Scan again when the download has finished';
+    }
+    return 'an empty file: its download stopped part way on ' . date('Y-m-d \a\t H:i', $at) . ', with ' . $got . ' of it in '
+        . basename($part) . ' beside it. Finish the download in your browser, then scan again';
+}
+
+/**
+ * Clear it: deletes an empty archive and its download so far. Read again at
+ * the press: only an empty .zip or .7z under a games folder, never while its
+ * download is going. The bytes freed, or null with $why; $fault when the disk
+ * refused, which is said with the report pointer.
+ */
+function xs_scan_clear_unfinished(string $file, ?string &$why = null, bool &$fault = false): ?int
+{
+    require_once __DIR__ . '/unpack.php';
+    $fault = false;
+    if (!xs_unpack_allowed($file, $why)) {
+        return null;
+    }
+    clearstatcache();
+    if ((int) @filesize($file) !== 0) {
+        $why = 'it is no longer empty: its download has finished. Scan again to unpack it';
+        return null;
+    }
+    $part = xs_scan_part_of($file);
+    if (xs_scan_part_going($part)) {
+        $why = 'it is still downloading. Stop it in your browser first';
+        return null;
+    }
+    $bytes = $part === null ? 0 : (int) @filesize($part);
+    // The part first: a browser holding it open refuses, and the empty file then stays to say so.
+    foreach (array_filter([$part, $file]) as $f) {
+        if (!@unlink($f)) {
+            $said = (string) (error_get_last()['message'] ?? 'Windows gave no reason');
+            // Held open (PHP says "temporarily unavailable") is the person's to end, not a fault to report.
+            if (stripos($said, 'temporarily unavailable') !== false) {
+                $why = 'another program has ' . basename($f) . ' open, most likely your browser. Close it, then press Clear it again';
+                return null;
+            }
+            $fault = true;
+            $why = basename($f) . ' could not be deleted: ' . $said;
+            return null;
+        }
+    }
+    return $bytes;
 }
 
 /**
@@ -518,6 +642,8 @@ function xs_scan_walk(?string $rootOverride = null): array
     $out  = ['root' => $roots[0] ?? '', 'roots' => $roots, 'folders' => [],
              'new' => [], 'archives' => [], 'gaps' => [], 'unknown' => [], 'm3u' => [], 'orphans' => [], 'loose' => [],
              'unsure' => [],
+             // An empty .zip or .7z: a download not finished (xs_scan_unfinished), named and never offered to unpack.
+             'unfinished' => [],
              'skippedFolders' => [], 'alreadyHave' => 0, 'junk' => 0, 'newPlatforms' => [], 'noEmulator' => [],
              // Said, never passed over in silence: a file taken for a game that is here under another
              // file ('passed'), and what was counted as no game at all ('junkFiles').
@@ -526,6 +652,8 @@ function xs_scan_walk(?string $rootOverride = null): array
              'copies' => [],
              // A folder of arcade sets: how many files, how many are games, and what was left out (includes\arcade.php).
              'arcade' => [],
+             // A file whose own contents name a console its folder's cannot play: offered as that one (xs_scan_file_says).
+             'refiled' => [],
              'ms' => 0];
     if (!$roots) {
         $out['error'] = 'no games folder chosen yet: Help > Getting started asks for one, or press Add a folder below';
@@ -726,6 +854,9 @@ function xs_scan_walk(?string $rootOverride = null): array
                 'rom'      => $r['rom'],
                 'discs'    => $r['disc'] !== null || $r['ext'] === 'm3u' || $r['ext'] === 'pbp' ? true : false,
             ];
+            if (isset($r['filedIn'])) {
+                $row['filedIn'] = $r['filedIn'];    // it stands in another console's folder
+            }
             /* That id held by another file: a game of another name kept under
                the same file name (disc.gdi in each game's own folder) takes
                its folder into the hash and is a game of its own. One of the
@@ -764,6 +895,9 @@ function xs_scan_walk(?string $rootOverride = null): array
             $newHere++;
             $idHeld[$row['id']] ??= ['rom' => $romKey, 'title' => $title];
             $out['new'][] = $row;
+            if (isset($row['filedIn'])) {
+                $out['refiled'][] = ['rom' => $row['rom'], 'folder' => $row['filedIn'], 'platform' => $platform];
+            }
         }
         // An empty folder called "gamegear" is not a new console.
         if ($newHere > 0) {
@@ -789,6 +923,12 @@ function xs_scan_walk(?string $rootOverride = null): array
         $exts   = array_flip(xs_scan_extensions($isDisc));
         $rows   = [];
         $archive = static function (string $file) use (&$out, $platform): void {
+            if (@filesize($file) === 0) {
+                $part = xs_scan_part_of($file);
+                $out['unfinished'][] = ['platform' => $platform, 'file' => $file, 'why' => xs_scan_unfinished($file, $part),
+                    'part' => $part, 'bytes' => $part === null ? 0 : (int) @filesize($part), 'going' => xs_scan_part_going($part)];
+                return;
+            }
             $out['archives'][] = ['platform' => $platform, 'file' => $file,
                 'why' => 'looks like a disc in an archive: a CD core cannot read it from there. Extract it and rescan'];
         };
@@ -870,6 +1010,11 @@ function xs_scan_walk(?string $rootOverride = null): array
                 continue;
             }
             $ext = strtolower((string) pathinfo($n, PATHINFO_EXTENSION));
+            // An empty archive is a download not finished, on a cartridge console too, where a .zip is a game.
+            if (($ext === 'zip' || $ext === '7z') && @filesize($full) === 0) {
+                $archive($full);
+                continue;
+            }
             if (!isset($exts[$ext]) && !xs_scan_cart_bin($full, $ext, $isDisc)) {
                 if (preg_match('/\.(7z|zip)$/i', $n) && $isDisc) {
                     $archive($full);
@@ -924,13 +1069,32 @@ function xs_scan_walk(?string $rootOverride = null): array
         $placed[$console][] = ['name' => $n, 'rom' => $full, 'ext' => $ext];
         return true;
     };
+    /* Inside a console's folder: a file that names, for sure, a console the
+       folder's cannot play joins that console's rows (a PlayStation disc in
+       gc). One the library has already stays as it is and is not read. */
+    $sortOut = static function (string $platform, array $rows) use (&$placed, &$out, $known, $discs): array {
+        if ($platform === XS_ARCADE) {
+            return $rows;
+        }
+        $kept = [];
+        foreach ($rows as $r) {
+            $says = isset($r['title']) || isset($known[strtolower(str_replace('/', '\\', (string) $r['rom']))])
+                ? null : xs_scan_file_says($r, $platform, isset($discs[$platform]));
+            if ($says === null) {
+                $kept[] = $r;
+                continue;
+            }
+            $placed[$says][] = $r + ['filedIn' => $platform];
+        }
+        return $kept;
+    };
     /* A folder that is no console's: everything under it, to six levels. A
        folder named for a console on the way down is read as that console's.
        Answers whether anything that is, or may be, a game was met. Stops
        after 40,000 files in all: a whole Documents folder is not a games
        folder, and the screen says to add the folder that is. */
     $budget = 40000;
-    $wander = static function (string $dir, int $depth) use (&$wander, &$budget, &$out, $place, $process, $consoleRows, $map): bool {
+    $wander = static function (string $dir, int $depth) use (&$wander, &$budget, &$out, $place, $process, $consoleRows, $sortOut, $map): bool {
         $any = false;
         foreach (@scandir($dir) ?: [] as $n) {
             if ($n === '.' || $n === '..') {
@@ -955,7 +1119,7 @@ function xs_scan_walk(?string $rootOverride = null): array
             $platform = $map[strtolower(trim($n))] ?? xs_scan_platform_for($n);
             if ($platform !== null) {
                 $rows = $consoleRows($full, $platform);
-                $process($platform, $rows);
+                $process($platform, $sortOut($platform, $rows));
                 $any = $any || $rows !== [];
             } elseif ($depth < 6) {
                 $any = $wander($full, $depth + 1) || $any;
@@ -1000,7 +1164,7 @@ function xs_scan_walk(?string $rootOverride = null): array
                 }
                 continue;
             }
-            $process($platform, $consoleRows($dir, $platform));
+            $process($platform, $sortOut($platform, $consoleRows($dir, $platform)));
         }
         // What the files of this games folder said for themselves.
         foreach ($placed as $platform => $rows) {
@@ -1276,7 +1440,9 @@ function xs_scan_after_accept(array $games, int $added, bool $byItself): array
                 }
             }
             require_once __DIR__ . '/fill.php';
-            if (!xs_fill_running()) {
+            if (xs_setup_pictures_off()) {
+                xs_log('FILL', 'not started after the scan: names and pictures were switched off in the setup window');
+            } elseif (!xs_fill_running()) {
                 $fillWhy = null;
                 $auto['fill'] = xs_fill_start(['mode' => 'all', 'picks' => [], 'pictures_wanted' => true,
                                                'complete' => false, 'dry' => false], $fillWhy);

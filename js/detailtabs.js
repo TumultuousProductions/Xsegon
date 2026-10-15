@@ -15,6 +15,7 @@ import { hacksPane, hacksTabLabel } from "./hackstab.js";
 import { paintHelp } from "./help.js";
 import { iconEl } from "./icons.js";
 import { L } from "./log.js";
+import { mediaPane, mediaTabLabel } from "./mediatab.js";
 import { notesPane, notesTabLabel } from "./notestab.js";
 import { savesPane, savesTabLabel } from "./savestab.js";
 import { sound } from "./sound.js";
@@ -24,6 +25,7 @@ import { versionsPane, versionsTabLabel } from "./versionstab.js";
 function dtabs(g) {
   var t = [
     { key: "about",  label: function () { return "About"; }, build: aboutPane },
+    { key: "media",  label: mediaTabLabel, build: mediaPane },
     { key: "saves",  label: savesTabLabel, build: savesPane },
     { key: "filecheck", label: fileCheckTabLabel, build: fileCheckPane },
     { key: "cheats", label: cheatsTabLabel, build: cheatsPane },

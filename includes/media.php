@@ -5,8 +5,11 @@
  *     data\media\<Platform>\<game id>-<kind>.<ext>     kind: box logo shot fanart video
  *
  * NOTHING FILLS THIS FOLDER. Xsegon copies nothing into it; a copy that is
- * there is the person's own and is shown from here. Everything
- * here reads: nothing in data\media is made, replaced or deleted.
+ * there is the person's own and is shown from here. Nothing in it is made or
+ * replaced, and one thing deletes: Clear video or Clear all, pressed on a
+ * game, deletes that game's video (big, and another is a fetch away; its
+ * pictures are only hidden). Never in a media folder outside Xsegon's data
+ * folder (paths.mediaDir): video_may_delete, includes\video.php.
  *
  * Filed by game id, so a picture's address never needs the library read.
  *

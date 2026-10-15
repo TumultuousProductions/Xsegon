@@ -148,14 +148,16 @@ module.exports = async function (b, check) {
     await b.setView("list");
     await b.openPlatform("Nintendo 64");
     check("(the game's details open)", await detailsOf(b, ID), true);
-    check("the Saves tab stands after About, before File check, Cheats and Hacks, and counts what there is",
-      await b.until(`${TABS}.map((x) => x.textContent)`, ["About", "Saves (9)", "File check", "Cheats", "Hacks", "Accompanied files", "Notes"], 8000), ["About", "Saves (9)", "File check", "Cheats", "Hacks", "Accompanied files", "Notes"]);
+    check("the Saves tab stands after About and Media, before File check, Cheats and Hacks, and counts what there is",
+      await b.until(`${TABS}.map((x) => x.textContent)`, ["About", "Media", "Saves (9)", "File check", "Cheats", "Hacks", "Accompanied files", "Notes"], 8000), ["About", "Media", "Saves (9)", "File check", "Cheats", "Hacks", "Accompanied files", "Notes"]);
     await b.ev(`(() => { window.__realFetch = window.fetch; window.__launches = []; window.__shown = []; window.fetch = function (u, o) {
         if (String(u).indexOf("api/launch.php") >= 0) { window.__launches.push(JSON.parse(o.body)); return Promise.resolve(new Response(JSON.stringify({ ok: true, launched: "stub", via: "stub", slot: JSON.parse(o.body).slot === undefined ? null : JSON.parse(o.body).slot, loads: "hotkey" }), { headers: { "Content-Type": "application/json" } })); }
         if (String(u).indexOf("api/reveal.php") >= 0) { window.__shown.push(JSON.parse(o.body)); }
         return window.__realFetch(u, o); }; })()`);
     await b.key("ArrowRight");
-    check("Right opens it: the groups by name, and a row for every save",
+    await b.until(`${TABS}.some((x) => x.classList.contains("on") && x.textContent === "Media")`, true, 4000);
+    await b.key("ArrowRight");
+    check("Right, past Media, opens it: the groups by name, and a row for every save",
       [await b.until(`[...document.querySelectorAll("#details .dtab-pane.is-saves .sv-head")].map((h) => h.textContent)`,
          ["Save states", "In-game save", "Kept for another core", "Beside the game's file"], 9000), await b.ev(`${ROWS}.length`), await b.ev(tabOn)],
       [["Save states", "In-game save", "Kept for another core", "Beside the game's file"], 9, "Saves (9)"]);

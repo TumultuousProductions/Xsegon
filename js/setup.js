@@ -10,7 +10,6 @@
  *  stale page cannot fetch a second RetroArch.
  */
 
-import { firstCards, startAuto } from "./autosetup.js";
 import { confirmWindow } from "./confirm.js";
 import { closeEditor, reloadKeeping, setEditorOnClose } from "./editors.js";
 import { openFillTool } from "./fill.js";
@@ -20,6 +19,7 @@ import { L, api, postJson } from "./log.js";
 import { openGamesFolder } from "./nogames.js";
 import { openScanTool, pickWindowsFolder } from "./scan.js";
 import { jobBarNode, jobBarSet, jobFrac, jobLine, quietDone, setGuidePaint, setRowsPaint, watchSetup, watchUp } from "./setupbar.js";
+import { openSetupWindow } from "./setupwin.js";
 import { stopVideo } from "./snap.js";
 import { sound } from "./sound.js";
 import { $editor, games, sel } from "./state.js";
@@ -181,13 +181,13 @@ export function confirmCores(st, after) {
   }
 }
 
-/* Set it all up lives in js\autosetup.js. */
+/* Set it all up lives in js\setupwin.js (the window) and js\autosetup.js (what its press starts). */
 
 /* ---------- where these live ---------- */
 
 /* Once, at startup, for someone new: no RetroArch in use, or no games yet.
-   The first time only: Set it all up as short questions while it is on
-   offer (js\autosetup.js), the guide otherwise; Help > Getting started
+   The first time only: the setup window while Set it all up is on
+   offer (js\setupwin.js), the guide otherwise; Help > Getting started
    opens the guide any time after. Everyone who is already set up hears nothing. */
 export function firstRunSetup() {
   return api("api/setup.php").then(function (st) {
@@ -196,7 +196,7 @@ export function firstRunSetup() {
     var fresh = !(st.retroarch.have && st.retroarch.inTable) || st.guide.games === 0;
     if (fresh && !st.guide.shown) {
       post({ asked: "guide" });
-      if (!st.auto && (st.canGet || st.canUse)) { firstCards(st, openGuide); } else { openGuide(); }
+      if (!st.auto && (st.canGet || st.canUse)) { openSetupWindow(st, openGuide); } else { openGuide(); }
     }
   });
 }
@@ -280,11 +280,11 @@ export function openGuide() {
     // Set it all up: the rest of this page without the pressing, shown while
     // RetroArch is the next thing to do; once it is in, the offer is only noise.
     if (!st.auto && !running && (st.canGet || st.canUse)) {
-      // No window after the press, so what it downloads is said here.
+      // What it downloads is said here; the press opens the setup window (js\setupwin.js).
       var lead = el("div", "gd-lead");
       var words = el("div", "gd-lead-words");
       words.appendChild(el("p", "gd-text",
-        "Xsegon can set all of this up for you. You choose the folder your games are in, and it does the rest by itself: RetroArch, the cores your consoles need, and your games' names and pictures."));
+        "Xsegon can set all of this up for you. One window shows the folder your games are in and what it will set up, and one press does the rest: RetroArch, the cores your consoles need, and your games' names and pictures."));
       words.appendChild(el("p", "gd-lead-note", (st.canGet
         ? (st.get.carried ? "It sets up RetroArch " + st.get.version + ", which came with Xsegon, in " + st.get.dest + ", and downloads the cores"
                           : "It downloads RetroArch " + st.get.version + " (" + megabytes(st.get.bytes) + ") from " + st.get.url + " into " + st.get.dest + ", and the cores")
@@ -292,7 +292,7 @@ export function openGuide() {
         ", 1 to 30 MB each, from buildbot.libretro.com. Downloads are checked against the copies Xsegon was tested with. BIOS files and games are never downloaded."));
       lead.appendChild(words);
       var go = el("button", "primary", "Set it all up");
-      go.addEventListener("click", function () { guideDid = true; go.disabled = true; startAuto(st); });
+      go.addEventListener("click", function () { guideDid = true; openSetupWindow(st, openGuide, go); });
       lead.appendChild(go);
       list.appendChild(lead);
     } else if (st.auto) {

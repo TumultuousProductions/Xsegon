@@ -385,8 +385,9 @@ module.exports = async function (b, check) {
     const walk = async (button, to) => { for (let i = 0; i < 8 && (await b.ev(AT)) !== to; i++) { await press(0, button); } return b.until(AT, to, 2000); };
     check("further left, the bar ends on the wordmark", await walk(14, "brand-logo"), "brand-logo");
     await press(0, 0);
+    // Its first entry is Games: where the bar is not, the logo's menu leads with the bar's menus (roadmap AL5).
     check("yes there opens the round X's menu with the bar on the first entry, and lights the wordmark",
-          await b.until(`[(document.querySelector(".ctx-item.at .ctx-label") || {}).textContent, document.getElementById("brand-logo").classList.contains("open")]`, ["Settings...", true], 3000), ["Settings...", true]);
+          await b.until(`[(document.querySelector(".ctx-item.at .ctx-label") || {}).textContent, document.getElementById("brand-logo").classList.contains("open")]`, ["Games", true], 3000), ["Games", true]);
     await press(0, 1);
     check("the button that goes back puts it away and leaves the bar on the wordmark", await b.until(`[!!document.querySelector(".ctx"), ${AT}]`, [false, "brand-logo"], 3000), [false, "brand-logo"]);
     check("(and right walks back to the view picker)", await walk(15, "viewsel"), "viewsel");
