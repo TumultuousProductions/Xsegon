@@ -220,7 +220,7 @@ module.exports = async function (b, check) {
       await b.ev(`(n => !!n && n.classList.contains("can-add"))(document.querySelector("#view .rows-pic .hero-noart"))`), true);
     await b.setView("grid");               // the view this group found, for the groups after it
 
-    /* ---- the Media tab: another game's pictures and video, copied onto this one (roadmap AM1) ----
+    /* ---- the Media tab: this game's own pictures and video, and another game's copied onto it (roadmap AM1, AM2) ----
        Onto the scratch game alone: a copy drops that game's thumbnails, and the test copy's data\thumbs is the real folder. */
     const cm = (q, method) => api("api/copy-media.php?id=" + encodeURIComponent(bare.game.id) + q, null, method);
     const key = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "");
@@ -267,8 +267,28 @@ module.exports = async function (b, check) {
       await b.until(`!document.getElementById("details").hidden`, true, 6000);
       check("Media is the second tab", await b.until(`[...document.querySelectorAll("#details .dtab")].map(n => n.dataset.tab).slice(0, 2).join(",")`, "about,media", 6000), "about,media");
       await b.ev(`document.querySelector('#details .dtab[data-tab="media"]').click()`);
-      check("it opens on the games, with a find box",
-        await b.until(`document.querySelectorAll("#details .md-game").length > ${at} && !!document.querySelector("#details .md-tab .ch-find input")`, true, 8000), true);
+      const ownRows = `[...document.querySelectorAll("#details .md-own .cr-row")].map(n => n.dataset.kind || (n.className.match(/md-(copy|clear)/) || [])[1]).join(",")`;
+      check("it opens on this game's own media: a row a picture, the video, Copy from another game and Clear all",
+        await b.until(ownRows, "box,box3d,logo,shot,fanart,video,copy,clear", 8000), "box,box3d,logo,shot,fanart,video,copy,clear");
+      const own = await api("api/art.php?id=" + bare.game.id);
+      check("each picture says how it stands, as Change Pictures does, and the video only where its file is",
+        await b.ev(`[document.querySelector('#details .md-kind[data-kind="box"] .sv-sub').textContent, document.querySelector("#details .md-video .md-path").textContent, !document.querySelector("#details .md-video video, #details .md-video img")]`),
+        ["replaced in Xsegon", own.video.has ? own.video.path : "none", true]);
+      if (own.video.has) {
+        await b.ev(`document.querySelector("#details .md-video").click()`);
+        check("a press on the video asks before clearing it", await b.until(`(document.querySelector(".confirm h2") || {}).textContent || ""`, "Clear the video of " + own.title + "?", 4000), "Clear the video of " + own.title + "?");
+        await b.ev(`[...document.querySelectorAll(".confirm-bar button")].find(x => x.textContent === "Cancel").click()`);
+        check("and Cancel keeps it", (await api("api/art.php?id=" + bare.game.id)).video.has, true);
+      }
+      await b.ev(`document.querySelector('#details .md-kind[data-kind="box"]').click()`);
+      const menuNow = `[...document.querySelectorAll(".ctx .ctx-item")].map(n => n.querySelector(".ctx-label").textContent).join("|")`;
+      const wantMenu = ["Replace..."].concat(await b.ev(`!!(window.XSEGON && window.XSEGON.gamesdb)`) ? ["Find online..."] : [], ["Remove"]).join("|");
+      check("a press on a picture opens the buttons Change Pictures has for it", await b.until(menuNow, wantMenu, 4000), wantMenu);
+      await b.ev(`(async () => (await import("/js/menus.js")).closeGameMenu())()`);
+      await b.until(`!document.querySelector(".ctx")`, true, 4000);
+      await b.ev(`document.querySelector("#details .md-copy").click()`);
+      check("Copy from another game opens the games, with a find box and a way back",
+        await b.until(`document.querySelectorAll("#details .md-game").length > ${at} && !!document.querySelector("#details .md-tab .ch-find input") && !!document.querySelector("#details .md-home")`, true, 8000), true);
       await b.ev(`document.querySelectorAll("#details .md-game")[${at}].click()`);
       const kindsShown = `[...document.querySelectorAll("#details .md-kinds .cr-row")].map(n => n.dataset.kind || (n.className.match(/md-(back|all)/) || [])[1]).join(",")`;
       check("a game pressed shows Back, Copy all, and a row a kind", await b.until(kindsShown, "back,all,box,box3d,logo,shot,fanart,video", 8000), "back,all,box,box3d,logo,shot,fanart,video");
@@ -287,6 +307,17 @@ module.exports = async function (b, check) {
           check("and Cancel copies nothing", boxRow(await cm(q)).same, true);
         }
       }
+      // Back through the games to this game's own media, and a picture's button pressed there.
+      await b.ev(`document.querySelector("#details .md-back").click()`);
+      await b.until(`!!document.querySelector("#details .md-home")`, true, 8000);
+      await b.ev(`document.querySelector("#details .md-home").click()`);
+      await b.until(`!!document.querySelector('#details .md-own .md-kind[data-kind="box"]')`, true, 8000);
+      await b.ev(`document.querySelector('#details .md-kind[data-kind="box"]').click()`);
+      await b.until(`!!document.querySelector(".ctx")`, true, 4000);
+      await b.ev(`[...document.querySelectorAll(".ctx .ctx-item")].find(n => n.querySelector(".ctx-label").textContent === "Remove").click()`);
+      check("Remove there takes the copied box art away, and the row says so",
+        [await b.until(`(document.querySelector('#details .md-kind[data-kind="box"] .sv-sub') || {}).textContent`, "no image", 8000),
+         (await api("api/art.php?id=" + bare.game.id)).kinds.box.replaced], ["no image", false]);
       await b.ev(`(async () => (await import("/js/details.js")).closeDetails())()`);
     }
   } finally {

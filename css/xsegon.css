@@ -522,11 +522,11 @@ body.no-anim .ctx { animation: none; }
   font: 12px/1.5 var(--mono); color: var(--mute); background: var(--panel-2); padding: 8px 12px; border-radius: 8px; }
 .ss-plat { color: var(--mute); font-size: 11.5px; white-space: nowrap; }
 .ss-plat { overflow: hidden; text-overflow: ellipsis; }
-/* Never taller than the screen: what is above the list keeps its height, and the list
-   scrolls in the rest. Its own overflow, since .sc-rows (later) would hide the rows. */
+/* Never taller than the screen: what is above the lists keeps its height, and both lists
+   scroll together in the rest (.st-scroll, as in Steam trailers above). */
 .panel-inner.ss { max-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; }
 .panel-inner.ss > * { flex: none; }
-.panel-inner.ss > .sv-rows { flex: 1 1 auto; min-height: 140px; max-height: none; overflow-y: auto; }
+.panel-inner.ss > .st-scroll { flex: 1 1 auto; min-height: 140px; overflow-y: auto; }
 .setup-prog.bad { color: var(--bad) !important; }
 button.danger {
   border-color: rgba(248, 113, 113, .6); color: var(--bad);
@@ -3763,6 +3763,13 @@ body.no-anim .hk-listen.catching { animation: none; }
 .md-pair { display: flex; align-items: center; gap: 12px; margin: 10px 0; }
 .md-pair .md-shot { flex: 0 0 120px; height: 90px; }
 .md-what { font-size: 13px; color: var(--mute); }
+/* This game's own rows: a file held over a picture, a picture not used, and the video's file written out whole. */
+.md-mine.drop { outline: 2px dashed var(--cyan); outline-offset: -2px; }
+.md-mine.md-hid .md-shot { opacity: .45; }
+.md-tab .sv-sub.bad { color: var(--bad); }
+.md-video .sv-words { flex: 1 1 auto; min-width: 0; }
+.md-video .md-path { white-space: normal; overflow-wrap: anywhere; font-family: var(--mono); }
+.md-tab .pk-grid { max-height: calc(100vh - 520px - var(--strip-h)); min-height: 140px; }
 
 /* ---- settings, dressed as a console menu ----------------------------------
    A dark sheet, white words big enough to read from a sofa, an icon at the
@@ -4742,16 +4749,16 @@ body.no-glow .rcard.sel { box-shadow: none; }
 .rcard.sel .rcard-cap { color: var(--ink); }
 
 /* The bar: the list's, on the rows (up and down), and the ScreenScraper and Steam trailers windows' games. */
-.rows-list, .panel-inner.ss > .sv-rows, .panel-inner.st > .st-scroll { scrollbar-width: auto; scrollbar-color: auto; }
-.rows-list::-webkit-scrollbar, .panel-inner.ss > .sv-rows::-webkit-scrollbar, .panel-inner.st > .st-scroll::-webkit-scrollbar { display: block; width: 10px; }
-.rows-list::-webkit-scrollbar-track, .panel-inner.ss > .sv-rows::-webkit-scrollbar-track, .panel-inner.st > .st-scroll::-webkit-scrollbar-track { background: rgba(var(--well-rgb), .55); border-left: 1px solid var(--rule); }
-.rows-list::-webkit-scrollbar-thumb, .panel-inner.ss > .sv-rows::-webkit-scrollbar-thumb, .panel-inner.st > .st-scroll::-webkit-scrollbar-thumb {
+.rows-list, .panel-inner.ss > .st-scroll, .panel-inner.st > .st-scroll { scrollbar-width: auto; scrollbar-color: auto; }
+.rows-list::-webkit-scrollbar, .panel-inner.ss > .st-scroll::-webkit-scrollbar, .panel-inner.st > .st-scroll::-webkit-scrollbar { display: block; width: 10px; }
+.rows-list::-webkit-scrollbar-track, .panel-inner.ss > .st-scroll::-webkit-scrollbar-track, .panel-inner.st > .st-scroll::-webkit-scrollbar-track { background: rgba(var(--well-rgb), .55); border-left: 1px solid var(--rule); }
+.rows-list::-webkit-scrollbar-thumb, .panel-inner.ss > .st-scroll::-webkit-scrollbar-thumb, .panel-inner.st > .st-scroll::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, rgba(var(--cyan-rgb), .8), rgba(var(--cyan-rgb), .5));
   background-clip: padding-box; border: 2px solid transparent; min-height: 48px;
 }
-.rows-list::-webkit-scrollbar-thumb:hover, .panel-inner.ss > .sv-rows::-webkit-scrollbar-thumb:hover, .panel-inner.st > .st-scroll::-webkit-scrollbar-thumb:hover { background: var(--cyan); background-clip: padding-box; }
+.rows-list::-webkit-scrollbar-thumb:hover, .panel-inner.ss > .st-scroll::-webkit-scrollbar-thumb:hover, .panel-inner.st > .st-scroll::-webkit-scrollbar-thumb:hover { background: var(--cyan); background-clip: padding-box; }
 @supports not selector(::-webkit-scrollbar) {
-  .rows-list, .panel-inner.ss > .sv-rows, .panel-inner.st > .st-scroll { scrollbar-width: thin; scrollbar-color: rgba(var(--cyan-rgb), .7) rgba(var(--well-rgb), .55); }
+  .rows-list, .panel-inner.ss > .st-scroll, .panel-inner.st > .st-scroll { scrollbar-width: thin; scrollbar-color: rgba(var(--cyan-rgb), .7) rgba(var(--well-rgb), .55); }
 }
 
 /* No bar under each row: a row with more past an edge FADES at that edge
@@ -5400,3 +5407,23 @@ body.no-glow .flt-tag.on { box-shadow: none; }
 /* The keys' place in the window: the row or heading they are on wears the bar, inside its box. */
 .flt-inner .opt:focus-visible, .flt-inner .sect-head:focus-visible, .flt-inner .opt.pad-at, .flt-inner .sect-head.pad-at { outline-offset: -2px; }
 .flt-inner .opt:focus-visible::before, .flt-inner .opt:has(:focus-visible)::before, .flt-inner .sect-head:focus-visible::before { opacity: 1; }
+
+/* ---------- Fan projects (js/fanprojects.js) ----------
+   Made of the games' own boxes (the grid, its tiles and headings, the panel), so a theme dresses
+   it as it dresses the games; here is only what they have no box for. Its grid and panel reach
+   down to the legend from where the page's own grid starts (--fan-top, measured as it opens). */
+.fanpage { --fill-h: max(260px, calc(100vh - var(--fan-top, 220px) - var(--foot-h, var(--help-h, 42px)) - 12px)); }
+.fan-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 14px; margin: 10px 0 0; }
+.fan-name { color: var(--cyan); font-size: 15px; letter-spacing: .24em; text-transform: uppercase; }
+.fan-sub { color: var(--faint); font-size: 12px; letter-spacing: .06em; }
+.fanpage .tile .cap .bdg { opacity: 1; margin-left: 6px; }
+/* Where a project stands, one line under its name: fits, works, another release, missing. */
+.fanpage .tile .fan-st { padding: 0 9px 8px; font-size: 11.5px; line-height: 1.35; color: var(--faint); }
+.fanpage .tile .fan-st.ok { color: var(--good); }
+.fanpage .tile .fan-st.warn { color: var(--warn); }
+.fanpage .tile .fan-st.no { color: var(--bad); }
+.fanpage .fan-noart { font-size: 10.5px; }
+/* The panel's words are as long as a project's: they wrap, and the picture gives up the room. */
+.fanpage .hero-info { height: auto; }
+.fanpage .hero .hero-stats .v { white-space: normal; overflow: visible; }
+.fan-wait { grid-column: 1 / -1; padding: 18px 2px; color: var(--faint); font-size: 12.5px; letter-spacing: .06em; }

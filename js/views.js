@@ -9,6 +9,7 @@
 import { measureChrome } from "./chrome.js";
 import { dropDetails, openDetails } from "./details.js";
 import { dragAte } from "./drag.js";
+import { dropFanPage } from "./fanprojects.js";
 import { paintHelp, paintHelpHere } from "./help.js";
 import { heroOn, paintHero, paintHeroArt } from "./hero.js";
 import { artHint } from "./hint.js";
@@ -599,6 +600,7 @@ function logSel() {
 export function setView(next) {
   L("VW", view + " -> " + next + (sysStage === "wall" ? " (on the wall)" : ""));
   dropDetails();                         // a new view is never drawn under details
+  dropFanPage();                         // nor under the Fan projects page: the screen it covered comes back to change
   setViewMode(next);
   var payload = { "default": next };
 

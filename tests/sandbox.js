@@ -57,7 +57,7 @@ const FRESH = ["log", "backups", "reports"];
    ra-remaps: the button files the person's last real launches staged. A
    launch writes its own there, and the settings group must find the one it
    staged, not a game's file left by a real play. */
-const LEFT_OUT = /^(main-busy|phone\.json|phone-(stop|seen|closed)|browser-profile.*|emulators|videos|documents|extras|videos-steam|sounds-own|sounds-staged|ra-remaps|steamvid-(job|none)\.json|fill-(job|look)\.json|fill-stop|videos-screenscraper|screenscraper(-job)?\.json|screenscraper-shared\.dat|log|backups|reports|server\.log|gamesdb\.sqlite(-wal|-shm|\.part\d+)?|gamesdb-update|libretro)$/i;
+const LEFT_OUT = /^(main-busy|phone\.json|phone-(stop|seen|closed)|browser-profile.*|emulators|videos|documents|extras|videos-steam|sounds-own|sounds-staged|ra-remaps|steamvid-(job|none)\.json|fill-(job|look)\.json|fill-stop|videos-screenscraper|screenscraper(-job|-none)?\.json|screenscraper-shared\.dat|log|backups|reports|server\.log|gamesdb\.sqlite(-wal|-shm|\.part\d+)?|gamesdb-update|libretro)$/i;
 const HARD_LINKED = ["gamesdb.sqlite"];
 
 function php() {

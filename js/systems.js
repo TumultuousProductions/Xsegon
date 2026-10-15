@@ -2,6 +2,7 @@ import { openPlatformArtEditor } from "./art-editors.js";
 import { measureChrome } from "./chrome.js";
 import { dropDetails } from "./details.js";
 import { dragAte } from "./drag.js";
+import { FAN_KEY, dropFanPage, openFanPage } from "./fanprojects.js";
 import { openFilterWindow } from "./filterwin.js";
 import { paintHelp } from "./help.js";
 import { showStrip } from "./launch.js";
@@ -47,6 +48,8 @@ function buildSysList() {
     sysList.push({ name: c.key, label: c.label, count: n, show: sysShow[c.key] || null,
                    collection: true, note: c.note || null });
   });
+  // Fan projects rides last: a page of its own, not a list of games (js\fanprojects.js).
+  sysList.push({ name: FAN_KEY, label: "Fan projects", count: 0, show: null, collection: true, fan: true, note: null });
   if (sysSel >= sysList.length) { sysSel = 0; }
 }
 
@@ -65,6 +68,7 @@ export function repaintWall() {
 // "34 games", or "12 games · 2+ players" while a filter is on: the number
 // is only honest with its condition beside it.
 function countLabel(p) {
+  if (p.fan) { return "Hacks, mods and PC versions"; }
   if (p.note) { return p.note; }         // an empty collection says why instead of "0 games"
   var words = filterWords();
   return p.count + (p.count === 1 ? " game" : " games") + (words ? " · " + words : "");
@@ -79,6 +83,7 @@ export function enterSystems() {
   }
   L("NAV", "the wall, " + sysStyle());
   dropDetails();                         // nothing of a game's stays over the consoles
+  dropFanPage();                         // nor the Fan projects page
   stopVideo();
   setSysStage("wall");
   buildSysList();
@@ -95,6 +100,7 @@ export function enterSystems() {
 export function backToWall() {
   L("NAV", "back to the wall from " + ($platform.value || "all"));
   dropDetails();
+  dropFanPage();
   stopVideo();
   // Built here too, not only on the way in: the wall can be reached without
   // ever having been entered (opening on every game in List or Grid, or the
@@ -123,6 +129,7 @@ export function backToWall() {
    "" is how List and Grid open from the consoles screen: they have no wall
    shape, so they open the whole library and the back arrow goes back. */
 export function chooseSystem(name) {
+  if (name === FAN_KEY) { openFanPage(); return; }
   // An empty collection stays on the rim, greyed, so it can explain its
   // rule instead of vanishing and reading as broken. Opening it would show
   // nothing; the answer is the rule, from every door that leads here.
@@ -158,6 +165,7 @@ export function chooseSystem(name) {
    The dropdown is painted the moment the wall goes, or for the length of a
    request it names the wall's shape over a list. */
 function showInside(name) {
+  dropFanPage();                         // a console or every game, chosen from over the Fan projects page
   setSysStage("inside");
   // The game view is whatever the dropdown says: systems first is a toggle,
   // so the systems wheel can open into the game wheel.
@@ -366,6 +374,7 @@ function paintSysArt(p) {
   if (!sysInfoEl || !p) { return; }
   if (!SI || SI.host !== sysInfoEl) { buildSysInfo(); }
   SI.p = p;
+  SI.mark.textContent = p.fan ? "✦" : "★";
   var url = platformArtUrl(p.name, "device");
   if (SI.img.getAttribute("src") !== url) {
     SI.img.hidden = false;
