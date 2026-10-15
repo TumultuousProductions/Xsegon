@@ -1,5 +1,5 @@
 {
-  "about": "Fan projects made from games a person owns (roadmap AQ, doc/ideas/49-fan-projects.md). Each entry was read from the team's own page on 2026-10-15. A base names the releases it takes by their No-Intro name (cartridges) or disc ID (discs): fit 'fits' is what the team asks for, 'works' is taken with a note. Xsegon never supplies a game and never hosts a team's files. The list changes with each Xsegon release.",
+  "about": "Fan projects made from games a person owns (roadmap AQ, doc/ideas/49-fan-projects.md). Each entry was read from the team's own page on 2026-10-15: 'page' is their website, 'repo' their GitHub (a project or its owner's page), each checked against GitHub's own answer; at least one is given. A base names the releases it takes by their No-Intro name (cartridges), disc ID (discs), or every disc ID of a set ('discs': all must be in the library, in one .pbp or .m3u or as separate discs): fit 'fits' is what the team asks for, 'works' is taken with a note. 'yours' finds a copy already in the library: a patched cartridge by its header, or a PC version kept as a game of your own by its title, its build named in a file beside what it runs. Xsegon never supplies a game and never hosts a team's files. The list changes with each Xsegon release.",
   "projects": [
     {
       "id": "smash-remix",
@@ -10,6 +10,7 @@
       "tags": ["fighters", "levels"],
       "team": "the Smash Remix team",
       "page": "https://smashremix.net",
+      "repo": "https://github.com/JSsixtyfour/smashremix",
       "community": "https://discord.gg/Kr6J6PH",
       "licence": "none given",
       "base": {
@@ -31,7 +32,7 @@
       "adds": "Split-screen, mouse aim, 60 fps and widescreen",
       "tags": ["coop", "widescreen"],
       "team": "the perfect-dark-pc-port team",
-      "page": "https://github.com/perfect-dark-pc-port/perfect_dark",
+      "repo": "https://github.com/perfect-dark-pc-port/perfect_dark",
       "licence": "MIT",
       "base": {
         "title": "Perfect Dark (USA) (Rev 1)",
@@ -51,6 +52,7 @@
       "tags": ["widescreen"],
       "team": "Harbour Masters",
       "page": "https://shipofharkinian.com",
+      "repo": "https://github.com/HarbourMasters/Shipwright",
       "licence": "none given",
       "base": {
         "title": "The Legend of Zelda: Ocarina of Time (USA)",
@@ -70,7 +72,7 @@
       "adds": "Majora's Mask rebuilt for PC: widescreen, 60 fps and many options",
       "tags": ["widescreen"],
       "team": "Harbour Masters",
-      "page": "https://github.com/2ship2harkinian/2ship2harkinian",
+      "repo": "https://github.com/2ship2harkinian/2ship2harkinian",
       "licence": "CC0-1.0",
       "base": {
         "title": "The Legend of Zelda: Majora's Mask (USA)",
@@ -86,7 +88,7 @@
       "adds": "Majora's Mask recompiled for PC: high frame rates, widescreen and mods",
       "tags": ["widescreen"],
       "team": "the Zelda 64: Recompiled team",
-      "page": "https://github.com/Zelda64Recomp/Zelda64Recomp",
+      "repo": "https://github.com/Zelda64Recomp/Zelda64Recomp",
       "licence": "GPL-3.0",
       "base": {
         "title": "The Legend of Zelda: Majora's Mask (USA)",
@@ -102,7 +104,7 @@
       "adds": "Star Fox 64 rebuilt for PC: higher frame rates and widescreen",
       "tags": ["widescreen"],
       "team": "Harbour Masters",
-      "page": "https://github.com/HarbourMasters/Starship",
+      "repo": "https://github.com/HarbourMasters/Starship",
       "licence": "CC0-1.0",
       "base": {
         "title": "Star Fox 64 (USA) (Rev 1)",
@@ -119,6 +121,7 @@
       "tags": ["widescreen", "levels"],
       "team": "Harbour Masters",
       "page": "https://harbourmasters.github.io/SpaghettiKart/",
+      "repo": "https://github.com/HarbourMasters/SpaghettiKart",
       "licence": "none given",
       "base": {
         "title": "Mario Kart 64 (USA)",
@@ -135,6 +138,7 @@
       "tags": ["widescreen"],
       "team": "Harbour Masters",
       "page": "https://ghostship.net64.dev/",
+      "repo": "https://github.com/HarbourMasters/Ghostship",
       "licence": "MIT",
       "base": {
         "title": "Super Mario 64 (USA)",
@@ -150,7 +154,7 @@
       "adds": "A Link to the Past rebuilt to run on PC",
       "tags": ["widescreen"],
       "team": "snesrev",
-      "page": "https://github.com/snesrev/zelda3",
+      "repo": "https://github.com/snesrev/zelda3",
       "community": "https://discord.gg/AJJbJAzNNJ",
       "licence": "its own terms",
       "base": {
@@ -167,7 +171,7 @@
       "adds": "Super Metroid rebuilt to run on PC, an early version",
       "tags": [],
       "team": "snesrev",
-      "page": "https://github.com/snesrev/sm",
+      "repo": "https://github.com/snesrev/sm",
       "community": "https://discord.gg/AJJbJAzNNJ",
       "licence": "its own terms",
       "base": {
@@ -184,13 +188,36 @@
       "adds": "Super Mario World rebuilt to run on PC",
       "tags": [],
       "team": "snesrev",
-      "page": "https://github.com/snesrev/smw",
+      "repo": "https://github.com/snesrev/smw",
       "community": "https://discord.gg/AJJbJAzNNJ",
       "licence": "its own terms",
       "base": {
         "title": "Super Mario World (USA)",
         "db": { "id": 136, "title": "Super Mario World", "platform": "Super Nintendo Entertainment System" },
         "match": [ { "console": "Super Nintendo Entertainment System", "name": "Super Mario World (USA)", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "severed-chains",
+      "name": "Severed Chains",
+      "kind": "pc",
+      "console": "Sony Playstation",
+      "adds": "The Legend of Dragoon rewritten for PC: 4K at 60 fps, widescreen, fast loading, saving almost anywhere and mods",
+      "tags": ["widescreen"],
+      "team": "Monoxide and Legend of Dragoon Modding",
+      "page": "https://legendofdragoon.org/projects/severed-chains/",
+      "repo": "https://github.com/Legend-of-Dragoon-Modding/Severed-Chains",
+      "community": "https://discord.gg/legendofdragoon",
+      "licence": "AGPL-3.0",
+      "base": {
+        "title": "The Legend of Dragoon (USA)",
+        "db": { "id": 6772, "title": "The Legend of Dragoon", "platform": "Sony Playstation" },
+        "match": [ { "console": "Sony Playstation", "discs": ["SCUS-94491", "SCUS-94584", "SCUS-94585", "SCUS-94586"], "fit": "fits" } ]
+      },
+      "yours": {
+        "console": "Windows",
+        "title": "Severed Chains",
+        "build": "^lod-game-([0-9a-f]{7})[0-9a-f]*\\.jar$"
       }
     },
     {
@@ -202,6 +229,7 @@
       "tags": ["levels"],
       "team": "the Retro Rewind team",
       "page": "https://wiki.tockdom.com/wiki/Retro_Rewind",
+      "repo": "https://github.com/Retro-Rewind-Team",
       "licence": "GPL-3.0",
       "base": {
         "title": "Mario Kart Wii",
@@ -223,6 +251,7 @@
       "tags": ["fighters", "levels"],
       "team": "the Project+ team",
       "page": "https://projectplusgame.com",
+      "repo": "https://github.com/Project-Plus-Development-Team",
       "licence": "none given",
       "base": {
         "title": "Super Smash Bros. Brawl (USA)",
