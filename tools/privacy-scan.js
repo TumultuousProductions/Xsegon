@@ -21,8 +21,9 @@ const ROOT = path.join(__dirname, "..");
 const WORDS_FILE = path.join(ROOT, "private", "privacy-words.txt");
 const MAX_BYTES = 10 * 1024 * 1024;
 const NEVER = ["data/", "private/", "runtime/", "roms/", "doc/img/"];
+// noreply@github.com: GitHub's own, the committer of a pull request merged on its website.
 const MAIL_OK = [/^help@tumultuousproductions\.site$/i, /@users\.noreply\.github\.com$/i, /^noreply@anthropic\.com$/i,
-                 /@example\.(com|org|net)$/i, /^git@github\.com$/i];
+                 /@example\.(com|org|net)$/i, /^git@github\.com$/i, /^noreply@github\.com$/i];
 // Folder names under X:\Users that name nobody.
 const USER_OK = new Set(["public", "default", "all users", "you", "your name", "yourname", "name", "user", "username",
                          "someone", "me", "%username%", "<you>", "<name>", "<user>", "...", "josé"]);
@@ -200,7 +201,8 @@ if (require.main === module) {
       for (const l of fs.readFileSync(0, "utf8").split(/\r?\n/).filter(Boolean)) {
         const [, local, , remote] = l.split(" ");
         if (/^0+$/.test(local)) { continue; }
-        const range = /^0+$/.test(remote) ? [local] : [remote + ".." + local];
+        // A new branch sends only what the remote has not got: what it has is public already.
+        const range = /^0+$/.test(remote) ? [local, "--not", "--remotes"] : [remote + ".." + local];
         commits = commits.concat(git(["rev-list"].concat(range)).split(/\s+/).filter(Boolean));
       }
     }
