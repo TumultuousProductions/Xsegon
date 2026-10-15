@@ -320,9 +320,11 @@ function realEmulatorFolders() {
   } catch (e) { return []; }      // no table yet: nothing real to keep out of
 }
 
-// An even port with the one above it free: the page starts the fast lane on the port above the server's,
-// and with every port a run takes for itself even, two runs started together never sit on each other's lane.
+// A port with the two above it free: the page starts the fast lane on the port above the server's and the
+// phone page two above. Lanes started together (tests\lanes.js, XS_LANE "1/2") each take their own fours, so
+// however their asks interleave, two runs never sit on each other's.
 async function freePort() {
+  const [lane, of] = ((/^(\d+)\/(\d+)$/.exec(process.env.XS_LANE || "") || []).slice(1).map(Number).concat([0, 1])).slice(0, 2);
   const any = () => new Promise((resolve, reject) => {
     const srv = net.createServer();
     srv.once("error", reject);
@@ -334,8 +336,9 @@ async function freePort() {
     srv.listen(port, "127.0.0.1", () => srv.close(() => resolve(true)));
   });
   for (let tries = 0; tries < 40; tries++) {
-    const port = await any();
-    if (port % 2 === 0 && await open(port + 1)) { return port; }
+    const p = await any();
+    const port = p - (p % (4 * of)) + 4 * of + 4 * lane;     // this lane's next four above the one the OS handed out
+    if (port + 2 <= 65535 && await open(port) && await open(port + 1) && await open(port + 2)) { return port; }
   }
   return any();                 // none in forty: any free port
 }

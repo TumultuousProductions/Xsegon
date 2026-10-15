@@ -38,11 +38,13 @@ function groupNames() {
 }
 
 /** One run.js over these groups; its lines are passed on as they come, marked with the lane. */
-function run(tag, groups) {
+function run(tag, groups, lane) {
   return new Promise((resolve) => {
     const got = { tag, groups, passed: 0, total: 0, red: [], secs: {}, code: null, ms: 0 };
     const t0 = Date.now();
-    const child = spawn(process.execPath, [path.join(__dirname, "run.js")].concat(groups), { cwd: ROOT, windowsHide: true });
+    // Which lane of how many, so each takes ports of its own (tests\sandbox.js freePort).
+    const env = lane ? Object.assign({}, process.env, { XS_LANE: lane }) : process.env;
+    const child = spawn(process.execPath, [path.join(__dirname, "run.js")].concat(groups), { cwd: ROOT, env, windowsHide: true });
     let rest = "";
     const line = (l) => {
       const g = /^(ok|FAIL)\s+(\S+)\s+\d+\/\d+\s+([\d.]+)s/.exec(l);
@@ -93,7 +95,7 @@ const mmss = (ms) => Math.floor(ms / 60000) + "m" + String(Math.round(ms / 1000)
   console.log("");
 
   const t0 = Date.now();
-  const done = await Promise.all(busy.map((l) => run(l.tag, l.groups)));
+  const done = await Promise.all(busy.map((l, i) => run(l.tag, l.groups, i + "/" + busy.length)));
   const side = Date.now() - t0;
   if (alone.length) { done.push(await run("-", alone)); }
   const wall = Date.now() - t0;
