@@ -100,9 +100,10 @@ async function detailTabsOnAGame(b, check, sf) {
   await b.key("Enter");
   check("and a press on one that is on turns that one off", [await b.until(tabOn, "Cheats (1)", 9000), await kept(), await b.until(factOn("1 cheat on"), true, 6000)], ["Cheats (1)", [onRow], true]);
   await b.ev(`document.querySelector("#details .ch-list .ch-clear").click()`);
-  check("the row above turns them all off: no count on the tab, no fact beside it, nothing on the server",
-    [await b.until(tabOn, "Cheats", 9000), await b.until(`[...document.querySelectorAll("#details .dleft > dl dt")].some((d) => d.textContent === "cheats")`, false, 6000), await kept(),
-     await b.until(`(document.querySelector("#details .ch-list .ch-clear .cr-name") || {}).textContent`, "No cheat is on", 6000)], ["Cheats", false, [], "No cheat is on"]);
+  // With none on, the fact beside it says how many there are to choose from (api\game.php cheatsThere).
+  check("the row above turns them all off: no count on the tab, the fact beside it back to what there is to choose from, nothing on the server",
+    [await b.until(tabOn, "Cheats", 9000), await b.until(`[...document.querySelectorAll("#details .dleft > dl dt")].some((d) => d.textContent === "cheats" && / to choose from$/.test(d.nextElementSibling.textContent))`, true, 6000), await kept(),
+     await b.until(`(document.querySelector("#details .ch-list .ch-clear .cr-name") || {}).textContent`, "No cheat is on", 6000)], ["Cheats", true, [], "No cheat is on"]);
   await b.ev(`[...document.querySelectorAll("#details .ch-list .cr-row")].find((x) => x.textContent === ${JSON.stringify(onRow)}).click()`);
   await b.until(tabOn, "Cheats (1)", 9000);
   await b.key("Escape");
