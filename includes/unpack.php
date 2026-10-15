@@ -260,7 +260,8 @@ function xs_unpack_entries(string $archive, ?string &$why = null): ?array
         return null;
     }
     if (!$out) {
-        $why = 'the archive could not be read, or it is empty';
+        $why = @filesize($archive) === 0 ? 'it is an empty file, a download that has not finished'
+            : 'the archive could not be read, or it is empty';
         return null;
     }
     return $out;

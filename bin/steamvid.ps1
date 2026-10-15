@@ -5,8 +5,10 @@
 
     Started by api\steamvid.php. Each game's highlighted trailer (else the
     first) is saved as <dir>\<game id>.mp4: the plain mp4 where Steam still
-    serves it, else the HLS stream through ffmpeg when the job names one,
-    else the game is marked "stream" (needs ffmpeg) or "none".
+    serves it, else the HLS stream through ffmpeg when the job names one.
+    "none" and "stream" (needs ffmpeg) are only ever Steam's own answer; an
+    answer that cannot be read or a file that would not come is "failed",
+    which is asked again at the next fetch.
 
     A game already saved is skipped, so a stopped job carries on. One Steam
     API call about every half second, well inside what the store allows.
@@ -30,10 +32,10 @@ function Run-Native($exe, [string[]] $argv) {
     return $LASTEXITCODE
 }
 function Fetch($url, $to) {
-    # Given up only when stalled, as in setup.ps1.
-    $code = Run-Native $curl @('-L', '--fail', '--silent', '--retry', '2',
+    # Given up only when stalled, as in setup.ps1. The code is kept: a refusal is told from a lost connection.
+    $script:fetchCode = Run-Native $curl @('-L', '--fail', '--silent', '--retry', '2',
                                '--connect-timeout', '20', '--speed-limit', '1024', '--speed-time', '60', '-o', $to, $url)
-    return ($code -eq 0 -and (Test-Path -LiteralPath $to) -and (Get-Item -LiteralPath $to).Length -gt 0)
+    return ($script:fetchCode -eq 0 -and (Test-Path -LiteralPath $to) -and (Get-Item -LiteralPath $to).Length -gt 0)
 }
 
 # The first steps in a try of their own: a job file this cannot read, or a
@@ -64,10 +66,14 @@ try {
         $movie = $null
         try {
             $info = ([IO.File]::ReadAllText($jsonFile, $utf8) | ConvertFrom-Json).($g.appid)
+            if ($null -eq $info) { throw 'not an answer about this game' }
             if ($info.success -and $info.data.movies) {
                 $movie = @($info.data.movies | Where-Object { $_.highlight }) + @($info.data.movies) | Select-Object -First 1
             }
-        } catch { $movie = $null }
+        } catch {
+            # Not Steam's answer (a Wi-Fi sign-in page, a busy page): nothing is known of its trailers.
+            $g.state = 'failed'; Save-Job $j; Start-Sleep -Milliseconds 400; continue
+        }
         if (-not $movie) { $g.state = 'none'; Save-Job $j; Start-Sleep -Milliseconds 400; continue }
 
         $g.state = 'fetching'; Save-Job $j
@@ -77,6 +83,8 @@ try {
         $urls += ($j.cdn -replace '\{movie\}', [string]$movie.id)
         $got = $false
         foreach ($u in $urls) { if (Fetch $u $part) { $got = $true; break } }
+        # Steam named no file and its usual address has none: 22 is a server's no, 37 no file at the tests' file:// stand-in.
+        $noFile = -not ($movie.mp4 -and $movie.mp4.max) -and ($script:fetchCode -eq 22 -or $script:fetchCode -eq 37)
         if (-not $got -and $movie.hls_h264) {
             if ($j.ffmpeg) {
                 # -rw_timeout: 30 s with nothing from the stream ends it (microseconds)
@@ -84,11 +92,13 @@ try {
                                                 '-c', 'copy', '-movflags', '+faststart', '-f', 'mp4', $part)
                 $got = ($code -eq 0 -and (Test-Path -LiteralPath $part))
                 if (-not $got) { $g.state = 'failed'; Save-Job $j; continue }
-            } else {
+            } elseif ($noFile) {
                 $g.state = 'stream'; Save-Job $j; continue
             }
         }
-        if (-not $got) { $g.state = 'none'; Save-Job $j; continue }
+        if (-not $got -and $noFile) { $g.state = 'none'; Save-Job $j; continue }
+        # A file that would not come down is a failed fetch, never "no trailer".
+        if (-not $got) { $g.state = 'failed'; Save-Job $j; continue }
         Move-Item -LiteralPath $part -Destination $out -Force
         $g.state = 'done'
         $g | Add-Member -NotePropertyName bytes -NotePropertyValue (Get-Item -LiteralPath $out).Length -Force

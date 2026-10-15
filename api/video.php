@@ -33,17 +33,7 @@ if ($game === null) {
 $path = video_for_game($s, $game);
 $real = $path === null ? false : realpath($path);
 
-$inside = false;
-if ($real !== false) {
-    foreach (video_allowed_roots($s) as $root) {
-        $rootReal = realpath($root);
-        if ($rootReal !== false && xs_inside($real, $rootReal)) {
-            $inside = true;
-            break;
-        }
-    }
-}
-if (!$inside) {
+if ($real === false || !video_in_allowed_root($s, $real)) {
     http_response_code(404);
     exit;
 }

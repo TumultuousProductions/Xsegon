@@ -5,8 +5,9 @@
                                                [-Shared data\screenscraper-shared.dat]
 
     Started by api\screenscraper.php. Each game is asked for by name on its
-    console, else by ROM file name, and taken only when the names agree (a
-    wrong snap is worse than none); its video is saved as <dir>\<game id>.mp4.
+    console, else by ROM file name, else by its name as a file name (as ES-DE
+    asks), else by the longest word of its name, and taken only when the names
+    agree (a wrong snap is worse than none); its video is saved as <dir>\<game id>.mp4.
     A game already saved is skipped, so a stopped job carries on. One question
     at a time with a pause between: a free account is allowed one thread.
     -Shared is Xsegon's own developer ID as includes\screenscraper.php keeps it.
@@ -39,6 +40,22 @@ function Loose([string] $s) {
     $words = (($s.ToLowerInvariant() -replace '&', ' and ') -split '[^a-z0-9]+') |
         Where-Object { $_ -and @('the', 'a', 'an', 'and') -notcontains $_ }
     return ($words -join '')
+}
+# The same words in any order: "The Lost World: Jurassic Park" is "Jurassic Park - The Lost World".
+function Words([string] $s) {
+    $words = (($s.ToLowerInvariant() -replace '&', ' and ') -split '[^a-z0-9]+') |
+        Where-Object { $_ -and @('the', 'a', 'an', 'and') -notcontains $_ } | Sort-Object
+    return (@($words) -join ' ')
+}
+# The longest word of a name that says something: not a small word nor a number.
+# One word never straddles ScreenScraper's punctuation, which its search needs word for word.
+function Longest-Word([string] $s) {
+    $best = ''
+    foreach ($w in ($s -split '[^\p{L}\p{N}]+')) {
+        if ($w.Length -lt 3 -or $w -match '^\d+$' -or @('the', 'and') -contains $w.ToLowerInvariant()) { continue }
+        if ($w.Length -gt $best.Length) { $best = $w }
+    }
+    return $best
 }
 # A ROM's name without its extension and its notes: "Fable (USA) [!].iso" is "Fable".
 function Rom-Title([string] $file) {
@@ -143,7 +160,8 @@ function Ask([string] $url, [string] $file) {
 }
 
 # Does this answer name the game? Any of its names against the title or the ROM's.
-function Is-Game($jeu, [string[]] $ours) {
+# $anyOrder: the same words in another order count too (the one-word search only).
+function Is-Game($jeu, [string[]] $ours, [bool] $anyOrder = $false) {
     if (-not $jeu -or -not $jeu.noms) { return $false }
     foreach ($n in @($jeu.noms)) {
         $text = [string] $n.text
@@ -151,6 +169,7 @@ function Is-Game($jeu, [string[]] $ours) {
         foreach ($o in $ours) {
             if (-not $o) { continue }
             if ((Key $text) -eq (Key $o) -or ((Loose $text) -and (Loose $text) -eq (Loose $o))) { return $true }
+            if ($anyOrder -and (Words $text) -and (Words $text) -eq (Words $o)) { return $true }
         }
     }
     return $false
@@ -214,6 +233,11 @@ function Fill([string] $template, $g) {
     $u = $template.Replace('{auth}', $auth).Replace('{system}', [string] $g.system)
     return $u.Replace('{title}', (& $enc $g.title)).Replace('{rom}', (& $enc $g.rom))
 }
+# The same with other words in the name's or file name's place.
+function Fill-As([string] $template, $g, [string] $text) {
+    $u = $template.Replace('{auth}', $auth).Replace('{system}', [string] $g.system)
+    return $u.Replace('{title}', (& $enc $text)).Replace('{rom}', (& $enc $text))
+}
 
 try {
     $answer = Join-Path $tmp 'answer.json'
@@ -236,6 +260,7 @@ try {
 
         $ours = @([string] $g.title, (Rom-Title ([string] $g.rom)))
         $jeu = $null
+        $by = 'name'
         $unreadable = $false
 
         # 1. by the game's name
@@ -250,11 +275,36 @@ try {
 
         # 2. by the ROM file's name, believed only when the names agree
         if (-not $jeu -and $g.rom) {
+            $by = 'file'
             $json = Ask (Fill $j.rom $g) $answer
             if ($script:halt) { $g.state = 'waiting'; break }
             if ($script:asked -eq 'failed') { $unreadable = $true }
             if ($json -and $json.response -and (Is-Game $json.response.jeu $ours)) { $jeu = $json.response.jeu }
         }
+
+        # 3. by the game's name as a file name, as ES-DE asks: ScreenScraper's own matching
+        #    gets past punctuation its search needs word for word ("Zelda : Breath of the Wild")
+        if (-not $jeu -and $g.title) {
+            $by = 'title as a file name'
+            $json = Ask (Fill-As $j.rom $g ([string] $g.title)) $answer
+            if ($script:halt) { $g.state = 'waiting'; break }
+            if ($script:asked -eq 'failed') { $unreadable = $true }
+            if ($json -and $json.response -and (Is-Game $json.response.jeu $ours)) { $jeu = $json.response.jeu }
+        }
+
+        # 4. by the longest word of its name (at most 30 answers), the same words in any order taken
+        $word = Longest-Word ([string] $g.title)
+        if (-not $jeu -and $word -and (Key $word) -ne (Key ([string] $g.title))) {
+            $by = 'one word'
+            $json = Ask (Fill-As $j.search $g $word) $answer
+            if ($script:halt) { $g.state = 'waiting'; break }
+            if ($script:asked -eq 'failed') { $unreadable = $true }
+            if ($json -and $json.response -and $json.response.jeux) {
+                $named = @(@($json.response.jeux) | Where-Object { Is-Game $_ $ours $true })
+                $jeu = @($named | Where-Object { Video-Of $_ }) + $named | Select-Object -First 1
+            }
+        }
+        if ($jeu) { Set-Field $g 'by' $by }
 
         # how much of the day's allowance is gone, as ScreenScraper counts it
         if ($json -and $json.response -and $json.response.ssuser -and $json.response.ssuser.maxrequestsperday) {

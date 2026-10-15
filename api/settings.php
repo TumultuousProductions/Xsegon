@@ -15,8 +15,9 @@ require_once __DIR__ . '/../includes/settings.php';
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     if (isset($_GET['reset'])) {
         /* Back to defaults, but the folders (Settings > Paths) are kept, or
-           the library could not find its games; the old file is copied to
-           data\safety first, so a reset can be undone by hand. */
+           the library could not find its games, and so are the tips put away
+           for good (feel.tipsGone); the old file is copied to data\safety
+           first, so a reset can be undone by hand. */
         xs_local_origin_only();
         $was  = xs_settings();
         $path = xs_settings_path();
@@ -29,11 +30,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
             }
         }
         @unlink($path);
-        xs_settings_save(['paths' => $was['paths'] ?? []], $why);
+        xs_settings_save(['paths' => $was['paths'] ?? [], 'feel' => ['tipsGone' => $was['feel']['tipsGone'] ?? []]], $why);
         if ($why !== null) {
             xs_fail('reset, but your folders could not be written back: ' . $why . ($copy ? ' (the old settings are in ' . $copy . ')' : ''), 500);
         }
-        xs_log('SET', 'reset to defaults, folders kept' . ($copy ? ', old settings in ' . $copy : ''));
+        xs_log('SET', 'reset to defaults, folders and tips put away kept' . ($copy ? ', old settings in ' . $copy : ''));
         xs_json(['ok' => true, 'kept' => 'paths', 'copy' => $copy,
                  'settings' => xs_settings(), 'defaults' => xs_settings_defaults()]);
     }

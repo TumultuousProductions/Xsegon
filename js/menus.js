@@ -26,6 +26,7 @@ import { launch, launchNow, openStates, showStrip } from "./launch.js";
 import { bringInLaunchBox } from "./lbimport.js";
 import { clearFilters, filterWords, paintFilterButton, randomGame } from "./library.js";
 import { L, api } from "./log.js";
+import { logoTipDone } from "./logotip.js";
 import { TIPS, hideMenuTip, leaveMenuTip, menuTipScrolled, restMenuTip } from "./menu-tips.js";
 import { openPadCheck } from "./padcheck.js";
 import { openPhone } from "./phone.js";
@@ -305,14 +306,18 @@ function mbEntries(which) {
   // The round X: Xsegon itself. Its settings, the controller, the backup and the look.
   // Minimise and close are the window's own buttons, and are not said twice.
   if (which === "xsegon") {
-    var e = [
+    // Where the bar is not (a wheel, a carousel, rows), its four menus open from here, each in a box beside its row.
+    var e = barButton("games") ? [] : [["games", "Games", "library"], ["media", "Pictures & Videos", "image"], ["emulators", "Emulators", "disc"], ["help", "Help", "info"]]
+      .map(function (m) { return { icon: m[2], label: m[1], sub: function () { return withAdded(m[0], mbEntries(m[0])); } }; })
+      .concat([{ rule: true }]);
+    e = e.concat([
       { icon: "gear", label: "Settings...", run: function () { openSettings(); } },
       { icon: "gamepad", label: "Controller...", tip: TIPS.controller, run: function () { openPadCheck(); } },
       { icon: "shield", label: "Back up what you made...", tip: TIPS.backup, run: openBackupTool },
       { icon: "phone", label: "Connect a phone...", tip: TIPS.phone, run: openPhone },
       { rule: true },
       { head: "Themes" }
-    ];
+    ]);
     // The look, a row a theme (js\themes.js), and a family of them folded into one row: the one in use wears the mark.
     var themeRow = function (t) { return { label: t.name + " theme", checked: t.id === themeId, tip: TIPS.theme, run: function () { setTheme(t.id); } }; };
     var kin = {};
@@ -528,6 +533,7 @@ export function openBarMenu(which) {
   mbOpen = which;
   $mb.querySelectorAll("button").forEach(function (b) { b.classList.toggle("open", b === btn); });
   $logo.classList.toggle("open", btn === $logo);
+  if (btn === $logo) { logoTipDone("the logo's menu was opened"); }   // the tip has done its work (js\logotip.js)
 }
 
 // From the keyboard: open it beside whatever stands for the selected game.

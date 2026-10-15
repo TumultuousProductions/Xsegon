@@ -29,8 +29,9 @@ async function detailsOf(b, id) {
 const TABS = `[...document.querySelectorAll("#details .dtabs .dtab")]`;
 const tabOn = `(t => (t ? t.textContent : null))(${TABS}.find((x) => x.classList.contains("on")))`;
 const legend = `[...document.querySelectorAll("#help .hitem .hl")].map((x) => x.textContent)`;
-// Saves and File check stand between About and Cheats; Saves carries a count of what is saved, so it is named without it.
+// Media, Saves and File check stand between About and Cheats; Saves carries a count of what is saved, so it is named without it.
 const tabNames = `${TABS}.map((x) => (/^Saves/.test(x.textContent) ? "Saves" : x.textContent))`;
+const onMedia = `${tabOn} === "Media"`;
 const onSaves = `/^Saves/.test(${tabOn} || "")`;
 const onFile = `${tabOn} === "File check"`;
 
@@ -44,14 +45,16 @@ async function detailTabsOnAGame(b, check, sf) {
   check("(the game's details open)", await detailsOf(b, sf.id), true);
   check("details has a row of tabs under Back and Play, About first and open",
     await b.ev(`[${tabNames}, ${tabOn}, document.querySelector("#details .dright .bar").nextElementSibling.className, document.querySelector("#details .dtab-pane").className]`),
-    [["About", "Saves", "File check", "Cheats", "Hacks", "Accompanied files", "Notes"], "About", "dtabs", "dtab-pane is-about"]);
+    [["About", "Media", "Saves", "File check", "Cheats", "Hacks", "Accompanied files", "Notes"], "About", "dtabs", "dtab-pane is-about"]);
   check("and the legend names the keys for them", await b.until(`${legend}.includes("tabs")`, true), true);
   check("the open tab's words can be read: they are not the colour of the tab",
     await b.ev(`(s => s.color !== s.backgroundColor)(getComputedStyle(${TABS}.find((x) => x.classList.contains("on"))))`), true);
   await b.shot("details-tab-about");
 
   await b.key("ArrowRight");
-  check("Right opens the next tab, Saves", await b.until(onSaves, true), true);
+  check("Right opens the next tab, Media", await b.until(onMedia, true), true);
+  await b.key("ArrowRight");
+  check("Right again opens Saves", await b.until(onSaves, true), true);
   await b.key("ArrowRight");
   check("Right again opens File check, before Cheats", await b.until(onFile, true), true);
   await b.key("ArrowRight");
@@ -116,8 +119,12 @@ async function detailTabsOnAGame(b, check, sf) {
   await b.key("ArrowLeft");
   await b.until(onSaves, true);
   await b.key("ArrowLeft");
+  await b.until(onMedia, true);
+  await b.key("ArrowLeft");
   check("Left goes back tab by tab to About, with the words as they were",
     [await b.until(tabOn, "About"), await b.ev(`document.querySelector("#details .dtab-pane").className`)], ["About", "dtab-pane is-about"]);
+  await b.key("ArrowRight");
+  await b.until(onMedia, true);
   await b.key("ArrowRight");
   await b.until(onSaves, true);
   await b.key("ArrowRight");
@@ -140,6 +147,8 @@ async function detailTabsOnAGame(b, check, sf) {
     await press(13);                                       // down, on About: nothing to go into
     check("the cross over details does not move the game chosen behind it", await b.ev(chosen), was);
     await press(5);
+    await b.until(onMedia, true);
+    await press(5);
     await b.until(onSaves, true);
     await press(5);
     await b.until(onFile, true);
@@ -156,6 +165,8 @@ async function detailTabsOnAGame(b, check, sf) {
     await b.until(onFile, true);
     await press(4);
     await b.until(onSaves, true);
+    await press(4);
+    await b.until(onMedia, true);
     await press(4);
     check("LB goes back, a tab a press", await b.until(tabOn, "About"), "About");
     await press(1);
@@ -239,7 +250,9 @@ async function emulatorsOwnCheats(b, check) {
     await b.setView("list");
     await b.openPlatform(ps2.platform);
     check("(the PCSX2 game's details open)", await detailsOf(b, ps2.id), true);
-    check("its Cheats tab counts what PCSX2 has on", await b.until(tabNames, ["About", "Saves", "File check", "Cheats (2)", "Hacks", "Accompanied files", "Notes"], 8000), ["About", "Saves", "File check", "Cheats (2)", "Hacks", "Accompanied files", "Notes"]);
+    check("its Cheats tab counts what PCSX2 has on", await b.until(tabNames, ["About", "Media", "Saves", "File check", "Cheats (2)", "Hacks", "Accompanied files", "Notes"], 8000), ["About", "Media", "Saves", "File check", "Cheats (2)", "Hacks", "Accompanied files", "Notes"]);
+    await b.key("ArrowRight");
+    await b.until(onMedia, true);
     await b.key("ArrowRight");
     await b.until(onSaves, true);
     await b.key("ArrowRight");

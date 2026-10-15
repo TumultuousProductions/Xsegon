@@ -491,7 +491,9 @@ function xs_ss_job(): ?array
     if (($job['state'] ?? '') === 'done' && empty($job['logged'])) {
         $job['logged'] = true;
         xs_write_json(xs_ss_job_path(), $job);
-        xs_log('SSCR', 'snaps: ' . $tally);
+        // How the games were found: by name, file, title as a file name, one word (bin\screenscraper.ps1).
+        $by = array_count_values(array_filter(array_map(static fn ($g) => (string) ($g['by'] ?? ''), $job['games'] ?? [])));
+        xs_log('SSCR', 'snaps: ' . $tally . ($by ? '; found by ' . implode(', ', array_map(static fn ($k, $n) => $k . ' ' . $n, array_keys($by), $by)) : ''));
     }
     return $job;
 }

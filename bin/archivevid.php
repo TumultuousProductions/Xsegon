@@ -132,10 +132,12 @@ $s       = xs_settings();
 $library = xs_library();
 $chosen  = array_flip(array_map('strval', (array) ($job['platforms'] ?? [])));
 $byId    = [];
+$consoles = [];     // each console's games, for the look before a video is named (xs_vp_dest_now)
 foreach ($library['games'] ?? [] as $g) {
     $byId[(string) $g['id']] = $g;
+    $consoles[art_key((string) $g['platform'])][] = $g;
 }
-$lacking = array_values(array_filter(xs_vp_need($s, $library), static fn ($g) => isset($chosen[$g['platform']])));
+$lacking =array_values(array_filter(xs_vp_need($s, $library), static fn ($g) => isset($chosen[$g['platform']])));
 // One looked for before with nothing found is left out until Look again.
 $games = xs_av_unlooked($lacking);
 $job['games'] = count($games);
@@ -200,6 +202,7 @@ $t1    = microtime(true);
 $plan  = [];        // by the file it will be: ['game', 'v', 'dest']
 $none  = [];
 $how   = [];
+$shelfNow = [];     // each console's videos by name as matching began
 foreach ($games as $k => $g) {
     if ($stopped()) {
         $end('stopped', 'stopped: no video was fetched');
@@ -215,19 +218,27 @@ foreach ($games as $k => $g) {
     $v    = $m['video'];
     $ext  = strtolower(pathinfo($v['name'], PATHINFO_EXTENSION));
     $full = $byId[$g['id']] ?? null;
-    $stem = $full !== null ? xs_vp_stem_for($full) : null;
-    $dir  = xs_vp_safe($g['platform']);
-    if ($stem === null || art_key($dir) === '' || !isset(video_types()[$ext])) {
-        $none[] = $g + ['why' => 'its name has no letter or digit a video can be filed under'];
+    $pk   = art_key((string) $g['platform']);
+    $has  = false;
+    $said = 'its name has no letter or digit a video can be filed under';
+    $dest = $full !== null && isset(video_types()[$ext])
+        ? xs_vp_dest_now($s, $full, $consoles[$pk] ?? [], $ext, $said, $has, $shelfNow[$pk] ??= video_console_now($s, (string) $g['platform']))
+        : null;
+    if ($has) {
         continue;
     }
-    $dest = xs_data_path('videos') . DIRECTORY_SEPARATOR . $dir . DIRECTORY_SEPARATOR . $stem . '.' . $ext;
+    if ($dest === null) {
+        $none[] = $g + ['why' => $said];
+        continue;
+    }
     $how[XS_VM_KINDS[$m['kind']]] = ($how[XS_VM_KINDS[$m['kind']]] ?? 0) + 1;
     $job['found']++;
     // Two versions of one game share a name, and so a video: it is fetched once.
     if (!isset($plan[mb_strtolower($dest)])) {
-        $plan[mb_strtolower($dest)] = ['game' => $g, 'v' => $v, 'dest' => $dest];
+        $plan[mb_strtolower($dest)] = ['game' => $g, 'twins' => [], 'v' => $v, 'dest' => $dest];
         $job['total'] += $v['size'];
+    } else {
+        $plan[mb_strtolower($dest)]['twins'][] = $g;
     }
 }
 xs_log('ARCV', 'matched ' . $job['found'] . ' of ' . count($games) . ' games in ' . round(microtime(true) - $t1, 1) . 's ('
@@ -261,24 +272,55 @@ foreach ($plan as $key => $p) {
     }
     $want[$key] = ['url' => xs_av_file_url($p['v']['id'], $p['v']['path']), 'to' => $p['dest'] . '.part', 'lane' => $p['v']['id']];
 }
-$whole = $fetch($want, 6, 3, static function ($key, bool $ok, string $why) use (&$job, &$done, &$hevc, &$bad, $plan): void {
+// The versions sharing a fetch were counted as found: one that does not play a video once it is over joins $bad, with why.
+$twinsLeft = static function (array $p, string $why) use (&$bad, $s, $byId, $consoles): void {
+    foreach ($p['twins'] as $t) {
+        $has = false;
+        xs_vp_dest_now($s, $byId[(string) $t['id']], $consoles[art_key((string) $t['platform'])] ?? [], 'mp4', $said, $has);
+        if (!$has) {
+            $bad[] = ['why' => $why] + $t;
+        }
+    }
+};
+$whole = $fetch($want, 6, 3, static function ($key, bool $ok, string $why) use (&$job, &$done, &$hevc, &$bad, $plan, $s, $byId, $consoles, $twinsLeft): void {
     $p    = $plan[$key];
     $part = $p['dest'] . '.part';
+    $dest = $p['dest'];
     if ($ok && $p['v']['md5'] !== '' && md5_file($part) !== $p['v']['md5']) {
         [$ok, $why] = [false, 'it did not arrive whole (its checksum is not the Archive\'s)'];
     }
     if ($ok && !xs_vp_is_video($part)) {
         [$ok, $why] = [false, 'it is not a video a browser can play'];
     }
-    if ($ok && !@rename($part, $p['dest'])) {
-        [$ok, $why] = [false, 'it could not be given its name in ' . dirname($p['dest'])];
+    // Looked at again just before it is named: a video that came meanwhile stays, and so does another game's.
+    if ($ok) {
+        $now = xs_vp_dest_now($s, $byId[(string) $p['game']['id']], $consoles[art_key((string) $p['game']['platform'])] ?? [],
+            strtolower(pathinfo($p['dest'], PATHINFO_EXTENSION)), $said, $has);
+        if ($has) {
+            @unlink($part);
+            $job['added']++;
+            $twinsLeft($p, 'a version of it got a video from elsewhere meanwhile, so another go is needed for this one');
+            xs_log('ARCV', $p['game']['title'] . ' (' . $p['game']['platform'] . '): it has a video now, so this one was not kept');
+            return;
+        }
+        if ($now === null) {
+            [$ok, $why] = [false, (string) $said];
+        } else {
+            $dest = $now;
+        }
+    }
+    if ($ok && !@rename($part, $dest)) {
+        [$ok, $why] = [false, 'it could not be given its name in ' . dirname($dest)];
     }
     if (!$ok) {
         @unlink($part);
         $bad[] = $p['game'] + ['why' => 'its video could not be fetched: ' . $why];
+        $twinsLeft($p, 'its video could not be fetched: ' . $why);
         xs_log('ARCV', $p['game']['title'] . ' (' . $p['game']['platform'] . '): ' . $p['v']['id'] . '/' . $p['v']['path'] . ' not fetched: ' . $why);
         return;
     }
+    // Filed under its own file's name, a twin found by the shared title does not find it.
+    $twinsLeft($p, 'a version of it got a video under that version\'s own name, so another go is needed for this one');
     $job['added']++;
     $done += $p['v']['size'];
     $hevc += $p['v']['hevc'] ? 1 : 0;
@@ -366,6 +408,7 @@ if ($wol && !$ff) {
         }
         xs_log('ARCV', 'read the World of Longplays list in ' . round(microtime(true) - $t2, 1) . 's: '
             . array_sum(array_map('count', $shelved)) . ' recordings for ' . count($shelved) . ' console folders');
+        $wolNow = [];   // each console's videos by name as this matching began: nothing is saved until the cuts
         foreach ($wol as $g) {
             if ($stopped()) {
                 $end('stopped', 'stopped: ' . $n($job['added'], 'video was', 'videos were') . ' fetched before that');
@@ -382,17 +425,18 @@ if ($wol && !$ff) {
                 continue;
             }
             $full = $byId[$g['id']] ?? null;
-            $stem = $full !== null ? xs_vp_stem_for($full) : null;
-            $dir  = xs_vp_safe((string) $g['platform']);
-            if ($stem === null || art_key($dir) === '') {
-                $still[] = ['why' => 'its name has no letter or digit a video can be filed under'] + $g;
-                continue;
-            }
-            $dest = xs_data_path('videos') . DIRECTORY_SEPARATOR . $dir . DIRECTORY_SEPARATOR . $stem . '.mp4';
-            if (is_file($dest)) {
+            $has  = false;
+            $said = 'its name has no letter or digit a video can be filed under';
+            $pk   = art_key((string) $g['platform']);
+            $dest = $full !== null ? xs_vp_dest_now($s, $full, $consoles[$pk] ?? [], 'mp4', $said, $has, $wolNow[$pk] ??= video_console_now($s, (string) $g['platform'])) : null;
+            if ($has) {
                 // A twin version's video landed in this run, and this game is found by the same name.
                 $job['added']++;
                 $gotToo++;
+                continue;
+            }
+            if ($dest === null) {
+                $still[] = ['why' => $said] + $g;
                 continue;
             }
             $key = mb_strtolower($dest);
@@ -511,8 +555,41 @@ if ($wol && !$ff) {
                 clearstatcache(true, $part);
                 $ok  = (int) $st['exitcode'] === 0 && is_file($part) && (int) filesize($part) > 4096 && xs_vp_is_video($part);
                 $why = $said !== '' ? $said : 'ffmpeg ended with ' . (int) $st['exitcode'];
-                if ($ok && !@rename($part, $p['dest'])) {
-                    [$ok, $why] = [false, 'it could not be given its name in ' . dirname($p['dest'])];
+                $dest = $p['dest'];
+                // Looked at again just before it is named: a video that came meanwhile stays, and so does another game's.
+                if ($ok) {
+                    $now = xs_vp_dest_now($s, $byId[(string) $p['game']['id']], $consoles[art_key((string) $p['game']['platform'])] ?? [], 'mp4', $whyNow, $hasNow);
+                    if ($hasNow) {
+                        @unlink($part);
+                        // A twin counts only when it plays a video too; the others are asked for again.
+                        $seen = 0;
+                        foreach ($p['twins'] as $t) {
+                            $tHas = false;
+                            xs_vp_dest_now($s, $byId[(string) $t['id']], $consoles[art_key((string) $t['platform'])] ?? [], 'mp4', $tWhy, $tHas);
+                            if ($tHas) {
+                                $seen++;
+                            } else {
+                                $still[] = ['why' => 'a version of it got a video from elsewhere meanwhile, so another go is needed for this one'] + $t;
+                            }
+                        }
+                        $job['added'] += 1 + $seen;
+                        $gotToo += 1 + $seen;
+                        xs_log('ARCV', $p['game']['title'] . ' (' . $p['game']['platform'] . '): it has a video now, so the cut was not kept');
+                        continue;
+                    }
+                    if ($now === null) {
+                        [$ok, $why] = [false, (string) $whyNow];
+                    } elseif ($now !== $dest) {
+                        // Filed under its own file's name: a twin found by the shared title does not find it, so it is asked for again.
+                        foreach ($p['twins'] as $t) {
+                            $still[] = ['why' => 'a version of it got a video under that version\'s own name, so another go is needed for this one'] + $t;
+                        }
+                        $p['twins'] = [];
+                        $dest = $now;
+                    }
+                }
+                if ($ok && !@rename($part, $dest)) {
+                    [$ok, $why] = [false, 'it could not be given its name in ' . dirname($dest)];
                 }
                 if (!$ok) {
                     @unlink($part);
@@ -522,10 +599,10 @@ if ($wol && !$ff) {
                 $cuts++;
                 $job['added'] += 1 + count($p['twins']);
                 $gotToo += count($p['twins']);
-                clearstatcache(true, $p['dest']);
-                $done += (int) filesize($p['dest']);
+                clearstatcache(true, $dest);
+                $done += (int) filesize($dest);
                 xs_log('ARCV', $p['game']['title'] . ' (' . $p['game']['platform'] . '): the first 30 s of ' . $p['v']['id']
-                    . ($p['who'] !== '' ? ', recorded by ' . $p['who'] : '') . ' (World of Longplays), ' . round((int) filesize($p['dest']) / 1048576, 1) . ' MB');
+                    . ($p['who'] !== '' ? ', recorded by ' . $p['who'] : '') . ' (World of Longplays), ' . round((int) filesize($dest) / 1048576, 1) . ' MB');
             }
             $job['bytes'] = $done;
             $save(false);

@@ -80,6 +80,7 @@ function xs_backup_skipped(): array
         ['path' => 'videos',         'why' => 'snaps scraped straight into Xsegon. Bulk media, left out so a backup stays small enough to make often'],
         ['path' => 'thumbs',         'why' => 'built from the pictures: Build thumbs makes them again'],
         ['path' => 'videos-steam',   'why' => 'Steam trailers: Pictures & Videos > Steam trailers fetches them again'],
+        ['path' => 'steamvid-none.json', 'why' => 'the Steam games a fetch found no trailer for, listed apart: without it they are simply back on the main list'],
         ['path' => 'videos-screenscraper', 'why' => 'snaps from ScreenScraper: Pictures & Videos > ScreenScraper videos fetches them again'],
         ['path' => 'archivevid-none.json', 'why' => 'the games the online archives had no video for, left out of the next fetch: without it they are simply looked for again'],
         ['path' => 'documents',      'why' => 'manuals and maps fetched for your games, often over a gigabyte: they can be fetched again'],

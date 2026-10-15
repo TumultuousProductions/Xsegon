@@ -277,6 +277,18 @@ if (array_key_exists('auto', $body)) {
     // "runs": false is without the check; "ask" is none until the person
     // has answered the question the page asks once the games are in.
     unset($asked['runsSkip'], $asked['runsAsk'], $asked['videosWanted']);   // videos are owed to one answer, never carried to the next yes
+    /* The setup window (js\setupwin.js) answers everything with the yes: videos
+       owed until the names are in, names and pictures left out when switched off. */
+    if ($asked['auto'] && !empty($body['videos'])) {
+        $asked['videosWanted'] = true;
+    }
+    if ($asked['auto'] && array_key_exists('pictures', $body)) {
+        if (empty($body['pictures'])) {
+            $asked['noPictures'] = true;
+        } else {
+            unset($asked['noPictures']);
+        }
+    }
     if ($asked['auto'] && array_key_exists('runs', $body) && ($body['runs'] === 'ask' || empty($body['runs']))) {
         $asked['runsSkip'] = true;
         if ($body['runs'] === 'ask') {
@@ -298,9 +310,21 @@ if (array_key_exists('auto', $body)) {
         : (!empty($asked['runsAsk']) ? ', the runs check to be asked about' : (!empty($asked['runsSkip']) ? ', the runs check skipped' : ''))) : 'turned off'));
     if ($asked['auto']) {
         xs_setup_run_begin('the yes', xs_ra_find($table, $lib)['have']);
+        if (array_key_exists('videos', $body) || array_key_exists('pictures', $body)) {
+            xs_log('SETUP', 'chosen with the yes: names and pictures ' . (empty($asked['noPictures']) ? 'yes' : 'no')
+                . ', videos ' . (!empty($asked['videosWanted']) ? 'yes' : 'no') . ', cheat lists ' . (!empty($body['cheats']) ? 'yes' : 'no'));
+        }
     }
     $out = ['ok' => true, 'auto' => $asked['auto'], 'started' => null, 'used' => null, 'fill' => false, 'error' => null,
-            'runs' => !empty($asked['runsWanted'])];
+            'runs' => !empty($asked['runsWanted']), 'cheats' => null];
+    // The cheat lists wait for nothing: fetched at once, into Xsegon's own folder, after the run begins so its list shows them.
+    if ($asked['auto'] && !empty($body['cheats'])) {
+        require_once __DIR__ . '/../includes/cheats.php';
+        require_once __DIR__ . '/../includes/cheatlists.php';
+        $cwhy = null;
+        $out['cheats'] = xs_cheat_lists_here($lib) ? 'here already' : (xs_cl_start($cwhy) ? 'started' : 'not started: ' . $cwhy);
+        xs_log('SETUP', 'the cheat lists were selected: ' . $out['cheats']);
+    }
     if (!$asked['auto']) {
         xs_json($out);
     }
@@ -332,7 +356,7 @@ if (array_key_exists('auto', $body)) {
         }
     }
     require_once __DIR__ . '/../includes/fill.php';
-    if (!xs_fill_running() && xs_setup_bare_ids($lib)) {
+    if (empty($asked['noPictures']) && !xs_fill_running() && xs_setup_bare_ids($lib)) {
         $fillWhy = null;
         $out['fill'] = xs_fill_start(['mode' => 'all', 'picks' => [], 'pictures_wanted' => true,
                                       'complete' => false, 'dry' => false], $fillWhy);
