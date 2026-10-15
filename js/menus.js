@@ -17,6 +17,7 @@ import { hideGame, openEditor, openLocalEditor, removeLocal } from "./editors.js
 import { openEmuAdd } from "./emuadd.js";
 import { openEmuMove } from "./emumove.js";
 import { openEmuPicker } from "./emuset.js";
+import { openFanPage } from "./fanprojects.js";
 import { openFileCheck } from "./filecheck.js";
 import { openFillTool } from "./fill.js";
 import { openFilterWindow } from "./filterwin.js";
@@ -347,7 +348,9 @@ function mbEntries(which) {
       { icon: "tag", label: "Hacks to settle" + (hackAsking() ? " (" + hackAsking() + ")" : "") + "...", tip: TIPS.hackSettle, run: openHackSettle },
       // The other way round: every game on record for a console that is not
       // in the library, to star and export as a wanted list (js/wanted.js).
-      { icon: "star", label: "Games you do not have...", tip: TIPS.wanted, run: openWantedTool }
+      { icon: "star", label: "Games you do not have...", tip: TIPS.wanted, run: openWantedTool },
+      // Hacks, mods and PC versions made from games you have (js/fanprojects.js), also a card on the consoles screen.
+      { icon: "wand", label: "Fan projects...", tip: TIPS.fanProjects, run: openFanPage }
     ];
   }
   if (which === "media") {

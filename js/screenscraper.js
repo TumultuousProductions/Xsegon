@@ -2,7 +2,9 @@
  *
  *  Every game with no video, by console, and the logins ScreenScraper wants
  *  (kept on this computer, never shown back). Fetch asks first, then the snaps
- *  come down in the background. Only a game with no video can be selected.
+ *  come down in the background. A game that has a video is not listed, except
+ *  as saved while its fetch runs. One a fetch found no video for is listed
+ *  apart, folded away, and can be selected there to ask again.
  */
 
 import { confirmWindow } from "./confirm.js";
@@ -24,6 +26,7 @@ var WORDS = {
 var FIELDS = [
   ["user", "Member name", "text"], ["password", "Member password", "password"]
 ];
+var showTried = false;      // the games with no video before are shown, while the page is up
 
 export function openScreenScraper() {
   L("ED", "screenscraper videos");
@@ -46,8 +49,33 @@ export function openScreenScraper() {
   // instead, with no logins (js\skraper.js); elsewhere this adds nothing.
   var skr = skraperRoute(inner, function () { return ticked().map(function (t) { return t.value; }); },
     function () { paintBar(); });
+  // Both lists in one area that scrolls in what the rest of the window leaves.
+  var scroll = el("div", "st-scroll");
   var rows = el("div", "sc-rows sv-rows");
-  inner.appendChild(rows);
+  scroll.appendChild(rows);
+  var apart = el("div", "st-apart");
+  apart.hidden = true;
+  var apartHead = el("div", "st-apart-head");
+  var apartWords = el("div", "st-apart-words");
+  var apartName = el("span", "pj-job");
+  apartWords.appendChild(apartName);
+  apartWords.appendChild(el("span", "pj-hint", "A fetch found no video for these, each says why, so they are kept apart. Select one to ask ScreenScraper again."));
+  apartHead.appendChild(apartWords);
+  var fold = el("button", null, showTried ? "Hide" : "Show");
+  fold.type = "button";
+  fold.addEventListener("click", function () {
+    showTried = !showTried;
+    tried.hidden = !showTried;
+    fold.textContent = showTried ? "Hide" : "Show";
+    sound("select");
+  });
+  apartHead.appendChild(fold);
+  apart.appendChild(apartHead);
+  var tried = el("div", "sc-rows sv-rows st-tried");
+  tried.hidden = !showTried;
+  apart.appendChild(tried);
+  scroll.appendChild(apart);
+  inner.appendChild(scroll);
   $editor.textContent = "";
   $editor.appendChild(inner);
   $editor.hidden = false;
@@ -173,53 +201,71 @@ export function openScreenScraper() {
     ((job && job.games) || []).forEach(function (g) { states[g.id] = g.state; });
     var got = ((job && job.games) || []).filter(function (g) { return g.state === "done"; }).length;
     var quota = job && job.allowed ? " ScreenScraper counts " + job.used + " of " + job.allowed + " requests used today." : "";
-    if (!r.games.length) {
-      intro.textContent = "Every game has a video. Nothing to fetch.";
-    } else if (running) {
+    var nTried = r.games.filter(function (g) { return !g.has && g.tried; }).length;
+    var one = nTried === 1;
+    if (running) {
       intro.textContent = "Fetching " + job.games.length + " snaps in the background: " + got + " saved so far. You can close this; they carry on." + quota;
+    } else if (!r.missing) {
+      intro.textContent = "Every game has a video. Nothing to fetch.";
     } else if (job && job.state === "failed") {
       intro.textContent = "The last fetch stopped: " + (job.error || "no reason written") + ". " + got + " saved before that." + quota;
+    } else if (nTried === r.missing) {
+      // Every game with no video is in the list apart: nothing above it is on offer.
+      intro.textContent = (one ? "The one game with no video" : "The " + nTried + " games with no video") + " got none from ScreenScraper when fetched before, so " +
+        (one ? "it is" : "they are") + " listed apart below." + quota;
     } else {
-      intro.textContent = r.missing + (r.missing === 1 ? " game has" : " games have") + " no video. ScreenScraper has a short gameplay snap for most console games; each plays as that game's video." + quota;
+      intro.textContent = r.missing + (r.missing === 1 ? " game has" : " games have") + " no video. ScreenScraper has a short gameplay snap for most console games; each plays as that game's video." +
+        (nTried ? " " + nTried + " of them got none when fetched before and " + (one ? "is" : "are") + " listed apart below." : "") + quota;
     }
 
+    // One with a video is never offered; while its fetch runs it stays, to show it saved.
+    var shown = r.games.filter(function (g) { return !g.has || (running && states[g.id]); });
     // Drawn once for a given list of games and filled in after that, so a
     // progress tick does not throw the scroll back to the top.
-    var now = (running ? "r:" : "s:") + r.games.map(function (g) { return g.id; }).join(",");
+    var now = (running ? "r:" : "s:") + shown.map(function (g) { return g.id + (g.tried ? "~" : ""); }).join(",");
     if (now !== shape) {
       shape = now;
       lines = {};
       ticks = [];
       rows.textContent = "";
+      tried.textContent = "";
       // Versions of one game share its name; their file names tell them apart.
       var twins = {};
-      r.games.forEach(function (g) { var k = g.platform + "|" + g.title; twins[k] = (twins[k] || 0) + 1; });
-      r.games.forEach(function (g) {
+      shown.forEach(function (g) { var k = g.platform + "|" + g.title; twins[k] = (twins[k] || 0) + 1; });
+      shown.forEach(function (g) {
         var can = !g.has && g.system > 0;
         var line = el("label", "sc-row sv-row" + (can ? "" : " has"));
         var box = el("input");
         box.type = "checkbox";
         box.value = g.id;
         box.dataset.platform = g.platform;
-        box.checked = can && !running && !(states[g.id] && states[g.id] !== "waiting");
+        box.checked = can && !g.tried && !running && !(states[g.id] && states[g.id] !== "waiting");
         box.disabled = !can || running;
         if (can) { ticks.push(box); }
+        if (g.tried) { box.dataset.tried = "1"; }
         box.addEventListener("change", paintGo);
         line.appendChild(box);
         line.appendChild(el("span", "sc-title", g.title));
         line.appendChild(el("span", "ss-plat", g.platform + (twins[g.platform + "|" + g.title] > 1 && g.rom ? " · " + g.rom : "")));
         var note = el("span", "sc-rom sv-state");
         line.appendChild(note);
-        rows.appendChild(line);
+        (g.tried ? tried : rows).appendChild(line);
         lines[g.id] = { note: note, row: line };
       });
+      rows.hidden = !rows.children.length;
+      apart.hidden = !tried.children.length;
+      apartName.textContent = "Got no video before (" + tried.children.length + ")";
       paintBar();
     }
-    r.games.forEach(function (g) {
-      var st = states[g.id], at = lines[g.id];
+    shown.forEach(function (g) {
+      var st = states[g.id] || g.tried, at = lines[g.id];
       if (!at) { return; }
       at.row.classList.toggle("has", g.has || !g.system);
       at.note.textContent = wordsFor(g, st);
+      // The day of that answer: ScreenScraper adds videos now and then, so an old one is worth asking again.
+      if (!g.has && g.tried && g.triedAt && st === g.tried) {
+        at.note.textContent += ", asked " + new Date(g.triedAt * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+      }
       at.note.className = "sc-rom sv-state" + (g.has || st === "done" ? " ok" : (st === "none" || st === "novideo" || st === "failed" || !g.system) ? " off" : "");
     });
     if (running && !watching) { watch(); }
@@ -238,11 +284,12 @@ export function openScreenScraper() {
     bar.textContent = "";
     go = null;
     if (!last || isRunning(last) || !ticks.length) { return; }
-    // One console at a time is the gentle way to start: select just that one.
+    // One console at a time is the gentle way to start: select just that one. The games apart are selected by hand.
+    var main = ticks.filter(function (t) { return !t.dataset.tried; });
     var counts = {};
-    ticks.forEach(function (t) { counts[t.dataset.platform] = (counts[t.dataset.platform] || 0) + 1; });
+    main.forEach(function (t) { counts[t.dataset.platform] = (counts[t.dataset.platform] || 0) + 1; });
     var chooser = el("select", "ss-pick");
-    [["", "Select..."], ["*", "Every console (" + ticks.length + ")"]]
+    [["", "Select..."], ["*", "Every console (" + main.length + ")"]]
       .concat(Object.keys(counts).sort().map(function (p) { return ["p:" + p, "Only " + p + " (" + counts[p] + ")"]; }))
       .concat([["-", "None"]])
       .forEach(function (o) {
@@ -253,14 +300,16 @@ export function openScreenScraper() {
     chooser.addEventListener("change", function () {
       var v = chooser.value;
       if (v === "") { return; }
-      ticks.forEach(function (t) { t.checked = v === "*" || (v !== "-" && "p:" + t.dataset.platform === v); });
+      ticks.forEach(function (t) {
+        if (v === "-") { t.checked = false; } else if (!t.dataset.tried) { t.checked = v === "*" || "p:" + t.dataset.platform === v; }
+      });
       chooser.value = "";
       paintGo();
     });
     go = el("button", "primary", "Fetch snaps...");
     go.addEventListener("click", ask);
     bar.appendChild(go);
-    bar.appendChild(chooser);
+    if (main.length) { bar.appendChild(chooser); }
     var sb = skr.button();
     if (sb) { bar.appendChild(sb); }
     paintGo();

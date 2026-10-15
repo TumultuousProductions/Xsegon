@@ -21,7 +21,7 @@ var ART_PIECE = 3 * 1024 * 1024;
 // replaces it rather than leaving the last game's answering too.
 var artChanged = null;
 
-function uploadArt(g, kind, file, say) {
+export function uploadArt(g, kind, file, say) {
   return uploadPieces("api/art.php?id=" + encodeURIComponent(g.id) + "&kind=" + kind, file, say);
 }
 
@@ -303,7 +303,7 @@ export function openPlatformArtEditor(p) {
 var VIDEO_FROM = { name: "found by name", media: "from your media copy", steam: "from Steam", screenscraper: "from ScreenScraper" };
 
 // What Clear video deletes, for both asking windows: v is {file, files, shared}.
-function videoClearLines(box, v) {
+export function videoClearLines(box, v) {
   var more = (v.files || 1) - 1;
   box.appendChild(el("p", null, "The video is deleted: " + v.file +
     (more ? " (and " + plural(more, "more file", "more files") + " it could play)" : "") + "."));
@@ -316,7 +316,7 @@ function videoClearLines(box, v) {
 
 /* Clear all in Change Pictures: pictures stored in Xsegon are deleted, originals hidden
    (each comes back with Use the original again), and the video deleted. done(error or null). */
-function askClearAll(g, res, done) {
+export function askClearAll(g, res, done) {
   var kinds = Object.keys(res.kinds).map(function (kind) { return res.kinds[kind]; });
   var gone = kinds.filter(function (k) { return k.replaced; }).length;
   var hide = kinds.filter(function (k) { return k.replaced ? k.hadOne && !k.hidden : k.has; }).length;
@@ -452,14 +452,14 @@ export function openVideoEditor(g) {
 
 /* Find online: the LaunchBox Games Database's pictures for one slot (api\gamesdb.php);
    a click downloads one as the replacement. It takes the slots' place until Back, and
-   a game not matched to the database gets a search first. */
-function openPicker(g, kind, label, slotsEl) {
+   a game not matched to the database gets a search first. onBack: told when the slots are back. */
+export function openPicker(g, kind, label, slotsEl, onBack) {
   var host = slotsEl.parentNode;
   var box = el("div", "pk");
   slotsEl.hidden = true;
   host.appendChild(box);
 
-  function back() { box.remove(); slotsEl.hidden = false; }
+  function back() { box.remove(); slotsEl.hidden = false; if (onBack) { onBack(); } }
   function head(text) {
     var h = el("div", "pk-head");
     var b = el("button", null, "Back");

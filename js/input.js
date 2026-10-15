@@ -7,6 +7,7 @@ import { closeDetails, openDetails } from "./details.js";
 import { detailTabKey, detailTabPad, toggleTab } from "./detailtabs.js";
 import { openDocs } from "./docs.js";
 import { closeEditor, openEditor, openLocalEditor } from "./editors.js";
+import { fanKeys, fanOpen, fanPad } from "./fanprojects.js";
 import { filterKeys } from "./filterwin.js";
 import { setPadMode } from "./help.js";
 import { launch, pick } from "./launch.js";
@@ -270,6 +271,8 @@ function onKey(e) {
     // Enter plays the first of what was typed for, not the game chosen before the results are in.
     if (e.key === "Enter" && sysStage !== "wall") { play(true); e.preventDefault(); return; }
   }
+
+  if (fanKeys(e)) { return; }            // the Fan projects page, while it is up (js\fanprojects.js)
 
   // The wall of systems has its own, smaller vocabulary.
   if (sysStage === "wall") {
@@ -608,6 +611,8 @@ export function pollPad() {
       padPrev[i] = { a: a, b: b, x: x, y: y };
       continue;
     }
+
+    if (fanOpen()) { padPrev[i] = fanPad({ up: up, down: down, left: left, right: right, a: a, b: b, x: x, y: y }, prev); repeatDir = 0; continue; }
 
     // The bar up among the menus and buttons at the top: its own walk until it comes back down.
     var tp = padTopPoll({ up: up, down: down, left: left, right: right, a: a, b: b, x: x, y: y, hit: tbHit }, prev);

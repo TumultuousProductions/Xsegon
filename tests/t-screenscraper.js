@@ -186,6 +186,11 @@ module.exports = async function (b, check) {
     check("no password in the job file or the log", leak(fs.readFileSync(jobFile, "utf8")) || leak(logs), false);
     check("and the log says how it went", /SSCR snaps: 2 saved, 2 not on ScreenScraper, 1 there with no video, 1 failed/.test(logs), true);
 
+    const tried = (g) => (st.games.find((x) => x.id === g.id) || {}).tried;
+    check("one ScreenScraper does not have, or has no video of, is kept apart; a failed one is not",
+      [tried(C), tried(D), tried(E), tried(F)], ["none", "novideo", "", "none"]);
+    const keptApart = await api("api/screenscraper.php", { ids: [D.id], dry: true });
+    check("one kept apart can still be asked for again", keptApart.ok && keptApart.plan.games.map((g) => g.id), [D.id]);
     const rowA = st.games.find((g) => g.id === A.id);
     check("the saved snap is now that game's video", rowA && rowA.has, true);
     check("and two fewer are missing", st.missing, first.missing - 2);
@@ -285,16 +290,28 @@ module.exports = async function (b, check) {
     await b.menuItem(/ScreenScraper videos/);
     const title = `(document.querySelector("#editor .panel-title") || {}).textContent || ""`;
     check("Pictures & Videos > ScreenScraper videos opens the list", await b.until(title, "SCREENSCRAPER VIDEOS"), "SCREENSCRAPER VIDEOS");
-    await b.until(`document.querySelectorAll("#editor .sv-row").length`, st.games.length);
+    const listNow = await api("api/screenscraper.php");
+    const lacking = listNow.games.filter((g) => !g.has).map((g) => g.id).sort().join(",");
+    check("only the games with no video are listed", await b.until(`[...document.querySelectorAll("#editor .sv-row input")].map(x => x.value).sort().join(",")`, lacking), lacking);
     const rowOf = (id) => `[...document.querySelectorAll("#editor .sv-row")].find(r => r.querySelector("input").value === ${JSON.stringify(id)})`;
-    check("a game with its snap saved says so and cannot be selected", await b.ev(`(r => [r.querySelector(".sv-state").textContent, r.querySelector("input").disabled])(${rowOf(A.id)})`), ["saved", true]);
+    check("a game with its snap saved is not listed at all", await b.ev(`[!${rowOf(A.id)}, !${rowOf(B.id)}]`), [true, true]);
+    const where = (id) => `(r => !r ? "gone" : (t => !t ? "main" : t.hidden ? "apart, folded" : "apart")(r.closest(".st-tried")))(${rowOf(id)})`;
+    check("those ScreenScraper found no video for are listed apart, folded away and not selected; a failed one stays on the main list",
+      await b.ev(`[${where(C.id)}, ${where(D.id)}, ${where(F.id)}, ${where(E.id)}, ${rowOf(D.id)}.querySelector("input").checked]`),
+      ["apart, folded", "apart, folded", "apart, folded", "main", false]);
+    const dayOf = (g) => b.ev(`new Date(${(listNow.games.find((x) => x.id === g.id) || {}).triedAt || 0} * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric" })`);
+    check("each says why, and the day it was asked",
+      await b.ev(`[${rowOf(D.id)}, ${rowOf(F.id)}].map(r => r.querySelector(".sv-state").textContent)`),
+      ["ScreenScraper has no video of it, asked " + await dayOf(D), "not found on ScreenScraper, asked " + await dayOf(F)]);
+    await b.ev(`document.querySelector("#editor .st-apart-head button").click()`);
+    check("Show unfolds them", await b.ev(where(D.id)), "apart");
     check("the stored login is named, its password never shown, and no developer ID", await b.ev(`(() => { const t = document.querySelector("#editor .ss-acct").textContent; return [t.includes(${JSON.stringify(LOGIN.user)}), t.includes(${JSON.stringify(LOGIN.devid)}), t.includes(${JSON.stringify(LOGIN.password)}), !!document.querySelector("#editor .ss-form")]; })()`), [true, false, false, false]);
     check("a run that stopped says why", await b.ev(`/stopped: ScreenScraper refused the developer ID/.test(document.querySelector("#editor .group-help").textContent)`), true);
-    check("selecting one console selects only its games", await b.ev(`(() => {
-      const s = document.querySelector("#editor .ss-pick"), want = ${JSON.stringify("p:" + C.platform)};
+    check("selecting one console selects only its games, and none kept apart", await b.ev(`(() => {
+      const s = document.querySelector("#editor .ss-pick"), want = ${JSON.stringify("p:" + E.platform)};
       s.value = want; s.dispatchEvent(new Event("change"));
       const on = [...document.querySelectorAll("#editor .sv-row input:checked")];
-      return on.length > 0 && on.every(i => "p:" + i.dataset.platform === want) && /^Fetch \\d+ snaps?\\.\\.\\.$/.test(document.querySelector("#editor .ss-bar button").textContent);
+      return on.length > 0 && on.every(i => "p:" + i.dataset.platform === want && !i.closest(".st-tried")) && /^Fetch \\d+ snaps?\\.\\.\\.$/.test(document.querySelector("#editor .ss-bar button").textContent);
     })()`), true);
     await b.ev(`document.querySelector("#editor .ss-bar button").click()`);
     const ask = `(document.querySelector(".setup-confirm h2") || {}).textContent || ""`;
