@@ -99,56 +99,7 @@ if ($action === 'accept') {
     }
     xs_log('SCAN', 'accepted ' . $added . ' of ' . count($games) . ' offered'
         . ($skipped ? ' (' . count($skipped) . ' skipped: ' . $skipped[0]['why'] . ')' : ''));
-    // One that may be a hack is said so as it comes in, so none stands in the
-    // library unspoken for (includes\hackof.php, Games > Hacks to settle).
-    $hacks = ['checked' => 0, 'ask' => 0];
-    if ($added > 0) {
-        require_once __DIR__ . '/../includes/hackof.php';
-        $t0 = microtime(true);
-        $hacks = xs_hackof_check_new(array_column(array_filter($games, 'is_array'), 'id'));
-        // Said every time, with how long it took and how the games were read: a slow or an odd look shows in a report.
-        xs_log('HACK', 'of the ' . $hacks['looked'] . ($hacks['looked'] === 1 ? ' game' : ' games') . ' just added, ' . $hacks['checked'] . ' checked as they came in, ' . $hacks['ask'] . ' may be hacks: looked at in '
-            . (int) round((microtime(true) - $t0) * 1000) . 'ms, ' . ($hacks['once'] ? 'the list read once' : 'each game read alone')
-            . ($hacks['unknown'] ? ', ' . $hacks['unknown'] . ' not in the library' : ''));
-    }
-    /* The one yes from Getting started (includes\setup.php, xs_setup_auto):
-       the scan is the moment the consoles become known, so the missing cores
-       and the names and pictures pass start here by themselves. Skips are
-       quiet but said in the log: another fetch already running (the
-       RetroArch chain fetches the cores then), or nothing missing. */
-    $auto = null;
-    if ($added > 0) {
-        require_once __DIR__ . '/../includes/setup.php';
-        if (xs_setup_auto()) {
-            $auto = ['cores' => [], 'fill' => false];
-            // Games scanned in after the yes's own run ended get a list of
-            // their own; RetroArch is here by then, or its fetch still shows.
-            $tbl = xs_emulators(xs_norm_path((string) (xs_settings()['paths']['launchbox'] ?? '')));
-            xs_setup_run_begin('a scan', xs_ra_find($tbl, xs_library())['have']);
-            // and last the Runs check, once these are done (api\running.php)
-            xs_setup_runs_want(true);
-            if (!xs_setup_busy(xs_setup_job())) {
-                $err  = null;
-                $plan = xs_setup_chain_cores($err);
-                if ($plan !== null) {
-                    $auto['cores'] = array_map(static fn ($c) => $c['platform'], $plan['cores']);
-                } elseif ($err !== null) {
-                    xs_log('SETUP', 'cores did not follow the scan: ' . $err);
-                }
-            }
-            require_once __DIR__ . '/../includes/fill.php';
-            if (!xs_fill_running()) {
-                $fillWhy = null;
-                $auto['fill'] = xs_fill_start(['mode' => 'all', 'picks' => [], 'pictures_wanted' => true,
-                                               'complete' => false, 'dry' => false], $fillWhy);
-                if ($auto['fill']) {
-                    xs_log('FILL', 'started by itself after the scan: every game it is sure of');
-                } elseif ($fillWhy !== null) {
-                    xs_log('FILL', 'did not start after the scan: ' . $fillWhy);
-                }
-            }
-        }
-    }
+    [$hacks, $auto] = xs_scan_after_accept($games, $added, false);
     xs_json(['ok' => true, 'added' => $added, 'skipped' => $skipped, 'accepted' => count(xs_scan_read()), 'auto' => $auto,
              'mayBeHacks' => $hacks['ask']]);
 }

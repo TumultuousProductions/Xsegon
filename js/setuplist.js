@@ -6,8 +6,8 @@
  *  opened half way shows the same list. The separate bars still work outside a run.
  */
 
+import { askCards } from "./askcards.js";
 import { cheatListsSize } from "./cheatlists.js";
-import { confirmWindow } from "./confirm.js";
 import { fillWords } from "./fillbar.js";
 import { showStrip } from "./launch.js";
 import { L, api, postJson } from "./log.js";
@@ -264,9 +264,10 @@ function paint(r) {
   }
 }
 
-/*  "Run the games check?", asked once the games are in and everything else is
+/*  "Check which games start?", asked once the games are in and everything else is
     at work, so nothing waits for the answer: only the person knows how long
-    their PC takes. No answer (Esc, a press outside) is Later. */
+    their PC takes. No answer (Esc, a press outside) is Later. A card a question
+    (js\askcards.js): videos and the cheat lists first when they are on offer. */
 var runsWin = null, runsAnswered = false, askWanted = false, askLooking = false;
 var VIDEO_MB = 4.2;                      // a video's usual size, for the estimate
 var VIDEO_MB_SEC = 3;                    // what the Archive gives on a good day
@@ -302,86 +303,32 @@ function openAsk(n, lists, vids) {
     // an answer that did not reach the server is asked for again
     sendJson("api/setup.php", body).then(function (res) { if (!res || !res.ok) { runsAnswered = false; } return read(); });
   }
-  if (lists || vids) { askMore(n, lists, vids, answered); } else { askCheckOnly(n, answered); }
+  /* One question a card, in this order; Esc or a press outside is no to
+     the rest. Nothing is fetched or opened unasked. */
+  var cards = [];
+  if (vids) {
+    var mb = vids * VIDEO_MB;
+    cards.push({ key: "videos", q: { title: "Videos for your games?", yes: "Yes", no: "No",
+      lines: [["A short video for each game Xsegon is sure of, from archive.org: free, no account, in the background."],
+              [cap(sizeWords(mb) + " for " + plural(vids, "game", "games") + ": " + about(mb / VIDEO_MB_SEC) + " on a good day."), "note"]] } });
+  }
+  if (lists) {
+    cards.push({ key: "cheats", q: { title: "Cheat lists for your games?", yes: "Yes", no: "No",
+      lines: [["For a game's Cheats tab. None is turned on by itself."], [cap(cheatListsSize(lists)) + ", from libretro.", "note"]] } });
+  }
+  var secs = n * GAME_SECS;
+  cards.push({ key: "runs", q: { title: "Check which games start?", yes: "Yes", no: "Later",
+    lines: [["Each game is opened for a few seconds to see that it starts."],
+            [cap(about(secs)) + " for your " + (n === 1 ? "game" : n + " games") + ", longer on a slow computer.", "note"],
+            ["Later: Emulators > Runs check, any time. Your games play without it.", "faint"]] } });
+  cards.forEach(function (c) { c.q.cls = "runs-ask"; });
+  runsWin = askCards(cards, function (got) { answered(got.runs, { videos: got.videos, cheats: got.cheats }); });
 }
+
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
 function sizeWords(mb) {
   return mb >= 1024 ? (Math.round(mb / 102.4) / 10) + " GB" : Math.max(1, Math.round(mb)) + " MB";
-}
-
-/*  With videos or the cheat lists to offer: up to three rows to select,
-    none selected, and one press that starts what is. No answer (Esc, a
-    press outside) is none of them: nothing is fetched or opened unasked. */
-function askMore(n, lists, vids, answered) {
-  var picks = {};
-  var names = (vids ? ["videos"] : []).concat(lists ? ["cheat lists"] : [], ["the games check"]);
-  var title = names.slice(0, -1).join(", ") + " and " + names[names.length - 1] + "?";
-  var secs = n * GAME_SECS;
-  var w = runsWin = confirmWindow(title.charAt(0).toUpperCase() + title.slice(1), function (box) {
-    box.classList.add("runs-ask", "runs-more");
-    box.appendChild(el("p", null, "Xsegon found " + plural(n, "game", "games") + " and is setting " + (n === 1 ? "it" : "them") + " up now. " +
-      (names.length === 3 ? "Three" : "Two") + " things are yours to decide. Select what you want: none of them is needed to play."));
-    var list = el("div", "confirm-list");
-    function addPick(key, name, words) {
-      var lab = el("label", "confirm-pick");
-      var c = el("input");
-      c.type = "checkbox";
-      c.value = key;
-      picks[key] = c;
-      lab.appendChild(c);
-      lab.appendChild(el("strong", null, " " + name));
-      lab.appendChild(document.createTextNode(" " + words));
-      list.appendChild(lab);
-    }
-    if (vids) {
-      var mb = vids * VIDEO_MB;
-      addPick("videos", "Videos for your games.", "A short video for each game Xsegon is sure of, from the Internet Archive (archive.org), free and with no account. About " +
-        sizeWords(mb) + " for the " + plural(vids, "game", "games") + " with no video: " + about(mb / VIDEO_MB_SEC) +
-        " on a good day, several times that when the Archive is slow. It runs in the background, after the names and pictures.");
-    }
-    if (lists) {
-      var size = cheatListsSize(lists);
-      addPick("cheats", "Cheat lists.", "RetroArch came without its cheats. With these lists a game's Cheats tab has them to select, and none is turned on by itself. " +
-        size.charAt(0).toUpperCase() + size.slice(1) + ", from libretro.");
-    }
-    addPick("runs", "The games check.", "Each game is opened for a few seconds to see that it starts. " + (secs >= 600 ? "It takes a long time: " : "It takes ") +
-      about(secs) + " for your " + (n === 1 ? "game" : n + " games") + ", and longer on a slow computer. It goes last, and Emulators > Runs check does it any time.");
-    box.appendChild(list);
-  }, { label: "Start what is selected", run: function () {
-    answered(picks.runs.checked, { videos: !!(picks.videos && picks.videos.checked), cheats: !!(picks.cheats && picks.cheats.checked) });
-  } }, "None of these", function () { answered(false, {}); });
-  // theirs to decide: neither press is lit, and the one that starts something waits for a selection
-  w.yes.classList.remove("primary");
-  w.yes.disabled = true;
-  Object.keys(picks).forEach(function (k) {
-    picks[k].addEventListener("change", function () { w.yes.disabled = !Object.keys(picks).some(function (x) { return picks[x].checked; }); });
-  });
-  var none = w.box.querySelector(".confirm-bar button");
-  if (none) { none.focus(); }
-}
-
-/* With nothing else to offer, the games check alone. */
-function askCheckOnly(n, answer) {
-  function answered(yes) { answer(yes, {}); }
-  var secs = n * GAME_SECS;
-  var w = runsWin = confirmWindow("Run the games check?", function (box) {
-    box.classList.add("runs-ask");
-    box.appendChild(el("p", null, "Xsegon found " + plural(n, "game", "games") + " and is setting " + (n === 1 ? "it" : "them") + " up now. One thing is yours to decide:"));
-    var ul = el("ul", "confirm-points");
-    ul.appendChild(el("li", null, "It only tests your games: each one is opened for a few seconds to see that it starts."));
-    var long = el("li", "long");
-    long.appendChild(document.createTextNode(secs >= 600 ? "It takes a long time: " : "It takes "));
-    long.appendChild(el("strong", null, about(secs) + " for your " + (n === 1 ? "game" : n + " games")));
-    long.appendChild(document.createTextNode(", and longer on a slow computer."));
-    ul.appendChild(long);
-    ul.appendChild(el("li", null, "Slow computer, or a lot of games? Choose Later and run it overnight, so it does not waste your time: Emulators > Runs check."));
-    ul.appendChild(el("li", null, "It is optional. Your games play without it."));
-    box.appendChild(ul);
-  }, { label: "Run the check", run: function () { answered(true); } }, "Later", function () { answered(false); });
-  // theirs to decide: neither press is lit, and Enter is the one that opens nothing
-  w.yes.classList.remove("primary");
-  var later = w.box.querySelector(".confirm-bar button");
-  if (later) { later.focus(); }
 }
 
 function hide() {

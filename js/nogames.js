@@ -15,6 +15,9 @@ import { el } from "./util.js";
    pressed the one that does it all. */
 var ASK_FOLDER = "Choose the folder your games are in, in the window that opened. Xsegon does the rest by itself.";
 var asking = false, askWords = ASK_FOLDER, shown = [];
+// Set it all up is asking for the folder or finding the games (js\newgames.js waits meanwhile).
+export function setupAsking() { return asking; }
+
 export function noGamesAsking(on, words) {
   asking = !!on;
   askWords = words || ASK_FOLDER;

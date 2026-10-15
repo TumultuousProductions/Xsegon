@@ -10,7 +10,7 @@
  *  stale page cannot fetch a second RetroArch.
  */
 
-import { startAuto } from "./autosetup.js";
+import { firstCards, startAuto } from "./autosetup.js";
 import { confirmWindow } from "./confirm.js";
 import { closeEditor, reloadKeeping, setEditorOnClose } from "./editors.js";
 import { openFillTool } from "./fill.js";
@@ -186,8 +186,9 @@ export function confirmCores(st, after) {
 /* ---------- where these live ---------- */
 
 /* Once, at startup, for someone new: no RetroArch in use, or no games yet.
-   The guide opens by itself the first time only; Help > Getting started
-   opens it any time after. Everyone who is already set up hears nothing. */
+   The first time only: Set it all up as short questions while it is on
+   offer (js\autosetup.js), the guide otherwise; Help > Getting started
+   opens the guide any time after. Everyone who is already set up hears nothing. */
 export function firstRunSetup() {
   return api("api/setup.php").then(function (st) {
     if (!st || !st.ok) { return; }
@@ -195,7 +196,7 @@ export function firstRunSetup() {
     var fresh = !(st.retroarch.have && st.retroarch.inTable) || st.guide.games === 0;
     if (fresh && !st.guide.shown) {
       post({ asked: "guide" });
-      openGuide();
+      if (!st.auto && (st.canGet || st.canUse)) { firstCards(st, openGuide); } else { openGuide(); }
     }
   });
 }
