@@ -1035,6 +1035,108 @@ module.exports = async function (b, check) {
       fs.rmSync(VACANT, { recursive: true, force: true });
       fs.rmSync(BLANK, { recursive: true, force: true });
     }
+
+    /* ---- new games by themselves (includes\newgames.php, js\newgames.js) ----
+       A games folder of its own: a game Xsegon is sure of, one whose name says
+       hack, a disc set waiting for its playlist, an archive and one still being
+       copied. The test copy has the look switched off (tests\sandbox.js). */
+    const NEWFIX = FIX + "-new";
+    const ngJob = path.join(DATA, "newgames-job.json");
+    const ngTold = path.join(DATA, "newgames-told.json");
+    const msgPath = path.join(DATA, "messages.json");
+    const runPath = path.join(DATA, "running.json");
+    const keepNg = {};
+    for (const f of [ngJob, ngTold, msgPath]) { keepNg[f] = fs.existsSync(f) ? fs.readFileSync(f) : null; }
+    const hourAgo = Date.now() / 1000 - 3600;
+    const putOld = (rel) => { const p = path.join(NEWFIX, rel); fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, "x"); fs.utimesSync(p, hourAgo, hourAgo); return p; };
+    // The least time between two looks is the server's: each look here starts from none.
+    const look = async (why) => {
+      fs.rmSync(ngJob, { force: true });
+      const r = await api("api/newgames.php", { start: why || "test" });
+      if (!r.started) { return r; }
+      for (const end = Date.now() + 20000; Date.now() < end;) {
+        const j = (await api("api/newgames.php")).job;
+        if (j && j.state !== "running") { return j; }
+        await sleep(200);
+      }
+      return { state: "still running after 20 s" };
+    };
+    const firstMsg = () => (JSON.parse(fs.readFileSync(msgPath, "utf8").replace(/^﻿/, "") || "[]")[0] || {});
+    fs.rmSync(NEWFIX, { recursive: true, force: true });
+    try {
+      putOld("systems/saturn/Xsnew Plain (USA).chd");
+      putOld("systems/saturn/Xsnew Racer (Hack).chd");
+      putOld("systems/psx/Xsnew Duo (USA) (Disc 1).cue");
+      putOld("systems/psx/Xsnew Duo (USA) (Disc 1).bin");
+      putOld("systems/psx/Xsnew Duo (USA) (Disc 2).cue");
+      putOld("systems/psx/Xsnew Duo (USA) (Disc 2).bin");
+      putOld("systems/psx/Xsnew Packed (USA).7z");
+      const arriving = path.join(NEWFIX, "systems", "saturn", "Xsnew Arriving (USA).chd");
+      fs.writeFileSync(arriving, "x");                       // written now: still being copied
+      await api("api/settings.php", { paths: { romRoot: NEWFIX } });
+
+      fs.rmSync(ngJob, { force: true });
+      const off = await api("api/newgames.php", { start: "test" });
+      check("switched off, no look is started, and that is no fault", [off.ok, off.started, off.no], [true, false, "switched off in Settings > Library"]);
+      await api("api/settings.php", { library: { addNewGames: true } });
+
+      const j1 = await look();
+      check("on, the look adds only the game it is sure of", [j1.state, j1.added, j1.titles], ["done", 1, ["Xsnew Plain"]]);
+      check("and leaves the hack and the disc set waiting for its playlist, and the file still arriving for later",
+            [j1.left, j1.fresh], [2, 1]);
+      const inList = JSON.parse(fs.readFileSync(scanPath, "utf8")).map((g) => g.title).filter((t) => /^Xsnew/.test(t)).sort();
+      check("the library has that one and none of the others", inList, ["Xsnew Plain"]);
+      const m1 = firstMsg();
+      check("the mailbox names what it was not sure of, once, with Scan for Games to see to them",
+            [m1.title, m1.opens, (m1.items || []).slice().sort(), j1.told],
+            ["3 files Xsegon was not sure of", ["scan"], ["Xsnew Duo (USA) (Disc 1).cue: a disc set waiting for its playlist",
+              "Xsnew Packed (USA).7z: an archive to unpack", "Xsnew Racer (Hack).chd: its name says it may be a hack"], 3]);
+
+      const soon = await api("api/newgames.php", { start: "test" });
+      check("asked again at once, the server says no: once in thirty seconds at the most", [soon.started, /seconds ago$/.test(soon.no || "")], [false, true]);
+
+      fs.writeFileSync(runPath, JSON.stringify({ title: "Xsnew Test", pending: true, startedAt: new Date().toISOString() }));
+      fs.rmSync(ngJob, { force: true });
+      const playing = await api("api/newgames.php", { start: "test" });
+      fs.rmSync(runPath, { force: true });
+      check("never while a game is running", [playing.started, playing.no], [false, "a game is running"]);
+
+      fs.utimesSync(arriving, hourAgo, hourAgo);
+      const msgsBefore = JSON.parse(fs.readFileSync(msgPath, "utf8").replace(/^﻿/, "") || "[]").length;
+      const j2 = await look("again");
+      check("the file that was still arriving comes in on the next look", [j2.added, j2.titles, j2.fresh], [1, ["Xsnew Arriving"], 0]);
+      check("and what was named once is not named again",
+            [j2.told, JSON.parse(fs.readFileSync(msgPath, "utf8").replace(/^﻿/, "") || "[]").length], [0, msgsBefore]);
+
+      for (let i = 0; i < 101; i++) { putOld("systems/saturn/Xsnew Many " + i + " (USA).chd"); }
+      const j3 = await look();
+      check("more than a hundred new games at once: none added, left for Scan for Games and named in the mailbox",
+            [j3.added, j3.many, firstMsg().title], [0, 101, "101 new games to look over"]);
+      for (let i = 0; i < 101; i++) { fs.rmSync(path.join(NEWFIX, "systems", "saturn", "Xsnew Many " + i + " (USA).chd"), { force: true }); }
+
+      /* The page: a look once it is up, and one when the window comes back
+         after a while away. The waits are cut short for the test (XSEGON.newGamesMs). */
+      putOld("systems/saturn/Xsnew Start (USA).chd");
+      fs.rmSync(ngJob, { force: true });
+      await b.goto();
+      check("the page looks once it is up, and the strip names what came",
+            await b.waitFor(`/1 new game added: Xsnew Start/.test(document.getElementById("strip").textContent)`, 20000));
+      check("and the new game is in the list of scanned games",
+            JSON.parse(fs.readFileSync(scanPath, "utf8")).some((g) => g.title === "Xsnew Start"), true);
+      putOld("systems/saturn/Xsnew Back (USA).chd");
+      fs.rmSync(ngJob, { force: true });
+      await b.ev(`window.XSEGON.newGamesMs = 300; window.dispatchEvent(new Event("blur"))`);
+      await sleep(500);
+      await b.ev(`window.dispatchEvent(new Event("focus"))`);
+      check("away a while and back, it looks again",
+            await b.waitFor(`/1 new game added: Xsnew Back/.test(document.getElementById("strip").textContent)`, 15000));
+      await b.ev(`window.XSEGON.newGamesMs = 0`);
+    } finally {
+      await api("api/settings.php", { library: { addNewGames: false }, paths: { romRoot: FIX } });
+      fs.rmSync(runPath, { force: true });
+      for (const [f, was] of Object.entries(keepNg)) { if (was === null) { fs.rmSync(f, { force: true }); } else { fs.writeFileSync(f, was); } }
+      fs.rmSync(NEWFIX, { recursive: true, force: true });
+    }
   } finally {
     await api("api/settings.php", { paths: { romRoot: before } });
     /* Put back what the run's copy held, not an empty slate: real games live

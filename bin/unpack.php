@@ -171,12 +171,17 @@ $one = static function (array $item) use (&$job, $save, $ask): array {
     // tar reads a name as a pattern, so the marks it would take for one are made plain.
     // -m: tar leaves the files' dates alone. An exFAT drive refuses them, and tar calls that a failure.
     $only = (array) ($look['take'] ?? []);
-    $cmd = $is7z && xs_unpack_7zr() !== ''
-        ? array_merge([xs_unpack_7zr(), 'x', '-y', '-bso0', '-bsp0', '-o' . $work, '--', $archive], $only)
+    /* 7zr gives a big file its whole size the moment it starts, so the size
+       written says nothing: its own percentage is the bar (-bsp1, into $prog).
+       tar writes as it goes, and the size is. */
+    $with7zr = $is7z && xs_unpack_7zr() !== '';
+    $cmd = $with7zr
+        ? array_merge([xs_unpack_7zr(), 'x', '-y', '-bso0', '-bsp1', '-o' . $work, '--', $archive], $only)
         : (xs_unpack_tar() !== '' ? array_merge([xs_unpack_tar(), '-xmf', $archive, '-C', $work],
             array_map(static fn ($n) => (string) preg_replace('/[\\\\\[\]*?]/', '\\\\$0', $n), $only)) : null);
     $says = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'xs-unpack-says-' . getmypid() . '.txt';
-    $run = $cmd === null ? null : xs_unpack_run($cmd, false, $says);
+    $prog = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'xs-unpack-prog-' . getmypid() . '.txt';
+    $run = $cmd === null ? null : xs_unpack_run($cmd, false, $says, $with7zr ? $prog : null);
     if ($run === null) {
         $undo();
         return ['ok' => false, 'why' => 'the program that unpacks it would not start'];
@@ -197,15 +202,19 @@ $one = static function (array $item) use (&$job, $save, $ask): array {
             usleep(300000);                         // the file it was writing is let go
             $undo();
             @unlink($says);
+            @unlink($prog);
             return ['ok' => false, 'why' => 'stopped', 'stopped' => true];
         }
         usleep(250000);
         if ($tick % 4 === 3) {
-            $job['now']['bytes'] = xs_unpack_size($work, $look['names']);
+            // Before 7zr's first percentage, nothing is said to be written.
+            $pct = $with7zr ? xs_7zr_percent($prog) : null;
+            $job['now']['bytes'] = $with7zr ? (int) round($look['bytes'] * ($pct ?? 0) / 100) : xs_unpack_size($work, $look['names']);
             $save();
         }
     }
     proc_close($run[0]);
+    @unlink($prog);
     $said = xs_unpack_said($says);
     $main = $work . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, (string) $look['main']);
     clearstatcache();

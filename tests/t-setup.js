@@ -131,7 +131,18 @@ module.exports = async function (b, check) {
     const guideTitle = `(document.querySelector("#editor .panel-title") || {}).textContent || ""`;
     const stepsNow = `[...document.querySelectorAll("#editor .gd-step")].map(s => s.querySelector(".gd-mark").textContent + " " + s.querySelector(".gd-title").textContent + " " + (s.classList.contains("done") ? "done" : "todo"))`;
     await b.goto();
-    check("with no RetroArch, the getting started guide opens at startup", await b.until(guideTitle, "GETTING STARTED", 8000), "GETTING STARTED");
+    /* The first start asks one short question while Set it all up is on
+       offer (js\autosetup.js firstCards); its second answer is the guide. */
+    const cardNow = `(w => !!w && [w.querySelector("h2").textContent, [...w.querySelectorAll(".confirm-bar button")].map(x => x.textContent + (x.classList.contains("primary") ? "*" : "")).join("|"),
+      document.activeElement && document.activeElement.textContent])(document.querySelector(".ask-card"))`;
+    check("with no RetroArch, the first start asks one short question: neither answer lit, Enter on the one that starts nothing",
+          await b.until(cardNow, ["Set everything up for you?", "Yes|Set up by hand", "Set up by hand"], 8000), ["Set everything up for you?", "Yes|Set up by hand", "Set up by hand"]);
+    check("saying what it sets up and how big, in two lines",
+          await b.ev(`(w => [...w.querySelectorAll(".ask-line")].map(p => p.textContent.replace(/\\d+ MB/, "N MB")))(document.querySelector(".ask-card"))`),
+          ["RetroArch, the cores your consoles need, and your games' names and pictures.", "RetroArch is N MB from libretro. The cores are 1 to 30 MB each, from libretro."]);
+    await b.ev(`[...document.querySelectorAll(".ask-card .confirm-bar button")].find(x => x.textContent === "Set up by hand").click()`);
+    check("Set up by hand opens the getting started guide, and the question is gone",
+          [await b.until(guideTitle, "GETTING STARTED", 8000), await b.ev(`!document.querySelector(".ask-card")`)], ["GETTING STARTED", true]);
     /* The fifth step (Names and pictures) depends on the copy's library, not
        the fixture, so only what the fixture controls is asserted. */
     // "Your games folder" is done only with the ROM drive in; out, it
@@ -216,29 +227,36 @@ module.exports = async function (b, check) {
       const guideGone = await b.until(`document.getElementById("editor").hidden`, true, 8000);
       for (const end = Date.now() + 8000; Date.now() < end && !(readJson(sjPage).auto && fs.existsSync(path.join(DATA, "setup-job.json")));) { await sleep(100); }
       check("the press is the yes: the guide closes itself and everything starts, with no window between",
-            [guideGone, !!readJson(sjPage).auto, fs.existsSync(path.join(DATA, "setup-job.json")), await b.ev(`!document.querySelector(".setup-confirm:not(:has(.runs-ask))")`)], [true, true, true, true]);
-      /* With the games in, the one question. Everything else is at work
-         already; nothing is owed until it is answered. */
+            [guideGone, !!readJson(sjPage).auto, fs.existsSync(path.join(DATA, "setup-job.json")), await b.ev(`!document.querySelector(".setup-confirm:not(.runs-ask)")`)], [true, true, true, true]);
+      /* With the games in, the questions, one card each. Everything else is at
+         work already; nothing is owed until they are answered. */
       const ask = `document.querySelector(".runs-ask")`;
+      const askNow = `(w => !!w && [w.querySelector("h2").textContent, [...w.querySelectorAll(".confirm-bar button")].map(x => x.textContent + (x.classList.contains("primary") ? "*" : "")).join("|"),
+        document.activeElement && document.activeElement.textContent, [...w.querySelectorAll(".ask-line")].map(p => p.textContent).join(" / ")])(${ask})`;
+      const answer = (label) => b.ev(`[...${ask}.querySelectorAll(".confirm-bar button")].find(x => x.textContent === ${JSON.stringify(label)}).click()`);
       /* No RetroArch here yet, so no cheat lists, and the copy's games have no
-         videos: both are offered beside the games check. */
-      const asked3 = ["Videos, cheat lists and the games check?", true, "videos cheats runs", true, true];
-      check("then one question, with the games in sight: videos, the cheat lists and the games check as rows to select, none selected",
-            await b.until(`(w => !!w && [w.querySelector("h2").textContent,
-              /^Xsegon found \\d+ games and is setting them up now\\. Three things are yours to decide\\. Select what you want: none of them is needed to play\\.$/.test(w.querySelector("p").textContent),
-              [...w.querySelectorAll(".confirm-pick input")].map(c => c.value + (c.checked ? "*" : "")).join(" "),
-              /It takes (a long time: )?(about [\\d.]+ (minutes?|hours)|under a minute) for your \\d+ games, and longer on a slow computer\\./.test(w.textContent),
-              /About [\\d.]+ (MB|GB) for the \\d+ games? with no video/.test(w.textContent) && /About 35 MB to download, about 230 MB on the disk, from libretro\\./.test(w.textContent)])(${ask})`,
-              asked3, 10000), asked3);
-      check("None of these or Start what is selected, neither one lit, the second waiting for a selection, and Enter on the one that starts nothing",
-            await b.ev(`(w => [[...w.querySelectorAll(".confirm-bar button")].map(x => x.textContent + (x.classList.contains("primary") ? "*" : "") + (x.disabled ? " (off)" : "")).join("|"), document.activeElement.textContent])(${ask})`),
-            ["None of these|Start what is selected (off)", "None of these"]);
+         videos: both are asked before the games check. */
+      const vidCard = await b.until(`(a => !!a && a[0] === "Videos for your games?" ? a : null)(${askNow})`, undefined, 10000);
+      check("then one question at a time, with the games in sight: videos first, neither answer lit, Enter on No",
+            vidCard && [vidCard[0], vidCard[1], vidCard[2], /^A short video for each game Xsegon is sure of, from archive\.org: free, no account, in the background\. \/ [\d.]+ (MB|GB) for \d+ games?: (about [\d.]+ (minutes?|hours)|under a minute) on a good day\.$/.test(vidCard[3])],
+            ["Videos for your games?", "Yes|No", "No", true]);
       check("unanswered, no check is owed, and its line says it waits for the answer",
             [!!readJson(sjPage).runsWanted, !!readJson(sjPage).runsAsk,
              await b.until(`(r => !!r && r.querySelector(".sl-line").textContent)(document.querySelector('.setup-list .sl-row[data-part="runs"]'))`, "waiting for your answer", 8000)],
             [false, true, "waiting for your answer"]);
-      // the games check alone is selected: videos and the cheat lists stay off the list
-      await b.ev(`(w => { w.querySelector('.confirm-pick input[value="runs"]').click(); [...w.querySelectorAll(".confirm-bar button")].find(x => x.textContent === "Start what is selected").click(); })(${ask})`);
+      await answer("No");
+      check("No brings the next card: the cheat lists, with their size",
+            await b.until(`(a => !!a && [a[0], a[1], a[3]])(${askNow})`, ["Cheat lists for your games?", "Yes|No",
+              "For a game's Cheats tab. None is turned on by itself. / About 35 MB to download, about 230 MB on the disk, from libretro."], 5000),
+            ["Cheat lists for your games?", "Yes|No", "For a game's Cheats tab. None is turned on by itself. / About 35 MB to download, about 230 MB on the disk, from libretro."]);
+      await answer("No");
+      const runCard = await b.until(`(a => !!a && a[0] === "Check which games start?" ? a : null)(${askNow})`, undefined, 5000);
+      check("and last the games check, saying how long, with Later on the one in focus",
+            runCard && [runCard[1], runCard[2], /^Each game is opened for a few seconds to see that it starts\. \/ (About [\d.]+ (minutes?|hours)|Under a minute) for your \d+ games, longer on a slow computer\. \/ Later: Emulators > Runs check, any time\. Your games play without it\.$/.test(runCard[3])],
+            ["Yes|Later", "Later", true]);
+      // the games check alone is answered yes: videos and the cheat lists stay off the list
+      await answer("Yes");
+      check("the last answer takes the cards away", await b.until(`!${ask}`, true, 5000), true);
       const slRows = `[...document.querySelectorAll(".setup-list .sl-row")]`;
       check("and one list in the corner carries the whole plan: a line and a bar for each part",
             await b.until(`(n => !!n && !n.hidden && !!n.closest("#corner-bars") && ${slRows}.map(r => r.dataset.part + (r.querySelector(".fb-track") ? "+bar" : "")).join(" "))(document.querySelector(".setup-list"))`,
@@ -251,6 +269,48 @@ module.exports = async function (b, check) {
       check("RetroArch arrives and chains the cores, no window, no guide",
             [chainEnd.job.kind, chainEnd.job.state, chainEnd.auto, await b.ev(`document.getElementById("editor").hidden && !document.querySelector(".setup-confirm")`)],
             ["cores", "done", true, true]);
+      await api("api/setup.php", { auto: false });
+      if (fillW) { fs.writeFileSync(fillJobF, fillW); } else { fs.rmSync(fillJobF, { force: true }); }
+      fs.rmSync(path.join(DATA, "setup-job.json"), { force: true });
+      fs.rmSync(ownDir, { recursive: true, force: true });
+      strip();
+      await b.goto();
+      await b.settled(1500);
+    }
+
+    /* ---- the first start's Yes: the rest asked one question at a time ----
+       This copy has its games scanned already, so no folder is asked: the next
+       question is whether new games come in by themselves. No is kept in the
+       settings, and everything starts as from Getting started's own press.
+       The pictures pass is blocked by a faked running one, as above. */
+    {
+      const sjF = path.join(DATA, "setup.json");
+      const fillJobF = path.join(DATA, "fill-job.json");
+      const fillW = fs.existsSync(fillJobF) ? fs.readFileSync(fillJobF) : null;
+      fs.writeFileSync(fillJobF, JSON.stringify({ state: "running", mode: "all", pid: process.pid, started: Math.floor(Date.now() / 1000) }));
+      const sjWas = readJson(sjF);
+      delete sjWas.shownGuide;
+      delete sjWas.auto;
+      fs.writeFileSync(sjF, JSON.stringify(sjWas));
+      await api("api/settings.php", { library: { addNewGames: true } });
+      await b.goto();
+      await b.until(cardNow, ["Set everything up for you?", "Yes|Set up by hand", "Set up by hand"], 8000);
+      await b.ev(`[...document.querySelectorAll(".ask-card .confirm-bar button")].find(x => x.textContent === "Yes").click()`);
+      const selfCard = ["Add new games by themselves?", true, "Yes|No", "No"];
+      check("Yes asks next whether new games come in by themselves, naming the folder, neither answer lit",
+            await b.until(`(w => !!w && [w.querySelector("h2").textContent, /^When you put more games in .+, they come in when you come back to Xsegon\\.$/.test(w.querySelector(".ask-line").textContent),
+              [...w.querySelectorAll(".confirm-bar button")].map(x => x.textContent + (x.classList.contains("primary") ? "*" : "")).join("|"), document.activeElement.textContent])(document.querySelector(".ask-card"))`,
+              selfCard, 10000), selfCard);
+      await b.ev(`[...document.querySelectorAll(".ask-card .confirm-bar button")].find(x => x.textContent === "No").click()`);
+      let keptOff = null;
+      for (const end = Date.now() + 5000; Date.now() < end && keptOff !== false;) { keptOff = (await api("api/settings.php")).settings.library.addNewGames; if (keptOff !== false) { await sleep(100); } }
+      check("No is kept in the settings", keptOff, false);
+      for (const end = Date.now() + 8000; Date.now() < end && !(readJson(sjF).auto && fs.existsSync(path.join(DATA, "setup-job.json")));) { await sleep(100); }
+      check("and everything starts, as from Getting started's own press", [!!readJson(sjF).auto, fs.existsSync(path.join(DATA, "setup-job.json"))], [true, true]);
+      // With the games in sight the questions about the extras come; Esc is no to them all.
+      if (await b.until(`!!document.querySelector(".runs-ask")`, true, 15000)) { await b.key("Escape"); }
+      check("Esc on those questions takes them all away", await b.until(`!document.querySelector(".confirm-wrap")`, true, 5000), true);
+      await jobEnds(120000);
       await api("api/setup.php", { auto: false });
       if (fillW) { fs.writeFileSync(fillJobF, fillW); } else { fs.rmSync(fillJobF, { force: true }); }
       fs.rmSync(path.join(DATA, "setup-job.json"), { force: true });
@@ -358,17 +418,23 @@ module.exports = async function (b, check) {
         await b.ev(`[...document.querySelectorAll(".nofound button")].find(x => x.textContent === "Scan again").click()`);
         check("with the game put in, Scan again takes it straight in",
               await b.until(`window.__seen.strip.some(t => /^added 1 game/.test(t))`, true, 15000), true);
-        check("and with a game in, the one question comes at once, for that one game",
-              await b.until(`(w => !!w && [w.querySelector("h2").textContent, w.querySelector("p").textContent, /It takes under a minute for your game, and longer on a slow computer\\./.test(w.textContent)])(document.querySelector(".runs-ask"))`,
-                ["Videos, cheat lists and the games check?", "Xsegon found 1 game and is setting it up now. Three things are yours to decide. Select what you want: none of them is needed to play.", true], 15000),
-              ["Videos, cheat lists and the games check?", "Xsegon found 1 game and is setting it up now. Three things are yours to decide. Select what you want: none of them is needed to play.", true]);
-        check("nothing is owed while it is unanswered",
+        const oneCard = `(w => !!w && [w.querySelector("h2").textContent, [...w.querySelectorAll(".ask-line")].map(p => p.textContent).join(" / ")])(document.querySelector(".runs-ask"))`;
+        const press = (label) => b.ev(`[...document.querySelectorAll(".runs-ask .confirm-bar button")].find(x => x.textContent === ${JSON.stringify(label)}).click()`);
+        const firstAsk = await b.until(`(a => !!a && a[0] === "Videos for your games?" ? a : null)(${oneCard})`, undefined, 15000);
+        check("and with a game in, the questions come at once, for that one game",
+              firstAsk && /for 1 game: /.test(firstAsk[1]), true);
+        check("nothing is owed while they are unanswered",
               [!!readJson(path.join(DATA, "setup.json")).runsWanted, !!readJson(path.join(DATA, "setup.json")).runsAsk], [false, true]);
+        await press("No");
+        await b.until(`(a => !!a && a[0])(${oneCard})`, "Cheat lists for your games?", 5000);
+        await press("No");
+        check("the games check comes last, for the one game",
+              await b.until(`(a => !!a && a[0] === "Check which games start?" && /^Each game is opened for a few seconds to see that it starts\\. \\/ Under a minute for your game, longer on a slow computer\\./.test(a[1]))(${oneCard})`, true, 5000), true);
         /* Answered while a read of the list is still on its way back: what it
            says is from before the answer, and must not bring the question up again. */
         await b.ev(`window.__seen.slow = 1700`);
         await sleep(1800);
-        await b.ev(`(w => { w.querySelector('.confirm-pick input[value="runs"]').click(); [...w.querySelectorAll(".confirm-bar button")].find(x => x.textContent === "Start what is selected").click(); })(document.querySelector(".runs-ask"))`);
+        await press("Yes");
         await sleep(2600);
         check("answered with an older read still on its way, the question is not asked a second time",
               [await b.ev(`window.__seen.asks`), await b.ev(`!!document.querySelector(".runs-ask")`), !!readJson(path.join(DATA, "setup.json")).runsAsk], [1, false, false]);

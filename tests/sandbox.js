@@ -116,6 +116,15 @@ function build() {
     const sj = fs.existsSync(setupJson) ? JSON.parse(fs.readFileSync(setupJson, "utf8").replace(/^﻿/, "")) : {};
     if (!sj.tipsTold) { sj.tipsTold = "a test copy"; fs.writeFileSync(setupJson, JSON.stringify(sj)); }
   } catch (e) { /* unreadable: the groups that read it say so */ }
+  /* Nor does a test copy add new games by itself (js\newgames.js): its look
+     reads the real games folders and would change the library every group
+     counts. The scan group switches it on for its own checks. */
+  const settingsJson = path.join(DIR, "settings.json");
+  try {
+    const st = fs.existsSync(settingsJson) ? JSON.parse(fs.readFileSync(settingsJson, "utf8").replace(/^﻿/, "")) : {};
+    st.library = Object.assign({}, st.library, { addNewGames: false });
+    fs.writeFileSync(settingsJson, JSON.stringify(st, null, 2));
+  } catch (e) { /* unreadable: the settings group says so */ }
 }
 
 /* Stand-ins for libretro's download site (t-setup): a RetroArch
