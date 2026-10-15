@@ -74,9 +74,12 @@ if (($job['kind'] ?? '') === 'import') {
     $s      = xs_settings();
     $byId   = [];
     $byName = [];
+    $consoles = [];     // each console's games, for the look before a video is named (xs_vp_dest_now)
+    $shelf  = [];       // each console's videos by name as the plan was made
     foreach (xs_library()['games'] ?? [] as $g) {
         $byId[(string) $g['id']] = $g;
         $byName[art_key((string) $g['platform']) . '|' . art_key((string) $g['title'])] ??= $g;
+        $consoles[art_key((string) $g['platform'])][] = $g;
     }
     $types = video_types();
     $plan  = [];
@@ -101,14 +104,18 @@ if (($job['kind'] ?? '') === 'import') {
             $tally['had']++;
             continue;
         }
-        $stem = xs_vp_stem_for($g);
-        $dir  = xs_vp_safe((string) $g['platform']);
-        if ($stem === null || art_key($dir) === '') {
-            $tally['bad']++;
-            xs_log('VPK', $g['title'] . ' (' . $g['platform'] . ') has no name a video can be filed under: left out');
+        $pk   = art_key((string) $g['platform']);
+        $dest = xs_vp_dest_now($s, $g, $consoles[$pk] ?? [], $ext, $said, $has, $shelf[$pk] ??= video_console_now($s, (string) $g['platform']));
+        if ($has) {
+            $tally['had']++;
             continue;
         }
-        $plan[] = ['entry' => $entry, 'dest' => xs_data_path('videos') . DIRECTORY_SEPARATOR . $dir . DIRECTORY_SEPARATOR . $stem . '.' . $ext, 'title' => (string) $g['title']];
+        if ($dest === null) {
+            $tally['bad']++;
+            xs_log('VPK', $g['title'] . ' (' . $g['platform'] . '): ' . $said . ': left out');
+            continue;
+        }
+        $plan[] = ['entry' => $entry, 'dest' => $dest, 'title' => (string) $g['title'], 'game' => $g, 'ext' => $ext];
         $job['total'] += $entry['size'];
     }
     $job['games'] = count($plan);
@@ -119,12 +126,20 @@ if (($job['kind'] ?? '') === 'import') {
             $end('stopped', 'stopped: ' . $n($job['added'], 'game', 'games') . ' got a video before that');
         }
         $job['at'] = $i + 1;
-        // Two versions of one game share a name, and so a video: the second finds the first's already there.
-        if (is_file($p['dest'])) {
+        // Looked at again just before: two versions of one game share a name, and so a video: the second
+        // finds the first's already there. A name another game's video took meanwhile is not used.
+        $now = xs_vp_dest_now($s, $p['game'], $consoles[art_key((string) $p['game']['platform'])] ?? [], $p['ext'], $said, $has);
+        if ($has) {
             $job['bytes'] += $p['entry']['size'];
             $job['added']++;
             continue;
         }
+        if ($now === null) {
+            $tally['bad']++;
+            xs_log('VPK', $p['title'] . ': ' . $said . ': left out');
+            continue;
+        }
+        $p['dest'] = $now;
         if (!is_dir(dirname($p['dest'])) && !@mkdir(dirname($p['dest']), 0777, true)) {
             $end('failed', 'the folder ' . dirname($p['dest']) . ' could not be made: ' . $n($job['added'], 'game', 'games') . ' got a video before that');
         }

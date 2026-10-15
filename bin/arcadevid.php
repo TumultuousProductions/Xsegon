@@ -130,8 +130,10 @@ $save();
 $s       = xs_settings();
 $library = xs_library();
 $byId    = [];
+$consoles = [];     // each console's games, for the look before a video is named (xs_vp_dest_now)
 foreach ($library['games'] ?? [] as $g) {
     $byId[(string) $g['id']] = $g;
+    $consoles[art_key((string) $g['platform'])][] = $g;
 }
 $none  = [];        // the games that got no video here, with why
 $games = [];
@@ -208,17 +210,16 @@ foreach ($games as $k => $g) {
     $job['none'] = $listNone($none);
     $save(false);
     $full = $byId[$g['id']] ?? null;
-    $stem = $full !== null ? xs_vp_stem_for($full) : null;
-    $dir  = xs_vp_safe($g['platform']);
-    if ($stem === null || art_key($dir) === '') {
-        $none[] = $g + ['why' => 'its name has no letter or digit a video can be filed under'];
+    $has  = false;
+    $said = 'its name has no letter or digit a video can be filed under';
+    $dest = $full !== null ? xs_vp_dest_now($s, $full, $consoles[art_key((string) $g['platform'])] ?? [], 'mp4', $said, $has) : null;
+    // One video a game. Versions of one game share a name: the first found is the one all of them use.
+    if ($has) {
+        $shared++;
         continue;
     }
-    $dest = xs_data_path('videos') . DIRECTORY_SEPARATOR . $dir . DIRECTORY_SEPARATOR . $stem . '.mp4';
-    // One video a game. Versions of one game share a name: the first found is the one all of them use.
-    clearstatcache(true, $dest);
-    if (is_file($dest)) {
-        $shared++;
+    if ($dest === null) {
+        $none[] = $g + ['why' => $said];
         continue;
     }
     $a = $ask($g['name']);
@@ -277,12 +278,22 @@ foreach ($games as $k => $g) {
         [$ok, $why] = [false, 'what came is not a video a browser can play'];
     }
     $bytes = $ok ? (int) filesize($part) : 0;
-    // A video of it came from elsewhere while this one was on its way: that one was first, and it stays the only one.
-    clearstatcache(true, $dest);
-    if ($ok && is_file($dest)) {
-        @unlink($part);
-        xs_log('ARCD', $g['title'] . ' (' . $from . '): a video of it arrived from elsewhere meanwhile, so this one was not kept');
-        continue;
+    // Looked at again: a video of it from elsewhere meanwhile was first and stays the only one,
+    // and a name another game's video took meanwhile is not used.
+    if ($ok) {
+        $now = xs_vp_dest_now($s, $full, $consoles[art_key((string) $g['platform'])] ?? [], 'mp4', $said, $has);
+        if ($has) {
+            @unlink($part);
+            xs_log('ARCD', $g['title'] . ' (' . $from . '): a video of it arrived from elsewhere meanwhile, so this one was not kept');
+            continue;
+        }
+        if ($now === null) {
+            @unlink($part);
+            $none[] = $g + ['why' => (string) $said];
+            xs_log('ARCD', $g['title'] . ' (' . $from . '): not kept: ' . $said);
+            continue;
+        }
+        $dest = $now;
     }
     if ($ok && !@rename($part, $dest)) {
         [$ok, $why] = [false, 'it could not be given its name in ' . dirname($dest)];

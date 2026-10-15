@@ -78,26 +78,74 @@ function xs_ffmpeg(): string
     return '';
 }
 
+/** The games a fetch found no trailer for: {"from": that fetch's start, "games": {id: {at, why}}}. */
+function xs_steamvid_none_path(): string
+{
+    return xs_data_path('steamvid-none.json');
+}
+
+function xs_steamvid_none(): array
+{
+    $none = xs_read_json(xs_steamvid_none_path(), []);
+    return is_array($none) && is_array($none['games'] ?? null) ? $none['games'] : [];
+}
+
+/**
+ * Keeps, once per ended fetch, the games Steam had no trailer for or only
+ * streams, so the list shows them apart. One saved since is let go; a failed ask changes nothing.
+ */
+function xs_steamvid_keep_none(array $job): void
+{
+    $file    = xs_read_json(xs_steamvid_none_path(), []);
+    $started = (int) ($job['started'] ?? 0);
+    if (is_array($file) && isset($file['from']) && (int) $file['from'] === $started) {
+        return;
+    }
+    $games = xs_steamvid_none();
+    $kept  = 0;
+    foreach ($job['games'] ?? [] as $g) {
+        $id    = (string) ($g['id'] ?? '');
+        $state = (string) ($g['state'] ?? '');
+        if ($id !== '' && ($state === 'none' || $state === 'stream')) {
+            $games[$id] = ['at' => (int) ($job['ended'] ?? time()), 'why' => $state];
+            $kept++;
+        } elseif ($id !== '' && $state === 'done') {
+            unset($games[$id]);
+        }
+    }
+    if (!$games && !is_file(xs_steamvid_none_path())) {
+        return;
+    }
+    xs_write_json(xs_steamvid_none_path(), ['from' => $started, 'games' => $games]);
+    if ($kept) {
+        xs_log('STEAMV', $kept . ' with no trailer kept apart, ' . count($games) . ' in all');
+    }
+}
+
 /**
  * Every Steam game, with whether it has a video already and from where.
  * A game with any video is left alone, wherever it came from
- * (video_for_game).
+ * (video_for_game). One with none that a fetch found no trailer for says so in 'tried', and when in 'triedAt'.
  */
 function xs_steamvid_games(array $s, array $library): array
 {
     $rows = [];
+    $none = xs_steamvid_none();
     foreach ($library['games'] ?? [] as $g) {
         $appid = (string) ($g['launch']['steam']['id'] ?? '');
         if ($appid === '' || !ctype_digit($appid)) {
             continue;
         }
         $video = video_for_game($s, $g);
+        $tried = $video === null ? ($none[(string) $g['id']] ?? null) : null;
         $rows[] = [
             'id'      => (string) $g['id'],
             'title'   => (string) $g['title'],
             'appid'   => $appid,
             'has'     => $video !== null,
             'trailer' => $video !== null && xs_steamvid_for((string) $g['id']) === $video,
+            'tried'   => is_array($tried) ? (string) ($tried['why'] ?? 'none') : '',
+            'triedAt' => is_array($tried) ? (int) ($tried['at'] ?? 0) : 0,
         ];
     }
     usort($rows, static fn ($a, $b) => strcasecmp($a['title'], $b['title']));
@@ -137,6 +185,9 @@ function xs_steamvid_job(): ?array
             . ($count['stream'] ?? 0) . ' stream only, ' . ($count['failed'] ?? 0) . ' failed');
         $job['logged'] = true;
         xs_write_json(xs_steamvid_job_path(), $job);
+    }
+    if (in_array($job['state'] ?? '', ['done', 'failed'], true)) {
+        xs_steamvid_keep_none($job);
     }
     return $job;
 }

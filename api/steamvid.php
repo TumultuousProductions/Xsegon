@@ -2,8 +2,9 @@
 /**
  * /api/steamvid.php - Steam trailers as video snaps (includes\steamvid.php).
  *
- *   GET                      every Steam game, whether it has a video, the
- *                            job if one is running, and whether ffmpeg is here
+ *   GET                      every Steam game, whether it has a video or got
+ *                            no trailer before, the job if one is running,
+ *                            and whether ffmpeg is here
  *   POST {"ids": [...]}      fetch trailers for these games, in the background
  *   POST {..., "dry": true}  the plan, nothing started
  *
@@ -19,6 +20,7 @@ $s   = xs_settings();
 $lib = xs_library();
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+    $job  = xs_steamvid_job();          // first: an ended fetch's games with no trailer are kept apart before the rows are read
     $rows = xs_steamvid_games($s, $lib);
     xs_json([
         'ok'      => true,
@@ -26,7 +28,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
         'missing' => count(array_filter($rows, static fn ($r) => !$r['has'])),
         'ffmpeg'  => xs_ffmpeg() !== '',
         'dir'     => xs_steamvid_dir(),
-        'job'     => xs_steamvid_job(),
+        'job'     => $job,
     ]);
 }
 

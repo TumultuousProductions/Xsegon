@@ -1,9 +1,11 @@
 /*  Pictures & Videos > Steam trailers (includes\steamvid.php).
  *
- *  Every Steam game, the ones with no video selected. Fetch asks first, in the
+ *  The Steam games with no video, all selected. Fetch asks first, in the
  *  same window as the RetroArch downloads, then the trailers come down in
  *  the background while this screen shows each game's progress. A game that
- *  already has a video is shown but cannot be selected: yours always wins.
+ *  has a video is not listed, except as saved while its fetch runs.
+ *  One a fetch found no trailer for is listed apart, folded away, and can be
+ *  selected there to ask again.
  */
 
 import { confirmWindow } from "./confirm.js";
@@ -20,12 +22,13 @@ var WORDS = {
   waiting: "waiting", asking: "asking Steam...", fetching: "downloading...", done: "saved",
   none: "no trailer on Steam", stream: "Steam only streams this one: needs ffmpeg", failed: "could not be fetched"
 };
+var showTried = false;      // the games with no trailer before are shown, while the page is up
 
 export function openSteamTrailers() {
   L("ED", "steam trailers");
   stopVideo();
   setEditorOnClose(null);
-  var inner = el("div", "panel-inner ed-inner sv");
+  var inner = el("div", "panel-inner ed-inner sv st");
   var head = el("div", "set-head");
   head.appendChild(el("h1", "panel-title", "STEAM TRAILERS"));
   var done = el("button", "primary", "Done (esc)");
@@ -36,8 +39,32 @@ export function openSteamTrailers() {
   inner.appendChild(intro);
   var bar = el("div", "sv-bar");
   inner.appendChild(bar);
+  // Both lists in one area that scrolls in what the rest of the window leaves.
+  var scroll = el("div", "st-scroll");
   var rows = el("div", "sc-rows sv-rows");
-  inner.appendChild(rows);
+  scroll.appendChild(rows);
+  var apart = el("div", "st-apart");
+  var apartHead = el("div", "st-apart-head");
+  var apartWords = el("div", "st-apart-words");
+  var apartName = el("span", "pj-job");
+  apartWords.appendChild(apartName);
+  apartWords.appendChild(el("span", "pj-hint", "A fetch got no trailer for these, each says why, so they are kept apart. Select one to ask Steam again."));
+  apartHead.appendChild(apartWords);
+  var fold = el("button", null, showTried ? "Hide" : "Show");
+  fold.type = "button";
+  fold.addEventListener("click", function () {
+    showTried = !showTried;
+    tried.hidden = !showTried;
+    fold.textContent = showTried ? "Hide" : "Show";
+    sound("select");
+  });
+  apartHead.appendChild(fold);
+  apart.appendChild(apartHead);
+  var tried = el("div", "sc-rows sv-rows st-tried");
+  tried.hidden = !showTried;
+  apart.appendChild(tried);
+  scroll.appendChild(apart);
+  inner.appendChild(scroll);
   $editor.textContent = "";
   $editor.appendChild(inner);
   $editor.hidden = false;
@@ -61,32 +88,53 @@ export function openSteamTrailers() {
       return;
     }
     var got = ((job && job.games) || []).filter(function (g) { return g.state === "done"; }).length;
+    var nTried = r.games.filter(function (g) { return g.tried; }).length;
+    var one = nTried === 1;
+    // Every game with no video may be in the list apart: then nothing above it is on offer.
     intro.textContent = running
       ? "Fetching " + job.games.length + " trailers in the background: " + got + " saved so far. You can close this; they carry on."
-      : r.missing + " of " + r.games.length + " Steam games have no video. Steam has a trailer for most of them; each plays as that game's video snap.";
+      : !r.missing ? (r.games.length === 1 ? "Your Steam game has a video." : "All " + r.games.length + " Steam games have a video.")
+      : nTried === r.missing ? (one ? "The one Steam game with no video" : "The " + nTried + " Steam games with no video") +
+        " got no trailer when fetched before, so " + (one ? "it is" : "they are") + " listed apart below."
+      : r.missing + " of " + r.games.length + " Steam games have no video. Steam has a trailer for most games; each plays as that game's video snap." +
+        (nTried ? " " + nTried + " of them got no trailer when fetched before and " + (one ? "is" : "are") + " listed apart below." : "");
     bar.textContent = "";
     ticks = [];
+    var top = scroll.scrollTop;          // a progress tick redraws the rows, and must not scroll back to the top
     rows.textContent = "";
+    tried.textContent = "";
     r.games.forEach(function (g) {
+      // One with a video is never offered; while its fetch runs it stays, to show it saved.
+      if (g.has && !(running && states[g.id])) { return; }
       var line = el("label", "sc-row sv-row" + (g.has ? " has" : ""));
       var box = el("input");
       box.type = "checkbox";
       box.value = g.id;
-      box.checked = !g.has && !running && !(states[g.id] && states[g.id] !== "waiting");
+      box.checked = !g.has && !g.tried && !running && !(states[g.id] && states[g.id] !== "waiting");
       box.disabled = g.has || running;
       if (!g.has) { ticks.push(box); }
       line.appendChild(box);
       line.appendChild(el("span", "sc-title", g.title));
-      var st = states[g.id];
+      var st = states[g.id] || g.tried;
       var note = g.has ? (g.trailer ? "trailer saved" : "has a video already") : (st ? WORDS[st] || st : "");
+      // The day of that answer: Steam adds trailers now and then, so an old one is worth asking again.
+      if (!g.has && g.tried && g.triedAt && st === g.tried) {
+        note += ", asked " + new Date(g.triedAt * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+      }
       line.appendChild(el("span", "sc-rom sv-state" + (st === "done" ? " ok" : (st === "none" || st === "stream" || st === "failed") ? " off" : ""), note));
-      rows.appendChild(line);
+      (g.tried ? tried : rows).appendChild(line);
     });
+    rows.hidden = !rows.children.length;
+    apart.hidden = !nTried;
+    apartName.textContent = "Got no trailer before (" + nTried + ")";
+    scroll.scrollTop = top;
     if (!running && ticks.length) {
       var go = el("button", "primary", "Fetch trailers...");
       go.addEventListener("click", function () { ask(r); });
       bar.appendChild(go);
-      ticks.forEach(function (t) { t.addEventListener("change", function () { go.disabled = !ticks.some(function (x) { return x.checked; }); }); });
+      var some = function () { go.disabled = !ticks.some(function (x) { return x.checked; }); };
+      some();
+      ticks.forEach(function (t) { t.addEventListener("change", some); });
     }
     if (running && !watching) { watch(); }
   }

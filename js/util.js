@@ -233,6 +233,9 @@ export function closeOnBackdrop(host, close) {
 // "1 game", "3 games": a number with the word for one or for many.
 export function plural(n, one, many) { return n + " " + (n === 1 ? one : many); }
 
+// "a, b and c": names joined the way a sentence says them.
+export function namesAnd(a) { return a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1]; }
+
 // A size in whole megabytes: "70 MB".
 export function megabytes(bytes) { return Math.round((bytes || 0) / 1048576) + " MB"; }
 

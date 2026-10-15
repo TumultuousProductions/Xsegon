@@ -217,7 +217,7 @@ module.exports = async function (b, check) {
     await details("known");
     check("details has a File check tab, after Saves and before Cheats and Hacks, and nothing of it left under the facts",
       [await b.ev(`${TABS}.map((x) => x.textContent.replace(/ \\(\\d+\\)$/, ""))`), await b.ev(tabOn), await b.ev(`!!document.querySelector("#details .dleft .fcheck, #details .dleft .fc-line, #details .dleft .fc-go")`)],
-      [["About", "Saves", "File check", "Cheats", "Hacks", "Accompanied files", "Notes"], "About", false]);
+      [["About", "Media", "Saves", "File check", "Cheats", "Hacks", "Accompanied files", "Notes"], "About", false]);
     await b.key("f");
     check("F opens it: where the game is from and that it is known, in one line",
       [await b.until(line, "USA, Rev 1  ·  a known release", 8000), await b.ev(tabOn)], ["USA, Rev 1  ·  a known release", "File check"]);

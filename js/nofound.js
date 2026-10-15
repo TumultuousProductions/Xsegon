@@ -29,6 +29,10 @@ function reasons(scan) {
   if (archives.length) {
     out.push(plural(archives.length, "archive that holds", "archives that hold") + " a disc. Extract " + (archives.length === 1 ? "it" : "them") + " and scan again.");
   }
+  if ((scan.unfinished || []).length) {
+    out.push(plural(scan.unfinished.length, "download", "downloads") + " that " + (scan.unfinished.length === 1 ? "has" : "have") +
+      " not finished, an empty .zip or .7z. Finish " + (scan.unfinished.length === 1 ? "it" : "them") + ", then scan again.");
+  }
   if (!out.length && skipped.length) { out.push(skipped[0].why + "."); }
   if (!out.length) {
     out.push("Nothing in it is a game file Xsegon knows. Put your games in it, a folder per console works best (nes, snes, n64...), then scan again.");

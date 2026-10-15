@@ -5,6 +5,7 @@
  *   GET  /api/video-own.php?id=<id>                  what this game plays now, and why
  *   POST /api/video-own.php?id=<id>&part=0&of=9      body = raw bytes of that piece
  *   POST /api/video-own.php?id=<id>&reset=1          delete the chosen video
+ *   POST /api/video-own.php?id=<id>&clear=1          Clear video: every video it could play, deleted (video_clear)
  *
  * Sent in pieces, as images are (api\art.php), for PHP's upload limit. Nothing
  * is given a name the player reads until the last piece is in and looked at.
@@ -28,18 +29,22 @@ $s = xs_settings();
 // must never reach the writes below, which take everything from the query.
 if (in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true)) {
     $own    = video_own($id);
-    $byName = video_for(video_index($s), (string) $game['platform'],
-                        (string) ($game['sourceKey'] ?? $game['key']), $game['romPath'] ?? null);
-    $now    = $own ?? $byName;
+    $layers = video_layers($s, $game);
+    $now    = video_for_game($s, $game);
+    $under  = array_values(array_filter($layers, static fn ($l) => $l['from'] !== 'own'));
     xs_json([
         'ok'       => true,
         'id'       => $id,
         'title'    => $game['title'],
         'has'      => $now !== null,
         'replaced' => $own !== null,
-        'hadOne'   => $byName !== null,          // there is a snap found by name underneath
+        'hadOne'   => $under !== [],             // a video underneath the chosen one
+        'under'    => $under[0]['from'] ?? null, // where that one comes from: media, steam, name or screenscraper
+        'from'     => video_from($s, $game, $layers),
         'file'     => $now !== null ? basename($now) : null,
         'rev'      => $now !== null ? (int) @filemtime($now) : 0,
+        'files'    => count($layers),            // what Clear video deletes
+        'shared'   => $now !== null ? video_shared_with($s, $game, $layers) : [],
     ]);
 }
 
@@ -69,6 +74,19 @@ if (($_GET['reset'] ?? '') === '1') {
     }
     xs_log('VID', $id . ': own video removed');
     xs_json(['ok' => true, 'id' => $id, 'replaced' => false]);
+}
+
+if (($_GET['clear'] ?? '') === '1') {
+    @unlink($tmp);
+    $shared = video_shared_with($s, $game, video_layers($s, $game));
+    $r = video_clear($s, $game);
+    if ($r['why'] !== null) {
+        xs_log('VID', $game['title'] . ': Clear video stopped: ' . $r['why'] . ($r['gone'] ? ' (' . count($r['gone']) . ' deleted before that)' : ''));
+        xs_fail('the video could not be cleared: ' . $r['why'], 500);
+    }
+    xs_log('VID', $game['title'] . ': video cleared, ' . count($r['gone']) . ' deleted (' . implode(', ', array_map('basename', $r['gone'])) . ')'
+        . ($shared ? '; ' . implode(', ', $shared) . ' played it too' : ''));
+    xs_json(['ok' => true, 'id' => $id, 'gone' => count($r['gone']), 'shared' => $shared]);
 }
 
 xs_upload_piece($tmp, XS_VIDEO_MAX, 'video is larger than 400 MB', 400);

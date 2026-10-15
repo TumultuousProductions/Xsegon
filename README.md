@@ -42,22 +42,22 @@ same tour as below, with more pictures, to open in your browser.
 
 ## 3. Let it set itself up
 
-The first time, Xsegon asks a few short questions, one at a time:
+The first time, Xsegon opens one window, **Set everything up**:
 
-1. **Set everything up for you?** Press **Yes**.
-2. **Where are your games?** Press **Pick the folder** and choose the folder
-   your games are in. Any folder works: Xsegon looks inside every folder under
-   it. When your games are already in a folder Xsegon looks in, it asks **Are
-   your games here?** instead.
-3. **Add new games by themselves?** With **Yes**, games you put in that
-   folder later show up when you come back to Xsegon.
-4. Then the extras, one question each: videos for your games, the cheat
-   lists, and a check that opens each game for a moment to see that it
-   starts. Answer **Yes** or **No** (**Later** for the check). Each one can be
-   had later from the menus.
+1. **Your games.** If Xsegon already sees your games it names the folder and
+   how many there are. If not, press **Pick the folder...** and choose the
+   folder your games are in. Any folder works: Xsegon looks inside every
+   folder under it.
+2. **What Xsegon sets up.** A switch for each part, with what it takes beside
+   it: names and box art, adding new games by themselves (games you put in
+   your folder later show up when you come back to Xsegon), videos, the cheat
+   lists, and a check that opens each game for a moment to see that it starts.
+   Everything is on but the check; **All on** and **All off** switch them all.
+   Each one can be had later from the menus.
+3. Press **Set it up**. Nothing more is asked.
 
-**Set up by hand**, on the first question, opens **Getting started** instead:
-every step, one at a time, with a button for each.
+**Set up by hand** opens **Getting started** instead: every step, one at a
+time, with a button for each.
 
 ![Getting started, for setting up by hand](doc/screens/getting-started.jpg)
 
