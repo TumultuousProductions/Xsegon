@@ -1,0 +1,234 @@
+{
+  "about": "Fan projects made from games a person owns (roadmap AQ, doc/ideas/49-fan-projects.md). Each entry was read from the team's own page on 2026-10-15. A base names the releases it takes by their No-Intro name (cartridges) or disc ID (discs): fit 'fits' is what the team asks for, 'works' is taken with a note. Xsegon never supplies a game and never hosts a team's files. The list changes with each Xsegon release.",
+  "projects": [
+    {
+      "id": "smash-remix",
+      "name": "Smash Remix",
+      "kind": "patch",
+      "console": "Nintendo 64",
+      "adds": "New fighters, stages, items and music for Super Smash Bros.",
+      "tags": ["fighters", "levels"],
+      "team": "the Smash Remix team",
+      "page": "https://smashremix.net",
+      "community": "https://discord.gg/Kr6J6PH",
+      "licence": "none given",
+      "base": {
+        "title": "Super Smash Bros. (USA)",
+        "db": { "id": 404, "title": "Super Smash Bros.", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Super Smash Bros. (USA)", "fit": "fits" } ]
+      },
+      "yours": {
+        "header": "SMASH REMIX",
+        "crc": { "0ced62d7": "2.0.1", "242bb15c": "1.2.1" },
+        "ids": { "34EE4749-1833C64C": "2.0.1", "A30D86A3-87AC7661": "1.2.1" }
+      }
+    },
+    {
+      "id": "perfect-dark",
+      "name": "Perfect Dark PC port",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Split-screen, mouse aim, 60 fps and widescreen",
+      "tags": ["coop", "widescreen"],
+      "team": "the perfect-dark-pc-port team",
+      "page": "https://github.com/perfect-dark-pc-port/perfect_dark",
+      "licence": "MIT",
+      "base": {
+        "title": "Perfect Dark (USA) (Rev 1)",
+        "db": { "id": 173, "title": "Perfect Dark", "platform": "Nintendo 64" },
+        "match": [
+          { "console": "Nintendo 64", "name": "Perfect Dark (USA) (Rev 1)", "fit": "fits" },
+          { "console": "Nintendo 64", "name": "Perfect Dark (USA)", "fit": "works", "note": "works; Rev 1 is the one the team recommends" }
+        ]
+      }
+    },
+    {
+      "id": "ship-of-harkinian",
+      "name": "Ship of Harkinian",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Ocarina of Time rebuilt for PC: widescreen, 60 fps and many options",
+      "tags": ["widescreen"],
+      "team": "Harbour Masters",
+      "page": "https://shipofharkinian.com",
+      "licence": "none given",
+      "base": {
+        "title": "The Legend of Zelda: Ocarina of Time (USA)",
+        "db": { "id": 161, "title": "The Legend of Zelda: Ocarina of Time", "platform": "Nintendo 64" },
+        "match": [
+          { "console": "Nintendo 64", "name": "Legend of Zelda, The - Ocarina of Time (USA)", "fit": "fits" },
+          { "console": "Nintendo 64", "name": "Legend of Zelda, The - Ocarina of Time (USA) (Rev 1)", "fit": "fits" },
+          { "console": "Nintendo 64", "name": "Legend of Zelda, The - Ocarina of Time (USA) (Rev 2)", "fit": "fits" }
+        ]
+      }
+    },
+    {
+      "id": "2ship2harkinian",
+      "name": "2 Ship 2 Harkinian",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Majora's Mask rebuilt for PC: widescreen, 60 fps and many options",
+      "tags": ["widescreen"],
+      "team": "Harbour Masters",
+      "page": "https://github.com/2ship2harkinian/2ship2harkinian",
+      "licence": "CC0-1.0",
+      "base": {
+        "title": "The Legend of Zelda: Majora's Mask (USA)",
+        "db": { "id": 175, "title": "The Legend of Zelda: Majora's Mask", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Legend of Zelda, The - Majora's Mask (USA)", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "zelda64recomp",
+      "name": "Zelda 64: Recompiled",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Majora's Mask recompiled for PC: high frame rates, widescreen and mods",
+      "tags": ["widescreen"],
+      "team": "the Zelda 64: Recompiled team",
+      "page": "https://github.com/Zelda64Recomp/Zelda64Recomp",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "The Legend of Zelda: Majora's Mask (USA)",
+        "db": { "id": 175, "title": "The Legend of Zelda: Majora's Mask", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Legend of Zelda, The - Majora's Mask (USA)", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "starship",
+      "name": "Starship",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Star Fox 64 rebuilt for PC: higher frame rates and widescreen",
+      "tags": ["widescreen"],
+      "team": "Harbour Masters",
+      "page": "https://github.com/HarbourMasters/Starship",
+      "licence": "CC0-1.0",
+      "base": {
+        "title": "Star Fox 64 (USA) (Rev 1)",
+        "db": { "id": 4, "title": "Star Fox 64", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Star Fox 64 (USA) (Rev 1)", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "spaghettikart",
+      "name": "SpaghettiKart",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Mario Kart 64 rebuilt for PC: 4K, 120 fps, ultrawide and a track editor",
+      "tags": ["widescreen", "levels"],
+      "team": "Harbour Masters",
+      "page": "https://harbourmasters.github.io/SpaghettiKart/",
+      "licence": "none given",
+      "base": {
+        "title": "Mario Kart 64 (USA)",
+        "db": { "id": 266, "title": "Mario Kart 64", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Mario Kart 64 (USA)", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "ghostship",
+      "name": "Ghostship",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Super Mario 64 rebuilt for PC",
+      "tags": ["widescreen"],
+      "team": "Harbour Masters",
+      "page": "https://ghostship.net64.dev/",
+      "licence": "MIT",
+      "base": {
+        "title": "Super Mario 64 (USA)",
+        "db": { "id": 216, "title": "Super Mario 64", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Super Mario 64 (USA)", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "zelda3",
+      "name": "zelda3",
+      "kind": "pc",
+      "console": "Super Nintendo Entertainment System",
+      "adds": "A Link to the Past rebuilt to run on PC",
+      "tags": ["widescreen"],
+      "team": "snesrev",
+      "page": "https://github.com/snesrev/zelda3",
+      "community": "https://discord.gg/AJJbJAzNNJ",
+      "licence": "its own terms",
+      "base": {
+        "title": "The Legend of Zelda: A Link to the Past (USA)",
+        "db": { "id": 1318, "title": "The Legend of Zelda: A Link to the Past", "platform": "Super Nintendo Entertainment System" },
+        "match": [ { "console": "Super Nintendo Entertainment System", "name": "Legend of Zelda, The - A Link to the Past (USA)", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "sm",
+      "name": "sm",
+      "kind": "pc",
+      "console": "Super Nintendo Entertainment System",
+      "adds": "Super Metroid rebuilt to run on PC, an early version",
+      "tags": [],
+      "team": "snesrev",
+      "page": "https://github.com/snesrev/sm",
+      "community": "https://discord.gg/AJJbJAzNNJ",
+      "licence": "its own terms",
+      "base": {
+        "title": "Super Metroid (Japan, USA)",
+        "db": { "id": 299, "title": "Super Metroid", "platform": "Super Nintendo Entertainment System" },
+        "match": [ { "console": "Super Nintendo Entertainment System", "name": "Super Metroid (Japan, USA) (En,Ja)", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "smw",
+      "name": "smw",
+      "kind": "pc",
+      "console": "Super Nintendo Entertainment System",
+      "adds": "Super Mario World rebuilt to run on PC",
+      "tags": [],
+      "team": "snesrev",
+      "page": "https://github.com/snesrev/smw",
+      "community": "https://discord.gg/AJJbJAzNNJ",
+      "licence": "its own terms",
+      "base": {
+        "title": "Super Mario World (USA)",
+        "db": { "id": 136, "title": "Super Mario World", "platform": "Super Nintendo Entertainment System" },
+        "match": [ { "console": "Super Nintendo Entertainment System", "name": "Super Mario World (USA)", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "retro-rewind",
+      "name": "Retro Rewind",
+      "kind": "disc",
+      "console": "Nintendo Wii",
+      "adds": "152 classic tracks from every Mario Kart, for Mario Kart Wii",
+      "tags": ["levels"],
+      "team": "the Retro Rewind team",
+      "page": "https://wiki.tockdom.com/wiki/Retro_Rewind",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Mario Kart Wii",
+        "db": { "id": 169, "title": "Mario Kart Wii", "platform": "Nintendo Wii" },
+        "match": [
+          { "console": "Nintendo Wii", "disc": "RMCE01", "fit": "fits" },
+          { "console": "Nintendo Wii", "disc": "RMCP01", "fit": "fits" },
+          { "console": "Nintendo Wii", "disc": "RMCJ01", "fit": "fits" },
+          { "console": "Nintendo Wii", "disc": "RMCK01", "fit": "fits" }
+        ]
+      }
+    },
+    {
+      "id": "project-plus",
+      "name": "Project+",
+      "kind": "disc",
+      "console": "Nintendo Wii",
+      "adds": "Brawl played like Melee, with Mewtwo, Roy and Knuckles and new stages",
+      "tags": ["fighters", "levels"],
+      "team": "the Project+ team",
+      "page": "https://projectplusgame.com",
+      "licence": "none given",
+      "base": {
+        "title": "Super Smash Bros. Brawl (USA)",
+        "db": { "id": 3518, "title": "Super Smash Bros. Brawl", "platform": "Nintendo Wii" },
+        "match": [ { "console": "Nintendo Wii", "disc": "RSBE01", "fit": "fits" } ]
+      }
+    }
+  ]
+}
