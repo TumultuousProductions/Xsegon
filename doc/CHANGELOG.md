@@ -2,6 +2,10 @@
 
 Newest first: what changed for the person at the screen.
 
+## 2026-10-15
+
+- **The privacy check on a push no longer stops a new branch by mistake.** Nothing in Xsegon itself changes: this is the check that runs before Xsegon's code is pushed to GitHub (`tools\privacy-scan.js`). It took `noreply@github.com`, the address GitHub signs a pull request merged on its website with, for a personal one, and on a new branch it read every commit back to the first, so that one merge stopped every new branch. GitHub's own address is now allowed, and a new branch is checked for the commits GitHub does not have yet.
+
 ## 2026-10-14
 
 - **Unpacking a big game no longer looks stuck.** The bar of a large disc game being unpacked jumped straight to full ("12.9 GB of 12.9 GB") and stayed there for minutes while it was still working. It now follows how far the unpacking really is.
