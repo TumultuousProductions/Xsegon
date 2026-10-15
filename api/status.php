@@ -18,6 +18,8 @@ xs_heartbeat();
 // Trouble that happened by itself goes into the mailbox here, on the main
 // server's own poll (includes\news.php); the page lights the dot from 'mail'.
 xs_trouble_sweep();
+// A ScreenScraper or Steam fetch that ended: its videos to Recently changed (includes\changed.php).
+xs_changed_fetches();
 /* The sizes of the spines, cartridges and discs are kept in a file
    (includes\extras.php). The fast lane never writes, so it is made here, on
    the main server's own poll, when pictures have come or gone. */

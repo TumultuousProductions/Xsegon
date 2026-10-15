@@ -1,6 +1,8 @@
 // The consoles screen and the four game views, by keyboard.
 "use strict";
-const { BASE, sleep, api, apiUntil } = require("./lib");
+const { BASE, DATA, sleep, api, apiUntil } = require("./lib");
+const fs = require("fs");
+const path = require("path");
 
 /* The view is drawn again: its first child is marked before `act` and a
    fresh one is waited for, then the arrival animations. */
@@ -1383,6 +1385,44 @@ module.exports = async function (b, check) {
       check("and choosing there counts the rim again", await b.until(`(document.querySelector(".sysinfo .syscount, .syscard.sel .syscount") || {}).textContent || ""`, added.count + " games"), added.count + " games");
     } finally {
       await api("api/settings.php", { view: { addedPeriod: "month" } });
+    }
+  }
+
+  /* Recently changed: the same dropdown, holding its own stretch. The run
+     writes its own record (data\changed.json, includes\changed.php) so there
+     is something in it, and puts the copy's back. */
+  {
+    const chF = path.join(DATA, "changed.json");
+    const chWas = fs.existsSync(chF) ? fs.readFileSync(chF) : null;
+    const two = (await api("api/library.php")).games.filter((x) => !x.versions).slice(0, 2);
+    const tenAgo = new Date();
+    tenAgo.setDate(tenAgo.getDate() - 10);
+    fs.writeFileSync(chF, JSON.stringify({ [two[0].id]: { at: new Date().toLocaleDateString("sv") + " 00:00:00", what: "video" },
+                                           [two[1].id]: { at: tenAgo.toLocaleDateString("sv") + " 00:00:00", what: "box" } }));
+    const shown = `parseInt(document.getElementById("count").textContent, 10)`;
+    try {
+      await b.goto();
+      await b.openPlatform("Recently changed");
+      check("inside Recently changed the bar offers its own stretch: the week",
+            await b.until(`(s => !s.hidden && [s.value, s.title])(document.getElementById("added"))`, ["week", "How far back Recently changed looks"]),
+            ["week", "How far back Recently changed looks"]);
+      check("holding what changed this week", await b.until(shown, 1), 1);
+      await b.ev(`(s => { s.value = "twoweeks"; s.dispatchEvent(new Event("change")); })(document.getElementById("added"))`);
+      check("the past 2 weeks shows what changed ten days ago too", await b.until(shown, 2), 2);
+      check("and the choice is kept as its own, Recently added's as it was",
+            await apiUntil(async () => { const v = (await api("api/settings.php")).settings.view; return v.changedPeriod === "twoweeks" && v.addedPeriod === "month"; }));
+      await b.key("Escape");
+      await b.waitFor(`!document.getElementById("syswall").hidden && document.querySelectorAll("#syswall .sel").length > 0`, 5000);
+      await b.settled();
+      await b.ev(`document.querySelector("#syswall .sel").dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: 300, clientY: 300 }))`);
+      check("its menu on the consoles screen marks its own stretch",
+            await b.until(`[...document.querySelectorAll(".ctx-item.on .ctx-label")].map(n => n.textContent).filter(t => /^Changed/.test(t))`, ["Changed in the past 2 weeks"]),
+            ["Changed in the past 2 weeks"]);
+      await b.menuItem(/^Changed in the past week$/);
+      check("and choosing there counts the rim again", await b.until(`(document.querySelector(".sysinfo .syscount, .syscard.sel .syscount") || {}).textContent || ""`, "1 game"), "1 game");
+    } finally {
+      await api("api/settings.php", { view: { changedPeriod: "week" } });
+      if (chWas) { fs.writeFileSync(chF, chWas); } else { fs.rmSync(chF, { force: true }); }
     }
   }
 

@@ -60,7 +60,11 @@ register_shutdown_function(static function () use (&$job, $save, $tidy, $then): 
 });
 // The Stop of the fetch that waits on this one is a Stop of both.
 $stopped = static fn (): bool => is_file(xs_ad_stop_path()) || ($then && is_file(xs_av_stop_path()));
-$end = static function (string $state, string $words) use (&$job, $save, $then): void {
+// However it ends, the videos that came go to Recently changed and are said in Messages ($s and $consoles are read below).
+$end = static function (string $state, string $words) use (&$job, $save, $then, &$s, &$consoles): void {
+    if (!empty($job['added']) && is_array($consoles)) {
+        xs_changed_tell(XS_AD_NAME, xs_changed_videos_by_name($s, xs_changed_on($consoles, (array) ($job['platforms'] ?? [])), (int) ($job['started'] ?? 0)));
+    }
     $job['state'] = $state;
     $job['phase'] = 'end';
     $job['now']   = '';

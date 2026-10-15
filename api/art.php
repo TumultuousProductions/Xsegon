@@ -176,6 +176,7 @@ if ($final === null) {
     xs_fail('could not store the image (' . $held . '): the one before it is still there', 500);
 }
 $dropThumb();
+xs_changed_note([$id], $kind);
 xs_log('ART', $game['title'] . ': ' . $kind . ' replaced (' . $info[0] . 'x' . $info[1] . ')');
 
 xs_json(['ok' => true, 'id' => $id, 'kind' => $kind, 'replaced' => true,

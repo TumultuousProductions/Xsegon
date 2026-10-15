@@ -137,6 +137,9 @@ if (!$dry && ($filled || ($all[$id]['lrName'] ?? null) !== $name)) {
     if (!xs_write_json(xs_overrides_path(), $all, $why)) {
         xs_fail((string) $why, 500);
     }
+    if ($filled) {
+        xs_changed_note([$id], 'details');
+    }
 }
 
 $pictures = [];

@@ -17,6 +17,7 @@ import { iconEl } from "./icons.js";
 import { showStrip } from "./launch.js";
 import { L, api } from "./log.js";
 import { popupMenu } from "./menus.js";
+import { addsMissing } from "./missing.js";
 import { stopVideo } from "./snap.js";
 import { sound } from "./sound.js";
 import { games, hasGamesDb, sel } from "./state.js";
@@ -124,8 +125,7 @@ function paintOwn(pane, g, res, keepAt) {
   // A change made: the rows are read again, and the cover beside them shows a new box art at once.
   function again(kind) {
     changed = g.id;
-    var cover = document.querySelector("#details .dleft img.cover");
-    if (cover && kind === "box") { cover.src = "api/image.php?id=" + encodeURIComponent(g.id) + "&kind=box&size=full&v=" + Date.now(); }
+    if (kind === "box") { coverAgain(g, "api/image.php?id=" + encodeURIComponent(g.id) + "&kind=box&size=full&v=" + Date.now()); }
     if (tabPane("media") === pane) { ownMedia(pane, g, at); }
   }
   function upload(x, cell, file) {
@@ -153,10 +153,21 @@ function paintOwn(pane, g, res, keepAt) {
     });
   }
   // Find online takes the rows' place until Back, as it takes the slots' in Change Pictures.
+  // Its presses are the tab's list, read afresh as it fills, so Enter or A never falls through to Play.
   function findOnline(x) {
     finding = x.kind;
-    setTabRows(pane, null);
-    openPicker(g, x.kind, x.k.label, list, function () { if (tabPane("media") === pane) { focusAt(at); } });
+    var box = openPicker(g, x.kind, x.k.label, list, function () { if (tabPane("media") === pane) { focusAt(at); } });
+    var on = 0;
+    function presses() { return Array.prototype.slice.call(box.querySelectorAll(".pk-head button, .pk-search button, .pk > button, .pk-cell, .pk-result")); }
+    function mark(i) {
+      var all = presses();
+      on = Math.max(0, Math.min(all.length - 1, i));
+      all.forEach(function (c, n) { c.classList.toggle("sel", n === on); });
+      if (all[on]) { all[on].scrollIntoView({ block: "nearest", inline: "nearest" }); }
+      setTabRows(pane, { cells: all, at: on, word: "choose", move: function (d) { mark(on + d); },
+                         choose: function () { var c = presses()[on]; if (c) { c.click(); } } });
+    }
+    mark(0);
   }
   inner.addEventListener("xs-art-changed", function () { if (finding) { again(finding); } });
 
@@ -483,8 +494,23 @@ function takeIn(g, patch, got) {
   setWheelNodes(null);
   setCarNodes(null);
   render();
-  var cover = document.querySelector("#details .dleft img.cover");
-  if (cover && got.indexOf("box") >= 0) { cover.src = artUrl(g, "box", true); }
+  if (got.indexOf("box") >= 0) { coverAgain(g, artUrl(g, "box", true)); }
   var lacks = document.querySelector("#details .dlacks");
   if (lacks && got.indexOf("video") >= 0) { lacks.remove(); }
+}
+
+/* Details' cover after the box art changed in the tab: the new picture once
+   it has come, or NO ART back when there is none (its address answers 404),
+   each in the other's place. The old one shows until then. */
+function coverAgain(g, src) {
+  var now = document.querySelector("#details .dleft img.cover, #details .dleft .cover-noart");
+  if (!now) { return; }
+  var img = el("img", "cover");
+  img.alt = g.title;
+  img.onload = function () { now.replaceWith(img); };
+  img.onerror = function () {
+    if (now.classList.contains("cover-noart")) { return; }
+    now.replaceWith(addsMissing(el("div", "hero-noart cover-noart", "NO ART"), function () { return g; }, "art"));
+  };
+  img.src = src;
 }

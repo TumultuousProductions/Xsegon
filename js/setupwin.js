@@ -24,6 +24,7 @@ var VIDEO_MB = 4.2;       // a video's usual size, for the estimate (js\setuplis
 
 var win = null, st = null, have = null, offers = { videos: false, cheats: null };
 var on = {}, paints = [], gone = false, byHand = null;
+var added = [];           // folders added in this window: their new games come in at Set it up, even into a library that has games
 
 function sizeWords(mb) { return mb >= 1024 ? "about " + (Math.round(mb / 102.4) / 10) + " GB" : "about " + Math.max(1, Math.round(mb)) + " MB"; }
 function timeWords(secs) {
@@ -100,6 +101,7 @@ function pickFolder() {
     postJson("api/scan.php", { action: "addFolder", path: path }).then(function (res) {
       if (!res.ok && !/already on the list/.test(res.error || "")) { showStrip("that folder could not be added: " + (res.error || ""), true); return; }
       L("SETUP", "games folder " + path + " (setup window)");
+      if (added.indexOf(path) < 0) { added.push(path); }
       look();
     });
   });
@@ -140,7 +142,7 @@ function setItUp() {
       onYes: openGamesFolder });
     return;
   }
-  beginAuto(st, have, answers);
+  beginAuto(st, Object.assign({}, have, { added: added.slice() }), answers);
 }
 
 /* The window, from the first start (js\setup.js firstRunSetup) and from the
@@ -168,6 +170,7 @@ function showWindow(state, guide, found) {
   have = null;
   gone = false;
   paints = [];
+  added = [];
   on = { pictures: true, self: !(S.library && S.library.addNewGames === false), videos: true, cheats: true, runs: false };
   offers = found;
   var inner = toolFrame("SET EVERYTHING UP", { base: "set-inner", cls: "su-inner", close: "Not now (esc)", primary: false });

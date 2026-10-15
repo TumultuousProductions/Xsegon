@@ -758,8 +758,10 @@ function xs_scan_walk(?string $rootOverride = null): array
        The id is console and file name, so a second file of that name in
        another folder meets the first one here. */
     $idHeld = [];
+    $accepted = [];                      // files accepted before, by path: never filed under another console
     foreach (xs_scan_read() as $e) {
         $idHeld[(string) $e['id']] = ['rom' => strtolower(str_replace('/', '\\', (string) ($e['rom'] ?? ''))), 'title' => (string) ($e['title'] ?? ''), 'kept' => true];
+        $accepted[$idHeld[(string) $e['id']]['rom']] = true;
     }
 
     /* ---- what becomes of a console's candidate rows ----------------------
@@ -1071,14 +1073,16 @@ function xs_scan_walk(?string $rootOverride = null): array
     };
     /* Inside a console's folder: a file that names, for sure, a console the
        folder's cannot play joins that console's rows (a PlayStation disc in
-       gc). One the library has already stays as it is and is not read. */
-    $sortOut = static function (string $platform, array $rows) use (&$placed, &$out, $known, $discs): array {
+       gc). One the library has, or one accepted before (a game hidden since among
+       them, which the library leaves out), stays as it is and is not read. */
+    $sortOut = static function (string $platform, array $rows) use (&$placed, &$out, $known, $accepted, $discs): array {
         if ($platform === XS_ARCADE) {
             return $rows;
         }
         $kept = [];
         foreach ($rows as $r) {
-            $says = isset($r['title']) || isset($known[strtolower(str_replace('/', '\\', (string) $r['rom']))])
+            $rom  = strtolower(str_replace('/', '\\', (string) $r['rom']));
+            $says = isset($r['title']) || isset($known[$rom]) || isset($accepted[$rom])
                 ? null : xs_scan_file_says($r, $platform, isset($discs[$platform]));
             if ($says === null) {
                 $kept[] = $r;
@@ -1216,16 +1220,16 @@ function xs_scan_accept(array $picks, ?string &$why = null, ?array &$skipped = n
     $added = 0;
     foreach ($picks as $p) {
         if (!is_array($p) || empty($p['id']) || empty($p['title']) || empty($p['platform']) || empty($p['rom'])) {
-            $skipped[] = ['title' => is_array($p) ? (string) ($p['title'] ?? '?') : '?',
+            $skipped[] = ['id' => is_array($p) ? (string) ($p['id'] ?? '') : '', 'title' => is_array($p) ? (string) ($p['title'] ?? '?') : '?',
                           'why'   => 'the entry was missing a field: it did not come from the scan'];
             continue;
         }
         if (isset($have[(string) $p['id']])) {
-            $skipped[] = ['title' => (string) $p['title'], 'why' => 'already accepted before'];
+            $skipped[] = ['id' => (string) $p['id'], 'title' => (string) $p['title'], 'why' => 'already accepted before'];
             continue;
         }
         if (!is_file((string) $p['rom'])) {
-            $skipped[] = ['title' => (string) $p['title'],
+            $skipped[] = ['id' => (string) $p['id'], 'title' => (string) $p['title'],
                           'why'   => 'the file is not there any more: ' . (string) $p['rom']];
             continue;
         }

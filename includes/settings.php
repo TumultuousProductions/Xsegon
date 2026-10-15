@@ -87,6 +87,7 @@ function xs_settings_defaults(): array
             'groupHeaders'        => false,    // list and grid: a header wherever the sorted value changes
             'rollVersions'        => true,     // versions of one game on one console share a card (api\library.php)
             'addedPeriod'         => 'month',  // how far back Recently added looks: today | threedays | week | twoweeks | month | year
+            'changedPeriod'       => 'week',   // and Recently changed (includes\changed.php), the same choices
             'gridImage'           => 'box',    // which art the grid's tiles show (the Image Group menu)
             // Tile, spine and picture sizes in percent; each view's gear writes its own (js\viewsize.js).
             'gridSize'            => 100,
@@ -373,6 +374,10 @@ function xs_settings_schema(): array
                                'options' => ['today' => 'Today', 'threedays' => 'Past 3 days', 'week' => 'Past week',
                                              'twoweeks' => 'Past 2 weeks', 'month' => 'Past month', 'year' => 'Past year'],
                                'help' => 'How far back the Recently added collection looks, and the Recently added row in the Rows view. Also the dropdown in the bar while Recently added is open, and its menu on the consoles screen (right-click, or Y on the pad).'],
+            'changedPeriod' => ['label' => 'Recently changed goes back', 'type' => 'enum', 'section' => 'Order and grouping',
+                               'options' => ['today' => 'Today', 'threedays' => 'Past 3 days', 'week' => 'Past week',
+                                             'twoweeks' => 'Past 2 weeks', 'month' => 'Past month', 'year' => 'Past year'],
+                               'help' => 'How far back the Recently changed collection looks: the games whose pictures, video or details came or changed, by your hand or by a fetch. Also the dropdown in the bar while Recently changed is open, and its menu on the consoles screen (right-click, or Y on the pad).'],
             'gridImage' => ['label' => 'Grid image', 'type' => 'enum', 'section' => 'What is shown',
                             'options' => ['box' => 'Box art', 'box3d' => '3D box', 'logo' => 'Clear logo',
                                           'shot' => 'Screenshot', 'fanart' => 'Fanart', 'medium' => 'Cartridge or disc'],

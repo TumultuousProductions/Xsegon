@@ -62,6 +62,11 @@ function xs_ffmpeg(): string
     if (is_string($test) && getenv('XSEGON_DATA')) {
         return $test !== '' && is_file($test) ? $test : '';
     }
+    // The one a download carries first, as the playthrough cutter looks (xs_av_ffmpeg).
+    $own = XS_ROOT . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'ffmpeg.exe';
+    if (is_file($own)) {
+        return $own;
+    }
     $out = @shell_exec('where ffmpeg 2>NUL');
     if (is_string($out)) {
         foreach (preg_split('/\r?\n/', trim($out)) as $line) {
@@ -155,23 +160,18 @@ function xs_steamvid_games(array $s, array $library): array
 /** The job as the page sees it. */
 function xs_steamvid_job(): ?array
 {
-    $job = xs_read_json(xs_steamvid_job_path(), null);
+    // Settled: a read at the moment the fetcher saves would let the window lose its fetch.
+    $job = xs_read_json_settled(xs_steamvid_job_path(), null);
     if (!is_array($job)) {
         return null;
     }
-    // A worker that died would leave "running" for ever; a whole library of trailers is well inside six hours.
+    // A worker that died would leave "running" for ever. One alive is at work however long a large fetch takes.
     if (($dead = xs_job_dead($job, xs_steamvid_job_path())) !== null) {
         $job['state'] = 'failed';
         $job['error'] = 'it stopped part way (' . $dead . '); start it again and it carries on where it stopped';
         $job['failLogged'] = true;
         xs_write_json(xs_steamvid_job_path(), $job);
         xs_log('STEAMV', 'the trailer fetch stopped: ' . $dead . '; marked failed');
-    }
-    if (($job['state'] ?? '') === 'running' && time() - (int) ($job['started'] ?? 0) > 21600) {
-        $job['state'] = 'failed';
-        $job['error'] = 'it stopped answering; start it again and it carries on where it stopped';
-        xs_write_json(xs_steamvid_job_path(), $job);
-        xs_log('STEAMV', 'the trailer fetch stopped answering (started ' . date('H:i', (int) ($job['started'] ?? 0)) . '); marked failed');
     }
     // A fetch that failed outright is logged once, not only in the job file.
     if (($job['state'] ?? '') === 'failed' && empty($job['failLogged'])) {

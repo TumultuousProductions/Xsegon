@@ -286,6 +286,17 @@ module.exports = async function (b, check) {
       check("a press on a picture opens the buttons Change Pictures has for it", await b.until(menuNow, wantMenu, 4000), wantMenu);
       await b.ev(`(async () => (await import("/js/menus.js")).closeGameMenu())()`);
       await b.until(`!document.querySelector(".ctx")`, true, 4000);
+      if (await b.ev(`!!(window.XSEGON && window.XSEGON.gamesdb)`)) {
+        // Find online in the tab: its presses are the tab's list, so Enter picks there and never plays (roadmap AR13).
+        await b.ev(`document.querySelector("#details .dtab-pane").dispatchEvent(new MouseEvent("mousedown", { bubbles: true }))`);
+        await b.ev(`document.querySelector('#details .md-kind[data-kind="box"]').click()`);
+        await b.until(`!!document.querySelector(".ctx")`, true, 4000);
+        await b.ev(`[...document.querySelectorAll(".ctx .ctx-item")].find(n => n.querySelector(".ctx-label").textContent === "Find online...").click()`);
+        await b.until(`!!document.querySelector("#details .pk .pk-head button")`, true, 8000);
+        await b.ev(`document.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }))`);
+        check("Find online in the tab: Enter presses its Back, not Play",
+          await b.until(`!document.getElementById("details").hidden && !document.querySelector("#details .pk") && !!document.querySelector('#details .md-own .md-kind[data-kind="box"]')`, true, 6000), true);
+      }
       await b.ev(`document.querySelector("#details .md-copy").click()`);
       check("Copy from another game opens the games, with a find box and a way back",
         await b.until(`document.querySelectorAll("#details .md-game").length > ${at} && !!document.querySelector("#details .md-tab .ch-find input") && !!document.querySelector("#details .md-home")`, true, 8000), true);
@@ -318,6 +329,15 @@ module.exports = async function (b, check) {
       check("Remove there takes the copied box art away, and the row says so",
         [await b.until(`(document.querySelector('#details .md-kind[data-kind="box"] .sv-sub') || {}).textContent`, "no image", 8000),
          (await api("api/art.php?id=" + bare.game.id)).kinds.box.replaced], ["no image", false]);
+      // Details' cover follows, both ways, with no broken picture between (roadmap AR14).
+      const coverIs = `document.querySelector("#details .dleft img.cover") ? "cover" : document.querySelector("#details .dleft .cover-noart.can-add") ? "NO ART" : "none"`;
+      check("and the cover beside it is NO ART again, not a broken picture", await b.until(coverIs, "NO ART", 6000), "NO ART");
+      await b.ev(`document.querySelector("#details .md-copy").click()`);
+      await b.until(`document.querySelectorAll("#details .md-game").length > ${at}`, true, 8000);
+      await b.ev(`document.querySelectorAll("#details .md-game")[${at}].click()`);
+      await b.until(`!!document.querySelector('#details .md-kind[data-kind="box"]')`, true, 8000);
+      await b.ev(`document.querySelector('#details .md-kind[data-kind="box"]').click()`);
+      check("a box art copied in then stands where NO ART was", await b.until(coverIs, "cover", 8000), "cover");
       await b.ev(`(async () => (await import("/js/details.js")).closeDetails())()`);
     }
   } finally {

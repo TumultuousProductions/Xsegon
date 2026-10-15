@@ -145,7 +145,7 @@ const PROTECTED = ["favourites.json", "my-ratings.json", "tags.json", "fix-marks
      turn its checks red with nothing broken. */
   await api("api/settings.php", { view: { default: "wheel", systemsFirst: true, systemsStyle: "wheel", pageSize: 2000,
                                           listColumns: ["title", "platform", "genre", "seconds"], listWidths: {},
-                                          sort: "title", sortReverse: false, groupHeaders: false, addedPeriod: "month",
+                                          sort: "title", sortReverse: false, groupHeaders: false, addedPeriod: "month", changedPeriod: "week",
                                           gridImage: "box", gridSize: 100, shelfSize: 100, rowsSize: 100, heroPanel: true, sidebar: false,
                                           // every game shown, under its title alone (the wired group sets its own)
                                           showMissingArt: true, showPlatformInTitle: false },

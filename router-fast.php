@@ -23,6 +23,14 @@ $root = __DIR__;
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
+// Asked for by this machine's name only, as router.php is: a page elsewhere that points its
+// own domain at 127.0.0.1 (DNS rebinding) is "same origin", but cannot choose its Host header.
+$host = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
+if ($host !== '' && !preg_match('#^(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$#', $host)) {
+    http_response_code(403);
+    exit;
+}
+
 // What may come here, and how. window.php is a POST, but it only asks a
 // window to move; it writes no file.
 const XS_LANE_PATHS = [

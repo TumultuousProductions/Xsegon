@@ -22,12 +22,12 @@ function letterOf(text) {
 }
 
 /* Every game's letter in the order on screen, or null where the list does
-   not run by letter: an order with no letters, Recently added (by date,
-   whatever Arrange By says), or letters that turn out scattered. With
+   not run by letter: an order with no letters, Recently added or Recently
+   changed (by date, whatever Arrange By says), or letters that turn out scattered. With
    Favourites first the favourites are a run of their own (the "*"). */
 function lettersNow() {
   var field = FIELD[$sort.value];
-  if (!field || $platform.value === "@added" || games.length < 2) { return null; }
+  if (!field || $platform.value === "@added" || $platform.value === "@changed" || games.length < 2) { return null; }
   var favFirst = !!(S.view && S.view.favouritesFirst);
   var keys = [], seen = {}, kinds = 0, runs = 0;
   for (var i = 0; i < games.length; i++) {

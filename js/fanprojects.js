@@ -87,6 +87,8 @@ export function openFanPage() {
   FP.root.hidden = false;
   FP.grid.textContent = "";
   FP.hero.textContent = "";
+  FP.first = null;                       // no press reaches the last visit's buttons while it reads
+  fanShown = [];
   FP.grid.appendChild(el("div", "fan-wait", "Reading your games for what each project needs..."));
   fanFit();
   paintHelp("fanprojects");
@@ -233,6 +235,7 @@ function fanDraw() {
   if (!fanShown.length) {
     FP.grid.appendChild(el("div", "fan-wait", fanProjects.length ? "No project passes these filters." : "No projects to show."));
     FP.hero.textContent = "";
+    FP.first = null;
     return;
   }
   var i = fanShown.findIndex(function (s) { return s.p.id === was; });

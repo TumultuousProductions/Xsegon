@@ -64,7 +64,7 @@ import { attachSpin } from "./drag.js";
 import { closeEditor } from "./editors.js";
 import { paintHelp, paintHelpHere } from "./help.js";
 import { initInput, pollPad } from "./input.js";
-import { load, randomGame, searchTyped, setAddedPeriod } from "./library.js";
+import { load, randomGame, searchTyped, setPeriod } from "./library.js";
 import { initList } from "./list.js";
 import { listGlide } from "./listglide.js";
 import { initListMenu } from "./listmenu.js";
@@ -216,7 +216,7 @@ $q.addEventListener("focus", function () { paintHelp("search"); });
 $q.addEventListener("blur", paintHelpHere);
 $platform.addEventListener("change", load);
 $sort.addEventListener("change", load);
-$added.addEventListener("change", function () { setAddedPeriod($added.value); });
+$added.addEventListener("change", function () { setPeriod($platform.value, $added.value); });
 closeOnBackdrop($settings, closeSettings);
 
 paintHelp("browse");

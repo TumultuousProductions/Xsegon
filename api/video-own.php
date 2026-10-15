@@ -113,6 +113,7 @@ $final = xs_put_file($tmp, $dir . DIRECTORY_SEPARATOR . $id, $ext, array_keys(vi
 if ($final === null) {
     xs_fail('could not store the video (' . $held . '): the one before it is still there', 500);
 }
+xs_changed_note([$id], 'video');
 
 xs_log('VID', $id . ': own video set (' . round(filesize($final) / 1048576, 1) . ' MB)');
 xs_json(['ok' => true, 'id' => $id, 'replaced' => true, 'bytes' => filesize($final), 'rev' => (int) filemtime($final)]);

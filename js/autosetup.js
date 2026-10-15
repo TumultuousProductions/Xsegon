@@ -52,8 +52,13 @@ export function beginAuto(st, have, answers, noScan) {
     if (r.started && !watchUp()) { watchSetup(quietDone); }
     // the pictures pass now, not at the next status poll
     if (r.fill) { fillWatch(); }
-    // scanned before: the POST above already fills
-    if (have.scanned) { noGamesAsking(false); runPoke(); return; }
+    // scanned before: the POST above already fills; a folder added in the setup window still brings its own new games
+    if (have.scanned) {
+      noGamesAsking(false);
+      runPoke();
+      if (have.added && have.added.length) { autoScan(have.where, have.own, null, have.added); }
+      return;
+    }
     // no games yet: the empty screen says where they go and keeps Scan for Games
     if (noScan) { noGamesAsking(false); return; }
     // the empty screen keeps to one line until the games are on it
@@ -79,9 +84,19 @@ function askFolder(own) {
 /* Scan and accept without the review screen, as Getting started says. Nothing found
    gets a window of its own (js\nofound.js) with a press for each way on; pictures
    start only from an accept that added games (api\scan.php). */
-function autoScan(where, own, looked) {
+function autoScan(where, own, looked, only) {
   var again = { pick: function () { askFolder(own); }, rescan: function () { autoScan(where, own); } };
   (looked ? Promise.resolve(looked) : api("api/scan.php")).then(function (r) {
+    // only: folders added to a library that has games; their new games alone come in, the rest stay for Scan for Games
+    if (only && r && r.ok) {
+      var inside = function (rom) {
+        var p = String(rom || "").toLowerCase().replace(/\//g, "\\");
+        return only.some(function (f) { return p.indexOf(String(f).toLowerCase().replace(/\//g, "\\").replace(/\\+$/, "") + "\\") === 0; });
+      };
+      r = Object.assign({}, r, { "new": (r.new || []).filter(function (g) { return inside(g.rom); }) });
+      L("SETUP", r.new.length + " new games in the folder added in the setup window");
+      if (!r.new.length) { showStrip("no new games in " + only.join(", "), false); return; }
+    }
     if (!r || !r.ok || !(r.new || []).length) { noGamesAsking(false); }
     if (!r || !r.ok) { noGamesFound({ folder: where, error: (r && r.error) || "the scan did not answer", own: own }, again); return; }
     var offer = r.new || [];

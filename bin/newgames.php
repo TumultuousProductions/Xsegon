@@ -55,6 +55,7 @@ if ($many > 0) {
     $add = [];
 }
 $added = 0;
+$came = [];                             // the games really added: a skipped one is never named
 $hacks = ['ask' => 0];
 $auto = null;
 if ($add) {
@@ -66,14 +67,32 @@ if ($add) {
     xs_log('SCAN', 'accepted ' . $added . ' of ' . count($add) . ' offered, by themselves'
         . ($skipped ? ' (' . count($skipped) . ' skipped: ' . $skipped[0]['why'] . ')' : ''));
     [$hacks, $auto] = xs_scan_after_accept($add, $added, true);
+    $passed = array_flip(array_column($skipped ?? [], 'id'));
+    $came = array_values(array_filter($add, static fn ($g): bool => !isset($passed[(string) $g['id']])));
+    // Nobody pressed anything for these, so they are news: one message a look, with the way to Recently added.
+    if ($added > 0) {
+        require_once __DIR__ . '/../includes/news.php';
+        xs_messages_add([
+            'id'    => 'msg-' . bin2hex(random_bytes(6)),
+            'at'    => date('c'),
+            'kind'  => 'added',
+            'title' => $added === 1 ? 'A new game was added' : $added . ' new games were added',
+            'body'  => 'Found in your games folders and added by themselves. Recently added holds them.',
+            'items' => array_slice(array_map('xs_news_line', $came), 0, 12),
+            'n'     => $added,
+            'show'  => '@added',
+            'read'  => false,
+        ]);
+    }
 }
 $unsure = xs_ng_unsure($found, $left);
-$told = xs_ng_tell($unsure, $many);
+$saidMany = $many;
+$told = xs_ng_tell($unsure, $saidMany);
 $job['added'] = $added;
-$job['titles'] = array_slice(array_column($add, 'title'), 0, 5);
+$job['titles'] = array_slice(array_column($came, 'title'), 0, 5);
 $job['left'] = count($left);
 $job['fresh'] = count($fresh);
-$job['many'] = $many;
+$job['many'] = $saidMany;              // the strip says it when Messages does, not at every look
 $job['told'] = $told ? count($unsure) : 0;
 $job['hacks'] = (int) $hacks['ask'];
 $job['fill'] = !empty($auto['fill']);

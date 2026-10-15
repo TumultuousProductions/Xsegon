@@ -6,7 +6,7 @@ import { FAN_KEY, dropFanPage, openFanPage } from "./fanprojects.js";
 import { openFilterWindow } from "./filterwin.js";
 import { paintHelp } from "./help.js";
 import { showStrip } from "./launch.js";
-import { addedPeriod, addedPeriods, collectionCount, collectionsAll, consoleCounts, filterWords, libraryTotal, load, platformArtUrl, platformsAll, setAddedPeriod, sysShow } from "./library.js";
+import { addedPeriods, collectionCount, collectionsAll, consoleCounts, filterWords, libraryTotal, load, periodOf, platformArtUrl, platformsAll, setPeriod, sysShow } from "./library.js";
 import { L, logWarn } from "./log.js";
 import { TIPS } from "./menu-tips.js";
 import { popupMenu } from "./menus.js";
@@ -137,8 +137,8 @@ export function chooseSystem(name) {
     var c = collectionsAll[ci];
     if (c.key === name && !c.count) {
       L("NAV", "refused empty " + name);
-      // Recently added can look further back, and its menu is the way from here.
-      var wider = name === "@added" && addedPeriod() !== "year" ? ". Its menu (right-click, or Y) looks further back" : "";
+      // Recently added and Recently changed can look further back, and their menus are the way from here.
+      var wider = periodOf(name) && periodOf(name) !== "year" ? ". Its menu (right-click, or Y) looks further back" : "";
       showStrip(c.label + ": " + (c.note || "nothing in it yet") + wider, false);
       sound("back");
       return;
@@ -216,10 +216,11 @@ function sysClick(p, i) {
    search box for and which the pad reaches only here (Y opens this menu). */
 export function openSysMenu(p, i, x, y) {
   if (i !== sysSel) { sysSel = i; updateSystems(); }
-  // Recently added: how far back it looks, here because an empty one cannot be opened to choose.
-  var stretch = p.name !== "@added" ? [] : [{ rule: true }].concat(addedPeriods().map(function (o) {
-    return { label: o[0] === "today" ? "Added today" : "Added in the " + o[1].toLowerCase(),
-             checked: addedPeriod() === o[0], run: function () { setAddedPeriod(o[0]); } };
+  // Recently added and Recently changed: how far back each looks, here because an empty one cannot be opened to choose.
+  var verb = { "@added": "Added", "@changed": "Changed" }[p.name];
+  var stretch = !verb ? [] : [{ rule: true }].concat(addedPeriods().map(function (o) {
+    return { label: o[0] === "today" ? verb + " today" : verb + " in the " + o[1].toLowerCase(),
+             checked: periodOf(p.name) === o[0], run: function () { setPeriod(p.name, o[0]); } };
   }));
   popupMenu([
     { icon: "play", label: "Open " + (p.label || p.name), hint: p.note ? "empty" : null, tip: p.note ? TIPS.sysEmpty : null,

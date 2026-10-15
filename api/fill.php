@@ -275,6 +275,7 @@ if ($wantMeta) {
     if ($filled) {
         $all[$id] = $mine;
         xs_write_or_fail(xs_overrides_path(), $all);
+        xs_changed_note([$id], 'details');
     }
 }
 

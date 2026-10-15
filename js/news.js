@@ -272,7 +272,7 @@ function paintMail(panel, msgs, failedWords) {
          sort and the search still working". So this is one parameter, not
          a screen of its own. */
       if (m.show) {
-        var go = el("button", "mail-show", "Show these games in a list");
+        var go = el("button", "mail-show", OPENS[m.show] || "Show these games in a list");
         go.type = "button";
         go.addEventListener("click", function () { showCollection(m.show); });
         rowEl.appendChild(go);
@@ -311,11 +311,13 @@ export function mailOpen() { return !!$mail && !$mail.hidden; }
    machinery of its own: it leaves the wall, sets the one parameter, reads
    again and refuses an empty collection with its reason. The view is set
    first so the games land in a list, which is what a list of things to fix
-   wants to be. */
+   wants to be. New games and new videos are to play and watch: those open
+   in the view you have, under the collection's own name. */
+var OPENS = { "@added": "Open Recently added", "@changed": "Open Recently changed" };
 function showCollection(key) {
   closeMail();
   L("NEWS", "show " + key);
-  setViewMode("list");
+  if (!OPENS[key]) { setViewMode("list"); }
   /* The library is read again FIRST: the collection this message points at
      is usually newer than the page's last read, and without it chooseSystem
      falls through to every game. The fresh read carries @missing and
