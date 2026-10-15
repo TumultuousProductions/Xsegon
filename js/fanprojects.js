@@ -171,7 +171,9 @@ function fanStatus(p) {
   if (b.state === "fits") { return ["ok", "Your " + b.yourTitle + " fits"]; }
   if (b.state === "works") { return ["warn", "Your " + b.yourTitle + " " + (b.note || "works")]; }
   if (b.state === "other") { return ["warn", "Yours is " + (b.release || b.yourTitle) + "; this needs " + b.title]; }
+  if (b.state === "partial") { return ["warn", "Yours has " + b.have + " of its " + b.need + " discs; this needs all of them"]; }
   if (b.state === "unchecked") { return ["", "Your " + b.yourTitle + ": its file is not checked yet (Games > Check game files)"]; }
+  if (b.state === "unread") { return ["", "Your " + b.yourTitle + ": which discs it is cannot be read from this kind of file yet"]; }
   return ["no", "Needs " + b.title];
 }
 
@@ -185,8 +187,14 @@ function fanPic(id, kinds, img, onNone) {
   next();
 }
 
+// A tile as the panel reads: the project's name over its picture, where it stands under it.
 function fanTile(p) {
   var t = el("div", "tile");
+  var cap = el("div", "cap", p.name);
+  var kind = el("span", "bdg");
+  kind.appendChild(el("span", "b-hack", p.kindLabel.toUpperCase()));
+  cap.appendChild(kind);
+  t.appendChild(cap);
   var img = el("img", "shot as-shot");
   img.alt = "";
   t.appendChild(img);
@@ -194,11 +202,6 @@ function fanTile(p) {
     var none = el("div", "noart fan-noart", p.base.title.toUpperCase());
     img.replaceWith(none);
   });
-  var cap = el("div", "cap", p.name);
-  var kind = el("span", "bdg");
-  kind.appendChild(el("span", "b-hack", p.kindLabel.toUpperCase()));
-  cap.appendChild(kind);
-  t.appendChild(cap);
   var st = fanStatus(p);
   t.appendChild(el("div", "fan-st" + (st[0] ? " " + st[0] : ""), st[1]));
   return t;
@@ -213,7 +216,7 @@ function fanDraw() {
   FAN_SECTIONS.forEach(function (sec) {
     var lot = fanProjects.filter(function (p) {
       return fanSection(p) === sec[0] && (!c || p.console === c) && (!adds || p.tags.indexOf(adds) >= 0)
-        && (!words || (p.name + " " + p.base.title + " " + p.adds).toLowerCase().indexOf(words) >= 0);
+        && (!words || (p.name + " " + p.base.title + " " + p.adds + " " + p.team).toLowerCase().indexOf(words) >= 0);
     });
     if (!lot.length) { return; }
     var h = el("div", "ghead");
@@ -253,9 +256,22 @@ function fanButton(label, run, primary, off) {
   return b;
 }
 
-// The panel beside the grid, for the chosen project: its picture, what it adds, where it stands, its buttons.
+// The places a project lives, in the order its buttons stand: its website, its GitHub, its community.
+var FAN_LINKS = [["page", "Website"], ["repo", "GitHub"], ["community", "Community"]];
+
+function fanAddress(url) { return url.replace(/^https:\/\/(github\.com\/)?/, "").replace(/\/$/, ""); }
+
+// The panel beside the grid: the project's name and who made it over its picture; what it adds, where it stands and its buttons under it.
 function fanPanel(p) {
   FP.hero.textContent = "";
+  var top = el("div", "fan-top");
+  top.appendChild(el("div", "fan-kind", p.kindLabel + " · " + p.console));
+  var h = el("h3");
+  h.appendChild(el("span", "hero-name", p.name));
+  top.appendChild(h);
+  if (p.team) { top.appendChild(el("div", "fan-by", "by " + p.team)); }
+  FP.hero.appendChild(top);
+
   var frame = el("div", "hero-art-frame");
   var img = el("img", "hero-art");
   img.alt = "";
@@ -264,31 +280,33 @@ function fanPanel(p) {
   FP.hero.appendChild(frame);
 
   var info = el("div", "hero-info");
-  var h = el("h3");
-  h.appendChild(el("span", "hero-name", p.name));
-  info.appendChild(h);
-  var pills = el("div", "pills");
-  pills.appendChild(el("span", "pill accent", p.console));
-  pills.appendChild(el("span", "pill", p.kindLabel));
-  p.tags.forEach(function (t) { if (FAN_TAGS[t]) { pills.appendChild(el("span", "pill", FAN_TAGS[t])); } });
-  info.appendChild(pills);
+  var tags = p.tags.filter(function (t) { return FAN_TAGS[t]; });
+  if (tags.length) {
+    var pills = el("div", "pills");
+    tags.forEach(function (t) { pills.appendChild(el("span", "pill", FAN_TAGS[t])); });
+    info.appendChild(pills);
+  }
+  info.appendChild(el("p", "fan-adds", p.adds));
   var stats = el("div", "hero-stats");
   function kv(k, v, hot) { stats.appendChild(el("span", "k", k)); stats.appendChild(el("span", "v" + (hot ? " hot" : ""), v)); }
-  kv("Adds", p.adds);
   var st = fanStatus(p);
   kv("Built from", p.base.title);
   kv("Yours", p.yours.length ? st[1].replace(/^Yours: /, "") : st[1], st[0] === "ok");
-  kv("Made by", p.team);
   kv("Licence", p.licence || "none given");
-  kv("From", p.page.replace(/^https:\/\//, "").replace(/\/$/, ""));
+  if (p.page) { kv("Website", fanAddress(p.page)); }
+  if (p.repo) { kv("GitHub", fanAddress(p.repo)); }
   info.appendChild(stats);
   FP.hero.appendChild(info);
 
   var bar = el("div", "bar");
   FP.first = fanFirst(p);
   bar.appendChild(FP.first);
-  if (FP.first.textContent !== "Their page") { bar.appendChild(fanButton("Their page", function () { fanOpenUrl(p, "page"); })); }
-  if (p.community) { bar.appendChild(fanButton("Their community", function () { fanOpenUrl(p, "community"); })); }
+  FAN_LINKS.forEach(function (w) {
+    if (!p[w[0]] || FP.first.dataset.opens === w[0]) { return; }
+    var b = fanButton(w[1], function () { fanOpenUrl(p, w[0]); });
+    b.title = fanAddress(p[w[0]]);
+    bar.appendChild(b);
+  });
   FP.hero.appendChild(bar);
 }
 
@@ -299,7 +317,7 @@ function fanFirst(p) {
     var y = p.yours[0];
     return fanButton("Play " + (y.version || ""), function () {
       L("FAN", "play " + p.name + " " + (y.version || "") + " (" + y.id + ")");
-      launchNow({ id: y.id, title: y.title, platform: y.platform, local: false }, null);
+      launchNow({ id: y.id, title: y.title, platform: y.platform, local: !!y.local }, null);
     }, true);
   }
   if (s === "ready") {
@@ -309,7 +327,11 @@ function fanFirst(p) {
     return fanButton(p.base.wanted ? "On your wanted list" : "Add to wanted list", function () { fanWant(p); }, true,
                      p.base.wanted ? p.base.db.title + " is on your wanted list already" : null);
   }
-  return fanButton("Their page", function () { fanOpenUrl(p, "page"); }, true);
+  // Nothing to do here but read about it: its website first, else its GitHub.
+  var w = p.page ? FAN_LINKS[0] : FAN_LINKS[1];
+  var b = fanButton(w[1], function () { fanOpenUrl(p, w[0]); }, true);
+  b.dataset.opens = w[0];
+  return b;
 }
 
 // The game it is made from onto the wanted list, said only from the server's answer.
@@ -328,11 +350,11 @@ function fanWant(p) {
   });
 }
 
-// The team's page in your own browser: the server opens what the list names, never an address from here.
+// The team's website, GitHub or community in your own browser: the server opens what the list names, never an address from here.
 function fanOpenUrl(p, which) {
   postJson("api/fanprojects.php", { open: p.id, which: which }).then(function (r) {
     if (!r || !r.ok) {
-      showStrip("Their page did not open: " + ((r && r.error) || "no answer"), true);
+      showStrip(p.name + "'s page did not open: " + ((r && r.error) || "no answer"), true);
       return;
     }
     L("FAN", "open " + which + " of " + p.name);
@@ -399,7 +421,7 @@ export function fanPad(k, prev) {
   else if (key !== prev.fd) { fanStep(d[0], d[1]); fanPadAt = now + (padSet.repeatDelayMs || 400); }
   else if (now >= fanPadAt) { fanStep(d[0], d[1]); fanPadAt = now + (padSet.repeatRateMs || 110); }
   if (k.a && !prev.a) { fanPress(); }
-  if (k.x && !prev.x && fanShown[fanAt]) { fanOpenUrl(fanShown[fanAt].p, "page"); }
+  if (k.x && !prev.x && fanShown[fanAt]) { fanOpenUrl(fanShown[fanAt].p, fanShown[fanAt].p.page ? "page" : "repo"); }
   if (k.b && !prev.b) { closeFanPage(); }
   return { a: k.a, b: k.b, x: k.x, y: k.y, fd: key };
 }
