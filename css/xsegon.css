@@ -606,6 +606,10 @@ button.danger:disabled { opacity: .45; cursor: default; }
 .pk-result:hover { background: var(--panel-2); }
 .pk-result.same .t { color: var(--cyan); }
 .pk-result .p { color: var(--mute); font-size: 12px; white-space: nowrap; }
+/* Walked by the keys in a game's Media tab (js/mediatab.js findOnline). */
+.pk-cell.sel { border-color: var(--cyan); box-shadow: 0 0 0 1px var(--cyan); }
+.pk-result.sel { background: var(--panel-2); }
+.pk button.sel { outline: 2px solid var(--cyan); outline-offset: 2px; }
 
 /* Settings > Library > Copy media: a ledger of what the copy costs and holds. */
 .mt-box { border: 1px solid var(--rule); background: var(--panel-2); padding: 6px 14px; margin: 14px 0; }

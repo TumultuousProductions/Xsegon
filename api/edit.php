@@ -33,6 +33,7 @@ if ($source === null) {
 
 $overlay = xs_overrides();
 $mine    = is_array($overlay[$id] ?? null) ? $overlay[$id] : [];
+$before  = $mine;
 
 $reset = $body['reset'] ?? null;
 if ($reset === 'all') {
@@ -77,6 +78,10 @@ if ($mine) {
 }
 
 xs_write_or_fail(xs_overrides_path(), $overlay);
+// A save that changed nothing (the same words again) is no change for Recently changed.
+if ($mine != $before) {
+    xs_changed_note([$id], 'details');
+}
 
 xs_log('EDIT', $id . ' set=' . implode(',', array_keys((array) ($body['set'] ?? []))) . ' reset=' . (is_array($reset) ? implode(',', $reset) : (string) $reset));
 xs_json(['ok' => true, 'id' => $id, 'origin' => $origin, 'edited' => array_keys($mine)]);

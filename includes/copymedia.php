@@ -224,6 +224,8 @@ function xs_cm_copy_video(array $s, array $to, array $from, ?string &$why = null
     $final = xs_put_file($tmp, $dir . DIRECTORY_SEPARATOR . $to['id'], $ext, array_keys(video_types()), $held);
     if ($final === null) {
         $why = 'could not store the video (' . $held . '): the one before it is still there';
+    } else {
+        xs_changed_note([(string) $to['id']], 'video');
     }
     return $final;
 }

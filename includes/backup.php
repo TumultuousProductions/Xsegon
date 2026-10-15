@@ -64,9 +64,9 @@ function xs_backup_parts(): array
         ],
         'settings' => [
             'label' => 'Settings',
-            'help'  => 'Your settings.json, including the paths this Xsegon reads from, the emulator table: where each emulator is and which core runs which console, and the sounds you chose yourself.',
-            // sounds-own: Settings > Sound > Your own sounds (includes\ownsounds.php)
-            'dirs'  => ['sounds-own'],
+            'help'  => 'Your settings.json, including the paths this Xsegon reads from, the emulator table: where each emulator is and which core runs which console, the sounds you chose yourself, and sound packs of your own.',
+            // sounds-own: Settings > Sound > Your own sounds (includes\ownsounds.php); sounds: packs put in by hand (includes\sounds.php)
+            'dirs'  => ['sounds-own', 'sounds'],
             'files' => ['settings.json', 'emulators.json'],
         ],
     ];
@@ -89,7 +89,6 @@ function xs_backup_skipped(): array
         ['path' => 'screenscraper.json', 'why' => 'your ScreenScraper logins: passwords are never put in an archive, type them in again'],
         ['path' => 'screenscraper-shared.dat', 'why' => "Xsegon's own ScreenScraper developer ID, sealed to this computer: fetched again at the next check"],
         ['path' => 'emulators',      'why' => 'the RetroArch Xsegon downloaded for you, and its cores: Settings > Emulators gets them again'],
-        ['path' => 'sounds',         'why' => 'a copy of the sound packs: a pull brings them back'],
         ['path' => 'sounds-staged',  'why' => 'a sound you chose, for the moment it is being checked'],
         ['path' => 'gamesdb.sqlite', 'why' => "a copy of the Games Database: made again from the packed copy"],
         ['path' => 'gamesdb.sqlite.from', 'why' => 'its note of which copy it is'],
@@ -119,7 +118,8 @@ function xs_backup_dir(?array $s = null): string
 function xs_backup_walk(string $rel): array
 {
     $root = xs_data_path($rel);
-    if (!is_dir($root)) {
+    $data = realpath(xs_data_dir());
+    if (!is_dir($root) || $data === false) {
         return [];
     }
     $out = [];
@@ -135,6 +135,11 @@ function xs_backup_walk(string $rel): array
             continue;
         }
         $full = $file->getPathname();
+        // One whose real place is outside data\ (behind a link) is not kept: a restore refuses it.
+        $real = realpath($full);
+        if ($real === false || !xs_inside($real, $data)) {
+            continue;
+        }
         $out[] = $rel . '/' . str_replace(DIRECTORY_SEPARATOR, '/', substr($full, strlen($root) + 1));
     }
     sort($out);

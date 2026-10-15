@@ -561,6 +561,7 @@ export function openPicker(g, kind, label, slotsEl, onBack) {
     if (res.unmatched) { showSearch(); return; }
     showImages(res);
   });
+  return box;
 }
 
 export function initArtEditors() {

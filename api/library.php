@@ -170,6 +170,7 @@ $collections = [
     '@favourites' => 'Favourites',
     '@recent'     => 'Recently played',
     '@added'      => 'Recently added',
+    '@changed'    => 'Recently changed',
     '@unplayed'   => 'Never played',
     '@players'    => 'Two players or more',
     // Games whose file is not on the disk: it empties itself when the files
@@ -186,16 +187,28 @@ if (!isset($addedDays[$addedPeriod])) {
     $addedPeriod = 'month';
 }
 $addedCutoff = date('Y-m-d', strtotime('-' . $addedDays[$addedPeriod] . ' days'));
-$addedEmpty  = 'nothing added ' . ($addedPeriod === 'today' ? 'today'
-    : 'in the last ' . ($addedPeriod === 'year' ? 'year' : $addedDays[$addedPeriod] . ' days'));
+$inLast      = static fn (string $p): string => $p === 'today' ? 'today' : 'in the last ' . ($p === 'year' ? 'year' : $addedDays[$p] . ' days');
+$addedEmpty  = 'nothing added ' . $inLast($addedPeriod);
+// Recently changed, by the same rules: the games whose pictures, video or
+// details came or changed lately (includes\changed.php), its own stretch in
+// view.changedPeriod, ?changed= the same way.
+$changedAt     = xs_changed();
+$changedPeriod = (string) ($_GET['changed'] ?? $s['view']['changedPeriod'] ?? 'week');
+if (!isset($addedDays[$changedPeriod])) {
+    $changedPeriod = 'week';
+}
+$changedCutoff = date('Y-m-d', strtotime('-' . $addedDays[$changedPeriod] . ' days'));
+$changedEmpty  = 'nothing changed ' . $inLast($changedPeriod);
 // Two players or more is MaxPlayers, with PlayMode as the fallback where the
 // number is blank.
-$inCollection = static function (string $which, array $g) use ($recent, $addedCutoff): bool {
+$inCollection = static function (string $which, array $g) use ($recent, $addedCutoff, $changedAt, $changedCutoff): bool {
     $r = $recent[$g['id']] ?? null;
     switch ($which) {
         case '@favourites': return (bool) $g['favourite'];
         case '@recent':     return $r !== null && !empty($r['last']);
         case '@added':      return (string) ($g['added'] ?? '') >= $addedCutoff && ($g['added'] ?? '') !== '';
+        // A time compared as text with a day: "2026-10-15 17:02" is on or after "2026-10-15".
+        case '@changed':    return (string) ($changedAt[$g['id']]['at'] ?? '') >= $changedCutoff;
         case '@unplayed':   return $r === null || (int) $r['count'] === 0;
         case '@players':
             $n = (int) ($g['players'] ?? 0);
@@ -384,6 +397,7 @@ foreach ($games as $g) {
         'plays'     => $recent[$id]['count'] ?? 0,
         'lastPlayed'=> $recent[$id]['last'] ?? null,
         'addedAt'   => substr((string) ($g['added'] ?? ''), 0, 10) ?: null,
+        'changedAt' => $changedAt[$id]['at'] ?? null,  // its pictures, video or details last (includes\changed.php)
         'players'   => (int) ($g['players'] ?? 0),   // 0 where nobody said
         // A Steam game of yours (api\steam.php): its app number, and whether
         // it has a program of its own for Play without Steam.
@@ -492,16 +506,19 @@ if ($roll) {
  */
 $sort    = (string) ($_GET['sort'] ?? $s['view']['sort']);
 // Inside Recently added the default sort is newest first; any other order
-// picked in Arrange By still applies.
+// picked in Arrange By still applies. Recently changed the same, by its time.
 if ($platform === '@added' && ($sort === 'title' || $sort === '')) {
     $sort = 'added';
+}
+if ($platform === '@changed' && ($sort === 'title' || $sort === '')) {
+    $sort = 'changed';
 }
 $reverse = isset($_GET['reverse']) ? $_GET['reverse'] === '1' : !empty($s['view']['sortReverse']);
 $flip    = $reverse ? -1 : 1;
 $textKeys = ['developer' => 'developer', 'publisher' => 'publisher', 'genre' => 'genre', 'platform' => 'platform'];
 // Unrated, never played and undated games have no value to sort by: last either way, like blanks.
 // Play counts and time are counts, so 0 sorts as the smallest.
-$noValueLast = ['rating' => 'rating', 'myrating' => 'myRating', 'recent' => 'lastPlayed', 'added' => 'addedAt',
+$noValueLast = ['rating' => 'rating', 'myrating' => 'myRating', 'recent' => 'lastPlayed', 'added' => 'addedAt', 'changed' => 'changedAt',
                 'players' => 'players', 'cheats' => 'cheats', 'docs' => 'docs', 'hack' => 'hack', 'discs' => 'discs'];
 // How many discs a row's game has: a set's count, 1 for a single disc of a set, 0 for any other game.
 $discCount = static fn(array $r): int => is_array($r['discs']) ? (!empty($r['discs']['set']) ? (int) ($r['discs']['n'] ?? 2) : 1) : 0;
@@ -557,6 +574,9 @@ usort($rows, function ($a, $b) use ($sort, $favFirst, $flip, $textKeys, $textOf,
             break;
         case 'added':
             $c = strcmp((string) $b['addedAt'], (string) $a['addedAt']);
+            break;
+        case 'changed':
+            $c = strcmp((string) $b['changedAt'], (string) $a['changedAt']);
             break;
         case 'playtime':
             $c = $b['seconds'] <=> $a['seconds'];
@@ -690,18 +710,20 @@ xs_json([
         'platforms'   => (object) $platformFiltered,
         'collections' => (object) $collectionFiltered,
     ] : null,
-    // An empty collection is left out (Recently added aside). array_values, or
-    // holes in the keys make json_encode ship an OBJECT, not an array.
+    // An empty collection is left out (Recently added and Recently changed
+    // aside, with their reason). array_values, or holes in the keys make
+    // json_encode ship an OBJECT, not an array.
     'collections' => array_values(array_filter(array_map(
-        static function (string $k, string $label) use ($collectionCounts, $addedEmpty): array {
+        static function (string $k, string $label) use ($collectionCounts, $addedEmpty, $changedEmpty): array {
             $c = ['key' => $k, 'label' => $label, 'count' => $collectionCounts[$k]];
-            if ($k === '@added' && $c['count'] === 0) {
-                $c['note'] = $addedEmpty;
+            $why = ['@added' => $addedEmpty, '@changed' => $changedEmpty];
+            if ($c['count'] === 0 && isset($why[$k])) {
+                $c['note'] = $why[$k];
             }
             return $c;
         },
         array_keys($collections), $collections
-    ), static fn(array $c) => $c['count'] > 0 || $c['key'] === '@added')),
+    ), static fn(array $c) => $c['count'] > 0 || $c['key'] === '@added' || $c['key'] === '@changed')),
     // Moves whenever a console picture might have; the page puts it in those
     // pictures' addresses so the browser can keep them (includes\platform-art.php).
     'platformArtRev' => xs_platform_art_rev($s),

@@ -45,10 +45,10 @@ function xs_messages_unread(?array $msgs = null): int
     return $n;
 }
 
-/** Newest first, capped, written. */
+/** Newest first, capped, written. One with the id of a kept message replaces it: a message kept up to date. */
 function xs_messages_add(array $msg, ?string &$why = null): bool
 {
-    $all = xs_messages();
+    $all = array_values(array_filter(xs_messages(), static fn ($m) => !isset($msg['id']) || ($m['id'] ?? null) !== $msg['id']));
     array_unshift($all, $msg);
     return xs_write_json(xs_messages_path(), array_slice($all, 0, XS_MESSAGES_KEPT), $why);
 }

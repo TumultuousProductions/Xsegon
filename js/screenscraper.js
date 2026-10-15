@@ -321,7 +321,8 @@ export function openScreenScraper() {
     var r = last;
     confirmWindow("Fetch " + ids.length + (ids.length === 1 ? " snap?" : " snaps?"), function (box) {
       box.appendChild(el("p", null, "Each game's video snap from ScreenScraper, found by the game's name and console. A few megabytes each."));
-      box.appendChild(el("p", "confirm-game", "One or two requests a game, so up to " + (ids.length * 2) + " of today's allowance, one at a time"));
+      // A look by name and the video; a game not found that way is looked for three more ways (bin\screenscraper.ps1).
+      box.appendChild(el("p", "confirm-game", "Two requests for a game found by its name, up to five for one that takes looking for, so up to " + (ids.length * 5) + " of today's allowance, one at a time"));
       box.appendChild(el("p", "confirm-note", "From: ScreenScraper (screenscraper.fr), as " + r.account.user));
       box.appendChild(el("p", "confirm-note", "Into: " + r.dir));
       box.appendChild(el("p", "confirm-safe", "A game that already has a video keeps it, and nothing outside that folder is written. Backups leave these out; they can be fetched again."));

@@ -20,7 +20,6 @@ require_once __DIR__ . '/scan.php';
 const XS_NG_GAP_S   = 30;     // the least time between two looks, whoever asks
 const XS_NG_FRESH_S = 30;     // a file younger than this may still be copying
 const XS_NG_MOST    = 100;    // more new games than this at once is a choice for Scan for Games
-const XS_NG_BEAT_S  = 120;    // a look not heard from for this long is taken as gone
 const XS_NG_CHECKS  = 30;     // cartridges checked against their console's list in one look
 
 function xs_ng_job_path(): string  { return xs_data_path('newgames-job.json'); }
@@ -37,19 +36,10 @@ function xs_ng_on(): bool
     return (xs_settings()['library']['addNewGames'] ?? true) !== false;
 }
 
-/** A look at work: its worker alive and heard from lately. A dead one never holds the next. */
+/** A look at work: its worker alive, however long it takes on a slow drive. A dead one never holds the next. */
 function xs_ng_busy(array $job): bool
 {
-    if (($job['state'] ?? '') !== 'running') {
-        return false;
-    }
-    $started = (int) ($job['started'] ?? 0);
-    if (time() - (int) ($job['beat'] ?? $started) > XS_NG_BEAT_S) {
-        return false;
-    }
-    $pid = (int) ($job['pid'] ?? 0);
-    // Asked for and not begun: a worker takes a moment to start.
-    return $pid === 0 ? time() - $started < 15 : xs_pid_alive($pid, $started);
+    return ($job['state'] ?? '') === 'running' && xs_job_dead($job, xs_ng_job_path()) === null;
 }
 
 /**
@@ -200,18 +190,33 @@ function xs_ng_unsure(array $found, array $left): array
     return array_diff_key($all, $told);
 }
 
-/** Named in the mailbox, once: the file of what was named is kept first, so a failed write is not said again at every look. */
-function xs_ng_tell(array $unsure, int $many): bool
+/**
+ * Named in the mailbox, once: the file of what was named is kept first, so a failed write is not said again at every look.
+ * $many comes back 0 when that many was said before, so the strip does not say it again either.
+ */
+function xs_ng_tell(array $unsure, int &$many): bool
 {
-    if (!$unsure && $many === 0) {
-        return false;
-    }
     $told = xs_read_json(xs_ng_told_path(), []);
     $told = is_array($told) ? $told : [];
+    // So many at once is one message, said again only when the number changes.
+    $was = (int) ($told['many'] ?? 0);
+    if ($many === $was) {
+        $many = 0;
+    } elseif ($many === 0) {
+        unset($told['many']);               // taken in by Scan for Games: the next such batch is said again
+    } else {
+        $told['many'] = $many;
+    }
+    if (!$unsure && $many === 0) {
+        if ($was && !isset($told['many'])) {
+            xs_write_json(xs_ng_told_path(), $told);
+        }
+        return false;
+    }
     foreach (array_keys($unsure) as $k) {
         $told[$k] = date('c');
     }
-    if ($unsure && !xs_write_json(xs_ng_told_path(), $told)) {
+    if (!xs_write_json(xs_ng_told_path(), $told)) {
         return false;
     }
     require_once __DIR__ . '/news.php';
@@ -222,7 +227,7 @@ function xs_ng_tell(array $unsure, int $many): bool
         : 'Xsegon added the new games it was sure of. ' . ($n === 1 ? 'This one needs' : 'These need') . ' you: Games > Scan for Games shows '
           . ($n === 1 ? 'it' : 'them') . ' with what to do.';
     return xs_messages_add([
-        'id'    => 'msg-' . bin2hex(random_bytes(6)),
+        'id'    => $many > 0 ? 'msg-newgames-many' : 'msg-' . bin2hex(random_bytes(6)),
         'at'    => date('c'),
         'kind'  => 'tip',
         'title' => $many > 0 ? $many . ' new games to look over' : ($n === 1 ? 'A file Xsegon was not sure of' : $n . ' files Xsegon was not sure of'),

@@ -229,8 +229,9 @@ $jsV = $jsV ?: time();
       </span>
       <select id="platform" aria-label="Platform" autocomplete="off"><option value="">All platforms</option></select>
     </span>
-    <!-- How far back Recently added looks. Only up while that collection is
-         open (js\library.js paintAddedPeriod); the choices are the setting's. -->
+    <!-- How far back Recently added, or Recently changed, looks: up only while
+         one of them is open, and that one's (js\library.js paintAddedPeriod).
+         The two settings offer the same choices. -->
     <select id="added" aria-label="Recently added goes back" title="How far back Recently added looks" autocomplete="off" hidden>
       <?php foreach (xs_settings_schema()['view']['addedPeriod']['options'] as $k => $label): ?>
         <option value="<?= $k ?>"<?= ($s['view']['addedPeriod'] ?? 'month') === $k ? ' selected' : '' ?>><?= $label ?></option>

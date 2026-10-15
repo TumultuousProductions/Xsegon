@@ -1101,7 +1101,8 @@ module.exports = async function (b, check) {
       }
       return { state: "still running after 20 s" };
     };
-    const firstMsg = () => (JSON.parse(fs.readFileSync(msgPath, "utf8").replace(/^﻿/, "") || "[]")[0] || {});
+    const allMsgs = () => JSON.parse(fs.readFileSync(msgPath, "utf8").replace(/^﻿/, "") || "[]");
+    const firstMsg = () => (allMsgs()[0] || {});
     fs.rmSync(NEWFIX, { recursive: true, force: true });
     try {
       putOld("systems/saturn/Xsnew Plain (USA).chd");
@@ -1131,6 +1132,10 @@ module.exports = async function (b, check) {
             [m1.title, m1.opens, (m1.items || []).slice().sort(), j1.told],
             ["3 files Xsegon was not sure of", ["scan"], ["Xsnew Duo (USA) (Disc 1).cue: a disc set waiting for its playlist",
               "Xsnew Packed (USA).7z: an archive to unpack", "Xsnew Racer (Hack).chd: its name says it may be a hack"], 3]);
+      // Nobody pressed anything for the one it added: that is news, with the way to Recently added.
+      const a1 = allMsgs()[1] || {};
+      check("and a message names the game it added, opening Recently added",
+            [a1.title, a1.show, (a1.items || []).map((l) => l.split("  (")[0])], ["A new game was added", "@added", ["Xsnew Plain"]]);
 
       const soon = await api("api/newgames.php", { start: "test" });
       check("asked again at once, the server says no: once in thirty seconds at the most", [soon.started, /seconds ago$/.test(soon.no || "")], [false, true]);
@@ -1142,16 +1147,22 @@ module.exports = async function (b, check) {
       check("never while a game is running", [playing.started, playing.no], [false, "a game is running"]);
 
       fs.utimesSync(arriving, hourAgo, hourAgo);
-      const msgsBefore = JSON.parse(fs.readFileSync(msgPath, "utf8").replace(/^﻿/, "") || "[]").length;
+      const idsBefore = new Set(allMsgs().map((m) => m.id));
       const j2 = await look("again");
       check("the file that was still arriving comes in on the next look", [j2.added, j2.titles, j2.fresh], [1, ["Xsnew Arriving"], 0]);
-      check("and what was named once is not named again",
-            [j2.told, JSON.parse(fs.readFileSync(msgPath, "utf8").replace(/^﻿/, "") || "[]").length], [0, msgsBefore]);
+      // By id, not by count: the mailbox keeps so many, and a full one drops its oldest.
+      check("and what was named once is not named again: the one new message is the game that came",
+            [j2.told, allMsgs().filter((m) => !idsBefore.has(m.id)).map((m) => m.title)], [0, ["A new game was added"]]);
 
       for (let i = 0; i < 101; i++) { putOld("systems/saturn/Xsnew Many " + i + " (USA).chd"); }
       const j3 = await look();
       check("more than a hundred new games at once: none added, left for Scan for Games and named in the mailbox",
             [j3.added, j3.many, firstMsg().title], [0, 101, "101 new games to look over"]);
+      const msgCount = () => JSON.parse(fs.readFileSync(msgPath, "utf8").replace(/^﻿/, "") || "[]").length;
+      const msgsMany = msgCount();
+      const j3b = await look("again");
+      check("the same hundred and one at the next look: said neither in Messages nor on the strip again (roadmap AR25)",
+            [j3b.added, j3b.many, msgCount()], [0, 0, msgsMany]);
       for (let i = 0; i < 101; i++) { fs.rmSync(path.join(NEWFIX, "systems", "saturn", "Xsnew Many " + i + " (USA).chd"), { force: true }); }
 
       /* The page: a look once it is up, and one when the window comes back

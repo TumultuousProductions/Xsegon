@@ -21,7 +21,22 @@ $utf8 = New-Object System.Text.UTF8Encoding($false)
 $curl = Join-Path $env:SystemRoot 'System32\curl.exe'
 
 function Read-Job { ConvertFrom-Json ([IO.File]::ReadAllText($Job, $utf8)) }
-function Save-Job($j) { [IO.File]::WriteAllText($Job, ($j | ConvertTo-Json -Depth 6), $utf8) }
+# Written beside and swapped in, so the page never reads it half written; a swap Windows refuses
+# while the server reads is tried again, and at the last it is written in place as before.
+function Save-Job($j) {
+    $text = $j | ConvertTo-Json -Depth 6
+    $tmp = $Job + '.part'
+    [IO.File]::WriteAllText($tmp, $text, $utf8)
+    for ($try = 0; $try -lt 20; $try++) {
+        try {
+            # [NullString]: PowerShell would pass $null as "", which Replace refuses as a path.
+            if ([IO.File]::Exists($Job)) { [IO.File]::Replace($tmp, $Job, [NullString]::Value) } else { [IO.File]::Move($tmp, $Job) }
+            return
+        } catch { Start-Sleep -Milliseconds 50 }
+    }
+    Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+    [IO.File]::WriteAllText($Job, $text, $utf8)
+}
 function Set-Field($o, $name, $value) { $o | Add-Member -NotePropertyName $name -NotePropertyValue $value -Force }
 
 # Native tools never stop the script: in Windows PowerShell 5.1 stderr

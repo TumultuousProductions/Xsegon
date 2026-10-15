@@ -168,6 +168,14 @@ module.exports = async function (b, check) {
     await b.ev(`(() => { const i = document.querySelector("#fanpage input[type=search]"); i.value = "works"; i.dispatchEvent(new Event("input", { bubbles: true })); })()`);
     check("typing finds a project", await b.waitFor(`document.querySelectorAll("#fanpage .tile").length === 1`, 3000));
     await b.ev(`(() => { const i = document.querySelector("#fanpage input[type=search]"); i.value = ""; i.dispatchEvent(new Event("input", { bubbles: true })); i.blur(); })()`);
+    // Nothing passes the filters: Enter presses nothing, not the Play of the project selected before (roadmap AR19).
+    await b.ev(`[...document.querySelectorAll("#fanpage .tile")].find((t) => t.textContent.includes("Test yours")).click()`);
+    await b.ev(`(() => { window.__fanAsked = []; window.__fanFetch = window.fetch; window.fetch = function (u, o) { window.__fanAsked.push(String(u)); return window.__fanFetch.call(this, u, o); }; })()`);
+    await b.ev(`(() => { const i = document.querySelector("#fanpage input[type=search]"); i.value = "no project is called this"; i.dispatchEvent(new Event("input", { bubbles: true })); i.blur(); })()`);
+    await b.key("Enter");
+    check("nothing passes the filters: Enter presses nothing",
+      await b.ev(`[document.querySelectorAll("#fanpage .tile").length, window.__fanAsked.filter((u) => /launch|fanprojects|wanted/.test(u)).length]`), [0, 0]);
+    await b.ev(`(() => { window.fetch = window.__fanFetch; const i = document.querySelector("#fanpage input[type=search]"); i.value = ""; i.dispatchEvent(new Event("input", { bubbles: true })); i.blur(); })()`);
     await b.key("Escape");
     check("Escape goes back to the consoles screen",
       await b.waitFor(`document.getElementById("fanpage").hidden && !document.getElementById("syswall").hidden`, 5000));

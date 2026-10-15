@@ -41,7 +41,11 @@ register_shutdown_function(static function () use (&$job, $save): void {
     }
 });
 $stopped = static fn (): bool => is_file(xs_vp_stop_path());
-$end = static function (string $state, string $words) use (&$job, $save): void {
+// However it ends, the videos that came go to Recently changed and are said in Messages ($s and $plan are made below).
+$end = static function (string $state, string $words) use (&$job, $save, &$s, &$plan): void {
+    if (!empty($job['added']) && is_array($plan)) {
+        xs_changed_tell('the video package', xs_changed_videos_by_name($s, array_column($plan, 'game'), (int) ($job['started'] ?? 0)));
+    }
     $job['state'] = $state;
     $job['phase'] = 'end';
     $job[$state === 'done' ? 'said' : 'error'] = $words;

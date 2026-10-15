@@ -1,6 +1,6 @@
 // The server, from outside the page: shape of the answers and the guards.
 "use strict";
-const { api, BASE, DATA } = require("./lib");
+const { api, BASE, DATA, Guard } = require("./lib");
 const fs = require("fs");
 const path = require("path");
 const net = require("net");
@@ -93,7 +93,7 @@ module.exports = async function (b, check) {
   const df = await api("api/reveal.php", { what: "data", dry: true });
   // the server's own data folder: the run's copy (tests\sandbox.js), or data\ itself
   check("the data folder can be opened, and is Xsegon's own", df.ok === true && require("path").resolve(df.folder || "") === require("path").resolve(require("./lib").DATA));
-  check("the status says nothing of a wiki: that is the maker's own part, in private\\", st.wiki, undefined);
+  check("the status says nothing of a wiki: that is the maker's own part, in private\\", "wiki" in st, false);
   // The Games Database pass answers for either scope on any library.
   check("the pass answers for scanned games", Array.isArray((await api("api/fill.php?scope=scanned")).games));
   check("and for imported games LaunchBox never matched", Array.isArray((await api("api/fill.php?scope=unmatched")).games));
@@ -189,7 +189,92 @@ module.exports = async function (b, check) {
     // Something real arrived in the last 30 days, so it is not empty.
     check("with the scratch game gone, Recently added is back to what was there", !!gone && gone.count === recentBefore);
   }
-  check("the other collections still hide when empty", after.collections.every((c) => c.count > 0 || c.key === "@added"));
+  check("the other collections still hide when empty", after.collections.every((c) => c.count > 0 || c.key === "@added" || c.key === "@changed"));
+
+  /* Recently changed: the games whose pictures, video or details came or
+     changed lately, read from data\changed.json, which whatever saves one
+     writes (includes\changed.php). The run's copy starts with this PC's
+     record, so these checks write their own and put it back. */
+  const changedF = path.join(DATA, "changed.json");
+  const chKeep = new Guard(["changed.json", "changed-fetches.json", "steamvid-job.json", "messages.json"]);
+  const daysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return d.toLocaleDateString("sv") + " 00:00:00"; };
+  const setChanged = (rec) => fs.writeFileSync(changedF, JSON.stringify(rec));
+  const record = () => JSON.parse(fs.readFileSync(changedF, "utf8"));
+  const chCol = async (q) => ((await api("api/library.php" + (q || ""))).collections || []).find((c) => c.key === "@changed");
+  const [chOld, chNew, chEdit] = lib.games.filter((x) => !x.local && !x.versions && !x.edited);
+  const vsDir = path.join(DATA, "videos-steam"), vsJob = path.join(DATA, "steamvid-job.json");
+  const vsHad = fs.existsSync(vsDir);
+  const vsNew = path.join(vsDir, "xs-changed-came.mp4"), vsOld = path.join(vsDir, "xs-changed-had.mp4");
+  let chOwn = null;
+  try {
+    setChanged({});
+    const chEmpty = await chCol();
+    check("empty, Recently changed stays and says why", [!!chEmpty && chEmpty.count, chEmpty && chEmpty.note], [0, "nothing changed in the last 7 days"]);
+    setChanged({ [chOld.id]: { at: daysAgo(10), what: "video" }, [chNew.id]: { at: daysAgo(0), what: "box" }, "xs-changed-year": { at: daysAgo(400), what: "logo" } });
+    check("it holds what changed in its stretch: the week the run sets", (await chCol()).count, 1);
+    const chTwo = await api("api/library.php?platform=%40changed&changed=twoweeks");
+    check("two weeks holds both, the newest change first", chTwo.games.map((x) => x.id), [chNew.id, chOld.id]);
+    check("rows carry when they last changed", chTwo.games[0].changedAt, daysAgo(0));
+    check("a word that is no choice reads as the week", (await chCol("?changed=nonsense")).count, 1);
+    check("the settings offer the same stretches as Recently added", Object.keys((await api("api/settings.php")).schema.view.changedPeriod.options), STRETCHES);
+    await api("api/settings.php", { view: { changedPeriod: "month" } });
+    const chMonth = await api("api/library.php");
+    check("its choice is kept, and is its own", [(chMonth.collections.find((c) => c.key === "@changed") || {}).count, chMonth.addedSince], [2, stretch.month.since]);
+    await api("api/settings.php", { view: { changedPeriod: "nonsense" } });
+    check("and only a real choice is", (await chCol()).count, 2);
+    await api("api/settings.php", { view: { changedPeriod: "week" } });
+    // Edit Metadata: a save that changes a detail is noted; the same words again are not.
+    const sameAgain = await api("api/edit.php", { id: chEdit.id, set: { genre: chEdit.genre } });
+    check("an edit that changes nothing is no change", [sameAgain.ok, chEdit.id in record()], [true, false]);
+    const edited = await api("api/edit.php", { id: chEdit.id, set: { genre: "Xsegon Changed Scratch" } });
+    const chRec = record();
+    check("an edited detail is", [edited.ok, (chRec[chEdit.id] || {}).what], [true, "details"]);
+    check("and a note over a year old went at that write", "xs-changed-year" in chRec, false);
+    check("the game just edited leads Recently changed", ((await api("api/library.php?platform=%40changed")).games[0] || {}).id, chEdit.id);
+    /* A picture set by hand, on a scratch game of the run's own: an upload
+       drops the game's thumbnail, and the copy's thumbs are the real ones. */
+    chOwn = await api("api/local.php", { set: { title: "Xsegon Changed Scratch", url: BASE + "/" } }, "POST");
+    const dot = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==", "base64");
+    const up = await (await fetch(BASE + "/api/art.php?id=" + chOwn.game.id + "&kind=logo&part=0&of=1", { method: "POST", headers: { Origin: BASE }, body: dot })).json();
+    check("a picture set by hand is a change, noted with its kind", [up.ok, (record()[chOwn.game.id] || {}).what], [true, "logo"]);
+    /* A Steam trailers fetch is PowerShell, which writes no note: once it has
+       ended, the main server's poll notes its trailers, each at its file's
+       time, and says so in Messages with the way to Recently changed. Ids of
+       no game, so no real trailer is touched. */
+    fs.mkdirSync(vsDir, { recursive: true });
+    fs.writeFileSync(vsNew, "x");
+    fs.writeFileSync(vsOld, "x");
+    const twoHours = new Date(Date.now() - 2 * 3600 * 1000);
+    fs.utimesSync(vsOld, twoHours, twoHours);
+    setChanged({});
+    const vsMail = async () => ((await api("api/news.php")).messages || []).filter((m) => m.show === "@changed" && /from Steam$/.test(m.title || ""));
+    const mailBefore = (await vsMail()).length;
+    fs.writeFileSync(vsJob, JSON.stringify({ state: "done", started: Math.floor(Date.now() / 1000) - 60,
+      games: [{ id: "xs-changed-came", title: "Xsegon Changed Came", state: "done" }, { id: "xs-changed-had", title: "Xsegon Changed Had", state: "done" },
+              { id: "xs-changed-none", title: "Xsegon Changed None", state: "none" }] }));
+    await api("api/status.php");
+    const vsRec = record(), cameAt = fs.statSync(vsNew).mtime;
+    check("a Steam fetch that ended: the trailer that came is noted, at its file's time", vsRec["xs-changed-came"],
+          { at: cameAt.toLocaleDateString("sv") + " " + cameAt.toLocaleTimeString("sv"), what: "video" });
+    check("one there before it started is not news, nor a game it found none for", ["xs-changed-had" in vsRec, "xs-changed-none" in vsRec], [false, false]);
+    const told = (await vsMail())[0] || {};
+    check("and Messages says what came, with the way to Recently changed",
+          [told.title, told.items, told.body], ["A trailer came from Steam", ["Xsegon Changed Came"], "Recently changed holds the game that got it."]);
+    setChanged({});
+    await api("api/status.php");
+    check("a fetch is seen to once: no note and no message at the next poll", [Object.keys(record()).length, (await vsMail()).length], [0, mailBefore + 1]);
+  } finally {
+    await api("api/edit.php", { id: chEdit.id, reset: ["genre"] });
+    await api("api/settings.php", { view: { changedPeriod: "week" } });
+    if (chOwn && chOwn.game) {
+      await api("api/art.php?id=" + chOwn.game.id + "&kind=logo&reset=1", null, "POST");
+      await api("api/local.php", { id: chOwn.game.id, remove: true }, "POST");
+    }
+    fs.rmSync(vsNew, { force: true });
+    fs.rmSync(vsOld, { force: true });
+    if (!vsHad) { fs.rmSync(vsDir, { recursive: true, force: true }); }
+    chKeep.restore();
+  }
 
   /* Two players or more: MaxPlayers of 2 or more, or a PlayMode saying
      Multiplayer or Cooperative where the number is blank. The count shown is

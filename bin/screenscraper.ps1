@@ -29,7 +29,22 @@ $utf8 = New-Object System.Text.UTF8Encoding($false)
 $curl = Join-Path $env:SystemRoot 'System32\curl.exe'
 
 function Read-Job { ConvertFrom-Json ([IO.File]::ReadAllText($Job, $utf8)) }
-function Save-Job($j) { [IO.File]::WriteAllText($Job, ($j | ConvertTo-Json -Depth 6), $utf8) }
+# Written beside and swapped in, so the page never reads it half written; a swap Windows refuses
+# while the server reads is tried again, and at the last it is written in place as before.
+function Save-Job($j) {
+    $text = $j | ConvertTo-Json -Depth 6
+    $tmp = $Job + '.part'
+    [IO.File]::WriteAllText($tmp, $text, $utf8)
+    for ($try = 0; $try -lt 20; $try++) {
+        try {
+            # [NullString]: PowerShell would pass $null as "", which Replace refuses as a path.
+            if ([IO.File]::Exists($Job)) { [IO.File]::Replace($tmp, $Job, [NullString]::Value) } else { [IO.File]::Move($tmp, $Job) }
+            return
+        } catch { Start-Sleep -Milliseconds 50 }
+    }
+    Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+    [IO.File]::WriteAllText($Job, $text, $utf8)
+}
 function Set-Field($o, $name, $value) { $o | Add-Member -NotePropertyName $name -NotePropertyValue $value -Force }
 
 # "Demon's Crest" and "Demon_s Crest" are both "demonscrest" (includes\art.php).
@@ -208,6 +223,12 @@ try {
         $Halts.blocked  = "ScreenScraper says Xsegon's own developer ID may not be used any more"
     }
     New-Item -ItemType Directory -Force -Path $j.dir | Out-Null
+    # A fetch ended by a crash or a shutdown leaves its folder, logins and all. One untouched for an
+    # hour is gone; a live fetch writes in its own at every ask, so another copy's is never taken.
+    $stale = (Get-Date).AddHours(-1)
+    Get-ChildItem -LiteralPath $env:TEMP -Directory -Filter 'xsegon-screenscraper-*' -ErrorAction SilentlyContinue |
+        Where-Object { $_.LastWriteTime -lt $stale } |
+        ForEach-Object { Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction SilentlyContinue }
     $tmp = Join-Path $env:TEMP ('xsegon-screenscraper-' + [guid]::NewGuid().ToString('N'))
     New-Item -ItemType Directory -Path $tmp | Out-Null
     Add-Type -AssemblyName System.Web.Extensions

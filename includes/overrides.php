@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/boot.php';
 require_once __DIR__ . '/art.php';
+require_once __DIR__ . '/changed.php';   // Recently changed: a picture stored here is noted
 
 /** field => [type, max length]. The order is the order the dialog shows. */
 function xs_override_fields(): array
@@ -357,6 +358,7 @@ function xs_own_art_store(string $id, string $kind, string $bytes, bool $liftHid
             xs_write_json(xs_data_path('art-hidden.json'), $hidden ?: new stdClass());
         }
     }
+    xs_changed_note([$id], $kind);
     return ['width' => $info[0], 'height' => $info[1], 'bytes' => strlen($bytes), 'rev' => (int) filemtime($final)];
 }
 

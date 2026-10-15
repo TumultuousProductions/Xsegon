@@ -512,22 +512,17 @@ function xs_ss_games(array $s, array $library): array
 /** The job as the page sees it. It never holds a login or an address. */
 function xs_ss_job(): ?array
 {
-    $job = xs_read_json(xs_ss_job_path(), null);
+    // Settled: a read at the moment the fetcher saves would let the window lose its fetch.
+    $job = xs_read_json_settled(xs_ss_job_path(), null);
     if (!is_array($job)) {
         return null;
     }
-    // A worker that died would leave "running" for ever; a whole library of snaps is well inside six hours.
+    // A worker that died would leave "running" for ever. One alive is at work however long a large fetch takes.
     if (($dead = xs_job_dead($job, xs_ss_job_path())) !== null) {
         $job['state'] = 'failed';
         $job['error'] = 'it stopped part way (' . $dead . '); start it again and it carries on where it stopped';
         xs_write_json(xs_ss_job_path(), $job);
         xs_log('SSCR', 'the snap fetch stopped: ' . $dead . '; marked failed');
-    }
-    if (($job['state'] ?? '') === 'running' && time() - (int) ($job['started'] ?? 0) > 21600) {
-        $job['state'] = 'failed';
-        $job['error'] = 'it stopped answering; start it again and it carries on where it stopped';
-        xs_write_json(xs_ss_job_path(), $job);
-        xs_log('SSCR', 'the snap fetch stopped answering (started ' . date('H:i', (int) ($job['started'] ?? 0)) . '); marked failed');
     }
     $count = array_count_values(array_map(static fn ($g) => (string) ($g['state'] ?? ''), $job['games'] ?? []));
     $tally = ($count['done'] ?? 0) . ' saved, ' . ($count['none'] ?? 0) . ' not on ScreenScraper, '

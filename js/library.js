@@ -63,7 +63,8 @@ export function load(opts) {
   var params = new URLSearchParams();
   if ($q.value.trim()) { params.set("q", $q.value.trim()); }
   if ($platform.value) { params.set("platform", $platform.value); }
-  params.set("added", addedPeriod());      // sent, like reverse: the saved setting may not have landed yet
+  params.set("added", periodOf("@added"));      // sent, like reverse: the saved setting may not have landed yet
+  params.set("changed", periodOf("@changed"));
   FILTERS.forEach(function (f) { if (filters[f.key]) { params.set(f.key, "1"); } });
   if (filters.myrating) { params.set("myrating", String(filters.myrating)); }
   if (filters.fails) { params.set("fails", "1"); }
@@ -261,25 +262,36 @@ function paintPlatformFace() {
   next();
 }
 
-/* How far back Recently added looks (view.addedPeriod). The dropdown beside
-   the picker is up only while that collection is open; on the consoles
-   screen the collection's own menu offers the same choices. */
-export function addedPeriod() { return (S.view && S.view.addedPeriod) || "month"; }
+/* How far back Recently added and Recently changed look (view.addedPeriod,
+   view.changedPeriod), each its own. The dropdown beside the picker is up
+   only while one of them is open, and is that one's; on the consoles screen
+   each collection's own menu offers the same choices. */
+var PERIODS = { "@added": { key: "addedPeriod", none: "month", name: "Recently added" },
+                "@changed": { key: "changedPeriod", none: "week", name: "Recently changed" } };
+// null for a collection with no stretch of its own.
+export function periodOf(c) { var p = PERIODS[c]; return p ? (S.view && S.view[p.key]) || p.none : null; }
 // The choices as the setting words them: [key, label].
 export function addedPeriods() {
   return Array.prototype.map.call($added.options, function (o) { return [o.value, o.text]; });
 }
 function paintAddedPeriod() {
-  $added.hidden = $platform.value !== "@added";
-  $added.value = addedPeriod();
+  var p = PERIODS[$platform.value];
+  $added.hidden = !p;
+  if (!p) { return; }
+  $added.value = periodOf($platform.value);
+  $added.title = "How far back " + p.name + " looks";
+  $added.setAttribute("aria-label", p.name + " goes back");
 }
-export function setAddedPeriod(v) {
-  if (v === addedPeriod()) { return; }
-  L("SET", "addedPeriod " + v);
+export function setPeriod(c, v) {
+  var p = PERIODS[c];
+  if (!p || v === periodOf(c)) { return; }
+  L("SET", p.key + " " + v);
   S.view = S.view || {};
-  S.view.addedPeriod = v;
+  S.view[p.key] = v;
   sound("select");
-  saveSetting({ view: { addedPeriod: v } }, "How far back Recently added looks");
+  var w = {};
+  w[p.key] = v;
+  saveSetting({ view: w }, "How far back " + p.name + " looks");
   // The consoles screen draws no rows, only its numbers: ask, then draw the rim again.
   if (sysStage === "wall") {
     load({ noDraw: true }).then(function () { if (sysStage === "wall") { repaintWall(); } });
@@ -363,6 +375,7 @@ function noteShowcases() {
     if (!sysShow["@recent"] || score > sysShow["@recent"]._score) { sysShow["@recent"] = g; sysShow["@unplayed"] = g; }
     // Recently added shows the newest arrival that has any scenery at all.
     if (g.addedAt && (!sysShow["@added"] || g.addedAt > sysShow["@added"].addedAt)) { sysShow["@added"] = g; }
+    if (g.changedAt && (!sysShow["@changed"] || g.changedAt > sysShow["@changed"].changedAt)) { sysShow["@changed"] = g; }
     // Two players or more shows whatever seats the most people, so the wall
     // picks a real couch game rather than the first two-player game it met.
     // Rating breaks the tie among the many that seat exactly four.

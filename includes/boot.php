@@ -163,6 +163,27 @@ function xs_read_json(string $path, $fallback = null)
     return $val;
 }
 
+/**
+ * A file a PowerShell fetcher rewrites as it goes: a read caught as a new copy
+ * is swapped in gets nothing, so it is tried again, up to five times 25 ms
+ * apart, before it counts as gone. A file not there with no new copy waiting
+ * (<file>.part) is not there at all, and answers at once.
+ */
+function xs_read_json_settled(string $path, $fallback = null)
+{
+    for ($try = 0; $try < 5; $try++) {
+        if (!is_file($path) && !is_file($path . '.part')) {
+            return $fallback;
+        }
+        $val = xs_read_json($path, null);
+        if ($val !== null) {
+            return $val;
+        }
+        usleep(25000);
+    }
+    return xs_read_json($path, $fallback);
+}
+
 /* ---- a file of yours that cannot be read ----------------------------------
  * The files a backup keeps. One stray comma makes one unreadable, and read as empty the
  * next save would write a nearly empty file over it. So such a file is never written over
