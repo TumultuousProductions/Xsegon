@@ -3,8 +3,8 @@
  * /api/fanprojects.php - the Fan projects page (includes\fanprojects.php, js\fanprojects.js).
  *
  *   GET                                       every project and where it stands for this library
- *   POST {"open": "<project id>", "which": "page" | "community"}
- *                                             that project's page opened in the default browser
+ *   POST {"open": "<project id>", "which": "page" | "repo" | "community"}
+ *                                             that project's website, GitHub or community opened in the default browser
  *
  * The address is never taken from the request: it comes out of the shipped list, so only
  * a listed team's own page can be opened. A test server opens nothing.
