@@ -16,6 +16,7 @@ import { sound } from "./sound.js";
 import { $added, $count, $details, $platform, $q, $sort, S, games, sel, setAddedSince, setGames, setSel, sysStage, view } from "./state.js";
 import { repaintWall } from "./systems.js";
 import { el } from "./util.js";
+import { setViewsLocked } from "./viewlock.js";
 import { render, setCarNodes, setWheelNodes } from "./views.js";
 
 // ---------- library ----------
@@ -204,6 +205,8 @@ function took(data, seq, draw) {
     if (data.tags) { tagsAll = data.tags; }
     if (data.platformArtRev) { platformArtRev = data.platformArtRev; }
     if (data.addedSince) { setAddedSince(data.addedSince); }
+    // Wheel, Carousel and the consoles screen: open the moment an emulator is in (js\viewlock.js).
+    if (typeof data.viewsLocked === "boolean") { setViewsLocked(data.viewsLocked); }
     setHackAsking(data.hackAsk);
     // The dropdown is filled again when the filters or what it lists change,
     // still naming what it named: a value with no option reads as every game.

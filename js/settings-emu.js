@@ -6,6 +6,7 @@ import { iconEl } from "./icons.js";
 import { showStrip } from "./launch.js";
 import { L, api, postJson } from "./log.js";
 import { noGamesBox } from "./nogames.js";
+import { raButton, raLabel } from "./raoffer.js";
 import { browseOnly } from "./scan.js";
 import { closeSettings, openSettings } from "./settings-ui.js";
 import { openGuide, setupRows } from "./setup.js";
@@ -30,6 +31,8 @@ export function emulatorsPage(part, actionRow) {
   var lacking = el("p", "mt-note warn emu-without");
   lacking.hidden = true;
   top.appendChild(lacking);
+  var raHold = top.appendChild(el("div", "bar emu-ra"));
+  raHold.hidden = true;
   top.appendChild(actionRow("Add an emulator",
     "A program of your own for a console, such as Dolphin, PCSX2 or DuckStation. Choose it, select its consoles, and their games start in it.",
     "Add...", function () { openAdd(null); }));
@@ -41,8 +44,28 @@ export function emulatorsPage(part, actionRow) {
   // the list is painted afresh after a save, which would wipe the row's word of it.
   var saved = {};
 
+  /* Consoles with games and nothing to start them. Those RetroArch plays are said
+     with its press: Set it all up beside the line, or the RetroArch row above it. */
+  function paintLacking(res) {
+    var without = res.without || [];
+    var byRa = without.filter(function (c) { return c.ra; });
+    var named = function (list) { return list.map(function (c) { return c.name + " (" + c.games + (c.games === 1 ? " game" : " games") + ")"; }).join(", "); };
+    var rest = without.length > byRa.length ? " Add an emulator below for " + (byRa.length ? "the others" : without.length === 1 && without[0].games === 1 ? "it" : "them") + "." : "";
+    lacking.hidden = !without.length;
+    lacking.textContent = !without.length ? ""
+      : byRa.length && res.raOffer === "coming" ? "RetroArch is being set up: " + named(byRa) + " play once it is in." + rest
+      : byRa.length && raLabel(res.raOffer) ? "No emulator yet for " + named(without) + ". RetroArch plays " + (byRa.length === without.length ? (without.length === 1 ? "it" : "them") : byRa.map(function (c) { return c.name; }).join(", ")) +
+        (res.raOffer === "setup" ? ": Set it all up gets it." : ": the RetroArch row above gets it.") + rest
+      : "No emulator yet for " + named(without) + ". Add one below and " + (without.length === 1 && without[0].games === 1 ? "it becomes" : "they become") + " playable.";
+    raHold.textContent = "";
+    var ra = byRa.length && res.raOffer === "setup" ? raButton("setup", "Settings > Emulators", "emu-ra-btn") : null;
+    raHold.hidden = !ra;
+    if (ra) { raHold.appendChild(ra); }
+  }
+
   function paint(res) {
     box.textContent = "";
+    if (res.ok) { paintLacking(res); }
     if (!res.ok || !res.programs.length) {
       note.textContent = hasLaunchBox
         ? "No emulator table yet. Re-read your library once (Library > Import) and Xsegon will write one from LaunchBox."
@@ -112,12 +135,6 @@ export function emulatorsPage(part, actionRow) {
       ? "Xsegon's own table, covering " + res.consoles + " consoles (" + res.yours +
         " of them on this machine). Moving an emulator takes effect on the next launch, with no re-import."
       : "Read live from LaunchBox. It becomes Xsegon's own the next time you import.";
-    var without = res.without || [];
-    lacking.hidden = !without.length;
-    lacking.textContent = without.length
-      ? "No emulator yet for " + without.map(function (c) { return c.name + " (" + c.games + (c.games === 1 ? " game" : " games") + ")"; }).join(", ") +
-        ". Add one below and " + (without.length === 1 && without[0].games === 1 ? "it becomes" : "they become") + " playable."
-      : "";
     // With no games, the emulators are not what is missing: say what is.
     var had = mine.querySelector(".nogames");
     if (had) { had.remove(); }

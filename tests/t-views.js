@@ -29,9 +29,10 @@ module.exports = async function (b, check) {
   check("consoles screen: page cannot scroll", await b.ev(`document.body.classList.contains("on-wall") && document.documentElement.scrollHeight <= innerHeight + 1`));
   // However many the server sent: the full four when something is recently
   // added (or that one greyed), three only if a fresh library had an empty
-  // Favourites too. Count against the API, not against a number.
+  // Favourites too. Count against the API, not against a number, and Fan
+  // projects, the page's own entry, after them.
   check("collections ride the rim", await b.ev(`document.querySelectorAll("#syswall .coll").length`),
-        ((await api("api/library.php")).collections || []).length);
+        ((await api("api/library.php")).collections || []).length + 1);
   check("header at the top", await b.ev(`Math.round(document.querySelector("header.top").getBoundingClientRect().top)`), 0);
   // and edge to edge, like the legend at the foot, while the games below it
   // stay in the centred column
@@ -424,13 +425,13 @@ module.exports = async function (b, check) {
 
   // the hamburger: every column offered, Title not removable
   await b.ev(`document.querySelector("#view .lh-cols").click()`);
-  check("the hamburger offers every column", await b.until(`document.querySelectorAll(".lcols .lcols-row").length`, 21), 21);
+  check("the hamburger offers every column", await b.until(`document.querySelectorAll(".lcols .lcols-row").length`, 24), 24);
   await b.settled();
-  // Twenty-one in one run would be taller than a small window: four headings, side by side.
+  // Twenty-four in one run would be taller than a small window: four headings, side by side.
   check("under four headings that stand side by side", await b.ev(`(() => {
     const g = [...document.querySelectorAll(".lcols .lcols-group")], tops = g.map(x => Math.round(x.getBoundingClientRect().top));
     return [g.map(x => x.querySelector(".lcols-ghead").textContent), g.map(x => x.querySelectorAll(".lcols-row").length), tops.every(t => t === tops[0])]; })()`),
-    [["About the game", "Your marks", "Stats", "Files and pictures"], [8, 4, 4, 5], true]);
+    [["About the game", "Your marks", "Stats", "Files and pictures"], [8, 4, 4, 8], true]);
   // The panel hangs from its right edge: given less width it must fold, not leave the screen by the left.
   check("it is given the room to its left and no more, and with less the headings fold under each other", await b.ev(`(() => {
     const p = document.querySelector(".lcols"), r = document.querySelector("#view .lh-cols").getBoundingClientRect();
@@ -676,9 +677,10 @@ module.exports = async function (b, check) {
      is on the text, and this presses real pixels rather than calling a handler. */
   await api("api/settings.php", { view: { listColumns: ["title", "platform", "genre", "developer", "seconds"], listWidths: {} } });
   await b.goto(BASE + "/");
-  await b.key("Enter");
-  await b.waitFor(`document.getElementById("syswall").hidden && !document.getElementById("main").hidden && !!document.querySelector("#view > *")`, 10000);
-  await b.settled();
+  // The console with the most games: striped rows and a sort far down the list
+  // need a long one, and the first console by name may hold two (Arcade).
+  const most = Object.entries((await api("api/library.php")).platforms).sort((x, y) => y[1] - x[1])[0][0];
+  await b.openPlatform(most);
   await b.setView("list");
   await b.until(`document.querySelectorAll("#view .lhead .lh-grip").length`, 5, 8000);
   await b.settled();
@@ -1040,7 +1042,8 @@ module.exports = async function (b, check) {
           await b.ev(`(async () => { const V = await import("/js/views.js"), body = document.body, was = body.style.getPropertyValue("--fs"), v = document.getElementById("view");
             body.style.setProperty("--fs", "1.4"); v.scrollTop = 0;
             await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(r, 150))));
-            const tall = (n) => Math.round(n.getBoundingClientRect().height * 10) / 10, out = [tall(V.flatNodes[1]), tall(V.flatNodes[V.flatNodes.length - 1])];
+            // The one before the last: the last row has no rule under it, so it is a pixel shorter.
+            const tall = (n) => Math.round(n.getBoundingClientRect().height * 10) / 10, out = [tall(V.flatNodes[1]), tall(V.flatNodes[V.flatNodes.length - 2])];
             if (was) { body.style.setProperty("--fs", was); } else { body.style.removeProperty("--fs"); }
             return [out[0] > 44, Math.abs(out[0] - out[1]) <= 0.2]; })()`), [true, true]);
     await b.settled();
@@ -1456,8 +1459,9 @@ module.exports = async function (b, check) {
     const s2 = await b.ev(shown);
     check("Esc goes to the consoles", s2.wall, true);
     // The list of consoles must be built on this road too, which never went in.
+    // Fan projects is the one entry the server does not send.
     check("with every console on it, though it was never entered",
-          await b.ev(`document.querySelectorAll("#syswall .syscard").length`), (await api("api/library.php")).collections.length + Object.keys((await api("api/library.php")).platforms).length);
+          await b.ev(`document.querySelectorAll("#syswall .syscard").length`), (await api("api/library.php")).collections.length + Object.keys((await api("api/library.php")).platforms).length + 1);
     check("and the dropdown names the consoles' shape, not the list", s2.dropdown, "carousel");
     check("while the legend says what a console opens into",
           await b.ev(`[...document.querySelectorAll("#help .hl")].map(x => x.textContent).join("|")`).then((t) => /open in list/.test(t)));

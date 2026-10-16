@@ -57,6 +57,18 @@ try {
 } catch (\Throwable $e) {
     $saves = 0;
 }
+// The packs listed for it and the one Xsegon put in place: the Texture packs tab's count and About's line. No folder is walked.
+$texPacks = null;
+require_once __DIR__ . '/../includes/texpacks.php';
+if (xs_tp_has_tab($g)) {
+    try {
+        $rec = xs_tp_records()[$id] ?? null;
+        $here = is_array($rec) && (is_dir((string) ($rec['into'] ?? '')) || is_file((string) ($rec['into'] ?? '')));
+        $texPacks = ['found' => count(xs_tp_found($g, null)), 'have' => $here ? ['from' => (string) ($rec['from'] ?? ''), 'bytes' => (int) ($rec['bytes'] ?? 0)] : null];
+    } catch (\Throwable $e) {
+        $texPacks = null;
+    }
+}
 
 /* Whether this game's buttons can be set per game: a RetroArch game of a
    console whose buttons Xsegon knows. */
@@ -96,6 +108,7 @@ xs_json(['ok' => true, 'game' => $played + [
     'cheatsThere' => $cheatsThere,
     'emuCheats' => $emuOn,
     'saves'     => $saves,
+    'texPacks'  => $texPacks,
     'id'        => $g['id'],
     'title'     => $g['title'],
     'platform'  => $g['platform'],

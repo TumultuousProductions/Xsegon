@@ -86,6 +86,14 @@ if ($method !== 'POST') {
         xs_log('SCAN', 'no games in: ' . implode(', ', array_slice($empty, 0, 12))
             . (count($empty) > 12 ? ' and ' . (count($empty) - 12) . ' more' : ''));
     }
+    // Consoles with no emulator that RetroArch plays, and the press that gets it (js\raoffer.js).
+    $found['raFor'] = [];
+    $found['raOffer'] = null;
+    if ($found['noEmulator']) {
+        require_once __DIR__ . '/../includes/setup.php';
+        $found['raFor'] = array_values(array_filter($found['noEmulator'], 'xs_setup_ra_plays'));
+        $found['raOffer'] = $found['raFor'] ? xs_setup_ra_offer(xs_library()) : null;
+    }
     // The names a folder can have, for the screen to say beside whatever
     // could not be placed (includes\scan.php, WHERE A GAME MAY STAND).
     xs_json(['ok' => true, 'accepted' => count(xs_scan_read()), 'names' => xs_scan_folder_names_playable()] + $found);

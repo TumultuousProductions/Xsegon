@@ -9,6 +9,7 @@ import { closeEditor, reloadKeeping, setEditorOnClose, toolFrame } from "./edito
 import { fillWatch } from "./fillbar.js";
 import { clearStrip, followSetupJob, showStrip } from "./launch.js";
 import { L, api, logWarn, postJson } from "./log.js";
+import { raButton, raLabel } from "./raoffer.js";
 import { passedTail } from "./scanpassed.js";
 import { stopVideo } from "./snap.js";
 import { sound } from "./sound.js";
@@ -324,7 +325,14 @@ export function openScanTool(onBack) {
         lab.appendChild(el("b", null, " " + p + "  (" + byPlat[p].length + ")"));
         head.appendChild(lab);
         if (isNewPlat) { head.appendChild(el("span", "sc-tag", "a console the library does not have yet")); }
-        if (noEmu) { head.appendChild(el("span", "sc-tag warn", "no emulator for this console yet: they will list as unplayable until one is added (Emulators > Add an emulator)")); }
+        // RetroArch plays it: said, with the press that gets it (js\raoffer.js); being set up: said so.
+        var byRa = noEmu && (res.raFor || []).indexOf(p) >= 0 ? res.raOffer : null;
+        if (noEmu) {
+          head.appendChild(el("span", "sc-tag warn", byRa === "coming" ? "RetroArch is being set up: these play once it is in"
+            : raLabel(byRa) ? "no emulator for this console yet: RetroArch plays it"
+            : "no emulator for this console yet: they will list as unplayable until one is added (Emulators > Add an emulator)"));
+        }
+        if (raLabel(byRa)) { head.appendChild(raButton(byRa, "Scan for Games", "sc-ra")); }
         inner.appendChild(head);
         var rows = el("div", "sc-rows");
         byPlat[p].forEach(function (g) {

@@ -3,19 +3,31 @@
  * /api/fanprojects.php - the Fan projects page (includes\fanprojects.php, js\fanprojects.js).
  *
  *   GET                                       every project and where it stands for this library
+ *   GET  ?job=1                               the make at work, or the last one, as its worker left it
  *   POST {"open": "<project id>", "which": "page" | "repo" | "community"}
  *                                             that project's website, GitHub or community opened in the default browser
+ *   POST {"make": "<project id>"}             make it from your game, in the background (includes\fanmake.php)
  *
  * The address is never taken from the request: it comes out of the shipped list, so only
  * a listed team's own page can be opened. A test server opens nothing.
  */
 declare(strict_types=1);
 
-require_once __DIR__ . '/../includes/fanprojects.php';
+require_once __DIR__ . '/../includes/fanmake.php';
+
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST' && ($_GET['job'] ?? '') === '1') {
+    xs_json(['ok' => true, 'job' => xs_fm_job()]);
+}
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     xs_local_origin_only();
     $body = xs_body();
+    if (isset($body['make'])) {
+        if (!xs_fm_start((string) $body['make'], $why)) {
+            xs_fail((string) $why, 409);
+        }
+        xs_json(['ok' => true, 'job' => xs_fm_job()]);
+    }
     $id = (string) ($body['open'] ?? '');
     $which = (string) ($body['which'] ?? 'page');
     $url = xs_fan_url($id, $which);
@@ -42,4 +54,5 @@ $ms = (int) round((microtime(true) - $t) * 1000);
 $ready = count(array_filter($projects, static fn($p) => in_array($p['base']['state'], ['fits', 'works'], true) && !$p['yours']));
 $mine = count(array_filter($projects, static fn($p) => (bool) $p['yours']));
 xs_log('FAN', count($projects) . ' projects: ' . $mine . ' in the library, ' . $ready . ' ready to make, in ' . $ms . 'ms');
-xs_json(['ok' => true, 'projects' => $projects, 'ms' => $ms]);
+$job = xs_fm_job();
+xs_json(['ok' => true, 'projects' => $projects, 'ms' => $ms, 'making' => ($job['state'] ?? '') === 'running' ? (string) ($job['project'] ?? '') : null]);

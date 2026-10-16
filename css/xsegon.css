@@ -3720,6 +3720,14 @@ body.no-anim .hk-listen.catching { animation: none; }
 .sv-words { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .sv-words .cr-name { flex: 0 0 auto; }
 .sv-sub { font-size: 11.5px; color: var(--mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The Texture packs tab (js/texpacktab.js): a pack's kind beside its name, its maker's Tip, the paid ones folded. */
+.tp-kind { display: inline-block; margin-left: 8px; padding: 0 5px; border: 1px solid var(--rule); border-radius: 3px;
+  font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--mute); vertical-align: 2px; }
+.tp-kind.hand { color: var(--cyan); border-color: var(--rule-hi); }
+.tp-tip { flex: 0 0 auto; padding: 3px 9px; font-size: 11px; }
+.tp-paid { margin: 8px 0 0; }
+.tp-paid > .sv-rows { border: 0; background: none; }
+.tp-paid > .sv-rows + .sv-rows { border-top: 1px solid var(--rule); }
 /* The Notes tab of details (js/notestab.js): one box to write in, as tall as the pane leaves it. */
 .nt-box { flex: 1 1 auto; min-height: 160px; max-height: calc(100vh - 470px - var(--strip-h)); margin: 12px 0 4px; padding: 12px 14px; resize: none;
   background: var(--panel-2); border: 1px solid var(--rule); color: var(--ink); font: inherit; font-size: 14px; line-height: 1.55; letter-spacing: .02em; text-transform: none; }

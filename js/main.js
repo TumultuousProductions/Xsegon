@@ -85,6 +85,7 @@ import { $added, $btnSystems, $editor, $info, $platform, $q, $settings, $sort, $
 import { checkIdle, lastStatus, paintStatus, pollStatus, statusOnFocus, touch } from "./status.js";
 import { backToWall, enterSystems, hasWallShape, moveSys, startOnAllGames, sysStyle } from "./systems.js";
 import { closeOnBackdrop, initVersionTips } from "./util.js";
+import { paintViewLock } from "./viewlock.js";
 import { ctl, move, setView, tickClock } from "./views.js";
 import { applyViewSizes } from "./viewsize.js";
 import { checkWhatsNew } from "./whatsnew.js";
@@ -220,6 +221,7 @@ $added.addEventListener("change", function () { setPeriod($platform.value, $adde
 closeOnBackdrop($settings, closeSettings);
 
 paintHelp("browse");
+paintViewLock();            // the back arrow greyed while the consoles screen waits (js\viewlock.js); index.php greyed the dropdown
 tickClock();
 setInterval(tickClock, 15000);
 

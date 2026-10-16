@@ -143,6 +143,19 @@ function xs_emulators(string $root = ''): array
     return ['programs' => [], 'platforms' => [], 'mine' => false];
 }
 
+/** No emulator in the table is on this PC: a new copy before RetroArch is in. Wheel,
+    Carousel and the consoles screen wait meanwhile (index.php, api\library.php): they have no menu bar. */
+function xs_emu_none_here(string $root = ''): bool
+{
+    foreach (xs_emulators($root)['programs'] ?? [] as $p) {
+        $exe = (string) ($p['exe'] ?? '');
+        if ($exe !== '' && (function_exists('xs_file_seen') ? xs_file_seen($exe) : is_file($exe))) {
+            return false;
+        }
+    }
+    return true;
+}
+
 /** Every option for one console, in the order the table holds them. */
 function xs_emu_options(array $table, string $platform): array
 {
