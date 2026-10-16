@@ -695,6 +695,16 @@ if ($grouped && $banded) {
 $from = isset($_GET['from']) ? max(0, (int) $_GET['from']) : null;
 $lot  = $from === null ? (int) $s['view']['pageSize'] : max(1, min(20000, (int) ($_GET['lot'] ?? $s['view']['pageSize'])));
 
+// Wheel, Carousel and the consoles screen wait while no emulator is on this PC and no game can start (js\viewlock.js).
+// Their words name RetroArch only while it would play a console here, or there are no games yet.
+$viewsLocked = xs_emu_none_here(xs_norm_path((string) ($s['paths']['launchbox'] ?? '')))
+               && !in_array(true, array_map(static fn ($g) => ($g['launch'] ?? null) !== null, $lib['games'] ?? []), true);
+if ($viewsLocked) {
+    require_once __DIR__ . '/../includes/setup.php';
+}
+$viewsWaitRa = !$viewsLocked || !($lib['games'] ?? [])
+               || array_filter(array_unique(array_column($lib['games'], 'platform')), static fn ($p) => xs_setup_ra_plays((string) $p)) !== [];
+
 xs_json([
     'ok'        => true,
     'count'     => count($rows),
@@ -742,9 +752,8 @@ xs_json([
     'platformArtRev' => xs_platform_art_rev($s),
     // The day Recently added starts from, for the Rows view's own row.
     'addedSince' => $addedCutoff,
-    // Wheel, Carousel and the consoles screen wait while no emulator is on this PC and no game can start (js\viewlock.js).
-    'viewsLocked' => xs_emu_none_here(xs_norm_path((string) ($s['paths']['launchbox'] ?? '')))
-                     && !in_array(true, array_map(static fn ($g) => ($g['launch'] ?? null) !== null, $lib['games'] ?? []), true),
+    'viewsLocked' => $viewsLocked,
+    'viewsWaitRa' => $viewsWaitRa,
     'generated' => $lib['generatedAt'] ?? null,
     'sort'      => $sort,
     'reverse'   => $reverse,

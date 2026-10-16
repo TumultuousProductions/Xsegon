@@ -204,7 +204,7 @@ function xs_ng_unsure(array $found, array $left): array
  * $many comes back 0 when that many was said before, so the strip does not say it again either.
  * $ra: the press that gets RetroArch for files left with no emulator (xs_ng_sort), a button of the message.
  */
-function xs_ng_tell(array $unsure, int &$many, ?string $ra = null): bool
+function xs_ng_tell(array $unsure, int &$many, ?string $ra = null, array $raFor = []): bool
 {
     $told = xs_read_json(xs_ng_told_path(), []);
     $told = is_array($told) ? $told : [];
@@ -239,7 +239,10 @@ function xs_ng_tell(array $unsure, int &$many, ?string $ra = null): bool
     // Set it all up, Get RetroArch or Use RetroArch (js\news.js MAIL_GOES), first: it is what plays them.
     $press = ['setup' => 'rasetup', 'get' => 'raget', 'use' => 'rause'][$ra ?? ''] ?? null;
     if ($press !== null && $many === 0) {
-        $body .= ' Those with no emulator yet play through RetroArch: the button below sets it up.';
+        // Named, so a console RetroArch does not play is not taken in with them.
+        $named = count($raFor) > 3 ? implode(', ', array_slice($raFor, 0, 3)) . ' and ' . (count($raFor) - 3) . ' more consoles'
+               : preg_replace('/, ([^,]+)$/', ' and $1', implode(', ', $raFor));
+        $body .= ' Those for ' . ($named !== '' ? $named : 'a console with no emulator yet') . ' play through RetroArch: the button below sets it up.';
     }
     return xs_messages_add([
         'id'    => $many > 0 ? 'msg-newgames-many' : 'msg-' . bin2hex(random_bytes(6)),

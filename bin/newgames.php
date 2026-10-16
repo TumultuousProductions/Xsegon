@@ -89,7 +89,8 @@ $unsure = xs_ng_unsure($found, $left);
 $saidMany = $many;
 // The press that gets RetroArch, for files left only for want of it (xs_ng_sort).
 $raLeft = array_values(array_filter(array_column($left, 'ra')));
-$told = xs_ng_tell($unsure, $saidMany, $raLeft[0] ?? null);
+$raFor = array_values(array_unique(array_column(array_filter($left, static fn($r) => ($r['ra'] ?? null) !== null), 'platform')));
+$told = xs_ng_tell($unsure, $saidMany, $raLeft[0] ?? null, $raFor);
 $job['ra'] = $raLeft[0] ?? null;
 $job['added'] = $added;
 $job['titles'] = array_slice(array_column($came, 'title'), 0, 5);
