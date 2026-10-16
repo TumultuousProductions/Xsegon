@@ -91,7 +91,7 @@ function ended(job, why) {
   // Left out for want of RetroArch: the message holds the press that sets it up (includes\newgames.php).
   var raPress = !job.many && job.told && raLabel(job.ra);
   if (raPress) {
-    line += (line ? "  ·  " : "") + plural(job.told, "file", "files") + " not added yet: Messages has " + raPress.replace("...", "") + " for those with no emulator";
+    line += (line ? "  ·  " : "") + plural(job.told, "file", "files") + " not added yet: Messages has " + raPress.replace("...", "") + " for those RetroArch plays";
     mailArrived();
   } else if (unsure) {
     line += (line ? "  ·  " : "") + unsure + ": use Games > Scan for Games for " + (job.many || job.told > 1 ? "them" : "it") + " (Messages lists them)";
