@@ -19,6 +19,7 @@ import { mediaPane, mediaTabLabel } from "./mediatab.js";
 import { notesPane, notesTabLabel } from "./notestab.js";
 import { savesPane, savesTabLabel } from "./savestab.js";
 import { sound } from "./sound.js";
+import { texPacksFor, texPacksPane, texPacksTabLabel } from "./texpacktab.js";
 import { el } from "./util.js";
 import { versionsPane, versionsTabLabel } from "./versionstab.js";
 
@@ -31,6 +32,8 @@ function dtabs(g) {
     { key: "cheats", label: cheatsTabLabel, build: cheatsPane },
     { key: "hacks", label: hacksTabLabel, build: hacksPane }
   ];
+  // Only a game of a console whose emulator here loads texture packs.
+  if (texPacksFor(g)) { t.push({ key: "texpacks", label: texPacksTabLabel, build: texPacksPane }); }
   // Only a card holding several versions gets the tab: one file is nothing
   // to choose between. row says it builds from the row, with no full record.
   if (g && g.versions && g.versions.length > 1) { t.push({ key: "versions", label: versionsTabLabel, build: versionsPane, row: true }); }

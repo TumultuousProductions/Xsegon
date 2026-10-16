@@ -6,6 +6,7 @@
  * Each job keeps its own file and worker; this only reads them, so one read
  * serves every bar on a server that answers one request at a time. Get
  * Pictures, the Runs check and a setup download have bars of their own.
+ * Make on the Fan projects page is one of these (includes\fanmake.php).
  */
 declare(strict_types=1);
 
@@ -26,6 +27,8 @@ function xs_jobs_files(): array
         'archivevid'    => xs_data_path('archivevid-job.json'),
         'arcadevid'     => xs_data_path('arcadevid-job.json'),
         'cheatlists'    => xs_data_path('cheatlists-job.json'),
+        'texpacks'      => xs_data_path('texpacks-job.json'),
+        'fanmake'       => xs_data_path('fanmake-job.json'),
     ];
 }
 
@@ -237,6 +240,54 @@ function xs_jobs(): array
         }
     }
 
+    // A game's texture pack: unpacked or copied by size, then put in place; taken away by count, with no Stop.
+    if (is_file($files['texpacks'])) {
+        require_once __DIR__ . '/texpacks.php';
+        $j = xs_tp_job();
+        $state = (string) ($j['state'] ?? '');
+        if (is_array($j) && $told($files['texpacks'], $state)) {
+            $phase = (string) ($j['phase'] ?? '');
+            $total = (int) ($j['total'] ?? 0);
+            $files = (int) ($j['files'] ?? 0);
+            $sized = ($phase === 'unpacking' || $phase === 'copying' || $phase === 'fetching') && $total > 0;
+            $line  = $sized ? ($phase === 'fetching' ? 'downloading' : $phase) . ': ' . xs_jobs_size((int) ($j['bytes'] ?? 0)) . ' of ' . xs_jobs_size($total)
+                   : ($phase === 'fetching' ? 'downloading: ' . xs_jobs_size((int) ($j['bytes'] ?? 0))
+                   : ($phase === 'removing' ? 'taking it away: ' . number_format((int) ($j['at'] ?? 0)) . ' of ' . $n($files, 'file', 'files')
+                   : ($phase === 'reading' ? 'reading what is in it' : ($phase === 'placing' || $phase === 'setting' || $phase === 'tidying' ? 'putting it in place' : 'starting'))));
+            $frac  = $sized ? (int) ($j['bytes'] ?? 0) / $total : ($phase === 'removing' && $files > 0 ? (int) ($j['at'] ?? 0) / $files : null);
+            $out[] = xs_jobs_row('texpacks', 'Texture pack for ' . (string) ($j['title'] ?? 'a game'), $state === 'running' ? 'running' : ($state === 'done' ? 'done' : 'failed'),
+                (int) ($j['started'] ?? 0), $line, $frac, ($j['action'] ?? '') !== 'remove',
+                (string) (($j['error'] ?? '') !== '' ? $j['error'] : (($j['said'] ?? '') !== '' ? $j['said'] : 'nothing was done')));
+        }
+    }
+
+    // Make on the Fan projects page: the team's list asked, the patch fetched by size, the copy made by how much of the patch is read.
+    if (is_file($files['fanmake'])) {
+        require_once __DIR__ . '/fanmake.php';
+        $j = xs_fm_job();
+        $state = (string) ($j['state'] ?? '');
+        if (is_array($j) && $told($files['fanmake'], $state)) {
+            $phase = (string) ($j['phase'] ?? '');
+            $total = (int) ($j['total'] ?? 0);
+            $line  = $phase === 'fetching' ? 'downloading ' . (isset($j['file']) ? (string) $j['file'] : 'the patch') . ': '
+                                             . xs_jobs_size((int) ($j['bytes'] ?? 0)) . ($total ? ' of ' . xs_jobs_size($total) : '')
+                   : ($phase === 'asking' ? 'asking ' . $j['name'] . '\'s team for its latest release'
+                   : ($phase === 'reading' ? 'reading your ' . (string) ($j['baseTitle'] ?? 'game')
+                   : ($phase === 'making' ? 'making ' . trim($j['name'] . ' ' . (string) ($j['version'] ?? ''))
+                   : ($phase === 'checking' ? 'Windows Defender is checking ' . (isset($j['file']) ? (string) $j['file'] : 'the download')
+                   : ($phase === 'building' ? 'building it with the team\'s own build line'
+                   : ($phase === 'updating' ? 'putting on update ' . (string) ($j['version'] ?? '')
+                   : ($phase === 'unpacking' ? 'unpacking it beside your ' . (string) ($j['platform'] ?? '') . ' games'
+                   : ($phase === 'placing' ? 'putting your ' . (string) ($j['baseTitle'] ?? 'game') . ' in its folder' . ($total ? ': ' . xs_jobs_size((int) ($j['bytes'] ?? 0)) . ' of ' . xs_jobs_size($total) : '')
+                   : ($phase === 'writing' ? 'writing it to your games' : ($phase === 'adding' ? 'adding it to your library' : 'starting'))))))))));
+            $frac  = ($phase === 'fetching' || $phase === 'placing') && $total > 0 ? (int) ($j['bytes'] ?? 0) / $total
+                   : ($phase === 'making' && (int) ($j['of'] ?? 0) > 0 ? (int) ($j['at'] ?? 0) / (int) $j['of'] : null);
+            $out[] = xs_jobs_row('fanmake', 'Make ' . (string) ($j['name'] ?? 'a fan project'), $state === 'running' ? 'running' : ($state === 'done' ? 'done' : 'failed'),
+                (int) ($j['started'] ?? 0), $line, $frac, true,
+                (string) (($j['error'] ?? '') !== '' ? $j['error'] : (($j['said'] ?? '') !== '' ? $j['said'] : 'nothing was made')));
+        }
+    }
+
     // Thumbnails: a builder for each kind of picture, told as one job. One that says running and has gone quiet died.
     $builds = [];
     foreach (xs_glob(xs_data_dir(), 'thumbs-job-*.json') as $path) {
@@ -315,6 +366,23 @@ function xs_jobs_stop(string $key): bool
         if ((xs_cl_job()['state'] ?? '') === 'running') {
             @touch(xs_cl_stop_path());
             xs_log('CHTL', 'asked to stop (the corner bar)');
+        }
+        return true;
+    }
+    if ($key === 'fanmake') {
+        require_once __DIR__ . '/fanmake.php';
+        if ((xs_fm_job()['state'] ?? '') === 'running') {
+            @touch(xs_fm_stop_path());
+            xs_log('FAN', 'make asked to stop: nothing is kept (the corner bar)');
+        }
+        return true;
+    }
+    if ($key === 'texpacks') {
+        require_once __DIR__ . '/texpacks.php';
+        $j = xs_tp_job();
+        if (($j['state'] ?? '') === 'running' && ($j['action'] ?? '') !== 'remove') {
+            @touch(xs_tp_stop_path());
+            xs_log('TPAK', 'asked to stop: nothing is put in place (the corner bar)');
         }
         return true;
     }

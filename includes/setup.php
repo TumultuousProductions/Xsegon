@@ -472,6 +472,55 @@ function xs_setup_auto(): bool
     return is_array($asked) && !empty($asked['auto']);
 }
 
+/* ---- a game with no emulator, on a console RetroArch plays --------------
+   What every screen that says so offers, so none says it without a press. */
+
+/** Whether RetroArch plays this console: it is on the usual cores list. */
+function xs_setup_ra_plays(string $platform): bool
+{
+    static $low = null;
+    $low ??= array_change_key_case(xs_setup_default_cores(), CASE_LOWER);
+    return isset($low[strtolower(trim($platform))]);
+}
+
+/**
+ * How RetroArch can come now: 'setup' (Set it all up never used), 'get' (none
+ * on this PC), 'use' (one on this PC), 'coming' (being set up), or null while
+ * RetroArch is in the table, where "no emulator" stands as it is.
+ */
+function xs_setup_ra_offer(array $lib): ?string
+{
+    $job = xs_setup_job();
+    // The cores after it too: the read that finishes RetroArch's fetch hands on to them, over games read before it was in.
+    if (xs_setup_busy($job)) {
+        return 'coming';
+    }
+    // Read after the job: finishing a fetch writes the table.
+    $ra = xs_ra_find(xs_emulators(xs_norm_path((string) (xs_settings()['paths']['launchbox'] ?? ''))), $lib);
+    if ($ra['inTable']) {
+        return null;
+    }
+    if (!xs_setup_auto()) {
+        return 'setup';
+    }
+    return $ra['have'] ? 'use' : 'get';
+}
+
+/** A game's reason it cannot start, with the press in it where RetroArch is the way out. */
+function xs_setup_ra_why(string $why, string $platform, ?string $offer): string
+{
+    if ($offer === null || !str_starts_with($why, 'no emulator') || !xs_setup_ra_plays($platform)) {
+        return $why;
+    }
+    $none = 'no emulator set up for ' . $platform . ' yet: ';
+    return match ($offer) {
+        'coming' => 'RetroArch is being set up: this game plays once it is in',
+        'setup'  => $none . 'Set it all up gets RetroArch, which plays it',
+        'get'    => $none . 'Get RetroArch sets up RetroArch, which plays it',
+        default  => $none . 'Use RetroArch sets up the RetroArch on this PC, which plays it',
+    };
+}
+
 /** Names and pictures were switched off in the setup window: no pass starts by itself. */
 function xs_setup_pictures_off(): bool
 {

@@ -12,6 +12,7 @@
 import { favStar, myStars, openDetails } from "./details.js";
 import { launch } from "./launch.js";
 import { addsMissing } from "./missing.js";
+import { getRetroArch, raLabel } from "./raoffer.js";
 import { $hero, S, view } from "./state.js";
 import { artUrl, discShort, discWords, el, fixMark, fixWords, hhmm, stars, titleText, versionLabel } from "./util.js";
 
@@ -45,7 +46,8 @@ function build() {
 
   var bar = el("div", "bar");
   H.play = el("button", "primary", "Play");
-  H.play.addEventListener("click", launch);
+  // No emulator yet where RetroArch would play it: the button gets RetroArch (js\raoffer.js).
+  H.play.addEventListener("click", function () { if (H.g && !H.g.playable && raLabel(H.g.raOffer)) { getRetroArch("the game panel"); } else { launch(); } });
   var more = el("button", null, "Details");
   more.addEventListener("click", openDetails);
   bar.appendChild(H.play);
@@ -155,6 +157,7 @@ export function paintHero(g) {
   kv("launches", String(g.plays || 0));
   kv("last played", g.lastPlayed ? g.lastPlayed.slice(0, 10) : "never");
 
-  H.play.textContent = g.playable ? "Play" : "Cannot play";
-  H.play.disabled = !g.playable;
+  var fix = g.playable ? null : raLabel(g.raOffer);
+  H.play.textContent = g.playable ? "Play" : fix || "Cannot play";
+  H.play.disabled = !g.playable && !fix;
 }

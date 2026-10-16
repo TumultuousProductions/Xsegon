@@ -362,6 +362,16 @@ wants a logo taken out has only to ask: help@tumultuousproductions.site.
   set leaves a gap, Xsegon keeps the first 30 seconds of the game's recording
   as its video and writes the player's name in its log. Xsegon carries none
   of the videos ([includes/archivevid/ABOUT.txt](includes/archivevid/ABOUT.txt)).
+- Texture packs listed in a game's details (the Texture packs tab of PS2,
+  GameCube, Wii and N64 games): the
+  [Texture Packs Archive](https://docs.google.com/spreadsheets/d/1sif8FeRGJRbytK8wFRXgF6Hke9V6GUFs),
+  the community's list kept by Sad Origami. Every pack is its maker's own,
+  named on its row with its maker's tip page. Xsegon carries the list and
+  none of the packs: a press opens a pack's own page, or, for the N64 packs
+  of [Emulation King](https://emulationking.com) and
+  [evilgames.eu](https://evilgames.eu), fetches the pack from there on the
+  person's own PC ([includes/texpacks/ABOUT.txt](includes/texpacks/ABOUT.txt);
+  `node tools\build-texpacks.js` makes the list).
 - Cutting those recordings: `ffmpeg.exe` from the
   [FFmpeg project](https://ffmpeg.org), the release essentials build for
   Windows by [Gyan Doshi](https://www.gyan.dev/ffmpeg/builds/), shipped

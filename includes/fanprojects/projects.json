@@ -1,5 +1,5 @@
 {
-  "about": "Fan projects made from games a person owns (roadmap AQ, doc/ideas/49-fan-projects.md). Each entry was read from the team's own page on 2026-10-15: 'page' is their website, 'repo' their GitHub (a project or its owner's page), each checked against GitHub's own answer; at least one is given. A base names the releases it takes by their No-Intro name (cartridges), disc ID (discs), or every disc ID of a set ('discs': all must be in the library, in one .pbp or .m3u or as separate discs): fit 'fits' is what the team asks for, 'works' is taken with a note. 'yours' finds a copy already in the library: a patched cartridge by its header, or a PC version kept as a game of your own by its title, its build named in a file beside what it runs. Xsegon never supplies a game and never hosts a team's files. The list changes with each Xsegon release.",
+  "about": "Fan projects made from games a person owns (roadmap AQ, doc/ideas/49-fan-projects.md). Each entry was read from the team's own page on 2026-10-15: 'page' is their website, 'repo' their GitHub (a project or its owner's page), each checked against GitHub's own answer; at least one is given. A base names the releases it takes by their No-Intro name (cartridges), disc ID (discs), or every disc ID of a set ('discs': all must be in the library, in one .pbp or .m3u or as separate discs): fit 'fits' is what the team asks for, 'works' is taken with a note. 'make' says how Xsegon makes it (includes/fanmake.php). A patch: the team's own list of releases ('list', newest first, each with 'version' and 'files'), which file of a release to take ('take'), where those files are ('from'), the kind of patch, the base's byte order and MD5, the made file's ending; every address on the team's website or GitHub, the patch checked against the CRC32 the team's GitHub release lists for it. 'how': 'release': the Windows download ('asset', a pattern) of the team's latest GitHub release or of 'tag', unpacked into 'folder' in the console's Ports folder; 'run' (with 'args', '{folder}' for where it went) joins the 'list' (Windows unless named); 'game' says where your game goes: 'to' (a copy, '{release}' for its release name, its 'format' and the 'md5' or 'sha1' the team takes), 'discs' (every disc of the set, a .pbp's written out as .bin and .cue), or 'ini' (the port's own emulator pointed at your disc where it is); 'need' files the download must hold, 'write' empty files a port reads as a switch, 'first' what its first start asks. 'how': 'build': the team's source at the newest commit of 'branch', the 'tools' their build guide names (GitHub release downloads of the size given), and their 'compile' line run in its folder. 'how': 'pack': a Riivolution pack from the team's own server ('hosts'), as their installer takes it: the full pack ('install'), each newer update ('updates') and what each takes away ('deletes'), only the 'take' folders kept, and a Dolphin start file booting your disc with the pack's 'xml' and 'options'. 'yours' finds a copy already in the library: a patched cartridge by its header, or a PC version kept as a game of your own by its title, its build named in a file beside what it runs. Xsegon never supplies a game and never hosts a team's files. The list changes with each Xsegon release.",
   "projects": [
     {
       "id": "smash-remix",
@@ -17,6 +17,14 @@
         "title": "Super Smash Bros. (USA)",
         "db": { "id": 404, "title": "Super Smash Bros.", "platform": "Nintendo 64" },
         "match": [ { "console": "Nintendo 64", "name": "Super Smash Bros. (USA)", "fit": "fits" } ]
+      },
+      "make": {
+        "list": "https://smashremix.net/patcher/patches/releases.json",
+        "from": "https://smashremix.net/patcher/patches/releases/",
+        "take": "ntsc",
+        "patch": "xdelta",
+        "base": { "format": "z64", "md5": "f7c52568a31aadf26e14dc2b6416b2ed" },
+        "ending": "z64"
       },
       "yours": {
         "header": "SMASH REMIX",
@@ -41,6 +49,16 @@
           { "console": "Nintendo 64", "name": "Perfect Dark (USA) (Rev 1)", "fit": "fits" },
           { "console": "Nintendo 64", "name": "Perfect Dark (USA)", "fit": "works", "note": "works; Rev 1 is the one the team recommends" }
         ]
+      },
+      "make": {
+        "how": "release",
+        "tag": "ci-dev-build",
+        "asset": "^pd-x86_64-windows\\.zip$",
+        "folder": "Perfect Dark",
+        "run": "pd.x86_64.exe",
+        "args": "--portable",
+        "title": "Perfect Dark PC port",
+        "game": { "to": "data/pd.ntsc-final.z64", "format": "z64", "md5": ["e03b088b6ac9e0080440efed07c1e40f", "7f4171b0c8d17815be37913f535e4e93"] }
       }
     },
     {
@@ -62,6 +80,15 @@
           { "console": "Nintendo 64", "name": "Legend of Zelda, The - Ocarina of Time (USA) (Rev 1)", "fit": "fits" },
           { "console": "Nintendo 64", "name": "Legend of Zelda, The - Ocarina of Time (USA) (Rev 2)", "fit": "fits" }
         ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "-Win64\\.zip$",
+        "folder": "Ship of Harkinian",
+        "run": "soh.exe",
+        "game": { "to": "{release}.z64", "format": "z64",
+                  "sha1": ["ad69c91157f6705e8ab06c79fe08aad47bb57ba7", "d3ecb253776cd847a5aa63d859d8c89a2f37b364", "41b3bdc48d98c48529219919015a1af22f5057c2"] },
+        "first": "Its first start makes its game files from your copy beside it: answer Yes to its questions, and it takes a minute or two."
       }
     },
     {
@@ -78,6 +105,14 @@
         "title": "The Legend of Zelda: Majora's Mask (USA)",
         "db": { "id": 175, "title": "The Legend of Zelda: Majora's Mask", "platform": "Nintendo 64" },
         "match": [ { "console": "Nintendo 64", "name": "Legend of Zelda, The - Majora's Mask (USA)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "-Win64\\.zip$",
+        "folder": "2 Ship 2 Harkinian",
+        "run": "2ship.exe",
+        "game": { "to": "{release}.z64", "format": "z64", "sha1": ["d6133ace5afaa0882cf214cf88daba39e266c078"] },
+        "first": "Its first start makes its game files from your copy beside it: answer Yes to its questions, and it takes a minute or two."
       }
     },
     {
@@ -94,6 +129,15 @@
         "title": "The Legend of Zelda: Majora's Mask (USA)",
         "db": { "id": 175, "title": "The Legend of Zelda: Majora's Mask", "platform": "Nintendo 64" },
         "match": [ { "console": "Nintendo 64", "name": "Legend of Zelda, The - Majora's Mask (USA)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "-Windows\\.zip$",
+        "folder": "Zelda 64 Recompiled",
+        "run": "Zelda64Recompiled.exe",
+        "write": ["portable.txt"],
+        "game": { "to": "mm.n64.us.1.0.z64", "format": "z64", "sha1": ["d6133ace5afaa0882cf214cf88daba39e266c078"] },
+        "first": "Its own window opens first: press Start game there."
       }
     },
     {
@@ -110,6 +154,14 @@
         "title": "Star Fox 64 (USA) (Rev 1)",
         "db": { "id": 4, "title": "Star Fox 64", "platform": "Nintendo 64" },
         "match": [ { "console": "Nintendo 64", "name": "Star Fox 64 (USA) (Rev 1)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "-Windows\\.zip$",
+        "folder": "Starship",
+        "run": "Starship.exe",
+        "game": { "to": "{release}.z64", "format": "z64", "sha1": ["09f0d105f476b00efa5303a3ebc42e60a7753b7a", "d8b1088520f7c5f81433292a9258c1184afa1457"] },
+        "first": "Its first start asks for your game: press Yes, pick the .z64 file in its own folder, press OK, and No when it offers to read another."
       }
     },
     {
@@ -127,6 +179,14 @@
         "title": "Mario Kart 64 (USA)",
         "db": { "id": 266, "title": "Mario Kart 64", "platform": "Nintendo 64" },
         "match": [ { "console": "Nintendo 64", "name": "Mario Kart 64 (USA)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "^spaghetti-windows\\.zip$",
+        "folder": "SpaghettiKart",
+        "run": "Spaghettify.exe",
+        "game": { "to": "{release}.z64", "format": "z64", "sha1": ["579c48e211ae952530ffc8738709f078d5dd215e"] },
+        "first": "Its first start makes its game files from your copy beside it: press Yes, then OK."
       }
     },
     {
@@ -144,6 +204,14 @@
         "title": "Super Mario 64 (USA)",
         "db": { "id": 216, "title": "Super Mario 64", "platform": "Nintendo 64" },
         "match": [ { "console": "Nintendo 64", "name": "Super Mario 64 (USA)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "-Win64\\.zip$",
+        "folder": "Ghostship",
+        "run": "Ghostship.exe",
+        "game": { "to": "{release}.z64", "format": "z64", "sha1": ["9bef1128717f958171a4afac3ed78ee2bb4e86ce"] },
+        "first": "Its first start makes its game files from your copy beside it: answer Yes to its questions."
       }
     },
     {
@@ -161,6 +229,14 @@
         "title": "The Legend of Zelda: A Link to the Past (USA)",
         "db": { "id": 1318, "title": "The Legend of Zelda: A Link to the Past", "platform": "Super Nintendo Entertainment System" },
         "match": [ { "console": "Super Nintendo Entertainment System", "name": "Legend of Zelda, The - A Link to the Past (USA)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "^zelda3_.*\\.zip$",
+        "folder": "zelda3",
+        "run": "zelda3.exe",
+        "title": "zelda3: A Link to the Past",
+        "game": { "to": "zelda3.sfc", "format": "sfc", "sha1": ["6d4f10a8b10e10dbe624cb23cf03b88bb8252973"] }
       }
     },
     {
@@ -178,6 +254,24 @@
         "title": "Super Metroid (Japan, USA)",
         "db": { "id": 299, "title": "Super Metroid", "platform": "Super Nintendo Entertainment System" },
         "match": [ { "console": "Super Nintendo Entertainment System", "name": "Super Metroid (Japan, USA) (En,Ja)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "build",
+        "branch": "main",
+        "tools": [
+          { "url": "https://github.com/FitzRoyX/tinycc/releases/download/tcc_20221020/tcc_20221020.zip", "size": 814898, "into": "third_party" },
+          { "url": "https://github.com/libsdl-org/SDL/releases/download/release-2.24.1/SDL2-devel-2.24.1-VC.zip", "size": 2605965, "into": "third_party" }
+        ],
+        "compile": ["third_party/tcc/tcc.exe", "-osm.exe", "-DCOMPILER_TCC=1", "-DSTBI_NO_SIMD=1", "-DHAVE_STDINT_H=1", "-D_HAVE_STDINT_H=1",
+                    "-DSYSTEM_VOLUME_MIXER_AVAILABLE=0", "-Ithird_party/SDL2-2.24.1/include", "-Lthird_party/SDL2-2.24.1/lib/x64", "-lSDL2", "-I.",
+                    "src/*.c", "src/snes/*.c", "third_party/gl_core/gl_core_3_1.c"],
+        "copy": [["third_party/SDL2-2.24.1/lib/x64/SDL2.dll", "SDL2.dll"]],
+        "folder": "sm",
+        "run": "sm.exe",
+        "args": "sm.smc",
+        "title": "sm: Super Metroid",
+        "game": { "to": "sm.smc", "format": "sfc", "sha1": ["da957f0d63d14cb441d215462904c4fa8519c613"] },
+        "first": "It is built on this PC from the team's source with the compiler their build guide names, as the team has no ready download."
       }
     },
     {
@@ -195,6 +289,14 @@
         "title": "Super Mario World (USA)",
         "db": { "id": 136, "title": "Super Mario World", "platform": "Super Nintendo Entertainment System" },
         "match": [ { "console": "Super Nintendo Entertainment System", "name": "Super Mario World (USA)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "^smw_.*\\.zip$",
+        "folder": "smw",
+        "run": "smw.exe",
+        "title": "smw: Super Mario World",
+        "game": { "to": "smw.sfc", "format": "sfc", "sha1": ["6b47bb75d16514b6a476aa0c73a683a2a4c18765"] }
       }
     },
     {
@@ -214,6 +316,15 @@
         "db": { "id": 6772, "title": "The Legend of Dragoon", "platform": "Sony Playstation" },
         "match": [ { "console": "Sony Playstation", "discs": ["SCUS-94491", "SCUS-94584", "SCUS-94585", "SCUS-94586"], "fit": "fits" } ]
       },
+      "make": {
+        "how": "release",
+        "tag": "devbuild",
+        "asset": "^Severed_Chains_Windows\\.zip$",
+        "folder": "Severed Chains",
+        "run": "launch.bat",
+        "game": { "discs": "isos", "name": "The Legend of Dragoon" },
+        "first": "Its first start fetches Java and unpacks the game from your four discs, which takes a while; the discs stay in its isos folder, as it reads them each time."
+      },
       "yours": {
         "console": "Windows",
         "title": "Severed Chains",
@@ -228,7 +339,7 @@
       "adds": "152 classic tracks from every Mario Kart, for Mario Kart Wii",
       "tags": ["levels"],
       "team": "the Retro Rewind team",
-      "page": "https://wiki.tockdom.com/wiki/Retro_Rewind",
+      "page": "https://mkwiiki.org/wiki/Retro_Rewind",
       "repo": "https://github.com/Retro-Rewind-Team",
       "licence": "GPL-3.0",
       "base": {
@@ -237,9 +348,24 @@
         "match": [
           { "console": "Nintendo Wii", "disc": "RMCE01", "fit": "fits" },
           { "console": "Nintendo Wii", "disc": "RMCP01", "fit": "fits" },
-          { "console": "Nintendo Wii", "disc": "RMCJ01", "fit": "fits" },
-          { "console": "Nintendo Wii", "disc": "RMCK01", "fit": "fits" }
+          { "console": "Nintendo Wii", "disc": "RMCJ01", "fit": "fits" }
         ]
+      },
+      "make": {
+        "how": "pack",
+        "hosts": ["rwfc.net"],
+        "install": "https://update.rwfc.net/RetroRewind/RetroRewindInstall.txt",
+        "updates": "https://update.rwfc.net/RetroRewind/RetroRewindVersion.txt",
+        "deletes": "https://update.rwfc.net/RetroRewind/RetroRewindDelete.txt",
+        "take": ["RetroRewind6", "riivolution"],
+        "version": "RetroRewind6/version.txt",
+        "xml": "riivolution/RetroRewind6.xml",
+        "options": [
+          { "section-name": "Retro Rewind", "option-name": "Pack", "choice": 1 },
+          { "section-name": "Retro Rewind", "option-name": "My Stuff", "choice": 0 }
+        ],
+        "folder": "Retro Rewind",
+        "first": "It plays in your Dolphin, which boots your Mario Kart Wii where it is with the pack."
       }
     },
     {
@@ -257,6 +383,18 @@
         "title": "Super Smash Bros. Brawl (USA)",
         "db": { "id": 3518, "title": "Super Smash Bros. Brawl", "platform": "Nintendo Wii" },
         "match": [ { "console": "Nintendo Wii", "disc": "RSBE01", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "repo": "https://github.com/Project-Plus-Development-Team/Project-Plus-Dolphin",
+        "asset": "\\.Netplay\\.Windows\\.zip$",
+        "folder": "Project+",
+        "run": "Dolphin.exe",
+        "args": "-b -e \"{folder}\\user\\Launcher\\Project+ Offline Launcher.dol\"",
+        "need": ["user/Launcher/Project+ Offline Launcher.dol"],
+        "list": "Nintendo Wii",
+        "game": { "ini": "user/Config/Dolphin.ini", "section": "Core", "key": "DefaultISO" },
+        "first": "It plays in the Dolphin that comes with it, which reads your Brawl where it is."
       }
     }
   ]

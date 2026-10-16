@@ -149,7 +149,8 @@ module.exports = async function (b, check) {
     await b.openPlatform("Nintendo 64");
     check("(the game's details open)", await detailsOf(b, ID), true);
     check("the Saves tab stands after About and Media, before File check, Cheats and Hacks, and counts what there is",
-      await b.until(`${TABS}.map((x) => x.textContent)`, ["About", "Media", "Saves (9)", "File check", "Cheats", "Hacks", "Accompanied files", "Notes"], 8000), ["About", "Media", "Saves (9)", "File check", "Cheats", "Hacks", "Accompanied files", "Notes"]);
+      await b.until(`${TABS}.map((x) => x.textContent.replace(/^(Texture packs) \\(\\d+\\)$/, "$1"))`, ["About", "Media", "Saves (9)", "File check", "Cheats", "Hacks", "Texture packs", "Accompanied files", "Notes"], 8000),
+      ["About", "Media", "Saves (9)", "File check", "Cheats", "Hacks", "Texture packs", "Accompanied files", "Notes"]);
     await b.ev(`(() => { window.__realFetch = window.fetch; window.__launches = []; window.__shown = []; window.fetch = function (u, o) {
         if (String(u).indexOf("api/launch.php") >= 0) { window.__launches.push(JSON.parse(o.body)); return Promise.resolve(new Response(JSON.stringify({ ok: true, launched: "stub", via: "stub", slot: JSON.parse(o.body).slot === undefined ? null : JSON.parse(o.body).slot, loads: "hotkey" }), { headers: { "Content-Type": "application/json" } })); }
         if (String(u).indexOf("api/reveal.php") >= 0) { window.__shown.push(JSON.parse(o.body)); }

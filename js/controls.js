@@ -3,6 +3,7 @@ import { iconEl } from "./icons.js";
 import { showStrip } from "./launch.js";
 import { L, api } from "./log.js";
 import { openRetroArch } from "./rahotkeys.js";
+import { raButton } from "./raoffer.js";
 import { $editor } from "./state.js";
 import { el } from "./util.js";
 
@@ -77,6 +78,9 @@ function paint(g, res) {
     note.appendChild(iconEl("cr-ico", "info"));
     note.appendChild(document.createTextNode(" " + ((res.source && res.source.note) || "nothing readable here")));
     inner.appendChild(note);
+    // No emulator yet, on a console RetroArch plays: the press that gets it (js\raoffer.js).
+    var ra = raButton(res.raOffer, "Controls");
+    if (ra) { var raBar = el("div", "bar"); raBar.appendChild(ra); inner.appendChild(raBar); }
   } else {
     rows.forEach(function (r) { pairRow(inner, r.name, r.value); });
   }

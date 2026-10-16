@@ -5,10 +5,11 @@
  *  lighter look in js\launch.js.
  */
 
+import { reloadKeeping } from "./editors.js";
 import { showStrip } from "./launch.js";
 import { L, api, logWarn } from "./log.js";
 import { sound } from "./sound.js";
-import { $editor, $settings } from "./state.js";
+import { $editor, $settings, games, sel } from "./state.js";
 import { el, megabytes } from "./util.js";
 
 /* What a job is doing, in words. Shared by the corner, the guide's steps
@@ -124,6 +125,7 @@ var rowsPaint = null;      // Settings > Emulators keeps counting the same way
 export function watchSetup(done, tick) {
   var misses = 0;
   var lastKind = "";
+  var sawRa = false;                     // RetroArch came in this watch: the games on screen could not play before it
   watchAlive = true;
   function read() {
     // Only the job, unless a page draws from the whole answer: the full one
@@ -151,6 +153,7 @@ export function watchSetup(done, tick) {
         showStrip("RetroArch is ready: fetching the cores for your consoles next...", false);
       }
       lastKind = st.job.kind;
+      if (st.job.kind === "retroarch") { sawRa = true; }
       if (tick) { tick(st); }
       if (!st.light && guidePaint && guidePaint !== tick) { guidePaint(st); }
       if (!st.light && rowsPaint && rowsPaint !== tick) { rowsPaint(st); }
@@ -161,6 +164,8 @@ export function watchSetup(done, tick) {
         showStrip((st.job.kind === "cores" ? "the cores" : "RetroArch") + " could not be fetched: " + st.job.error, true);
         return;
       }
+      // Their Play buttons said what was missing: read again, so they play.
+      if (sawRa) { L("SETUP", "RetroArch is in: the games are read again"); reloadKeeping(games[sel] ? games[sel].id : null); }
       done(st);
     });
   }

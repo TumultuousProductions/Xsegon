@@ -11,6 +11,7 @@ import { showStrip } from "./launch.js";
 import { L, api, postJson } from "./log.js";
 import { mailArrived } from "./news.js";
 import { setupAsking } from "./nogames.js";
+import { raLabel } from "./raoffer.js";
 import { $editor, S, games, sel } from "./state.js";
 import { plural } from "./util.js";
 
@@ -87,7 +88,12 @@ function ended(job, why) {
     reloadKeeping(games[sel] ? games[sel].id : null);
   }
   var unsure = job.many ? job.many + " new games found at once" : job.told ? plural(job.told, "file", "files") + " Xsegon was not sure of" : "";
-  if (unsure) {
+  // Left out for want of RetroArch: the message holds the press that sets it up (includes\newgames.php).
+  var raPress = !job.many && job.told && raLabel(job.ra);
+  if (raPress) {
+    line += (line ? "  ·  " : "") + plural(job.told, "file", "files") + " not added yet: Messages has " + raPress.replace("...", "") + " for those with no emulator";
+    mailArrived();
+  } else if (unsure) {
     line += (line ? "  ·  " : "") + unsure + ": use Games > Scan for Games for " + (job.many || job.told > 1 ? "them" : "it") + " (Messages lists them)";
     mailArrived();
   }

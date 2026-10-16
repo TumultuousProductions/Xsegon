@@ -31,6 +31,7 @@ import { saverUp, touch } from "./status.js";
 import { subBack, subSide } from "./submenu.js";
 import { backToWall, chooseSystem, moveSys, openSysMenu, setSysSel, sysList, sysSel, sysStyle, updateSystems } from "./systems.js";
 import { openLogViewer } from "./tools.js";
+import { nextView } from "./viewlock.js";
 import { ctl, move, navRows, render, rowStep, setView, viewPending } from "./views.js";
 
 // ---------- input ----------
@@ -333,7 +334,7 @@ function onKey(e) {
   else if (e.key === "d")          { if (games[sel] && games[sel].docs) { openDocs(games[sel]); } }   // its manual and maps (js\docs.js)
   else if (e.key === "F10" && !e.shiftKey && $toolbar.classList.contains("as-menubar")) { openBarMenu("xsegon"); e.preventDefault(); }
   else if (e.key === "ContextMenu" || (e.key === "F10" && e.shiftKey)) { openGameMenuAtSelection(); e.preventDefault(); }
-  else if (e.key === "g")          { setView({ list: "grid", grid: "shelf", shelf: "wheel", wheel: "carousel", carousel: "rows", rows: "list" }[view] || "list"); }
+  else if (e.key === "g")          { setView(nextView(view)); }   // past Wheel and Carousel while they wait (js\viewlock.js)
   else if (e.key === "c")          { toggleContrast(); }
   else if (e.key === "l")          { openLogViewer(); }
   else if (e.key === "r")          { randomGame(); }

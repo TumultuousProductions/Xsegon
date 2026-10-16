@@ -95,10 +95,18 @@ if ($id !== '') {
     $platform = (string) $game['platform'];
     $launch   = is_array($game['launch'] ?? null) ? $game['launch'] : null;
     if ($launch === null) {
+        $note = (string) ($game['launchError'] ?? 'this game has no launch to explain');
+        // No emulator on a console RetroArch plays: the note names the press beside it (js\raoffer.js).
+        // One game read, so a RetroArch only LaunchBox's launch lines know is not looked for; the press asks again.
+        $raOffer = null;
+        if (str_starts_with($note, 'no emulator')) {
+            require_once __DIR__ . '/../includes/setup.php';
+            $raOffer = xs_setup_ra_plays($platform) ? xs_setup_ra_offer([]) : null;
+            $note = xs_setup_ra_why($note, $platform, $raOffer);
+        }
         xs_json(['ok' => true, 'title' => $title, 'platform' => $platform, 'via' => '',
-                 'source' => ['file' => null, 'read' => false,
-                              'note' => (string) ($game['launchError'] ?? 'this game has no launch to explain')],
-                 'rows' => [], 'remap' => null]);
+                 'source' => ['file' => null, 'read' => false, 'note' => $note],
+                 'rows' => [], 'remap' => null, 'raOffer' => $raOffer]);
     }
     // A web game or a program of your own has no emulator to ask.
     if (!empty($launch['local'])) {
