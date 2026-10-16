@@ -147,6 +147,13 @@ function xs_pcsx2_home(string $exe): ?string
     return is_dir($docs . '\\inis') ? $docs : (is_dir($dir . '\\inis') ? $dir : null);
 }
 
+/** One of PCSX2's folders as its [Folders] names it: a relative one is under $home. */
+function xs_pcsx2_folder(array $ini, string $home, string $key, string $default): string
+{
+    $v = trim((string) (($ini['Folders'][$key] ?? [])[0] ?? '')) ?: $default;
+    return preg_match('/^([A-Za-z]:|\\\\\\\\)/', $v) ? $v : $home . '\\' . $v;
+}
+
 /**
  * A PCSX2 settings file as [section][key] => [values], a key kept as many
  * times as it is written (Enable = ... is, once a cheat). [] when unreadable.

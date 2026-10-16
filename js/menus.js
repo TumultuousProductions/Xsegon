@@ -31,6 +31,7 @@ import { logoTipDone } from "./logotip.js";
 import { TIPS, hideMenuTip, leaveMenuTip, menuTipScrolled, restMenuTip } from "./menu-tips.js";
 import { openPadCheck } from "./padcheck.js";
 import { openPhone } from "./phone.js";
+import { getRetroArch, raLabel } from "./raoffer.js";
 import { showInExplorer } from "./reveal.js";
 import { rowsNode } from "./rows.js";
 import { openRunCheck } from "./runcheck.js";
@@ -50,6 +51,7 @@ import { setTheme, themeId, themeList } from "./themes.js";
 import { openBackupTool, openLogViewer, openReportTool } from "./tools.js";
 import { el } from "./util.js";
 import { exportNoVideos, importVideoPackage } from "./videopack.js";
+import { lockWords, viewWaits, viewsLocked } from "./viewlock.js";
 import { carNodes, flatNodes, render, setView, wheelNodes } from "./views.js";
 import { GRID_IMAGES, badgesOn, badgesShown, gridImage, noVideoMarked, playersShown, setBadge, setGridImage, setShowPlayers, setSort, setViewFlag, toggleHeroPanel, toggleListStripes, toggleNoVideoMark, toggleShowBadges, toggleShowPlayers, toggleSidebar } from "./viewset.js";
 import { openSizer } from "./viewsize.js";
@@ -263,6 +265,9 @@ export function openGameMenu(i, x, y) {
   popupMenu([
     { icon: "play", label: "Play", hint: "Enter", run: g.playable ? function () { launch(); } : null,
       tip: g.playable ? null : "Cannot start: " + (g.why || "it has no launch command") },
+    // No emulator yet where RetroArch would play it: the press that gets it (js\raoffer.js).
+    { icon: "disc", label: raLabel(g.raOffer) || "", hidden: g.playable || !raLabel(g.raOffer), tip: g.why,
+      run: function () { getRetroArch("the game menu"); } },
     // A Steam game's own program, for when Steam or the internet is not
     // there. Play itself goes through Steam.
     { icon: "play", label: "Play without Steam", hidden: !g.steam,
@@ -394,11 +399,14 @@ function mbEntries(which) {
   }
   if (which === "view") {
     var views = { list: "List", grid: "Grid", shelf: "Shelf", wheel: "Wheel", carousel: "Carousel", rows: "Rows" };
+    // Wheel, Carousel and the consoles screen wait for an emulator (js\viewlock.js): greyed, saying why.
     var v = Object.keys(views).map(function (k) {
-      return { label: views[k], checked: view === k, tip: TIPS[k], run: function () { $viewsel.value = k; setView(k); } };
+      var waits = viewWaits(k);
+      return { label: views[k], checked: view === k, tip: waits ? lockWords() : TIPS[k], run: waits ? null : function () { $viewsel.value = k; setView(k); } };
     });
     if (sysStage === "inside") {
-      v.push({ rule: true }, { icon: "back", label: "Back to consoles", hint: "Esc", run: function () { backToWall(); } });
+      v.push({ rule: true }, { icon: "back", label: "Back to consoles", hint: "Esc", tip: viewsLocked() ? lockWords() : null,
+                               run: viewsLocked() ? null : function () { backToWall(); } });
     }
     return v.concat([
       { rule: true },

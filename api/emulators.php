@@ -80,9 +80,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET') {
     $without = [];
     foreach ($games as $low => $n) {
         if (xs_emu_option($table, (string) $low) === null) {
-            $without[] = ['name' => $names[$low] ?? ucwords((string) $low), 'games' => $n];
+            $name = $names[$low] ?? ucwords((string) $low);
+            $without[] = ['name' => $name, 'games' => $n, 'ra' => xs_setup_ra_plays($name)];
         }
     }
+    // Some of them RetroArch plays: the press that gets it goes beside them (js\raoffer.js).
+    $raOffer = in_array(true, array_column($without, 'ra'), true) ? xs_setup_ra_offer($lib) : null;
     $mine = xs_read_json(xs_emulators_path(), null);
     xs_json([
         'ok'        => true,
@@ -93,6 +96,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET') {
         'consoles'  => count($table['platforms'] ?? []),
         'yours'     => count($games),
         'without'   => $without,
+        'raOffer'   => $raOffer,
         'canReseed' => $root !== '' && is_dir($root),
     ]);
 }

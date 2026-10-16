@@ -1,0 +1,28 @@
+list.json: the texture packs a game's details lists (the Texture packs tab), for
+the consoles whose emulator here loads them: PS2 (PCSX2), GameCube and Wii
+(Dolphin), N64 (RetroArch's Mupen64Plus-Next core).
+
+It is read from the Texture Packs Archive, the community's list kept by Sad
+Origami: https://docs.google.com/spreadsheets/d/1sif8FeRGJRbytK8wFRXgF6Hke9V6GUFs
+Anyone on that list's own Blacklist tab is left out. `node tools\build-texpacks.js`
+makes this file again; it is run before a release, never on a person's PC.
+
+Xsegon carries this list and none of the packs. Each pack is its maker's own. A
+press opens a pack's own page in the browser; for a pack whose page is on
+emulationking.com, evilgames.eu or a GitHub project with a release, Xsegon
+fetches that pack's own download from there, on the person's PC, at their press.
+Credit is in README.md under Credits.
+
+Each console is a list of packs:
+  k       a key of the pack's own, from its console, title, maker and page
+  t       the game's title as the list writes it
+  name    the pack's own name, where its page gives one
+  by      who made it
+  kind    hand (made by hand), ai (an AI upscale), mixed, or '' (not said)
+  st      Complete, Not finished, Part of the game, or '' (not said)
+  r       the release it was made for: NTSC-U, PAL, NTSC-J, or ''
+  bytes   its size, from its download where it has one, else as the list says
+  pay     free, paid, account (needs an account to download), or ads
+  page    its page; where its own host
+  tip     its maker's tip page, or ''
+  get     its own download Xsegon may fetch {url, bytes, name}, or null

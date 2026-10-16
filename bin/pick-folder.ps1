@@ -19,7 +19,7 @@ param(
     [string] $Kind  = 'folder',
     # Where the window starts: the folder or file chosen before, if any.
     [string] $Start = '',
-    # What the file window lists first: 'sounds', 'lists', 'packages', or programs when not said.
+    # What the file window lists first: 'sounds', 'lists', 'packages', 'textures', or programs when not said.
     [string] $Types = ''
 )
 
@@ -44,6 +44,7 @@ try {
         $dlg.Filter = if ($Types -eq 'sounds') { 'Sounds (*.wav;*.ogg;*.mp3)|*.wav;*.ogg;*.mp3|All files (*.*)|*.*' }
                       elseif ($Types -eq 'lists') { 'Lists of games (*.json)|*.json|All files (*.*)|*.*' }
                       elseif ($Types -eq 'packages') { 'Video packages (*.zip)|*.zip|All files (*.*)|*.*' }
+                      elseif ($Types -eq 'textures') { 'Texture packs (*.zip;*.7z)|*.zip;*.7z|All files (*.*)|*.*' }
                       else { 'Programs (*.exe;*.bat;*.cmd;*.lnk)|*.exe;*.bat;*.cmd;*.lnk|All files (*.*)|*.*' }
         try {
             if ($Start) {

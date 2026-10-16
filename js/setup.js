@@ -24,6 +24,7 @@ import { stopVideo } from "./snap.js";
 import { sound } from "./sound.js";
 import { $editor, games, sel } from "./state.js";
 import { el, megabytes } from "./util.js";
+import { viewsLocked } from "./viewlock.js";
 
 function post(body) {
   return postJson("api/setup.php", body);
@@ -103,6 +104,8 @@ export function confirmUse(st, after) {
       L("SETUP", "use " + r.exe);
       sound("ok");
       showStrip("RetroArch at " + r.exe + " now plays " + r.filled.length + " more consoles", false);
+      // Their games could not start before it: read again, so Play works and Wheel and Carousel open (js\viewlock.js).
+      reloadKeeping(games[sel] ? games[sel].id : null);
       api("api/setup.php").then(function (s2) {
         if (after) { after(s2); }
         // under Set it all up the server chained the cores already: follow
@@ -319,7 +322,8 @@ export function openGuide() {
       // a real bar, not a number alone
       body1.appendChild(jobBarNode(jobFrac(st.job)));
       // The steps below do not need it: said, so nobody sits out a long download.
-      body1.appendChild(el("p", "gd-text gd-go-on", "No need to wait for it to finish: go on to the next step."));
+      body1.appendChild(el("p", "gd-text gd-go-on", "No need to wait for it to finish: go on to the next step." +
+        (viewsLocked() ? " Wheel and Carousel open once it is in." : "")));
     } else if (st.canUse) {
       step(1, "RetroArch", "todo", "Found at " + ra.exe + ", and Xsegon is not using it yet.",
         [{ label: "Use it...", primary: true, run: function () { confirmUse(st, paint); } }]);

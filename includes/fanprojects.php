@@ -49,9 +49,84 @@ function xs_fan_list(): array
         if (isset($p['yours']['build']) && @preg_match('#' . $p['yours']['build'] . '#i', '') === false) {
             unset($p['yours']['build']);
         }
+        // How it is made: only ever from the team's own website or GitHub, as the entry names them.
+        if (isset($p['make']) && ($p['make']['how'] ?? 'patch') === 'patch') {
+            $own = array_filter([parse_url((string) $page, PHP_URL_HOST), $repo !== null ? 'github.com' : null]);
+            foreach (['list', 'from'] as $k) {
+                $u = (string) ($p['make'][$k] ?? '');
+                if (!xs_fan_url_ok($u) || !in_array(parse_url($u, PHP_URL_HOST), $own, true)) {
+                    unset($p['make']);
+                    break;
+                }
+            }
+        } elseif (isset($p['make'])) {
+            // A release from GitHub: the project's own, or one under the same owner its GitHub names.
+            $from = (string) ($p['make']['repo'] ?? $repo);
+            $owner = $repo !== null && preg_match('#^https://github\.com/[A-Za-z0-9_.-]+#', $repo, $o) ? $o[0] . '/' : null;
+            if ($owner === null || !xs_fan_url_ok($from) || !str_starts_with($from . '/', $owner)
+                || @preg_match('#' . (string) ($p['make']['asset'] ?? '') . '#i', '') === false) {
+                unset($p['make']);
+            }
+        }
         $list[$p['id']] = $p;
     }
     return $list;
+}
+
+/**
+ * Whether Make can make this project here: a recipe of a kind Xsegon follows (includes\fanmake.php),
+ * a patch from the team's list, or a release from their GitHub given your game.
+ */
+function xs_fan_makes(array $p): bool
+{
+    $m = $p['make'] ?? null;
+    if (!is_array($m) || !isset($p['repo'])) {
+        return false;
+    }
+    $how = $m['how'] ?? 'patch';
+    if ($how === 'pack') {
+        // A Riivolution pack from the team's own server: every address theirs, every path inside its folder.
+        require_once __DIR__ . '/fanmake.php';
+        foreach (['install', 'updates', 'deletes'] as $k) {
+            if (!xs_fm_own_url($p, (string) ($m[$k] ?? ''))) {
+                return false;
+            }
+        }
+        $paths = array_merge((array) ($m['take'] ?? []), [(string) ($m['version'] ?? ''), (string) ($m['xml'] ?? '')]);
+        return ($m['take'] ?? []) && is_string($m['version'] ?? null) && is_string($m['xml'] ?? null)
+            && preg_match('/^[A-Za-z0-9][A-Za-z0-9 ._()+-]{0,60}$/', (string) ($m['folder'] ?? '')) === 1
+            && !array_filter($paths, static fn($f) => !is_string($f) || $f === '' || str_contains($f, '..') || str_contains($f, ':'));
+    }
+    if ($how === 'build') {
+        // The team's source and the tools their build guide names, each a GitHub release download of a size the list gives.
+        $paths = [(string) ($m['compile'][0] ?? '')];
+        foreach ((array) ($m['tools'] ?? []) as $t) {
+            if (!preg_match('#^https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/releases/download/[A-Za-z0-9_.%+-]+/[A-Za-z0-9_.%+-]+\.zip$#', (string) ($t['url'] ?? ''))
+                || (int) ($t['size'] ?? 0) <= 0) {
+                return false;
+            }
+            $paths[] = (string) ($t['into'] ?? '');
+        }
+        foreach ((array) ($m['copy'] ?? []) as $c) {
+            array_push($paths, (string) ($c[0] ?? '..'), (string) ($c[1] ?? '..'));
+        }
+        if (!is_string($m['branch'] ?? null) || !is_array($m['tools'] ?? null) || !is_array($m['compile'] ?? null) || count($m['compile']) < 2
+            || $paths[0] === '' || array_filter($paths, static fn($f) => str_contains($f, '..') || str_contains($f, ':'))) {
+            return false;
+        }
+        $m['asset'] = '';
+    }
+    if ($how === 'release' || $how === 'build') {
+        $game = $m['game'] ?? null;
+        return is_string($m['asset'] ?? null) && is_string($m['run'] ?? null) && !str_contains($m['run'], '..')
+            && preg_match('/^[A-Za-z0-9][A-Za-z0-9 ._()+-]{0,60}$/', (string) ($m['folder'] ?? '')) === 1
+            && is_array($game) && (isset($game['to']) || isset($game['discs']) || isset($game['ini'], $game['section'], $game['key']))
+            && !array_filter(array_merge([$game['to'] ?? '', $game['discs'] ?? '', $game['ini'] ?? ''], (array) ($m['need'] ?? [])),
+                             static fn($f) => str_contains((string) $f, '..') || str_contains((string) $f, ':'))
+            && !array_filter((array) ($m['write'] ?? []), static fn($f) => !preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]{0,60}$/', (string) $f));
+    }
+    return ($p['kind'] ?? '') === 'patch' && ($m['patch'] ?? '') === 'xdelta'
+        && is_string($m['list'] ?? null) && is_string($m['from'] ?? null) && is_string($m['take'] ?? null);
 }
 
 /** An address that may be handed to Windows to open: https, and none of the characters a command line reads. */
@@ -238,9 +313,13 @@ function xs_fan_states(array $games): array
     $s = xs_settings();
     $fc = xs_fc_all();
     $wanted = xs_read_json(xs_data_path('wanted.json'), []);
+    $made = xs_read_json(xs_data_path('fan-made.json'), []);
+    $made = is_array($made) ? $made : [];
     $on = [];
+    $byId = [];
     foreach ($games as $g) {
         $on[(string) ($g['platform'] ?? '')][] = $g;
+        $byId[(string) $g['id']] = $g;
     }
     $discs = [];                         // a game's discs read once a request, however many projects ask
     $disc = static function (array $g) use (&$discs, $s): ?array {
@@ -346,6 +425,15 @@ function xs_fan_states(array $games): array
                 }
             }
         }
+        // And what Make made, known by the record it kept, before a file check has read it.
+        $mine = array_column($yours, 'id');
+        foreach ($made as $mid => $rec) {
+            if (($rec['project'] ?? '') === $p['id'] && isset($byId[$mid]) && !in_array($mid, $mine, true)) {
+                $g = $byId[$mid];
+                $yours[] = ['id' => $g['id'], 'title' => $g['title'], 'platform' => $g['platform'], 'local' => !empty($g['local']),
+                            'version' => (string) ($rec['version'] ?? '') ?: null];
+            }
+        }
         // The newest first: what Play starts.
         usort($yours, static fn($a, $b) => version_compare((string) $b['version'], (string) $a['version']));
 
@@ -354,6 +442,7 @@ function xs_fan_states(array $games): array
             'console' => $p['console'], 'adds' => (string) ($p['adds'] ?? ''), 'tags' => array_values((array) ($p['tags'] ?? [])),
             'team' => (string) ($p['team'] ?? ''), 'licence' => (string) ($p['licence'] ?? ''),
             'page' => $p['page'] ?? null, 'repo' => $p['repo'] ?? null, 'community' => $p['community'] ?? null, 'base' => $base, 'yours' => $yours,
+            'make' => xs_fan_makes($p),
             // The picture: a copy of yours, else the game it is made from.
             'pic' => $yours[0]['id'] ?? ($base['gameId'] ?? null),
         ];

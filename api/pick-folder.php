@@ -44,8 +44,8 @@ $body  = xs_body();
 $title = trim(preg_replace('/["\r\n]+/', ' ', (string) ($body['title'] ?? '')) ?? '');
 // A file instead of a folder: an emulator or a program of your own is chosen in a window too.
 $kind  = ($body['kind'] ?? '') === 'file' ? 'file' : 'folder';
-// What the file window lists: programs, unless a sound, a list of games or a video package is being chosen.
-$types = in_array($body['types'] ?? '', ['sounds', 'lists', 'packages'], true) ? (string) $body['types'] : '';
+// What the file window lists: programs, unless a sound, a list of games, a video package or a texture pack is being chosen.
+$types = in_array($body['types'] ?? '', ['sounds', 'lists', 'packages', 'textures'], true) ? (string) $body['types'] : '';
 $start = mb_substr(trim(preg_replace('/["\r\n]+/', '', (string) ($body['start'] ?? '')) ?? ''), 0, 400);
 $title = $title !== '' ? mb_substr($title, 0, 120) : ($kind === 'file' ? 'Choose the file' : 'Choose the folder your games are in');
 

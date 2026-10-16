@@ -210,6 +210,102 @@ module.exports = async function (b, check) {
     await b.settled(1500);
     check("so the next start stays quiet", await b.ev(`document.getElementById("editor").hidden && !document.querySelector(".setup-confirm")`), true);
 
+    /* ---- a game with no emulator offers RetroArch (roadmap AV11) ----
+       Its words name the press and raOffer says which: Set it all up while the
+       setup was never used, Get RetroArch after it, none while RetroArch comes. */
+    {
+      const sjAv = path.join(DATA, "setup.json"), jobAv = path.join(DATA, "setup-job.json");
+      const sjAvWas = fs.existsSync(sjAv) ? fs.readFileSync(sjAv) : null;
+      const setAuto = (on) => { const j = fs.existsSync(sjAv) ? readJson(sjAv) : {}; if (on) { j.auto = true; } else { delete j.auto; } fs.writeFileSync(sjAv, JSON.stringify(j)); };
+      const allRows = async () => (await api("api/library.php?sort=title&grouped=0&versions=all&lot=20000")).games || [];
+      const offered = (rows) => rows.filter((g) => !g.playable && g.raOffer);
+      try {
+        setAuto(false);
+        const rows0 = await allRows();
+        const skip0 = offered(rows0);
+        if (!skip0.length) {
+          console.log("    (no scanned game on a console RetroArch plays is in this copy: the ROM drive may be out; the offer rests)");
+        } else {
+          check("with the setup never used, a game RetroArch plays offers Set it all up, in its words",
+                skip0.every((g) => g.raOffer === "setup" && /^no emulator set up for .+ yet: Set it all up gets RetroArch, which plays it$/.test(g.why)), true);
+          check("and none on such a console still sends a person to Add an emulator",
+                rows0.filter((g) => !g.playable && /Add an emulator gives it one/.test(g.why || "") && skip0.some((x) => x.platform === g.platform)).length, 0);
+          // A console whose games all wait on RetroArch: the game the panel shows is one of them.
+          const plat = [...new Set(skip0.map((g) => g.platform))].find((p) => rows0.filter((g) => g.platform === p && !g.local).every((g) => g.raOffer === "setup"));
+          if (plat) {
+            const heroBtn = `(x => x ? [x.textContent, x.disabled] : null)(document.querySelector("#hero .bar button.primary"))`;
+            await api("api/settings.php", { view: { heroPanel: true } });
+            await b.goto();
+            await b.openPlatform(plat);
+            const heroSays = await b.until(heroBtn, ["Set it all up...", false], 8000);
+            check("the game panel's Play is the press: Set it all up...", heroSays, ["Set it all up...", false]);
+            // Enter only on proof the game cannot start: on a playable one it would play.
+            if (JSON.stringify(heroSays) === JSON.stringify(["Set it all up...", false])) {
+              await b.ev(`document.querySelector("#hero .bar button.primary").click()`);
+              check("and it opens the setup window", await b.until(`document.getElementById("editor").dataset.tool === "setup" && !document.getElementById("editor").hidden`, true, 10000), true);
+              await b.key("Escape");
+              await b.until(`document.getElementById("editor").hidden`);
+              await b.key("Enter");
+              check("Enter on it opens a small window with the press, in place of a red line",
+                    await b.until(`[${askTitle}, ${askButtons}]`, ["No emulator yet", ["Not now", "Set it all up..."]], 8000), ["No emulator yet", ["Not now", "Set it all up..."]]);
+              await b.key("Escape");
+              await b.until(`!document.querySelector(".setup-confirm")`);
+            }
+            await api("api/settings.php", { view: { heroPanel: cfg0.view.heroPanel !== false } });
+          } else { console.log("    (no console here has all its games waiting on RetroArch; the panel's press rests)"); }
+          const emu = await api("api/emuset.php?id=" + encodeURIComponent(skip0[0].id));
+          check("Set Emulator offers it too", [emu.raOffer, / yet: Set it all up gets RetroArch/.test(emu.why || "")], ["setup", true]);
+          const ctl = await api("api/controls.php?id=" + encodeURIComponent(skip0[0].id));
+          check("and so does Controls", [ctl.raOffer, / yet: Set it all up gets RetroArch/.test((ctl.source || {}).note || "")], ["setup", true]);
+          // Being set up: faked with this runner's own process id, so nothing is fetched.
+          fs.writeFileSync(jobAv, JSON.stringify({ kind: "retroarch", state: "running", step: "unpack", pid: process.pid,
+            started: Math.floor(Date.now() / 1000), version: "test", total: 1, bytes: 1 }));
+          const coming = offered(await allRows());
+          check("while RetroArch is being set up, the same games say it comes, with no press",
+                coming.length === skip0.length && coming.every((g) => g.raOffer === "coming" && g.why === "RetroArch is being set up: this game plays once it is in"), true);
+          fs.rmSync(jobAv, { force: true });
+          setAuto(true);
+          const got = offered(await allRows());
+          check("with the setup used and RetroArch not here, Get RetroArch",
+                got.length === skip0.length && got.every((g) => g.raOffer === "get" && / yet: Get RetroArch sets up RetroArch, which plays it$/.test(g.why)), true);
+        }
+      } finally {
+        if (sjAvWas) { fs.writeFileSync(sjAv, sjAvWas); } else { fs.rmSync(sjAv, { force: true }); }
+        fs.rmSync(jobAv, { force: true });
+      }
+    }
+
+    /* ---- Wheel, Carousel and the consoles screen wait for an emulator (roadmap AV13) ----
+       A copy with no emulator on this PC and no game that can start: the copy's
+       own games and stored launches are set aside for it, and put back. */
+    {
+      const ownF = path.join(DATA, "local-games.json");
+      const kept = {};
+      for (const f of [tablePath, libPath, ownF]) { kept[f] = fs.existsSync(f) ? fs.readFileSync(f) : null; }
+      const optsOf = `[...document.getElementById("viewsel").options].filter(o => o.value === "wheel" || o.value === "carousel").map(o => o.textContent + (o.disabled ? ":greyed" : ""))`;
+      try {
+        fs.writeFileSync(tablePath, JSON.stringify({ programs: {}, platforms: {} }));
+        if (origLib) { const l = JSON.parse(JSON.stringify(origLib)); for (const g of l.games) { g.launch = null; } fs.writeFileSync(libPath, JSON.stringify(l)); }
+        fs.rmSync(ownF, { force: true });
+        check("with no emulator on this PC and no game that starts, the library says they wait", (await api("api/library.php?sort=title&grouped=0")).viewsLocked, true);
+        await b.goto();             // it asks for the wheel with Systems first, as every goto does
+        check("a copy whose view is Wheel opens on List meanwhile", await b.until(`[document.getElementById("viewsel").value, document.getElementById("syswall").hidden]`, ["list", true], 10000), ["list", true]);
+        check("and the dropdown greys Wheel and Carousel, saying why", await b.ev(optsOf), ["Wheel (once RetroArch is in):greyed", "Carousel (once RetroArch is in):greyed"]);
+        check("the legend has no way back to the consoles screen", await b.ev(`/back to systems/.test(document.getElementById("help").textContent)`), false);
+        await b.ev(`document.activeElement && document.activeElement.blur()`);
+        await b.key("Escape");
+        check("Esc keeps the list and says why", await b.until(`[document.getElementById("syswall").hidden, /open once RetroArch is in/.test((document.querySelector("#strip") || {}).textContent || "")]`, [true, true], 5000), [true, true]);
+        await b.setView("shelf");
+        await b.key("g");
+        check("G goes past them: Shelf, then Rows", await b.until(`document.getElementById("viewsel").value`, "rows", 5000), "rows");
+      } finally {
+        for (const f of Object.keys(kept)) { if (kept[f]) { fs.writeFileSync(f, kept[f]); } else { fs.rmSync(f, { force: true }); } }
+      }
+      check("with an emulator back on this PC they wait no more", (await api("api/library.php?sort=title&grouped=0")).viewsLocked, false);
+      await b.goto();
+      check("and the dropdown offers them again", await b.ev(optsOf), ["Wheel", "Carousel"]);
+    }
+
     /* ---- the one yes, from the page: the guide's Set it all up opens the window ----
        All off, then the games check alone: one press starts everything, and
        nothing is asked after it. The pictures pass is blocked by a faked

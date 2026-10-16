@@ -423,6 +423,19 @@ foreach ($games as $g) {
     ];
 }
 
+// No emulator on a console RetroArch plays: the words name the press, and raOffer says which (js\raoffer.js).
+if (array_filter($rows, static fn($r) => !$r['playable'] && str_starts_with((string) $r['why'], 'no emulator'))) {
+    require_once __DIR__ . '/../includes/setup.php';
+    $raOffer = xs_setup_ra_offer($lib);
+    foreach ($rows as $i => $r) {
+        $said = $r['playable'] ? null : xs_setup_ra_why((string) $r['why'], (string) $r['platform'], $raOffer);
+        if ($said !== null && $said !== $r['why']) {
+            $rows[$i]['why'] = $said;
+            $rows[$i]['raOffer'] = $raOffer;
+        }
+    }
+}
+
 // ---- versions: one card per game on a console ----------------------------
 /*
  * Games that share a console and a title become one card, wearing the version
@@ -729,6 +742,9 @@ xs_json([
     'platformArtRev' => xs_platform_art_rev($s),
     // The day Recently added starts from, for the Rows view's own row.
     'addedSince' => $addedCutoff,
+    // Wheel, Carousel and the consoles screen wait while no emulator is on this PC and no game can start (js\viewlock.js).
+    'viewsLocked' => xs_emu_none_here(xs_norm_path((string) ($s['paths']['launchbox'] ?? '')))
+                     && !in_array(true, array_map(static fn ($g) => ($g['launch'] ?? null) !== null, $lib['games'] ?? []), true),
     'generated' => $lib['generatedAt'] ?? null,
     'sort'      => $sort,
     'reverse'   => $reverse,

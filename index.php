@@ -17,6 +17,14 @@ if ($s['library']['importOnStartup'] && trim((string) $s['paths']['launchbox']) 
     $autoImported = (bool) (xs_import($s)['ok'] ?? false);
 }
 
+/* Wheel, Carousel and the consoles screen wait until an emulator is on this PC (a new
+   copy: until RetroArch is in): they have no menu bar, and someone new lost there finds
+   no way to Getting started (js\viewlock.js). A stored Wheel or Carousel opens on List meanwhile, this page only. */
+$viewsLocked = xs_emu_none_here(xs_norm_path((string) ($s['paths']['launchbox'] ?? '')));
+if ($viewsLocked && in_array($s['view']['default'], ['wheel', 'carousel'], true)) {
+    $s['view']['default'] = 'list';
+}
+
 /* The look (includes\themes.php). A theme's values go on <html>, under the
    stylesheet's own names; the house look is none. What a look does not have
    is off whatever the switches say. */
@@ -159,7 +167,8 @@ $jsV = $jsV ?: time();
          open naming a view that is not the one on screen. -->
     <select id="viewsel" title="Game view (g cycles)" aria-label="View" autocomplete="off">
       <?php foreach (['list' => 'List', 'grid' => 'Grid', 'shelf' => 'Shelf', 'wheel' => 'Wheel', 'carousel' => 'Carousel', 'rows' => 'Rows'] as $k => $label): ?>
-        <option value="<?= $k ?>"<?= $shownView === $k ? ' selected' : '' ?>><?= $label ?></option>
+        <?php $waits = $viewsLocked && in_array($k, ['wheel', 'carousel'], true); ?>
+        <option value="<?= $k ?>"<?= $shownView === $k ? ' selected' : '' ?><?= $waits ? ' disabled' : '' ?>><?= $label ?><?= $waits ? ' (once RetroArch is in)' : '' ?></option>
       <?php endforeach; ?>
     </select>
     <button type="button" id="btn-settings">Settings</button>
@@ -334,6 +343,8 @@ $jsV = $jsV ?: time();
     // The phone page (includes\phone.php): started here when its switch was left on, and the top row's mark says so.
     phoneOn: <?= (function () { require_once __DIR__ . '/includes/phone.php'; return xs_phone_ensure()['on']; })() ? 'true' : 'false' ?>,
     launchbox: <?= $lbOn ? 'true' : 'false' ?>,
+    // Wheel, Carousel and the consoles screen wait for an emulator (js\viewlock.js); each library read says it again.
+    viewsLocked: <?= $viewsLocked ? 'true' : 'false' ?>,
     // how many of the emulators in use sit inside a LaunchBox folder, which is read and never written (includes\emumove.php)
     emusInLb: <?= (function () { require_once __DIR__ . '/includes/emumove.php'; return xs_emumove_count(); })() ?>,
     // whether the Games Database is what fills games in (includes\gamesdb.php):

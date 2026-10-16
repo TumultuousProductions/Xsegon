@@ -4,6 +4,7 @@ import { load } from "./library.js";
 import { L, api, postJson } from "./log.js";
 import { popupMenu } from "./menus.js";
 import { troubleSeen } from "./news.js";
+import { askRetroArch, getRetroArch, raLabel } from "./raoffer.js";
 import { rowsNode } from "./rows.js";
 import { saveSetting } from "./savednote.js";
 import { paintSetupBar } from "./setupbar.js";
@@ -36,16 +37,23 @@ export function launch() {
    One that cannot start is listed, greyed, and says so. */
 function pickVersion(g) {
   L("LNCH", "which version of " + g.title + " (" + g.versions.length + ")");
-  popupMenu(g.versions.map(function (v) {
+  var vrows = g.versions.map(function (v) {
     return { icon: "play", label: versionLabel(v),
              hint: !v.playable ? "cannot start" : v.lastPlayed ? "played " + v.lastPlayed.slice(0, 10)
                  : v.plays ? "played before" : "never played",   // imported counts carry no date
              tip: v.playable ? null : "Cannot start: " + (v.why || "it has no launch command"),
              run: v.playable ? function () { launchGame(v); } : null };
-  }), Math.round(innerWidth / 2 - 160), Math.round(innerHeight / 3), g.title + ": which version?");
+  });
+  // One with no emulator yet where RetroArch would play it: the press that gets it, last.
+  var raVer = g.versions.filter(function (v) { return !v.playable && raLabel(v.raOffer); })[0];
+  if (raVer) { vrows.push({ icon: "disc", label: raLabel(raVer.raOffer), tip: raVer.why, run: function () { getRetroArch("the which-version menu"); } }); }
+  popupMenu(vrows, Math.round(innerWidth / 2 - 160), Math.round(innerHeight / 3), g.title + ": which version?");
 }
 
 function launchGame(g) {
+  // No emulator yet where RetroArch would play it: the press that gets it, not a red line.
+  if (!g.playable && raLabel(g.raOffer)) { askRetroArch(g); return; }
+  if (!g.playable && g.raOffer) { showStrip(g.title + ": " + g.why, false); return; }
   if (!g.playable) { showStrip("cannot launch: " + (g.why || "no command"), true); return; }
 
   // Ask before launching (Settings > Launching): the yes comes first. The

@@ -2,10 +2,13 @@
     (api\fanprojects.php). Opened from its card on the consoles screen and from
     the Games menu. Drawn with the games' own boxes (the grid, its tiles and
     headings, the panel beside them), so every theme dresses it as it dresses
-    the games. Making a project is the next step (roadmap AQ2).              */
+    the games. Make makes a project from your game where the list says how
+    (includes\fanmake.php, roadmap AQ2 and AQ3): a patched copy, a PC version
+    from the team's release or source, or a disc mod's pack.                 */
 
 import { dropDetails } from "./details.js";
 import { paintHelp, paintHelpHere } from "./help.js";
+import { jobsWatch } from "./jobbars.js";
 import { launchNow, showStrip } from "./launch.js";
 import { L, api, postJson } from "./log.js";
 import { armBrowse, stopVideo } from "./snap.js";
@@ -93,6 +96,12 @@ export function openFanPage() {
   fanFit();
   paintHelp("fanprojects");
   sound("select");
+  fanAt = 0;
+  fanLoad();
+}
+
+// The list read, and drawn keeping the chosen project; a make at work is followed from here.
+function fanLoad() {
   api("api/fanprojects.php").then(function (r) {
     if (!fanOpen()) { return; }
     if (!r || !r.ok) {
@@ -104,9 +113,42 @@ export function openFanPage() {
       L("FAN", fanProjects.length + " projects read in " + r.ms + "ms");
     }
     fanConsoles();
-    fanAt = 0;
+    if (r && r.making && FP.making !== r.making) { fanFollow(r.making); }
     fanDraw();
   });
+}
+
+/* Make: one press. The bar in the corner says how far it is and how it ended
+   (js\jobbars.js); the page reads its list again when it is over, so what was
+   made stands under In your library. */
+function fanMake(p) {
+  if (FP.making) { return; }
+  L("FAN", "make " + p.name + " pressed");
+  postJson("api/fanprojects.php", { make: p.id }).then(function (r) {
+    if (!r || !r.ok) {
+      showStrip(p.name + " was not made: " + ((r && r.error) || "no answer"), true);
+      sound("back");
+      return;
+    }
+    sound("select");
+    showStrip("Making " + p.name + " from your " + (p.base.yourTitle || "game") + ": the bar in the corner shows how far it is", false);
+    jobsWatch("fanmake");
+    fanFollow(p.id);
+    if (fanOpen()) { fanDraw(); }
+  });
+}
+
+function fanFollow(id) {
+  FP.making = id;
+  clearInterval(FP.followT);
+  FP.followT = setInterval(function () {
+    api("api/fanprojects.php?job=1").then(function (r) {
+      if (r && r.ok && r.job && r.job.state === "running") { return; }
+      clearInterval(FP.followT);
+      FP.making = null;
+      if (fanOpen()) { fanLoad(); }
+    });
+  }, 2000);
 }
 
 // Off screen, and what it covered back: the consoles, or the games it was opened from.
@@ -167,6 +209,7 @@ function fanSection(p) {
 // Where a project stands, in one line and its colour.
 function fanStatus(p) {
   var b = p.base;
+  if (FP && FP.making === p.id) { return ["", "Being made: the bar in the corner shows how far it is"]; }
   if (p.yours.length) {
     return ["", "Yours: " + p.yours.map(function (y) { return y.version || "a copy"; }).join(" and ")];
   }
@@ -304,6 +347,11 @@ function fanPanel(p) {
   var bar = el("div", "bar");
   FP.first = fanFirst(p);
   bar.appendChild(FP.first);
+  // A copy you have already, and Xsegon can make it: another beside it.
+  if (p.make && p.yours.length && (p.base.state === "fits" || p.base.state === "works")) {
+    bar.appendChild(fanButton("Make another copy", function () { fanMake(p); }, false,
+                              FP.making ? "Something is being made: the bar in the corner shows how far it is" : null));
+  }
   FAN_LINKS.forEach(function (w) {
     if (!p[w[0]] || FP.first.dataset.opens === w[0]) { return; }
     var b = fanButton(w[1], function () { fanOpenUrl(p, w[0]); });
@@ -324,7 +372,11 @@ function fanFirst(p) {
     }, true);
   }
   if (s === "ready") {
-    return fanButton("Make", function () {}, true, "Make is not built yet: it is the next step for this page");
+    if (!p.make) {
+      return fanButton("Make", function () {}, true, "Making a " + p.kindLabel.toLowerCase() + " is not built yet: " + (p.page ? "its website" : "its GitHub") + " has it");
+    }
+    return fanButton(FP.making === p.id ? "Being made" : "Make", function () { fanMake(p); }, true,
+                     FP.making ? "Something is being made: the bar in the corner shows how far it is" : null);
   }
   if (s === "missing" && p.base.db) {
     return fanButton(p.base.wanted ? "On your wanted list" : "Add to wanted list", function () { fanWant(p); }, true,

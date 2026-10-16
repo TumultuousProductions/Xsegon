@@ -16,6 +16,7 @@ import { stopVideo } from "./snap.js";
 import { sound } from "./sound.js";
 import { $body, $btnSystems, $main, $platform, $syswall, $toolbar, S, setSysStage, view } from "./state.js";
 import { artUrl, el } from "./util.js";
+import { lockRefuses } from "./viewlock.js";
 import { clearView, ctl, paintBackdropUrl, paintSeg, settle } from "./views.js";
 import { carouselSpin } from "./wheelfx.js";
 
@@ -98,6 +99,8 @@ export function enterSystems() {
 }
 
 export function backToWall() {
+  // The consoles screen has a wheel's or a carousel's shape: it waits with them (js\viewlock.js).
+  if (lockRefuses("the consoles screen")) { return; }
   L("NAV", "back to the wall from " + ($platform.value || "all"));
   dropDetails();
   dropFanPage();

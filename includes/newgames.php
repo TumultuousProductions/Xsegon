@@ -92,8 +92,9 @@ function xs_ng_start(string $why, ?string &$no = null): bool
 
 /**
  * The walk's offer cut down to what Scan for Games would add with no question.
- * Answers [add, left, fresh]: left rows carry why. Nothing here changes a file
- * but the file check's own answers (kept by game id, as Scan for Games keeps them).
+ * Answers [add, left, fresh]: left rows carry why, and ra, the press that gets
+ * RetroArch for one it plays (includes\setup.php xs_setup_ra_offer). Nothing here
+ * changes a file but the file check's own answers (kept by game id, as Scan for Games keeps them).
  */
 function xs_ng_sort(array $found): array
 {
@@ -101,6 +102,7 @@ function xs_ng_sort(array $found): array
     require_once __DIR__ . '/hackof.php';
     require_once __DIR__ . '/accompanied.php';
     $noEmu = array_flip($found['noEmulator'] ?? []);
+    $raOffer = false;                   // asked once, at the first game with no emulator
     // A disc set that plays as Disc 1 until its playlist is written: Scan for Games offers the playlist.
     $sets = [];
     foreach ($found['m3u'] ?? [] as $o) {
@@ -113,8 +115,15 @@ function xs_ng_sort(array $found): array
     foreach ($found['new'] ?? [] as $row) {
         $rom = (string) $row['rom'];
         $why = null;
+        $ra = null;
         if (isset($noEmu[$row['platform']])) {
-            $why = 'no emulator for ' . $row['platform'] . ' yet';
+            if ($raOffer === false) {
+                require_once __DIR__ . '/setup.php';
+                $raOffer = xs_setup_ra_offer(xs_library());
+            }
+            $ra = $raOffer !== null && xs_setup_ra_plays((string) $row['platform']) ? $raOffer : null;
+            $why = $ra === 'coming' ? 'waiting for RetroArch, which is being set up: Scan for Games adds it now'
+                 : 'no emulator for ' . $row['platform'] . ' yet' . ($ra !== null ? ': RetroArch plays it' : '');
         } elseif (isset($sets[strtolower($rom)])) {
             $why = 'a disc set waiting for its playlist';
         } elseif (xs_fc_guess($rom, null) === 'hack' || xs_acc_kind_from_name($rom) !== null) {
@@ -129,7 +138,7 @@ function xs_ng_sort(array $found): array
             }
         }
         if ($why !== null) {
-            $left[] = $row + ['why' => $why];
+            $left[] = $row + ['why' => $why, 'ra' => $ra];
             continue;
         }
         /* Still being copied, perhaps: the next look takes it. A copy in Explorer
@@ -193,8 +202,9 @@ function xs_ng_unsure(array $found, array $left): array
 /**
  * Named in the mailbox, once: the file of what was named is kept first, so a failed write is not said again at every look.
  * $many comes back 0 when that many was said before, so the strip does not say it again either.
+ * $ra: the press that gets RetroArch for files left with no emulator (xs_ng_sort), a button of the message.
  */
-function xs_ng_tell(array $unsure, int &$many): bool
+function xs_ng_tell(array $unsure, int &$many, ?string $ra = null): bool
 {
     $told = xs_read_json(xs_ng_told_path(), []);
     $told = is_array($told) ? $told : [];
@@ -226,6 +236,11 @@ function xs_ng_tell(array $unsure, int &$many): bool
         ? $many . ' new games were found at once, more than Xsegon adds by itself. Games > Scan for Games lists them for you to add.'
         : 'Xsegon added the new games it was sure of. ' . ($n === 1 ? 'This one needs' : 'These need') . ' you: Games > Scan for Games shows '
           . ($n === 1 ? 'it' : 'them') . ' with what to do.';
+    // Set it all up, Get RetroArch or Use RetroArch (js\news.js MAIL_GOES), first: it is what plays them.
+    $press = ['setup' => 'rasetup', 'get' => 'raget', 'use' => 'rause'][$ra ?? ''] ?? null;
+    if ($press !== null && $many === 0) {
+        $body .= ' Those with no emulator yet play through RetroArch: the button below sets it up.';
+    }
     return xs_messages_add([
         'id'    => $many > 0 ? 'msg-newgames-many' : 'msg-' . bin2hex(random_bytes(6)),
         'at'    => date('c'),
@@ -234,7 +249,7 @@ function xs_ng_tell(array $unsure, int &$many): bool
         'body'  => $body,
         'items' => array_slice($lines, 0, 40),
         'n'     => $n,
-        'opens' => ['scan'],
+        'opens' => $press !== null && $many === 0 ? [$press, 'scan'] : ['scan'],
         'read'  => false,
     ]);
 }

@@ -17,6 +17,7 @@ import { openFillTool } from "./fill.js";
 import { showStrip } from "./launch.js";
 import { load } from "./library.js";
 import { L, api, postJson } from "./log.js";
+import { getRetroArch, raLabel } from "./raoffer.js";
 import { openScanTool } from "./scan.js";
 import { openSkraperHow } from "./skraperhow.js";
 import { sound } from "./sound.js";
@@ -144,6 +145,10 @@ var MAIL_GOES = {
   archivevid: ["Videos from online archives...", function () { openArchiveVideos(); }],
   cheatlists: ["Get the cheat lists...", function () { askCheatLists(); }],
   fillcheck: ["Check these games...", function (m) { openFillTool(null, false, (m.ids || []).map(String)); }],
+  // New games left out for want of an emulator RetroArch would be (includes\newgames.php xs_ng_tell).
+  rasetup: [raLabel("setup"), function () { getRetroArch("a message"); }],
+  raget: [raLabel("get"), function () { getRetroArch("a message"); }],
+  rause: [raLabel("use"), function () { getRetroArch("a message"); }],
   scan: ["Scan for Games...", function () { openScanTool(); }],
   skraper: ["How to get them with Skraper", function (m) { openSkraperHow(m); }]
 };
