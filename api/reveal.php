@@ -75,11 +75,24 @@ if ($what === 'videos') {
     }
     xs_reveal_folder($dir, !empty($body['dry']));
 }
-if (!xs_game_id_ok($id) || !in_array($what, ['rom', 'images', 'video', 'save'], true)) {
-    xs_fail('id and what (rom, images, video or save) are required', 400);
+if (!xs_game_id_ok($id) || !in_array($what, ['rom', 'images', 'video', 'save', 'texpack'], true)) {
+    xs_fail('id and what (rom, images, video, save or texpack) are required', 400);
 }
 
 $game = xs_game_or_404($id, 'no such game');
+
+// The game's texture pack, in the folder its emulator loads it from (includes\texpacks.php).
+if ($what === 'texpack') {
+    require_once __DIR__ . '/../includes/texpacks.php';
+    $t = xs_tp_target($game);
+    if ($t !== null && $t['file'] !== null && is_file($t['file']) && !is_dir($t['into'])) {
+        xs_reveal_folder(dirname($t['file']), !empty($body['dry']));       // an N64 core's .hts, in its cache folder
+    }
+    if ($t === null || !is_dir($t['into'])) {
+        xs_fail('this game has no texture pack now', 404);
+    }
+    xs_reveal_folder($t['into'], !empty($body['dry']));
+}
 
 $s = xs_settings();
 $path = null;

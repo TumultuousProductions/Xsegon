@@ -11,6 +11,7 @@ import { padKeyNamed, padPressed } from "./padkind.js";
 import { $body, $help, games, sel, sysStage, view } from "./state.js";
 import { sysStyle } from "./systems.js";
 import { el } from "./util.js";
+import { viewsLocked } from "./viewlock.js";
 
 var HELP = {
   browse:   [["↑↓", "navigate"], ["Enter", "play"], ["Space", "details"],
@@ -83,6 +84,8 @@ export function paintHelp(ctx) {
     if (ctx === "tabrows" && label === "select" && tabRowsWord()) { label = tabRowsWord(); }
     // And typing finds only where the list has a find box.
     if (ctx === "tabrows" && label === "find" && !tabRowsFind()) { return; }
+    // The consoles screen waits for an emulator (js\viewlock.js): no key goes back to it.
+    if (label === "back to systems" && viewsLocked()) { return; }
     // On the consoles screen the dropdown names the screen's own shape, so
     // when a console will open into something else (a List, say, under a
     // carousel of consoles) the legend is where that is said.

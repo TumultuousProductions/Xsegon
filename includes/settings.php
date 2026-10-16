@@ -79,7 +79,7 @@ function xs_settings_defaults(): array
         ],
 
         'view' => [
-            'default'             => 'wheel',  // list | grid | shelf | wheel | carousel | rows
+            'default'             => 'list',   // list | grid | shelf | wheel | carousel | rows; a new copy opens on List, its menu bar in sight
             'systemsFirst'        => true,     // pick a system before seeing games
             'systemsStyle'        => 'wheel',  // wheel | carousel
             'sort'                => 'title',  // title | developer | ... | random, and one per list column: the schema below has them all

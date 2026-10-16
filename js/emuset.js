@@ -2,6 +2,7 @@ import { closeEditor, reloadKeeping, setEditorOnClose, toolFrame } from "./edito
 import { iconEl } from "./icons.js";
 import { setPick, showStrip } from "./launch.js";
 import { L, api, postJson } from "./log.js";
+import { raButton } from "./raoffer.js";
 import { sound } from "./sound.js";
 import { $editor } from "./state.js";
 import { el } from "./util.js";
@@ -34,6 +35,9 @@ function paint(g, res) {
     note.appendChild(iconEl("cr-ico", "info"));
     note.appendChild(document.createTextNode(" " + (res.why || "there is nothing to choose here")));
     inner.appendChild(note);
+    // None at all, on a console RetroArch plays: the press that gets it (js\raoffer.js).
+    var ra = raButton(res.raOffer, "Set Emulator");
+    if (ra) { var raBar = el("div", "bar"); raBar.appendChild(ra); inner.appendChild(raBar); }
     $editor.appendChild(inner);
     $editor.hidden = false;
     return;

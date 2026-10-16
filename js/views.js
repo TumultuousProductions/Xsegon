@@ -31,6 +31,7 @@ import { sound } from "./sound.js";
 import { $bdA, $bdB, $body, $clock, $details, $hero, $logo, $main, $toolbar, $view, $viewsel, S, games, sel, setSel, setViewMode, sysStage, view } from "./state.js";
 import { backToWall, chooseSystem, renderSystems, sysStyle } from "./systems.js";
 import { artUrl, badgeClasses, badgesEl, el, fixMark, platformBeside, playersIcon, titleText } from "./util.js";
+import { lockRefuses, viewWaits } from "./viewlock.js";
 import { gridImage, sortHeader, tileKind } from "./viewset.js";
 import { closeSizer, sizeButton, syncSizer } from "./viewsize.js";
 import { carouselSpin, wheelDress, wheelSpin } from "./wheelfx.js";
@@ -598,6 +599,8 @@ function logSel() {
 }
 
 export function setView(next) {
+  // Wheel and Carousel wait for an emulator (js\viewlock.js): the dropdown goes back to what is on screen.
+  if (viewWaits(next)) { lockRefuses("the view " + next); paintSeg(); return; }
   L("VW", view + " -> " + next + (sysStage === "wall" ? " (on the wall)" : ""));
   dropDetails();                         // a new view is never drawn under details
   dropFanPage();                         // nor under the Fan projects page: the screen it covered comes back to change

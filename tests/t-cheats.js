@@ -29,8 +29,8 @@ async function detailsOf(b, id) {
 const TABS = `[...document.querySelectorAll("#details .dtabs .dtab")]`;
 const tabOn = `(t => (t ? t.textContent : null))(${TABS}.find((x) => x.classList.contains("on")))`;
 const legend = `[...document.querySelectorAll("#help .hitem .hl")].map((x) => x.textContent)`;
-// Media, Saves and File check stand between About and Cheats; Saves carries a count of what is saved, so it is named without it.
-const tabNames = `${TABS}.map((x) => (/^Saves/.test(x.textContent) ? "Saves" : x.textContent))`;
+// Media, Saves and File check stand between About and Cheats; Saves and Texture packs carry counts of the game's own, so they are named without them.
+const tabNames = `${TABS}.map((x) => (/^Saves/.test(x.textContent) ? "Saves" : /^Texture packs/.test(x.textContent) ? "Texture packs" : x.textContent))`;
 const onMedia = `${tabOn} === "Media"`;
 const onSaves = `/^Saves/.test(${tabOn} || "")`;
 const onFile = `${tabOn} === "File check"`;
@@ -45,7 +45,7 @@ async function detailTabsOnAGame(b, check, sf) {
   check("(the game's details open)", await detailsOf(b, sf.id), true);
   check("details has a row of tabs under Back and Play, About first and open",
     await b.ev(`[${tabNames}, ${tabOn}, document.querySelector("#details .dright .bar").nextElementSibling.className, document.querySelector("#details .dtab-pane").className]`),
-    [["About", "Media", "Saves", "File check", "Cheats", "Hacks", "Accompanied files", "Notes"], "About", "dtabs", "dtab-pane is-about"]);
+    [["About", "Media", "Saves", "File check", "Cheats", "Hacks", "Texture packs", "Accompanied files", "Notes"], "About", "dtabs", "dtab-pane is-about"]);
   check("and the legend names the keys for them", await b.until(`${legend}.includes("tabs")`, true), true);
   check("the open tab's words can be read: they are not the colour of the tab",
     await b.ev(`(s => s.color !== s.backgroundColor)(getComputedStyle(${TABS}.find((x) => x.classList.contains("on"))))`), true);
@@ -251,7 +251,7 @@ async function emulatorsOwnCheats(b, check) {
     await b.setView("list");
     await b.openPlatform(ps2.platform);
     check("(the PCSX2 game's details open)", await detailsOf(b, ps2.id), true);
-    check("its Cheats tab counts what PCSX2 has on", await b.until(tabNames, ["About", "Media", "Saves", "File check", "Cheats (2)", "Hacks", "Accompanied files", "Notes"], 8000), ["About", "Media", "Saves", "File check", "Cheats (2)", "Hacks", "Accompanied files", "Notes"]);
+    check("its Cheats tab counts what PCSX2 has on", await b.until(tabNames, ["About", "Media", "Saves", "File check", "Cheats (2)", "Hacks", "Texture packs", "Accompanied files", "Notes"], 8000), ["About", "Media", "Saves", "File check", "Cheats (2)", "Hacks", "Texture packs", "Accompanied files", "Notes"]);
     await b.key("ArrowRight");
     await b.until(onMedia, true);
     await b.key("ArrowRight");

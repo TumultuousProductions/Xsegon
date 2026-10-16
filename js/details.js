@@ -7,12 +7,14 @@ import { paintHelp } from "./help.js";
 import { launch, launchNow, openStates, showStrip, whenSaved } from "./launch.js";
 import { L, api, postJson } from "./log.js";
 import { addsMissing } from "./missing.js";
+import { getRetroArch, raLabel } from "./raoffer.js";
 import { rowsStale } from "./rows.js";
 import { rowStarsAgain } from "./rowstars.js";
 import { armBrowse, armVideo } from "./snap.js";
 import { sound } from "./sound.js";
 import { $body, $details, $main, $toolbar, games, sel, sysStage } from "./state.js";
 import { startOnAllGames } from "./systems.js";
+import { texPackFact } from "./texpacktab.js";
 import { artUrl, discWords, el, fixMark, fixWords, hhmm, stars, titleText, versionsFact } from "./util.js";
 import { render, setCarNodes, setWheelNodes } from "./views.js";
 
@@ -243,6 +245,14 @@ function buildDetails(g, full) {
       dl.lastChild.title = "Open the Cheats tab";
       dl.lastChild.addEventListener("click", function () { openTab("cheats"); });
     }
+    // The pack put in place, else how many are listed; a press opens its tab.
+    var tpSays = texPackFact(full);
+    pair("texture pack", tpSays);
+    if (tpSays) {
+      dl.lastChild.classList.add("fact-go");
+      dl.lastChild.title = "Open the Texture packs tab";
+      dl.lastChild.addEventListener("click", function () { openTab("texpacks"); });
+    }
   }
   pair("played", hhmm(g.seconds) || "never");
   pair("launches", g.plays || 0);
@@ -258,9 +268,11 @@ function buildDetails(g, full) {
   var bar = el("div", "bar");
   var back = el("button", null, "◂ Back");
   back.addEventListener("click", closeDetails);
-  var play = el("button", "primary", g.playable ? "▸ Play" : "Cannot play");
-  play.disabled = !g.playable;
-  play.addEventListener("click", function () { closeDetails(); launch(); });
+  // No emulator yet where RetroArch would play it: the button gets RetroArch (js\raoffer.js).
+  var fix = g.playable ? null : raLabel(g.raOffer);
+  var play = el("button", "primary", g.playable ? "▸ Play" : fix || "Cannot play");
+  play.disabled = !g.playable && !fix;
+  play.addEventListener("click", function () { if (fix) { getRetroArch("Details"); return; } closeDetails(); launch(); });
   bar.appendChild(back);
   bar.appendChild(play);
   // Its manual, maps and guides (js\docs.js). The row only knows there are

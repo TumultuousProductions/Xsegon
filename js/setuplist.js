@@ -12,8 +12,10 @@ import { fillWords } from "./fillbar.js";
 import { showStrip } from "./launch.js";
 import { L, api, postJson } from "./log.js";
 import { mailArrived } from "./news.js";
+import { getRetroArch } from "./raoffer.js";
 import { cornerBox } from "./setupbar.js";
 import { el, megabytes, plural } from "./util.js";
+import { viewsLocked } from "./viewlock.js";
 
 var TICK_MS = 1500;
 var GAME_SECS = 25;                      // what the Runs check spends on one game (includes\setup.php)
@@ -64,6 +66,8 @@ function build() {
   lines.runs.btn.addEventListener("click", skipRuns);
   lines.fill.btn.textContent = "Try again";
   lines.fill.btn.addEventListener("click", fillAgain);
+  lines.retroarch.btn.textContent = "Try again";
+  lines.retroarch.btn.addEventListener("click", function () { getRetroArch("the Setting up list"); });
   cornerBox().appendChild(panel);
 }
 
@@ -117,17 +121,20 @@ function gamesLine(r) {
 
 function raLine(a) {
   if (a.state === "done") { paintLine("retroarch", "done", a.had ? "already here" : "ready", 1); return; }
-  if (a.state === "failed") { paintLine("retroarch", "failed", "stopped: " + (a.error || "no reason given"), 0); return; }
-  if (a.state === "waiting") { paintLine("retroarch", "waiting", a.for === "folder" ? "starts once the folder is chosen" : "starting...", 0); return; }
-  if (a.step === "check") { paintLine("retroarch", "running", "checking RetroArch...", null); return; }
+  // Until it is in, Wheel and Carousel wait (js\viewlock.js): said where its progress is.
+  var then = viewsLocked() ? "; Wheel and Carousel open once it is in" : "";
+  // Stopped: Try again gets it (js\raoffer.js), so the games waiting on it are not left without a press.
+  if (a.state === "failed") { paintLine("retroarch", "failed", "stopped: " + (a.error || "no reason given") + then, 0, true); return; }
+  if (a.state === "waiting") { paintLine("retroarch", "waiting", (a.for === "folder" ? "starts once the folder is chosen" : "starting...") + then, 0); return; }
+  if (a.step === "check") { paintLine("retroarch", "running", "checking RetroArch..." + then, null); return; }
   if (a.step === "unpack") {
     // 7zr says how far it is; tar does not, and the piece travels
     var far = typeof a.unpacked === "number";
-    paintLine("retroarch", "running", "unpacking" + (far ? " " + a.unpacked + "%" : "") + ": a few minutes on a slower disk", far ? a.unpacked / 100 : null);
+    paintLine("retroarch", "running", "unpacking" + (far ? " " + a.unpacked + "%" : "") + ": a few minutes on a slower disk" + then, far ? a.unpacked / 100 : null);
     return;
   }
   var pct = a.total ? Math.min(100, Math.round(a.bytes * 100 / a.total)) : 0;
-  paintLine("retroarch", "running", "downloading: " + megabytes(a.bytes) + " of " + megabytes(a.total) + " (" + pct + "%)", a.total ? a.bytes / a.total : 0);
+  paintLine("retroarch", "running", "downloading: " + megabytes(a.bytes) + " of " + megabytes(a.total) + " (" + pct + "%)" + then, a.total ? a.bytes / a.total : 0);
 }
 
 function coresLine(c) {

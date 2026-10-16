@@ -57,15 +57,20 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET') {
         $chosen = null;
     }
     $why = null;
+    $raOffer = null;
     if (!$rows) {
-        $why = $platform . ' has no emulator yet: Emulators > Add an emulator gives it one';
+        // A console RetroArch plays: the words name the press beside them (js\raoffer.js).
+        require_once __DIR__ . '/../includes/setup.php';
+        $raOffer = xs_setup_ra_plays($platform) ? xs_setup_ra_offer($lib) : null;
+        $why = $raOffer !== null ? xs_setup_ra_why('no emulator', $platform, $raOffer)
+                                 : $platform . ' has no emulator yet: Emulators > Add an emulator gives it one';
     } elseif (count($rows) === 1) {
         $why = $platform . ' has one emulator, ' . $rows[0]['name']
              . '. Emulators > Add an emulator adds another, and both are offered here.';
     }
     $counts = xs_emu_game_counts($lib);
     xs_json(['ok' => true, 'id' => $id, 'platform' => $platform, 'games' => $counts[strtolower($platform)] ?? 0,
-             'rows' => $rows, 'chosen' => $chosen, 'usual' => $usual, 'why' => $why]);
+             'rows' => $rows, 'chosen' => $chosen, 'usual' => $usual, 'why' => $why, 'raOffer' => $raOffer]);
 }
 
 xs_local_origin_only();
