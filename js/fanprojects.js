@@ -21,7 +21,7 @@ import { el } from "./util.js";
 export var FAN_KEY = "@fanprojects";
 
 var FAN_SECTIONS = [["mine", "In your library"], ["ready", "Ready to make"],
-                    ["other", "You have another release"], ["missing", "Needs a game you do not have"]];
+                    ["other", "You have another release"], ["missing", "Needs a game you do not have"], ["soon", "Coming soon"]];
 var FAN_ADDS = [["", "Adds anything"], ["coop", "Couch co-op"], ["fighters", "New fighters"],
                 ["levels", "New stages and tracks"], ["widescreen", "Widescreen and 60 fps"]];
 var FAN_TAGS = { coop: "Couch co-op", fighters: "New fighters", levels: "New stages", widescreen: "Widescreen" };
@@ -202,6 +202,7 @@ function fanConsoles() {
 
 function fanSection(p) {
   if (p.yours.length) { return "mine"; }
+  if (p.soon) { return "soon"; }
   var s = p.base.state;
   return s === "fits" || s === "works" ? "ready" : s === "missing" ? "missing" : "other";
 }
@@ -247,7 +248,8 @@ function fanTile(p) {
     var none = el("div", "noart fan-noart", p.base.title.toUpperCase());
     img.replaceWith(none);
   });
-  var st = fanStatus(p);
+  // Under Coming soon a tile says where the project stands; whether your game fits waits in the panel.
+  var st = fanSection(p) === "soon" ? ["", p.soon] : fanStatus(p);
   t.appendChild(el("div", "fan-st" + (st[0] ? " " + st[0] : ""), st[1]));
   return t;
 }
@@ -316,6 +318,8 @@ function fanPanel(p) {
   h.appendChild(el("span", "hero-name", p.name));
   top.appendChild(h);
   if (p.team) { top.appendChild(el("div", "fan-by", "by " + p.team)); }
+  // The work it stands on, credited with its makers.
+  if (p.basedon) { top.appendChild(el("div", "fan-by fan-based", "based on " + p.basedon)); }
   FP.hero.appendChild(top);
 
   var frame = el("div", "hero-art-frame");
@@ -336,8 +340,9 @@ function fanPanel(p) {
   var stats = el("div", "hero-stats");
   function kv(k, v, hot) { stats.appendChild(el("span", "k", k)); stats.appendChild(el("span", "v" + (hot ? " hot" : ""), v)); }
   var st = fanStatus(p);
+  if (p.soon) { kv("Coming soon", p.soon); }
   kv("Built from", p.base.title);
-  kv("Yours", p.yours.length ? st[1].replace(/^Yours: /, "") : st[1], st[0] === "ok");
+  kv("Yours",p.yours.length ? st[1].replace(/^Yours: /, "") : st[1], st[0] === "ok");
   kv("Licence", p.licence || "none given");
   if (p.page) { kv("Website", fanAddress(p.page)); }
   if (p.repo) { kv("GitHub", fanAddress(p.repo)); }

@@ -4,9 +4,9 @@
  * pack's own download, replaced, put beside another and uninstalled one at a time, with
  * the emulator's switch turned on for the game alone and put back as it was with the
  * last; the N64 core's own cache of the packs before cleared; the packs listed for a
- * game, in the shipped list's shape.
+ * game, in the shipped list's shape, found by its title written another way too.
  *
- * Nothing real is read or written: for the length of the group the library is four
+ * Nothing real is read or written: for the length of the group the library is eight
  * stand-in games on a stand-in portable PCSX2, a stand-in portable Dolphin and a
  * stand-in RetroArch in the test's own data, the list is a stand-in of the test's
  * own (data\texpacks-list.json), a download comes from a server the test runs on this
@@ -40,6 +40,11 @@ const GAME = game(1, "Stand-in Colossus", "Sony Playstation 2", "Stand-in Coloss
 const MELEE = game(2, "Stand-in Melee", "Nintendo GameCube", "Stand-in Melee (USA).iso");
 const KART = game(3, "Stand-in Kart", "Nintendo 64", "Stand-in Kart (USA).z64");
 const OTHER = game(4, "Stand-in Quest", "Super Nintendo Entertainment System", "Stand-in Quest (USA).sfc");
+// Titles the list writes another way: words run together with II for 2, two releases joined by " + ", and an X that stays a letter.
+const BRAWL = game(5, "Standin Brawl II", "Sony Playstation 2", "Standin Brawl II (USA).iso");
+const SAGA = game(6, "Stand-in Saga", "Sony Playstation 2", "Stand-in Saga (USA).iso");
+const SAGA_INT = game(7, "Stand-in Saga International", "Sony Playstation 2", "Stand-in Saga International (Japan).iso");
+const HERO = game(8, "Stand-in Hero X", "Sony Playstation 2", "Stand-in Hero X (USA).iso");
 const ANSWER = path.join(DATA, "pick-answer.txt");
 
 /* A portable PCSX2 that lists the stand-in game under SERIAL, as PCSX2 2.x keeps its game list. */
@@ -131,13 +136,14 @@ module.exports = async function (b, check) {
     fs.rmSync(FX, { recursive: true, force: true });
     put(GAME.rom, "not a game, a stand-in");
     put(OTHER.rom, "not a game, a stand-in");
+    for (const g of [BRAWL, SAGA, SAGA_INT, HERO]) { put(g.rom, "not a game, a stand-in"); }
     put(MELEE.rom, Buffer.concat([Buffer.from("GALE01"), Buffer.from([0, 2]), Buffer.alloc(64)]));
     const n64 = Buffer.alloc(1024); n64.writeUInt32BE(0x80371240, 0); n64.write("STANDIN KART        ", 0x20, "latin1");
     put(KART.rom, n64);
     pcsx2(PCSX2, GAME.rom);
     dolphin();
     retroarch();
-    fs.writeFileSync(path.join(DATA, "scanned-games.json"), JSON.stringify([GAME, MELEE, KART, OTHER]));
+    fs.writeFileSync(path.join(DATA, "scanned-games.json"), JSON.stringify([GAME, MELEE, KART, OTHER, BRAWL, SAGA, SAGA_INT, HERO]));
     fs.writeFileSync(path.join(DATA, "emulators.json"), table(path.join(PCSX2, "pcsx2-qt.exe")));
     for (const f of ["texpacks-job.json", "texpacks.json", "pick-answer.txt"]) { fs.rmSync(path.join(DATA, f), { force: true }); }
     // The packs: a folder as a person unpacked it, a .zip made for another release, a .7z, a .rar; one for Dolphin; two for the N64 core.
@@ -159,7 +165,11 @@ module.exports = async function (b, check) {
       "sony playstation 2": [row("aaaaaaaaaaa1", "Stand-in Colossus", "Upscaler", { kind: "ai", r: "NTSC-U", tip: "https://ko-fi.com/upscaler" }),
                              row("aaaaaaaaaaa2", "Stand-in Colossus", "Painter", { kind: "hand", r: "PAL", bytes: 2104533974 }),
                              row("aaaaaaaaaaa3", "Stand-in Colossus", "Seller", { kind: "ai", pay: "paid", page: "https://www.patreon.com/seller", where: "patreon.com" }),
-                             row("aaaaaaaaaaa4", "Another Game Entirely", "Someone")],
+                             row("aaaaaaaaaaa4", "Another Game Entirely", "Someone"),
+                             row("aaaaaaaaaab1", "Stand-in Brawl 2", "Joiner"),
+                             row("aaaaaaaaaab2", "Stand-in Brawl 2", "Handmaker", { page: "https://example.org/brawl", where: "example.org", from: "xsegon", says: "its download holds more than textures" }),
+                             row("aaaaaaaaaab3", "Stand-in Saga + International", "Twofold"),
+                             row("aaaaaaaaaab4", "Stand-in Hero 10", "Tenth")],
       // A pack with a download of its own carries that download's size, as tools\build-texpacks.js writes it.
       "nintendo 64": [row("bbbbbbbbbbb1", "Stand-in Kart", "Kartist", { kind: "hand", name: "Kartist's Stand-in Kart Retexture", page: "https://emulationking.com/x/",
                              where: "emulationking.com", bytes: fs.statSync(path.join(PACKS, "kart.zip")).size, get: { url: HOST + "/kart.zip", bytes: fs.statSync(path.join(PACKS, "kart.zip")).size, name: "Kartist's Stand-in Kart Retexture" } })] } }));
@@ -184,6 +194,12 @@ module.exports = async function (b, check) {
     check("a pack with no tip page, another game's pack and a key that is no key are refused",
       [(await post({ open: "aaaaaaaaaaa2", which: "tip" })).ok, (await post({ open: "aaaaaaaaaaa4" })).ok, (await post({ open: "..\\x" })).ok], [false, false, false]);
     check("a pack with no download of its own cannot be got", /no download Xsegon can fetch/.test((await post({ get: "aaaaaaaaaaa2" })).error || ""), true);
+    check("a title the list writes another way finds its packs (Standin Brawl II, Stand-in Brawl 2); a row of Xsegon's own list says so, with its word on it",
+      (await get(BRAWL.id)).found.map((f) => [f.by, f.from, f.says]), [["Joiner", "", ""], ["Handmaker", "xsegon", "its download holds more than textures"]]);
+    check("a listed title of two releases joined by + is found for each of them; an X stays a letter, not 10",
+      [(await get(SAGA.id)).found.map((f) => f.by), (await get(SAGA_INT.id)).found.map((f) => f.by), (await get(HERO.id)).found], [["Twofold"], ["Twofold"], []]);
+    const texHas = ((await api("api/library.php?texpacks=1&versions=all&grouped=0")).games || []).map((g) => g.id);
+    check("Filter by > Texture packs finds them the same way", [BRAWL, SAGA, SAGA_INT, HERO].map((g) => texHas.includes(g.id)), [true, true, true, false]);
 
     /* ---- from a folder ----------------------------------------------------- */
     const s1 = await post({ from: path.join(PACKS, "Folder Pack") });

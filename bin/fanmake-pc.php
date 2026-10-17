@@ -40,6 +40,7 @@ $job['phase'] = 'reading';
 $save();
 $bytes = null;
 $discs = null;
+$xfiles = null;
 if (isset($game['discs'])) {
     $need = [];
     foreach ((array) $p['base']['match'] as $mm) {
@@ -55,6 +56,15 @@ if (isset($game['discs'])) {
     }
     $room = (int) array_sum(array_column($discs, 'bytes'));
     xs_log('FAN', 'make ' . $name . ': ' . count($discs) . ' discs found, ' . implode(', ', array_map(static fn($d) => isset($d['pbp']) ? basename($d['pbp']) . ' disc ' . $d['disc']['id'] : basename($d['files'][0]), $discs)));
+} elseif (isset($game['xiso'])) {
+    // An Xbox disc's files, written out once beside the port, which reads them from a folder and not from the image.
+    require_once __DIR__ . '/../includes/xiso.php';
+    $xfiles = xs_xiso_list($rom, $w);
+    if ($xfiles === null) {
+        $fail('your ' . $job['baseTitle'] . '\'s ' . $w);
+    }
+    $room = (int) array_sum(array_column($xfiles, 'size'));
+    xs_log('FAN', 'make ' . $name . ': ' . count($xfiles) . ' files on your disc, ' . round($room / 1048576) . ' MB, to be written into ' . $game['xiso']);
 } elseif (isset($game['ini']) || !empty($game['args'])) {
     // A port with an emulator of its own, or one told its disc when it starts, reads your disc where it is: nothing is copied.
     $room = 0;
@@ -174,11 +184,11 @@ if ($discs !== null) {
         $fail('the folder ' . $to . ' could not be made (' . xs_file_error_reason() . ')');
     }
     $wrote = xs_fm_disc_write($discs, $to, (string) ($game['name'] ?? $job['baseTitle']),
-        static function (int $b) use (&$job, $save, $stopped): bool { $job['bytes'] = $b; $save(false); return !$stopped(); }, $w);
+        static function (int $b) use (&$job, $save, $stopped): bool { $job['bytes'] = $b; $save(false); return !$stopped(); }, $w, !empty($game['rename']));
     if ($wrote === null) {
         $fail((string) $w);
     }
-    $placed = count($discs) . ' discs into ' . $game['discs'];
+    $placed = count($discs) === 1 ? 'your disc into ' . $game['discs'] . ' as ' . implode(' and ', $wrote) : count($discs) . ' discs into ' . $game['discs'];
 } elseif (isset($game['ini'])) {
     if (!xs_fm_ini_set($tmp . $DS . str_replace('/', $DS, (string) $game['ini']), (string) $game['section'], (string) $game['key'], $rom, $w)) {
         $fail((string) $w);
@@ -186,6 +196,13 @@ if ($discs !== null) {
     $placed = $game['ini'] . ' pointed at your ' . $job['baseTitle'] . ' (' . $rom . ')';
 } elseif (!empty($game['args'])) {
     $placed = 'started with your ' . $job['baseTitle'] . ' where it is (' . $rom . ')';
+} elseif ($xfiles !== null) {
+    $wrote = xs_xiso_write($rom, $xfiles, $tmp . $DS . str_replace('/', $DS, (string) $game['xiso']),
+        static function (int $b) use (&$job, $save, $stopped): bool { $job['bytes'] = $b; $save(false); return !$stopped(); }, $w);
+    if ($wrote === null) {
+        $fail((string) $w);
+    }
+    $placed = count($xfiles) . ' files of your disc into ' . $game['xiso'] . ', ' . round($wrote / 1048576) . ' MB';
 } else {
     $to = $tmp . $DS . xs_fm_game_to((string) $game['to'], (string) ($job['release'] ?? ''), (string) $job['baseTitle']);
     if (!is_dir(dirname($to)) && !@mkdir(dirname($to), 0777, true) && !is_dir(dirname($to))) {
@@ -214,7 +231,9 @@ $save();
 $list = (string) ($m['list'] ?? 'Windows');
 $exe = $out . $DS . str_replace('/', $DS, (string) $m['run']);
 $links = array_filter([$p['page'] ?? null, $p['repo'] ?? null, $p['community'] ?? null]);
-$notes = $name . ' is made by ' . $p['team'] . ":\n" . implode("\n", $links) . "\n\n"
+// A credit the team's licence asks a launcher to show goes first, in its own words.
+$notes = (isset($m['credit']) ? (string) $m['credit'] . "\n\n" : '') . $name . ' is made by ' . $p['team']
+    . (is_string($p['basedon'] ?? null) && trim($p['basedon']) !== '' ? ', based on ' . trim($p['basedon']) : '') . ":\n" . implode("\n", $links) . "\n\n"
     . 'Set up by Xsegon\'s Fan projects from your ' . $job['baseTitle'] . ', ' . $rel['tag'] . ($tag !== '' ? ' of ' . $rel['day'] : '')
     . ' downloaded from the team\'s GitHub.' . (isset($m['first']) ? ' ' . $m['first'] : '');
 // "{folder}" in its words is where it was put, for a file it is told to open; "{disc}" is your disc where it is.
