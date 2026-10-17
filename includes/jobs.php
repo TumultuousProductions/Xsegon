@@ -215,7 +215,7 @@ function xs_jobs(): array
             $games = (int) ($j['games'] ?? 0);
             $line  = $phase === 'fetching' ? (int) ($j['at'] ?? 0) . ' of ' . $n($games, 'game', 'games') . ', ' . $n((int) ($j['added'] ?? 0), 'video', 'videos') . ' in'
                                              . ((string) ($j['now'] ?? '') !== '' ? ': ' . $j['now'] : '')
-                   : ($phase === 'asking' ? 'asking the Arcade Database whether it is there' : 'starting');
+                   : 'starting';
             $out[] = xs_jobs_row('arcadevid', 'Arcade Database videos', $state === 'running' ? 'running' : ($state === 'done' ? 'done' : 'failed'),
                 (int) ($j['started'] ?? 0), $line, $phase === 'fetching' && $games > 0 ? (int) ($j['at'] ?? 0) / $games : null, true,
                 (string) (($j['error'] ?? '') !== '' ? $j['error'] : (($j['said'] ?? '') !== '' ? $j['said'] : 'nothing was fetched')));

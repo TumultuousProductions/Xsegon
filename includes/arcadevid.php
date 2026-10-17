@@ -49,13 +49,18 @@ function xs_ad_job(): ?array
 function xs_ad_source(): array
 {
     $test = getenv('XSEGON_ARCADEDB');
-    if (is_string($test) && $test !== '' && xs_test_copy()) {
-        $base = rtrim($test, '/');
-        return ['ask' => $base . '/query_mame/{name}.json', 'left' => $base . '/download_status.json', 'base' => $base . '/', 'real' => false];
-    }
-    $base = 'https://adb.arcadeitalia.net/';
-    return ['ask' => $base . 'service_scraper.php?ajax=query_mame&game_name={name}', 'left' => $base . 'service_scraper.php?ajax=download_status',
-            'base' => $base, 'real' => true];
+    $real = !(is_string($test) && $test !== '' && xs_test_copy());
+    $base = $real ? 'https://adb.arcadeitalia.net/' : rtrim($test, '/') . '/';
+    // The ask its maker names for one game's media (2026-10-17): the video's address and the game it is a version of.
+    return ['ask' => $base . 'service_scraper.php?ajax=query_mame_media&game_name={name}', 'base' => $base, 'real' => $real];
+}
+
+/** An answer's code in words, for an ask that did not come; its maker asks that a program go by these. */
+function xs_ad_code_said(int $code): string
+{
+    $what = [404 => 'nothing there', 429 => 'asked too often', 509 => 'its allowance is used up for now'][$code]
+        ?? ($code >= 500 ? 'its server had a fault' : '');
+    return 'it answered ' . $code . ($what !== '' ? ' (' . $what . ')' : '');
 }
 
 /** Whether a console's games are arcade games, which is what the Arcade Database knows. */
@@ -103,17 +108,6 @@ function xs_ad_answer(string $json): ?array
     // Only an address of the Arcade Database's own is ever fetched.
     return ['known' => true, 'parent' => (string) (xs_ad_name((string) ($row['cloneof'] ?? '')) ?? ''),
             'video' => is_string($url) && str_starts_with($url, xs_ad_source()['base']) ? $url : ''];
-}
-
-/** How many files it will still give today, from its own answer; null when that is no such answer. */
-function xs_ad_left(string $json): ?int
-{
-    $doc = json_decode(xs_strip_bom($json), true);
-    $res = is_array($doc) ? ($doc['result'] ?? null) : null;
-    if (!is_array($res) || !isset($res['download_limit_files'])) {
-        return null;
-    }
-    return (int) ($res['download_limit_bytes'] ?? 1) > 0 ? max(0, (int) $res['download_limit_files']) : 0;
 }
 
 /**

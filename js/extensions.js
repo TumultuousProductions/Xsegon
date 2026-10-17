@@ -156,6 +156,8 @@ function n(v) { return Number(v || 0).toLocaleString("en-GB"); }
 function mb(bytes) { return bytes >= 1073741824 ? (bytes / 1073741824).toFixed(1) + " GB" : Math.max(1, Math.round(bytes / 1048576)) + " MB"; }
 function fpName(x) { return x.version ? "Flashpoint " + x.version.number + (x.version.edition ? " " + x.version.edition : "") : "Flashpoint"; }
 function favourites(x) { return (x.playlists || []).filter(function (p) { return p.favourites; })[0] || null; }
+// Flashpoint's own best-of list, named by the server only when there are no favourites to bring in.
+function starter(x) { return (x.playlists || []).filter(function (p) { return p.file === x.starter; })[0] || null; }
 
 // Where it stands, in one line and its colour.
 function extStatus(x) {
@@ -164,6 +166,7 @@ function extStatus(x) {
   if (x.next === "open") { return ["warn", "On this PC, with no game list yet: open it once so it finishes setting itself up"]; }
   if (x.next === "none") { return ["no", fpName(x) + " is on this PC, and Xsegon does not know how to start its games yet"]; }
   if (x.next === "setup") { return ["warn", fpName(x) + " is on this PC. Set up fetches the small helper that starts its games (" + mb(x.fit.size) + ")"]; }
+  if (x.next === "bring" && starter(x)) { return ["ok", fpName(x) + " is set up, with no favourites in it yet. Bring in Flashpoint's best to start"]; }
   if (x.next === "bring") { return ["ok", fpName(x) + " is set up. Bring in its favourites next"]; }
   return ["ok", fpName(x) + ": " + n(x.mine) + (x.mine === 1 ? " game" : " games") + " in your library, in the Flashpoint list"];
 }
@@ -273,9 +276,11 @@ function extFirst(x) {
   if (x.next === "open") { return extButton("Open Flashpoint", function () { extLauncher(x); }, true); }
   if (x.next === "setup") { return extButton(XP.working === x.id ? "Being set up" : "Set up", function () { extSetup(x); }, true, atWork); }
   if (x.next === "bring") {
-    var fav = favourites(x);
+    var fav = favourites(x), best = starter(x);
+    if (best) { return extButton("Bring in Flashpoint's best (" + best.count + ")", function () { extBring(x, best); }, true); }
     return extButton("Bring in favourites" + (fav ? " (" + fav.count + ")" : ""), function () { extBring(x, fav); }, true,
-                     fav ? null : "Flashpoint has no favourites playlist: Other playlists has the rest");
+                     !fav ? "Flashpoint has no favourites playlist: Other playlists has the rest"
+                     : !fav.count ? "Your favourites in Flashpoint are empty: Other playlists has the rest" : null);
   }
   if (x.next === "list") {
     return extButton("Show its games", function () { dropExtPage(); chooseSystem("Flashpoint"); }, true);
@@ -388,6 +393,10 @@ function extBring(x, p) {
                    + n(r.added) + " new)"];
       if (r.online) { lines.push(n(r.online) + " download the first time they are played, so the internet is needed then"); }
       if (r.unknown) { lines.push(n(r.unknown) + " are no longer in Flashpoint's list and were left out"); }
+      if (r.hidden) {
+        var why = Object.keys(r.hiddenWhy || {}).map(function (k) { return (k === "broken" ? "marked broken" : k) + " " + n(r.hiddenWhy[k]); });
+        lines.push(n(r.hidden) + " left out, as Flashpoint's own settings hide them (" + why.join(", ") + ")");
+      }
       showStrip(lines.join("; "), false);
       load({ noDraw: true });
       if (extOpen()) { extLoad(); }

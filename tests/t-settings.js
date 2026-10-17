@@ -147,7 +147,7 @@ module.exports = async function (b, check) {
         await b.ev(`[...document.querySelectorAll("#settings .set-sect")].filter(s => !s.querySelector(":scope > .sect-head")).map(s => s.closest(".set-page").dataset.group + ":" + s.querySelectorAll(".opt").length).join(",")`), "controller:1");
   check("Window, Screensaver and Emulators say what each part holds",
         await b.ev(`["window", "screensaver", "emulators"].map(g => [...document.querySelectorAll("#settings .set-page[data-group=" + g + "] .sect-name")].map(n => n.textContent).join("|")).join(" / ")`),
-        "Closing Xsegon|On a big screen|Connecting a phone / When it starts|What it shows / Add and set up|Your emulators");
+        "Closing Xsegon|On a big screen|Connecting a phone / When it starts|What it shows / Add and set up|Your emulators|Achievements");
   check("every section heading has its fold drawn", await b.ev(`[...document.querySelectorAll("#settings .sect-head")].every(h => !!h.querySelector(".sect-caret svg path"))`));
   check("a section has a border you can see", await b.ev(`(s => parseFloat(s.borderTopWidth) >= 1 && s.borderTopStyle === "solid")(getComputedStyle(document.querySelector("#settings .set-page[data-group=sound] .set-sect")))`));
   check("and so does every row", await b.ev(`(s => parseFloat(s.borderBottomWidth) >= 1 && !/, 0\\.0\\d\\)$/.test(s.borderBottomColor))(getComputedStyle(document.querySelector("#settings .set-page[data-group=sound] .set-sect .opt")))`));

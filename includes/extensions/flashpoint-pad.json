@@ -1,0 +1,11 @@
+{
+  "about": "A controller for Flashpoint games, whose players read only the keyboard (roadmap AU13, bin/padtokeys.ps1). 'map' is pad button = the game's key: a b x y lb rb lt rt start back, and move=arrows puts the d-pad and the left stick on the arrow keys. 'windows' names the player programs whose window gets the keys. 'fullScreen' is pressed once when the game's window comes to the front, only into a program 'fullScreenIn' names: Ctrl+F is in the menu of every Flash player Flashpoint's games use (flashplayer* for Flash 7 to 32, SAFlashPlayer for 6 to 9, FlashPla for 4 and 5), and Java's player has none. 'default' serves every Flashpoint game with no entry of its own; a game's entry is keyed by its Flashpoint ID, its keys read from the game's own options screen. data/flashpoint-pad.json, where there is one, has the person's own entries, which come first.",
+  "default": { "map": "move=arrows", "windows": "flashplayer*,saflashplayer,flashpla,ruffle*,java*", "fullScreen": "Ctrl+F", "fullScreenIn": "flashplayer*,saflashplayer,flashpla" },
+  "games": {
+    "b0ce771e-7c02-4317-8528-ba48139e2688": {
+      "title": "Super Mario Bros. Crossover",
+      "map": "move=arrows,a=Z,b=X,x=X,y=C,start=Enter,back=A",
+      "read": "its own Options screen, 2026-10-17: Left Right Up Down the arrows, Jump Z, Attack X, Special C, Pause Enter, Select A"
+    }
+  }
+}

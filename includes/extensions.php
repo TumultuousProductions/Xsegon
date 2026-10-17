@@ -118,7 +118,7 @@ function xs_ext_flashpoint(array $x): array
     $root = xs_fp_root();
     $helper = is_array($x['helper'] ?? null) ? $x['helper'] : ['fits' => []];
     $st = ['section' => $root !== '' ? 'here' : 'ready', 'folder' => $root, 'version' => null, 'games' => null,
-           'playlists' => [], 'mine' => 0, 'helperHere' => null, 'fit' => null, 'next' => isset($x['get']) ? 'get' : 'none',
+           'playlists' => [], 'starter' => null, 'mine' => 0, 'helperHere' => null, 'fit' => null, 'next' => isset($x['get']) ? 'get' : 'none',
            'chosen' => (string) (xs_ext_state()['flashpoint']['folder'] ?? ''), 'put' => (array) (xs_ext_state()['flashpoint']['put'] ?? [])];
     if ($root === '') {
         return $st;
@@ -129,10 +129,12 @@ function xs_ext_flashpoint(array $x): array
     $st['games'] = xs_fp_count($root);
     $here = xs_fp_here(xs_local_read());
     $st['mine'] = count($here);
-    foreach (xs_fp_playlists($root) as $p) {
+    $lists = xs_fp_playlists($root);
+    foreach ($lists as $p) {
         $st['playlists'][] = ['file' => $p['file'], 'title' => $p['title'], 'count' => $p['count'], 'favourites' => $p['favourites'],
                               'here' => count(array_filter($p['ids'], static fn($i) => isset($here[$i])))];
     }
+    $st['starter'] = xs_fp_starter($lists);
     $fit = xs_fp_fit($helper, $v['number']);
     $st['fit'] = $fit === null ? null : ['tag' => $fit['tag'], 'flashpoint' => $fit['flashpoint'], 'size' => (int) $fit['size']];
     $st['helperHere'] = xs_fp_helper_here($root, $helper);
