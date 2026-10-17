@@ -513,6 +513,41 @@ body.no-anim .ctx { animation: none; }
 .ss-note { color: var(--mute); font-size: 13px; }
 .ss-note.ok { color: var(--good); }
 .ss-note.bad { color: var(--bad); }
+/* Settings > Emulators > Achievements (js/achsettings.js): the key box and its buttons on one line */
+.ach-ctl { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.ach-ctl input[type="password"] {
+  font: inherit; font-size: 13px; color: var(--ink); background: var(--panel);
+  border: 1px solid var(--rule); border-radius: 0; padding: 5px 9px; width: 220px;
+}
+.ach-row .hint.ok { color: var(--good); }
+.ach-row .hint.bad { color: var(--bad); }
+/* A game's Achievements tab (js/achtab.js): the count and its bar, the list, a badge with its rarity ring */
+.ach-head .mt-note { margin: 12px 0 0; }
+.ach-top { display: flex; align-items: center; gap: 16px; margin: 14px 0 4px; }
+.ach-top b { color: var(--ink); font-size: 15px; font-weight: normal; letter-spacing: .03em; white-space: nowrap; }
+.ach-top span { color: var(--faint); font-size: 12.5px; white-space: nowrap; }
+.ach-prog { flex: 1 1 auto; height: 6px; background: rgba(var(--well-rgb), .9); border: 1px solid var(--rule); }
+.ach-prog i { display: block; height: 100%; background: var(--cyan); }
+.ach-list { max-height: calc(100vh - 385px - var(--strip-h)); overflow-y: auto; margin-top: 10px; }
+.ach-list .cr-row { padding: 7px 14px; gap: 14px; }
+.ach-list .ach-item { cursor: default; }
+.ach-badge { flex: 0 0 auto; width: 40px; height: 40px; border: 1px solid var(--rule); background: var(--panel-2); }
+.ach-badge img { display: block; width: 100%; height: 100%; }
+.ach-badge.rare { box-shadow: 0 0 0 2px var(--cyan); }
+.ach-badge.rarest { box-shadow: 0 0 0 2px var(--warn); }
+.ach-words { display: flex; flex-direction: column; gap: 2px; flex: 1 1 auto; min-width: 0; }
+.ach-words .cr-name { font-size: 14px; }
+.ach-item:not(.got) .cr-name { color: var(--mute); }
+.ach-why { font-size: 11.5px; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ach-why.warn { color: var(--warn); }
+.ach-why.good { color: var(--good); }
+.cr-tag.ach-pt { min-width: 48px; text-align: right; color: var(--ink); }
+.cr-tag.ach-few { min-width: 104px; text-align: right; }
+.cr-tag.ach-few.gold { color: var(--warn); }
+.cr-tag.ach-day { min-width: 64px; text-align: right; }
+.ach-acts { margin: 12px 0 0; }
+/* Sign in or out is one row: its box keeps the Cheats list's look, not its stretch over the pane. */
+.ch-list.ach-who { flex: 0 0 auto; min-height: 0; overflow: visible; }
 .ss-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 
 /* The Skraper route under that bar (js\skraper.js) */
@@ -3685,6 +3720,10 @@ body.no-anim .hk-listen.catching { animation: none; }
 .dtab:hover { color: var(--white); background: rgba(var(--cyan-rgb), .05); border-color: transparent; }
 /* The open tab is solid, as every button that is on is: dark words on the cyan. */
 .dtab.on, .dtab.on:hover { color: var(--ground); background: var(--cyan); border-bottom-color: var(--cyan); }
+/* The parts of the open group (More: File check and Notes): a smaller row under the tabs. */
+.dparts { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; }
+.dparts .dtab { border: 1px solid var(--rule); padding: 5px 12px 4px; font-size: 11px; }
+.dparts .dtab.on, .dparts .dtab.on:hover { border-color: var(--cyan); }
 .dtab-pane { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
 .dtab-wait { color: var(--faint); margin: 16px 0; }
 /* A picker standing in a tab: no panel of its own, and a list no taller
@@ -4757,17 +4796,17 @@ body:not(.badge-favourite) .rcard.fav .rcard-cap::before { content: none; }
 body.no-glow .rcard.sel { box-shadow: none; }
 .rcard.sel .rcard-cap { color: var(--ink); }
 
-/* The bar: the list's, on the rows (up and down), and the ScreenScraper and Steam trailers windows' games. */
-.rows-list, .panel-inner.ss > .st-scroll, .panel-inner.st > .st-scroll { scrollbar-width: auto; scrollbar-color: auto; }
-.rows-list::-webkit-scrollbar, .panel-inner.ss > .st-scroll::-webkit-scrollbar, .panel-inner.st > .st-scroll::-webkit-scrollbar { display: block; width: 10px; }
-.rows-list::-webkit-scrollbar-track, .panel-inner.ss > .st-scroll::-webkit-scrollbar-track, .panel-inner.st > .st-scroll::-webkit-scrollbar-track { background: rgba(var(--well-rgb), .55); border-left: 1px solid var(--rule); }
-.rows-list::-webkit-scrollbar-thumb, .panel-inner.ss > .st-scroll::-webkit-scrollbar-thumb, .panel-inner.st > .st-scroll::-webkit-scrollbar-thumb {
+/* The bar: the list's, on the rows (up and down), the ScreenScraper and Steam trailers windows' games, and the Achievements tab's list. */
+.rows-list, .panel-inner.ss > .st-scroll, .panel-inner.st > .st-scroll, .ach-list { scrollbar-width: auto; scrollbar-color: auto; }
+.rows-list::-webkit-scrollbar, .panel-inner.ss > .st-scroll::-webkit-scrollbar, .panel-inner.st > .st-scroll::-webkit-scrollbar, .ach-list::-webkit-scrollbar { display: block; width: 10px; }
+.rows-list::-webkit-scrollbar-track, .panel-inner.ss > .st-scroll::-webkit-scrollbar-track, .panel-inner.st > .st-scroll::-webkit-scrollbar-track, .ach-list::-webkit-scrollbar-track { background: rgba(var(--well-rgb), .55); border-left: 1px solid var(--rule); }
+.rows-list::-webkit-scrollbar-thumb, .panel-inner.ss > .st-scroll::-webkit-scrollbar-thumb, .panel-inner.st > .st-scroll::-webkit-scrollbar-thumb, .ach-list::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, rgba(var(--cyan-rgb), .8), rgba(var(--cyan-rgb), .5));
   background-clip: padding-box; border: 2px solid transparent; min-height: 48px;
 }
-.rows-list::-webkit-scrollbar-thumb:hover, .panel-inner.ss > .st-scroll::-webkit-scrollbar-thumb:hover, .panel-inner.st > .st-scroll::-webkit-scrollbar-thumb:hover { background: var(--cyan); background-clip: padding-box; }
+.rows-list::-webkit-scrollbar-thumb:hover, .panel-inner.ss > .st-scroll::-webkit-scrollbar-thumb:hover, .panel-inner.st > .st-scroll::-webkit-scrollbar-thumb:hover, .ach-list::-webkit-scrollbar-thumb:hover { background: var(--cyan); background-clip: padding-box; }
 @supports not selector(::-webkit-scrollbar) {
-  .rows-list, .panel-inner.ss > .st-scroll, .panel-inner.st > .st-scroll { scrollbar-width: thin; scrollbar-color: rgba(var(--cyan-rgb), .7) rgba(var(--well-rgb), .55); }
+  .rows-list, .panel-inner.ss > .st-scroll, .panel-inner.st > .st-scroll, .ach-list { scrollbar-width: thin; scrollbar-color: rgba(var(--cyan-rgb), .7) rgba(var(--well-rgb), .55); }
 }
 
 /* No bar under each row: a row with more past an edge FADES at that edge

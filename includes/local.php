@@ -237,6 +237,8 @@ function xs_local_games(): array
             // 0 for unknown, the same field the imported games carry.
             'players'     =>(int) ($e['players'] ?? 0),
             'steam'       => $steam,
+            // Flashpoint's ID for a game brought in from it: its controller keys follow it (api\launch.php).
+            'fpId'        => (string) ($e['fpId'] ?? ''),
         ];
     }
     return $games;

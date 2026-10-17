@@ -430,11 +430,12 @@ function strip_row(array $r): array
 }
 
 /* One answer for one game, and how sure it is. The pass over scanned games
-   selects "sure" and "likely" by itself and leaves "maybe" for a person:
+   fills "sure" and a "likely" with sameName by itself, and leaves the rest for a person:
      sure    the same name on the same console, and only one of them
-     likely  one game on that console whose name starts with this one, or
-             the other way round (file names drop subtitles: "Star Ocean" for
-             "Star Ocean: The Second Story")
+     likely  several games of the same name on that console (sameName true),
+             or one game there whose name starts with this one, or the other
+             way round (sameName false; file names drop subtitles: "Star Ocean"
+             for "Star Ocean: The Second Story")
      maybe   the same name on another console (a port, with another box),
              or several games this could be, best first
      none    nothing with these words in the whole database */
@@ -469,8 +470,13 @@ function match_one(SQLite3 $db, string $platform, string $title): array
         $best = $list[0];
         $confidence = 'maybe';
     }
-    return ['best' => $best !== null ? strip_row($best) : null, 'confidence' => $confidence,
-            'candidates' => array_map('strip_row', array_slice($list, 0, 8))];
+    $answer = ['best' => $best !== null ? strip_row($best) : null, 'confidence' => $confidence,
+               'candidates' => array_map('strip_row', array_slice($list, 0, 8))];
+    // Only on "likely", so every other answer reads as it always has.
+    if ($confidence === 'likely') {
+        $answer['sameName'] = count($exactHere) > 1;
+    }
+    return $answer;
 }
 
 // The wanted list (Games > Games you do not have): every console with its

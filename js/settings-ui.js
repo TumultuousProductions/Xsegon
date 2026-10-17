@@ -124,9 +124,9 @@ export var ROW_ICONS = {
 /* Shaped like a console menu: categories down the left, one page at a time on
    the right. Everything renders from the schema, so a setting added in
    includes\settings.php appears here for free. */
-// The bar onto one setting's row of the page that is showing.
+// The bar onto one setting's row of the page that is showing; a row with no setting of its own is named by data-land.
 function barOnSetting(group, key) {
-  var input = setUI && setUI.pages[group] && setUI.pages[group].querySelector('[data-group="' + group + '"][data-key="' + key + '"]');
+  var input = setUI && setUI.pages[group] && setUI.pages[group].querySelector('[data-group="' + group + '"][data-key="' + key + '"], .opt[data-land="' + key + '"]');
   var optRow = input && input.closest(".opt");
   if (optRow) { setBarTo("page", optRow); setPaint(); }
 }

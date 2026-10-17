@@ -1,5 +1,6 @@
 import { inApp } from "./appwindow.js";
 import { closeEditor, setEditorOnClose, toolFrame } from "./editors.js";
+import { askHardcore } from "./hardcoreask.js";
 import { load } from "./library.js";
 import { L, api, postJson } from "./log.js";
 import { popupMenu } from "./menus.js";
@@ -148,8 +149,9 @@ function pulseLaunch() {
    choice: how that save loads this once ("session" or "key"), the answer to
    the question below before the setting has come back saved.
    hack: { key, name, wait } to play with one of its hacks (js\hackstab.js);
-   wait is what the bottom line says while a patched copy is made. */
-export function launchNow(g, slot, direct, choice, hack) {
+   wait is what the bottom line says while a patched copy is made.
+   hc: the answer to the hardcore question (js\hardcoreask.js), "soft" or "nocheats". */
+export function launchNow(g, slot, direct, choice, hack, hc) {
   if (busy) { return; }
   setBusy(true);
   stopVideo();
@@ -158,11 +160,19 @@ export function launchNow(g, slot, direct, choice, hack) {
   L("LNCH", "ask " + g.title + " [" + g.platform + "]" + (g.local ? " own" : "") + (slot === null ? "" : " slot " + slot) + (direct ? " without Steam" : "") + (hack ? " hack " + hack.name : ""));
   showStrip(hack && hack.wait ? hack.wait : "starting " + g.title + "…", false);
 
-  postJson("api/launch.php", hack ? { id: g.id, hack: hack.key } : direct ? { id: g.id, direct: true } : slot === null ? { id: g.id }
-                         : choice ? { id: g.id, slot: slot, stateLoad: choice } : { id: g.id, slot: slot }).then(function (res) {
+  var body = hack ? { id: g.id, hack: hack.key } : direct ? { id: g.id, direct: true } : slot === null ? { id: g.id }
+           : choice ? { id: g.id, slot: slot, stateLoad: choice } : { id: g.id, slot: slot };
+  if (hc) { body.hardcore = hc; }
+  postJson("api/launch.php", body).then(function (res) {
     setBusy(false);
     // Network commands are off and nobody has said how a save should load.
     if (res.ok && res.ask === "stateLoad") { $strip.hidden = true; askStateLoad(g, slot, res.hotkey || "F4"); return; }
+    // Hardcore would refuse the save or the cheats inside the game.
+    if (res.ok && res.ask === "hardcore") {
+      $strip.hidden = true;
+      askHardcore(g.title, res.why, slot, function (answer, fromStart) { launchNow(g, fromStart ? null : slot, direct, choice, hack, answer); });
+      return;
+    }
     if (!res.ok) {
       // The guardrail speaks for itself; anything else gets the real reason.
       // "waiting" is the cores download under way (api\launch.php): said as

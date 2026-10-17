@@ -187,7 +187,7 @@ module.exports = async function (b, check) {
   await b.waitFor(`document.querySelectorAll("#details .dstates .st-cell").length > 0`, 8000);
   check("details lists the saves under the game", await b.ev(`document.querySelectorAll("#details .dstates .st-cell").length`), st.states.length);
   // Under Play come the tabs, and the saves are the first thing in About.
-  check("straight under Play and the tabs, in the right column", await b.ev(`(n => !!n && n.classList.contains("dst-wrap") && !!n.querySelector(".dstates"))(document.querySelector("#details .dright .bar + .dtabs + .dtab-pane.is-about").firstElementChild)`), true);
+  check("straight under Play and the tabs (the More row hidden), in the right column", await b.ev(`(n => !!n && n.classList.contains("dst-wrap") && !!n.querySelector(".dstates"))(document.querySelector("#details .dright .bar + .dtabs + .dparts[hidden] + .dtab-pane.is-about").firstElementChild)`), true);
   check("each one says its slot", await b.ev(`[...document.querySelectorAll("#details .dstates .st-label")].every(n => /^Slot \\d+$/.test(n.textContent))`));
   await b.ev(`document.querySelector("#details .dstates .st-cell").click()`);
   await b.until(`window.__launches.length`, 3, 4000);

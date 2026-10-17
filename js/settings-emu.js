@@ -1,6 +1,7 @@
 // ---------- settings: the Emulators page ----------
 // Its own file to keep js/settings-ui.js under 700 lines.
 
+import { achievementsPart } from "./achsettings.js";
 import { openEmuAdd } from "./emuadd.js";
 import { iconEl } from "./icons.js";
 import { showStrip } from "./launch.js";
@@ -20,8 +21,9 @@ import { el } from "./util.js";
    here, used from the next launch with no re-import.
    actionRow is the settings screen's own button row, as js\setup.js's setupRows takes it. */
 export function emulatorsPage(part, actionRow) {
-  // Two sections under headings that fold, as on every other page: what adds or sets one up, then the ones there are.
+  // Sections under headings that fold, as on every other page: what adds or sets one up, the ones there are, then RetroArch's achievements.
   var top = part("Add and set up"), mine = part("Your emulators");
+  achievementsPart(part("Achievements"));
   var hold = top.appendChild(el("div", "setup-hold"));
   // Settings closes for the screen and opens here again when it is done.
   function openAdd(program) {

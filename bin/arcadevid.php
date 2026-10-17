@@ -89,16 +89,16 @@ if ($curl === '') {
 
 /**
  * One address fetched into a file by one curl.exe, waited for.
- * [true, ''] or [false, why]; null when Stop was pressed, with the file removed.
+ * [true, '', code] or [false, why, code], code 0 when nothing answered; null when Stop was pressed, with the file removed.
  */
 $get = static function (string $url, string $to) use ($curl, $save, $stopped): ?array {
     @unlink($to);
     // Given up only when nothing comes for a minute: no limit on the whole of a file.
     $proc = @proc_open([$curl, '-L', '--fail', '--silent', '--show-error', '--retry', '2', '--connect-timeout', '20',
-                        '--speed-limit', '1024', '--speed-time', '60', '-A', 'Xsegon', '-o', $to, $url],
-        [0 => ['file', 'NUL', 'r'], 1 => ['file', 'NUL', 'w'], 2 => ['file', $to . '.err', 'w']], $pipes, null, null, ['bypass_shell' => true]);
+                        '--speed-limit', '1024', '--speed-time', '60', '-A', 'Xsegon', '--write-out', '%{http_code}', '-o', $to, $url],
+        [0 => ['file', 'NUL', 'r'], 1 => ['file', $to . '.code', 'w'], 2 => ['file', $to . '.err', 'w']], $pipes, null, null, ['bypass_shell' => true]);
     if (!is_resource($proc)) {
-        return [false, 'curl.exe could not be started'];
+        return [false, 'curl.exe could not be started', 0];
     }
     while (true) {
         $st = proc_get_status($proc);
@@ -108,8 +108,9 @@ $get = static function (string $url, string $to) use ($curl, $save, $stopped): ?
         if ($stopped()) {
             proc_terminate($proc);
             proc_close($proc);
-            @unlink($to);
-            @unlink($to . '.err');
+            foreach (['', '.err', '.code'] as $end) {
+                @unlink($to . $end);
+            }
             return null;
         }
         $save(false);
@@ -119,13 +120,19 @@ $get = static function (string $url, string $to) use ($curl, $save, $stopped): ?
     // curl writes a line for each of its tries: the last is why it gave up.
     $lines = preg_split('/\R/', trim((string) @file_get_contents($to . '.err'))) ?: [''];
     $said  = trim((string) end($lines));
+    $code  = (int) trim((string) @file_get_contents($to . '.code'));
     @unlink($to . '.err');
+    @unlink($to . '.code');
     clearstatcache(true, $to);
     if ((int) $st['exitcode'] === 0 && is_file($to) && (int) filesize($to) > 0) {
-        return [true, ''];
+        return [true, '', $code];
     }
     @unlink($to);
-    return [false, $said !== '' ? mb_substr($said, 0, 200) : 'curl ended with ' . (int) $st['exitcode']];
+    // Its makers ask that a program go by the answer's code.
+    if ($code >= 400) {
+        return [false, xs_ad_code_said($code), $code];
+    }
+    return [false, $said !== '' ? mb_substr($said, 0, 200) : 'curl ended with ' . (int) $st['exitcode'], $code];
 };
 
 // ---- the arcade games with no video ---------------------------------------------
@@ -163,39 +170,33 @@ $before = static function () use (&$job, $n): string {
     return $n((int) $job['added'], 'video was', 'videos were') . ' fetched from the Arcade Database before that';
 };
 
-// ---- is it there, and will it give files today ----------------------------------
-$job['phase'] = 'asking';
-$save();
-$got = $get($source['left'], $tmp . DIRECTORY_SEPARATOR . 'left.json');
-if ($got === null) {
-    $end('stopped', 'stopped: no video was fetched from the Arcade Database');
-}
-if (!$got[0]) {
-    $end('failed', 'the Arcade Database could not be reached (is the internet there?): ' . $got[1] . '.' . $next);
-}
-$left = xs_ad_left((string) @file_get_contents($tmp . DIRECTORY_SEPARATOR . 'left.json'));
-@unlink($tmp . DIRECTORY_SEPARATOR . 'left.json');
-if ($left === 0) {
-    $end('failed', 'the Arcade Database is giving no more files for now: it keeps an allowance for everyone together. Try again tomorrow.' . $next);
-}
-xs_log('ARCD', count($games) . ' arcade games to ask about' . ($none ? ', ' . count($none) . ' with a file not named as MAME names games' : '')
-    . '; the Arcade Database says ' . ($left === null ? 'nothing of its allowance' : $left . ' files may still be fetched'));
+xs_log('ARCD', count($games) . ' arcade games to ask about' . ($none ? ', ' . count($none) . ' with a file not named as MAME names games' : ''));
 
-/** What it said of one game, asked once a run. [answer or null, why] ; false when Stop was pressed. */
-$asked = [];
-$ask = static function (string $name) use (&$asked, $get, $source, $tmp) {
+/** What it said of one game, asked once a run. [answer or null, why, code] ; false when Stop was pressed. */
+$asked   = [];
+$reached = false;   // whether anything answered this run: until then a failed ask may be no internet
+$ask = static function (string $name) use (&$asked, &$reached, $get, $source, $tmp) {
     if (!isset($asked[$name])) {
         $to  = $tmp . DIRECTORY_SEPARATOR . 'ask.json';
         $got = $get(str_replace('{name}', rawurlencode($name), $source['ask']), $to);
         if ($got === null) {
             return false;
         }
+        $reached = $reached || $got[2] > 0;
         $answer = $got[0] ? xs_ad_answer((string) @file_get_contents($to)) : null;
         @unlink($to);
-        $asked[$name] = [$answer, $got[0] ? 'what came was not an answer' : $got[1]];
+        $asked[$name] = [$answer, $got[0] ? 'what came was not an answer' : $got[1], $got[2]];
         usleep(120000);     // a breath between asks: its makers serve everyone from one server
     }
     return $asked[$name];
+};
+// 509 or 429 is its allowance for everyone together: the run ends at once, with what came kept.
+$spent = static function (int $code) use (&$job, &$none, $listNone, $end, $before, $next): void {
+    if ($code === 509 || $code === 429) {
+        $job['none'] = $listNone($none);
+        $end('failed', 'the Arcade Database is giving no more files for now: it answered ' . $code . ', and it keeps an allowance for everyone together. '
+            . ($job['added'] ? ucfirst($before()) . '. ' : '') . 'Try again tomorrow.' . $next);
+    }
 };
 
 // ---- a game at a time: ask, then fetch -------------------------------------------
@@ -230,7 +231,12 @@ foreach ($games as $k => $g) {
     if ($a === false) {
         $end('stopped', 'stopped: ' . $before());
     }
+    $spent($a[2]);
     if ($a[0] === null) {
+        // Nothing has answered this run: the first ask is also whether it is there at all.
+        if (!$reached) {
+            $end('failed', 'the Arcade Database could not be reached (is the internet there?): ' . $a[1] . '.' . $next);
+        }
         $none[] = $g + ['why' => 'the Arcade Database gave no answer about ' . $g['name'] . ': ' . $a[1]];
         if (++$deaf >= 3) {
             $job['none'] = $listNone($none);
@@ -252,6 +258,7 @@ foreach ($games as $k => $g) {
         if ($p === false) {
             $end('stopped', 'stopped: ' . $before());
         }
+        $spent($p[2]);
         if ($p[0] !== null && $p[0]['known']) {
             $url  = $p[0]['video'];
             $from = $a[0]['parent'];
@@ -277,6 +284,7 @@ foreach ($games as $k => $g) {
     if ($got === null) {
         $end('stopped', 'stopped: ' . $before());
     }
+    $spent($got[2]);
     [$ok, $why] = $got;
     if ($ok && !xs_vp_is_video($part)) {
         [$ok, $why] = [false, 'what came is not a video a browser can play'];

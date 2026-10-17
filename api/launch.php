@@ -313,16 +313,39 @@ if (trim((string) ($body['hack'] ?? '')) !== '') {
     unset($hack['launch']);
 }
 
+/* ---- RetroAchievements' hardcore ------------------------------------------
+ * Signed in with hardcore on, RetroArch refuses a save loaded and cheats inside
+ * the game. So the person is asked before the start (includes\achievements.php):
+ * "soft" plays this once in softcore, "nocheats" plays without the cheats. A hack
+ * is left alone: what RetroArch does with a patched game is not proven yet.
+ */
+require_once __DIR__ . '/../includes/cheats.php';
+require_once __DIR__ . '/../includes/achievements.php';
+$hc = in_array($body['hardcore'] ?? null, ['soft', 'nocheats'], true) ? $body['hardcore'] : null;
+if (($launch['kind'] ?? '') === 'retroarch' && $hack === null && xs_ach_ra_state(ra_config_path((string) $launch['exe']))['hardcoreOn']) {
+    $cheatPick = $hc === 'nocheats' ? null : xs_cheats_for($id);
+    $askWhy = $slot >= 0 ? 'state' : ($cheatPick !== null && count($cheatPick['on'] ?? []) > 0 ? 'cheats' : null);
+    if ($askWhy !== null && $hc === null) {
+        xs_log('ACH', 'asked before starting ' . $game['title'] . ': hardcore and ' . ($askWhy === 'state' ? 'a save state' : 'cheats'));
+        xs_json(['ok' => true, 'ask' => 'hardcore', 'why' => $askWhy, 'launched' => null, 'slot' => $slot >= 0 ? $slot : null]);
+    }
+    if ($hc === 'soft') {
+        // Never written back as the person's own setting.
+        array_push($appendLines, 'cheevos_hardcore_mode_enable = "false"', 'config_save_on_exit = "false"');
+        xs_log('ACH', $game['title'] . ' plays in softcore this once');
+    }
+}
+
 /* ---- the cheats you chose -----------------------------------------------
  * RetroArch picks up <cheat_database_path>\<core>\<rom>.cht by itself. Xsegon
  * writes that file in ITS OWN folder and points RetroArch there for this run,
  * since RetroArch's own may be read only. With config_save_on_exit on, an
  * appended value IS written back into retroarch.cfg, so it is off for the run.
  */
-require_once __DIR__ . '/../includes/cheats.php';
 $cheats = null;
 if (($launch['kind'] ?? '') === 'retroarch') {
-    $pick = $hack !== null ? null : xs_cheats_for($id);   // cheats found for the game would land on a changed one
+    // Cheats found for the game would land on a changed one; "nocheats" is the hardcore answer above.
+    $pick = $hack !== null || $hc === 'nocheats' ? null : xs_cheats_for($id);
     if ($pick !== null) {
         $why   = null;
         $staged = xs_cheat_stage($game, $pick, $why);
@@ -604,6 +627,21 @@ if (($launch['kind'] ?? '') === 'retroarch' && strtolower((string) ($game['platf
 // The call as PowerShell text: readable in a dry run and the launch log.
 $command = xs_ps_call($script, $params);
 
+/* A Flashpoint game: its player reads no controller, so a helper beside the launcher turns
+   the pad into the game's keys while its window is in front (bin\padtokeys.ps1). */
+$padKeys = null;
+$padCall = null;
+if (($game['fpId'] ?? '') !== '' && ($launch['via'] ?? '') === 'Flashpoint') {
+    require_once __DIR__ . '/../includes/flashpoint.php';
+    $padKeys = xs_fp_padkeys((string) $game['fpId']);
+    if ($padKeys !== null) {
+        $padCall = xs_ps_call(XS_ROOT . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'padtokeys.ps1', [
+            'Map' => $padKeys['map'], 'Windows' => $padKeys['windows'], 'FullScreen' => $padKeys['fullScreen'] !== '' ? $padKeys['fullScreen'] : null,
+            'FullScreenIn' => $padKeys['fullScreen'] !== '' && $padKeys['fullScreenIn'] !== '' ? $padKeys['fullScreenIn'] : null,
+            'GameId' => (string) $shown['id'], 'DataDir' => xs_data_dir(), 'Log' => xs_log_enabled()]);
+    }
+}
+
 if ($dry) {
     xs_json(['ok' => true, 'dry' => true, 'launched' => $shown['title'], 'plays' => $game['title'], 'via' => $launch['via'],
              'exe' => $launch['exe'], 'args' => $launch['args'], 'command' => $command,
@@ -613,6 +651,8 @@ if ($dry) {
              'follow' => $follow['dir'] ?? null, 'viaSteam' => $viaSteam, 'direct' => $direct,
              'asks' => $netPort > 0 ? $netPort : null,     // the port the launcher asks RetroArch on
              'texRead' => $texRead ?: null,                 // bytes of texture packs this start reads first
+             'padKeys' => $padKeys,                         // a Flashpoint game's controller as its keys
+             'padCall' => $padCall,
              'raFix' => $raFix]);                           // what was found wrong in RetroArch's settings, and where it would be put right
 }
 
@@ -633,10 +673,15 @@ xs_log('LNCH', $shown['title'] . ' via ' . $launch['via'] . ' exe=' . basename($
        . ($hot !== null ? ' hot=' . $hot : '')
        . ($slot >= 0 ? ' slot=' . $slot . ($netPort > 0 ? ' load=sent' : ' load=hotkey') : '')
        . ($texRead > 0 ? ' texread=' . round($texRead / 1048576) . 'MB' : '')
-       . ($follow !== null ? ' follow=' . basename((string) $follow['dir']) : ''));
+       . ($follow !== null ? ' follow=' . basename((string) $follow['dir']) : '')
+       . ($padKeys !== null ? ' padkeys=' . $padKeys['map'] . ($padKeys['fullScreen'] !== '' ? ' full=' . $padKeys['fullScreen'] : '') : ''));
 // Detached: this returns now, the game runs on.
 if (!xs_spawn_ps($command)) {
     xs_fail('could not start the launcher', 500);
+}
+// Started as the launcher is, beside it.
+if ($padCall !== null && !xs_spawn_ps($padCall)) {
+    xs_log('LNCH', 'the controller helper for ' . $shown['title'] . ' could not be started: the game plays on the keyboard alone');
 }
 // Marked running at once, not in a second when PowerShell is up, so a second
 // press meanwhile is refused (xs_game_running); the launcher replaces it.

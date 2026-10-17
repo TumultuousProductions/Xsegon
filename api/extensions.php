@@ -125,7 +125,10 @@ if (isset($body['bring'])) {
         xs_fail((string) $why, 500);
     }
     xs_log('FLPT', 'brought in ' . $list['title'] . ' (' . $list['count'] . '): ' . $got['added'] . ' new, ' . $got['kept'] . ' already here'
-        . ($got['unknown'] ? ', ' . $got['unknown'] . ' not in Flashpoint\'s list' : '') . ', ' . $got['online'] . ' download at their first play, in '
+        . ($got['unknown'] ? ', ' . $got['unknown'] . ' not in Flashpoint\'s list' : '')
+        . ($got['hidden'] ? ', ' . $got['hidden'] . ' left out as Flashpoint\'s settings hide them ('
+            . implode(', ', array_map(static fn($k, $v) => $k . ' ' . $v, array_keys($got['hiddenWhy']), $got['hiddenWhy'])) . ')' : '')
+        . ', ' . $got['online'] . ' download at their first play, in '
         . (int) round((microtime(true) - $t) * 1000) . 'ms' . (!empty($body['dry']) ? ' (dry)' : ''));
     xs_json(['ok' => true, 'playlist' => $list['title'], 'platform' => XS_FP_PLATFORM] + $got);
 }

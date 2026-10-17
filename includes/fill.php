@@ -142,12 +142,19 @@ function xs_fill_rows_libretro(array $rows, ?bool &$offline = null): array
     return $out;
 }
 
-/** How many of these rows a pass fills by itself: sure, likely or linked. */
+/** A match a pass takes with no person asked: sure, or likely only because the console has several games of that very name. */
+function xs_fill_takes_itself(array $match): bool
+{
+    $conf = (string) ($match['confidence'] ?? '');
+    return $conf === 'sure' || ($conf === 'likely' && !empty($match['sameName']));
+}
+
+/** How many of these rows a pass fills by itself: those it takes itself, and those linked. */
 function xs_fill_sure(array $rows): int
 {
     $n = 0;
     foreach ($rows as $r) {
-        if (in_array($r['match']['confidence'] ?? '', ['sure', 'likely', 'linked'], true)) {
+        if (($r['match']['confidence'] ?? '') === 'linked' || xs_fill_takes_itself($r['match'] ?? [])) {
             $n++;
         }
     }
@@ -165,16 +172,28 @@ function xs_fill_same_name(string $a, string $b): bool
     return strtolower(trim($a)) === strtolower(trim($b));
 }
 
+/** A title that is only a console's name ("gb", "nes", "Sega 32X"): it says nothing of the game,
+    and its words still find unrelated games ("gb" finds GB Genjin), so no guess is made from it. */
+function xs_fill_console_title(string $title): bool
+{
+    require_once __DIR__ . '/scan.php';
+    $t = trim($title);
+    return $t !== '' && xs_scan_platform_for($t) !== null;
+}
+
 /**
  * Whose decision each row is. Every row gets a 'state':
  *
- *     ready   Xsegon is sure, or the match was chosen before and its box
- *             never arrived: filled by Fill in all, selected on the screen
+ *     ready   Xsegon is sure, or the console has several games of that very
+ *             name (xs_fill_takes_itself), or the match was chosen before and
+ *             its box never arrived: filled by Fill in all, selected on the screen
  *     check   for a person to look at, never filled unless selected by
- *             hand: 'why' is "guess" (the database's own word was "maybe")
+ *             hand: 'why' is "guess" (the database's word was "maybe", or
+ *             "likely" for a name that only starts the same)
  *             or "clash" (another of your games on that console matches the
  *             same entry under a different name; 'with' names them)
- *     none    nothing in the database with these words
+ *     none    nothing in the database with these words, or 'why' "console":
+ *             the title is only a console's name, so no guess is offered
  *     done    chosen before, and it has its box
  *
  * Two files with the same name matching one entry are one game twice (regions, discs),
@@ -182,6 +201,18 @@ function xs_fill_same_name(string $a, string $b): bool
  */
 function xs_fill_sort(array $rows): array
 {
+    $bare = [];
+    foreach ($rows as $i => &$r) {
+        if (($r['match']['confidence'] ?? '') !== 'linked' && xs_fill_console_title((string) ($r['title'] ?? ''))) {
+            $r['match'] = ['best' => null, 'confidence' => 'none', 'candidates' => []];
+            $bare[$i] = (string) $r['title'];
+        }
+    }
+    unset($r);
+    if ($bare) {
+        xs_log('FILL', 'no guess for ' . count($bare) . (count($bare) === 1 ? ' game' : ' games') . ' named only after a console: '
+            . implode(', ', array_slice($bare, 0, 10)) . (count($bare) > 10 ? ' and ' . (count($bare) - 10) . ' more' : ''));
+    }
     $by = [];
     foreach ($rows as $i => $r) {
         $to = (string) ($r['dbId'] ?: ($r['match']['best']['id'] ?? ''));
@@ -210,11 +241,14 @@ function xs_fill_sort(array $rows): array
             $r['state'] = !empty($r['art']['box']) ? 'done' : 'ready';
         } elseif (empty($r['match']['best'])) {
             $r['state'] = 'none';
+            if (isset($bare[$i])) {
+                $r['why'] = 'console';
+            }
         } elseif (isset($clash[$i])) {
             $r['state'] = 'check';
             $r['why']   = 'clash';
             $r['with']  = $clash[$i];
-        } elseif ($conf === 'sure' || $conf === 'likely') {
+        } elseif (xs_fill_takes_itself($r['match'])) {
             $r['state'] = 'ready';
         } else {
             $r['state'] = 'check';

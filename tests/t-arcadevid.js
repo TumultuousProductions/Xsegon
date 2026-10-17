@@ -1,12 +1,14 @@
 /* The Arcade Database's part of Pictures & Videos > Videos from online archives
  * (includes\arcadevid.php): one press asks the Arcade Database first for
  * arcade games, then the online archives for the rest.
- * Nothing goes online: XSEGON_ARCADEDB and XSEGON_ARCHIVE (tests\sandbox.js)
- * point at stand-in answers and tiny videos here, and what lands is compared
- * byte for byte with its stand-in.
+ * Nothing goes online: XSEGON_ARCADEDB (tests\sandbox.js) is a stand-in served
+ * here on the port the sandbox names, so it can answer with codes as the real
+ * one does (404, 500, 509); XSEGON_ARCHIVE points at stand-in files. What lands
+ * is compared byte for byte with its stand-in.
  */
 "use strict";
 const fs = require("fs");
+const http = require("http");
 const path = require("path");
 const crypto = require("crypto");
 const { api, DATA, Guard, sleep } = require("./lib");
@@ -15,8 +17,6 @@ const FX = path.join(DATA, "fixtures", "arcadedb");
 const IA = path.join(DATA, "fixtures", "archive");
 const SET = "test-arcade-a";
 const ARCADE = "Arcade", SNES = "Super Nintendo Entertainment System";
-// The stand-in's address, written as tests/sandbox.js writes it: a video is fetched only from an address that starts so.
-const SRC = "file:///" + FX.split(path.sep).join("/");
 
 // A stand-in video: the first bytes of an MP4 and words of its own.
 function video(words) {
@@ -50,16 +50,12 @@ const fileOf = (name) => path.join(FX, "videos", name + ".mp4");
 
 function makeAll() {
   fs.rmSync(FX, { recursive: true, force: true });
-  for (const d of ["roms", "videos", "query_mame"]) { fs.mkdirSync(path.join(FX, d), { recursive: true }); }
+  for (const d of ["roms", "videos"]) { fs.mkdirSync(path.join(FX, d), { recursive: true }); }
   for (const g of GAMES) { fs.writeFileSync(g.rom, "not a game, a stand-in"); }
   for (const name of Object.keys(KNOWN)) {
-    const [parent, has, kind] = KNOWN[name];
+    const [, has, kind] = KNOWN[name];
     if (has) { fs.writeFileSync(fileOf(name), kind === "video" ? video(name + ", the arcade database's own") : Buffer.from("these are words, not a video")); }
-    fs.writeFileSync(path.join(FX, "query_mame", name + ".json"), JSON.stringify({ release: 6, result: [{ index: 1, game_name: name, title: name, cloneof: parent,
-      url_video_shortplay: has ? SRC + "/videos/" + name + ".mp4" : "", url_video_shortplay_hd: "", url_image_title: "https://elsewhere.example/never-fetched.png" }] }));
   }
-  fs.writeFileSync(path.join(FX, "query_mame", "deltad.json"), JSON.stringify({ release: 6, result: [] }));
-  allowance(250000);
   // The online archives' side: one set for the Arcade console, as tests\t-archivevid.js makes its own.
   const rows = [];
   for (const name of Object.keys(IN_SET)) {
@@ -72,12 +68,40 @@ function makeAll() {
   fs.writeFileSync(path.join(IA, "metadata", SET, "files"), JSON.stringify({ result: rows }));
   fs.writeFileSync(path.join(DATA, "archivevid-sets.json"), JSON.stringify({ sets: [{ id: SET, folder: "arcade", whose: "ia-test", videos: 2, hevc: false }] }));
 }
-function allowance(files) {
-  fs.writeFileSync(path.join(FX, "download_status.json"), JSON.stringify({ release: 1, result: { download_limit_files: files, download_limit_bytes: 40000000000 } }));
-}
 
 module.exports = async function (b, check) {
   const kept = new Guard(["scanned-games.json", "arcadevid-job.json", "archivevid-job.json", "archivevid-sets.json", "archivevid-none.json", "messages.json"]);
+
+  /* ---- the Arcade Database's stand-in, answering as the real one does ------ */
+  const port = Number(fs.readFileSync(path.join(DATA, "fixtures", "arcadedb-port.txt"), "utf8"));
+  const SRC = "http://127.0.0.1:" + port;
+  const asked = [];             // every ask, as "ask <ajax> <name>" or "get <name>"
+  const say = { all: 0, code: {} };   // a code for every ask, or for one ("ask:<name>", "video:<name>")
+  const server = http.createServer((req, res) => {
+    const u = new URL(req.url, SRC);
+    const send = (code, body, type) => { res.writeHead(code, { "Content-Type": type || "text/plain; charset=utf-8" }); res.end(body); };
+    if (u.pathname === "/service_scraper.php") {
+      const name = u.searchParams.get("game_name") || "";
+      asked.push("ask " + u.searchParams.get("ajax") + " " + name);
+      const code = say.all || say.code["ask:" + name];
+      if (code) { return send(code, "Error " + code); }
+      const k = KNOWN[name];
+      // Shaped as its query_mame_media answers (2026-10-17); a name it does not know is an empty result, not a 404.
+      const result = !k ? [] : [{ index: 1, game_name: name, title: name, cloneof: k[0], youtube_video_id: "",
+        url_video_shortplay: k[1] ? SRC + "/videos/" + name + ".mp4" : "", url_video_shortplay_hd: "", url_image_title: "https://elsewhere.example/never-fetched.png" }];
+      return send(200, JSON.stringify({ release: 2, result }), "application/json");
+    }
+    const m = /^\/videos\/([a-z0-9_]+)\.mp4$/.exec(u.pathname);
+    if (m) {
+      asked.push("get " + m[1]);
+      const code = say.all || say.code["video:" + m[1]];
+      if (code) { return send(code, "Error " + code); }
+      return fs.existsSync(fileOf(m[1])) ? send(200, fs.readFileSync(fileOf(m[1])), "video/mp4") : send(404, "Not Found");
+    }
+    send(404, "Not Found");
+  });
+  const listen = () => new Promise((ok, no) => { server.once("error", no); server.listen(port, "127.0.0.1", ok); });
+
   const mineNow = () => api("api/arcadevid.php");
   const theirsNow = () => api("api/archivevid.php");
   // The one press, for the Arcade console; then both parts waited for: [the Arcade Database's job, the online archives' job].
@@ -100,7 +124,7 @@ module.exports = async function (b, check) {
   const alphaIsTheDatabases = () => ["alphaf", "alphafj"].some((v) => is(GAMES[0], fs.readFileSync(fileOf(v))));
   const alphaFiles = () => fs.readdirSync(arcadeDir).filter((n) => /^Alpha Fighter/.test(n));
   const clear = () => { for (const g of GAMES) { fs.rmSync(place(g), { force: true }); } };
-  const halfWritten = () => (fs.existsSync(arcadeDir) ? fs.readdirSync(arcadeDir).filter((f) => /\.(part|err)$/.test(f)).length : 0);
+  const halfWritten = () => (fs.existsSync(arcadeDir) ? fs.readdirSync(arcadeDir).filter((f) => /\.(part|err|code)$/.test(f)).length : 0);
 
   try {
     makeAll();
@@ -116,27 +140,44 @@ module.exports = async function (b, check) {
     check("it has no start of its own: asked for one, it names the one press there is",
       /asked as part of Pictures & Videos > Videos from online archives: start it there/.test((await api("api/arcadevid.php", { fetch: true })).error || ""), true);
 
-    /* ---- the Arcade Database away: the press still fetches --------------- */
-    fs.rmSync(path.join(FX, "download_status.json"));
+    /* ---- the Arcade Database away (its stand-in not yet listening): the press still fetches */
+    const whyIn = (job, title) => ((job.none || []).find((g) => g.title === title) || {}).why || "";
     check("the one press starts", (await press()).started, true);
     let [mine, theirs] = await ended(60000);
     check("with the Arcade Database out of reach its part says so, and the online archives are asked for the arcade games all the same",
       [mine.state, /^the Arcade Database could not be reached \(is the internet there\?\): .* The online archives are asked for the arcade games as well\.$/.test(mine.error || ""),
        theirs.state, is(GAMES[0], IN_SET["alphaf.mp4"]), is(GAMES[2], IN_SET["gammar.mp4"])], ["failed", true, "done", true, true]);
     clear();
-    allowance(0);
+    await listen();
+
+    /* ---- its allowance used up: it goes by the answer's code (its maker's word, 2026-10-17) */
+    say.all = 509;
     [mine, theirs] = (await press()).started ? await ended(60000) : [{}, {}];
-    check("and with its allowance used up it says to try again tomorrow, and the archives go on",
-      [/giving no more files for now.*Try again tomorrow\. The online archives are asked/.test(mine.error || ""), theirs.state, is(GAMES[2], IN_SET["gammar.mp4"])], [true, "done", true]);
+    check("a 509 ends its part at the first ask, not after three, says to try again tomorrow, and the archives go on",
+      [asked.length, /^the Arcade Database is giving no more files for now: it answered 509, .* Try again tomorrow\. The online archives are asked/.test(mine.error || ""),
+       theirs.state, is(GAMES[2], IN_SET["gammar.mp4"])], [1, true, "done", true]);
     clear();
-    allowance(250000);
+    say.all = 0;
+    asked.length = 0;
+    say.code = { "video:betab": 404, "ask:gammar": 500, "ask:zetaz": 509 };
+    [mine, theirs] = (await press()).started ? await ended(60000) : [{}, {}];
+    check("part way through, a 404 and a 500 are that game's alone and said in words, and a 509 ends the part with what came kept",
+      [mine.state, mine.added, alphaIsTheDatabases(), whyIn(mine, "Beta Blaster"), whyIn(mine, "Gamma Run"),
+       /it answered 509, .* 1 video was fetched from the Arcade Database before that\. Try again tomorrow\./.test(mine.error || ""), asked.includes("ask query_mame_media zetaz"), theirs.state],
+      ["failed", 1, true, "its video could not be fetched: it answered 404 (nothing there)", "the Arcade Database gave no answer about gammar: it answered 500 (its server had a fault)",
+       true, true, "done"]);
+    clear();
+    say.code = {};
+    asked.length = 0;
 
     /* ---- the one press, both there --------------------------------------- */
     [mine, theirs] = (await press()).started ? await ended(60000) : [{}, {}];
     check("the Arcade Database's part ends saying how many videos came from it and that the archives are asked for the rest: never a count of games beside a count of videos",
       [mine.state, mine.games, mine.added, mine.asked, (mine.said || "").replace(/, \d+ MB in \d+ s\./, ", so many MB in so many s.")],
       ["done", 6, 2, 6, "2 videos came from the Arcade Database (adb.arcadeitalia.net), so many MB in so many s. None came for 4 other arcade games. The online archives are asked for those next."]);
-    const why = (title) => ((mine.none || []).find((g) => g.title === title) || {}).why || "";
+    check("it asks only for a game's media, the ask its maker names, and never download_status",
+      [[...new Set(asked.filter((a) => a.startsWith("ask ")).map((a) => a.split(" ")[1]))], asked.some((a) => /download_status/.test(a))], [["query_mame_media"], false]);
+    const why = (title) => whyIn(mine, title);
     check("its job keeps why each of the others got none from it",
       [why("Gamma Run"), why("Delta Drive"), /not named the way MAME names a game \(sf2\.zip\), so the Arcade Database was not asked about it$/.test(why("Epsilon Wars")),
        /^its video could not be fetched: what came is not a video a browser can play$/.test(why("Zeta Zone"))],
@@ -174,7 +215,8 @@ module.exports = async function (b, check) {
       await b.key("Escape");
     }
   } finally {
-    for (const g of GAMES) { for (const end of ["", ".part", ".part.err", ".adb.part", ".adb.part.err"]) { fs.rmSync(place(g) + end, { force: true }); } }
+    server.close();
+    for (const g of GAMES) { for (const end of ["", ".part", ".part.err", ".adb.part", ".adb.part.err", ".adb.part.code"]) { fs.rmSync(place(g) + end, { force: true }); } }
     try { fs.rmdirSync(arcadeDir); } catch (e) { /* the copy's own videos are in it */ }
     fs.rmSync(FX, { recursive: true, force: true });
     fs.rmSync(path.join(IA, "download", SET), { recursive: true, force: true });

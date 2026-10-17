@@ -139,7 +139,7 @@ function build() {
    "usual places" a person's RetroArch lives become one empty folder here. */
 const TAR = path.join(process.env.SystemRoot || "C:\\Windows", "System32", "tar.exe");
 const FIX_CORES = ["mesen", "snes9x", "mupen64plus_next", "gambatte", "mgba", "genesis_plus_gx", "pcsx_rearmed"];
-function fixtures(ssPort) {
+function fixtures(ssPort, adbPort) {
   const fx = path.join(DIR, "fixtures");
   const ra = path.join(fx, "ra", "RetroArch-Win64");
   fs.mkdirSync(ra, { recursive: true });
@@ -232,6 +232,9 @@ function fixtures(ssPort) {
   const ss = path.join(fx, "ss");
   fs.mkdirSync(ss, { recursive: true });
   fs.writeFileSync(path.join(ss, "port.txt"), String(ssPort));
+  /* The Arcade Database's stand-in answers with codes too (404, 500, 509):
+     the arcadevid group serves it on this port while it runs. */
+  fs.writeFileSync(path.join(fx, "arcadedb-port.txt"), String(adbPort));
   /* A stand-in for the Skraper staging helper (includes\skraper.php): the
      same modes and closing words as the real stage.js, against this copy's
      own folder. While its hold file exists it waits, so a test can look at
@@ -296,7 +299,7 @@ function fixtures(ssPort) {
     XSEGON_STEAMVID_CDN: url(path.join(steam, "cdn")) + "/{movie}.mp4",
     XSEGON_FFMPEG: path.join(fx, "archive", "cutter.php"),   // the cutter's stand-in: t-archivevid.js writes it
     XSEGON_ARCHIVE: url(path.join(fx, "archive")),      // the Internet Archive's stand-in: t-archivevid.js fills it
-    XSEGON_ARCADEDB: url(path.join(fx, "arcadedb")),    // the Arcade Database's stand-in: t-arcadevid.js fills it
+    XSEGON_ARCADEDB: "http://127.0.0.1:" + adbPort,     // the Arcade Database's stand-in: t-arcadevid.js serves it
     XSEGON_CHEATLISTS: url(cheatsZip),                  // libretro's cheat lists, as the stand-in above
     XSEGON_DEFENDER: defender,
     XSEGON_PICK_ANSWER: roms,
@@ -352,7 +355,9 @@ async function start() {
   // it, which is where the page starts the fast lane.
   let ssPort = await freePort();
   while (ssPort === port || ssPort === port + 1) { ssPort = await freePort(); }
-  const setup = fixtures(ssPort);
+  let adbPort = await freePort();
+  while ([port, port + 1, port + 2, ssPort].includes(adbPort)) { adbPort = await freePort(); }
+  const setup = fixtures(ssPort, adbPort);
   const url = "http://127.0.0.1:" + port;
   const proc = spawn(php(), ["-S", "127.0.0.1:" + port, "-t", ROOT, path.join(ROOT, "router.php")], {
     // HOME as a test shell has it, so RetroArch's "~" folders read alike from any shell (a launch can be asked for Windows' way: assumeNoHome).

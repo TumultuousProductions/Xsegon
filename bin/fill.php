@@ -294,7 +294,7 @@ try {
         $name = (string) (xs_overrides()[(string) $game['id']]['lrName'] ?? '');
         if ($name === '') {
             $m = xs_lr_match($game, $tables[$sys]);
-            $name = in_array($m['confidence'], ['sure', 'likely'], true) ? (string) $m['name'] : '';
+            $name = $m['confidence'] === 'sure' ? (string) $m['name'] : '';
         }
         return $name === '' ? null : $libretro($game, $name, $kind);
     };

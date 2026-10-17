@@ -317,7 +317,7 @@ module.exports = async function (b, check) {
         return window.__realFetch(u, o); }; })()`);
     try {
       await details("base");
-      check("details has a Hacks tab, after Cheats", await b.ev(`${TABS}.map((x) => x.textContent.replace(/ \\(\\d+\\)$/, "")).slice(-4, -2)`), ["Cheats", "Hacks"]);
+      check("details has a Hacks tab, after Cheats", await b.ev(`${TABS}.map((x) => x.textContent.replace(/ \\(\\d+\\)$/, "")).slice(3, 5)`), ["Cheats", "Hacks"]);
       const want = (base.memory ? ["Starts patched as the game loads"] : []).concat(["Damaged", "Hk Base (USA)", "Hk Bundle", "Hk Colour Hack", "Hk Patch Only", "Hkt Gone Program", "Hkt PC Version"]);
       check("it lists the patches that fit" + (base.memory ? ", under the row that says how they start" : "") + ", and last the games of your own that play from its file", await b.until(names, want, 9000), want);
       const rowOf = (n) => `${ROWS}.find((r) => r.querySelector(".cr-name").textContent === ${JSON.stringify(n)})`;
