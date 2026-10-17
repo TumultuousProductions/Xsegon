@@ -29,6 +29,7 @@ function xs_jobs_files(): array
         'cheatlists'    => xs_data_path('cheatlists-job.json'),
         'texpacks'      => xs_data_path('texpacks-job.json'),
         'fanmake'       => xs_data_path('fanmake-job.json'),
+        'extensions'    => xs_data_path('extensions-job.json'),
     ];
 }
 
@@ -288,6 +289,25 @@ function xs_jobs(): array
         }
     }
 
+    // Set up or Get on the Extensions page: one download by size, then checked, unpacked and put in place.
+    if (is_file($files['extensions'])) {
+        require_once __DIR__ . '/extensions.php';
+        $j = xs_ext_job();
+        $state = (string) ($j['state'] ?? '');
+        if (is_array($j) && $told($files['extensions'], $state)) {
+            $phase = (string) ($j['phase'] ?? '');
+            $total = (int) ($j['total'] ?? 0);
+            $line  = $phase === 'fetching' ? 'downloading ' . (string) ($j['file'] ?? '') . ': ' . xs_jobs_size((int) ($j['bytes'] ?? 0)) . ($total ? ' of ' . xs_jobs_size($total) : '')
+                   : ($phase === 'verifying' ? 'checking it is the file its makers list'
+                   : ($phase === 'checking' ? 'Windows Defender is checking ' . (string) ($j['file'] ?? 'the download')
+                   : ($phase === 'unpacking' ? 'unpacking it' . (($j['action'] ?? '') === 'get' ? ': this takes a few minutes' : '')
+                   : ($phase === 'placing' ? 'putting it in place' : 'starting'))));
+            $out[] = xs_jobs_row('extensions', (string) ($j['name'] ?? 'Extensions'), $state === 'running' ? 'running' : ($state === 'done' ? 'done' : 'failed'),
+                (int) ($j['started'] ?? 0), $line, $phase === 'fetching' && $total > 0 ? (int) ($j['bytes'] ?? 0) / $total : null, $phase === 'fetching',
+                (string) (($j['error'] ?? '') !== '' ? $j['error'] : (($j['said'] ?? '') !== '' ? $j['said'] : 'nothing was done')));
+        }
+    }
+
     // Thumbnails: a builder for each kind of picture, told as one job. One that says running and has gone quiet died.
     $builds = [];
     foreach (xs_glob(xs_data_dir(), 'thumbs-job-*.json') as $path) {
@@ -374,6 +394,14 @@ function xs_jobs_stop(string $key): bool
         if ((xs_fm_job()['state'] ?? '') === 'running') {
             @touch(xs_fm_stop_path());
             xs_log('FAN', 'make asked to stop: nothing is kept (the corner bar)');
+        }
+        return true;
+    }
+    if ($key === 'extensions') {
+        require_once __DIR__ . '/extensions.php';
+        if ((xs_ext_job()['state'] ?? '') === 'running') {
+            @touch(xs_ext_stop_path());
+            xs_log('EXTN', 'asked to stop: nothing is kept (the corner bar)');
         }
         return true;
     }

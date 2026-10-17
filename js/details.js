@@ -1,6 +1,7 @@
 import { cheatsFact } from "./cheattab.js";
 import { detailTabs, detailTabsOff, openTab, tabPane } from "./detailtabs.js";
 import { openDocs } from "./docs.js";
+import { dropExtPage } from "./extensions.js";
 import { dropFanPage } from "./fanprojects.js";
 import { openGameButtons } from "./gamebtns.js";
 import { paintHelp } from "./help.js";
@@ -411,7 +412,7 @@ export function openDetails() {
   var g = games[sel];
   if (!g) { return; }
   // Surprise me from over the Fan projects page: the details stand over every game, never over the page or the consoles.
-  if (dropFanPage() && sysStage === "wall") { startOnAllGames(); }
+  if ((dropFanPage() || dropExtPage()) && sysStage === "wall") { startOnAllGames(); }
   sound("select");
 
   buildDetails(g, null);
