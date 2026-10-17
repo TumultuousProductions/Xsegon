@@ -45,6 +45,12 @@ if (isset($_GET['fatal'])) {
     }
 }
 
+// ?parse=1: read a file the test wrote into the data folder, with a syntax error in it as a half-made edit leaves one.
+if (isset($_GET['parse'])) {
+    require xs_data_path('boom-parse.php');
+    xs_json(['ok' => true, 'read' => true]);
+}
+
 function xs_boom_deep(): void
 {
     throw new RuntimeException('a stand-in fault, thrown on purpose');

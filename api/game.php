@@ -63,8 +63,10 @@ require_once __DIR__ . '/../includes/texpacks.php';
 if (xs_tp_has_tab($g)) {
     try {
         $rec = xs_tp_records()[$id] ?? null;
-        $here = is_array($rec) && (is_dir((string) ($rec['into'] ?? '')) || is_file((string) ($rec['into'] ?? '')));
-        $texPacks = ['found' => count(xs_tp_found($g, null)), 'have' => $here ? ['from' => (string) ($rec['from'] ?? ''), 'bytes' => (int) ($rec['bytes'] ?? 0)] : null];
+        $here = array_values(array_filter(is_array($rec) ? xs_tp_rec_norm($rec)['packs'] : [],
+            static fn (array $p): bool => is_dir((string) $p['at']) || is_file((string) $p['at'])));
+        $texPacks = ['found' => count(xs_tp_found($g, null)), 'have' => $here ? ['from' => count($here) === 1 ? (string) $here[0]['from'] : '',
+            'n' => count($here), 'bytes' => array_sum(array_map(static fn (array $p): int => (int) $p['bytes'], $here))] : null];
     } catch (\Throwable $e) {
         $texPacks = null;
     }

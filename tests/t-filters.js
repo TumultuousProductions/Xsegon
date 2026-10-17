@@ -16,12 +16,18 @@
  * on the way is in settings.json, which the Guard puts back.
  */
 "use strict";
-const { api, sleep, FILTERS_UP } = require("./lib");
+const fs = require("fs");
+const path = require("path");
+const lib = require("./lib");
+const { api, sleep, FILTERS_UP, Guard } = lib;
 
 // The rows in the order the window shows them, the left column and then the right.
-const NAMES = ["Favourites only", "Two players or more", "Never played", "Cheats on", "Your rating at least", "Not rated by you",
+const NAMES = ["Favourites only", "Two players or more", "Never played", "Cheats on", "Your rating at least", "Not rated by you", "Texture packs",
                "Ready to play", "Missing art", "Has a manual", "Hacks"];
-const HEADS = ["Play", "Ratings", "Files and pictures", "Hacks", "Your tags"];
+const HEADS = ["Play", "Ratings", "Texture packs", "Files and pictures", "Hacks", "Your tags"];
+// A title as the Texture packs tab matches it (includes\texpacks.php, xs_tp_words), for titles in plain letters.
+const tpWords = (t) => String(t).replace(/\([^)]*\)|\[[^\]]*\]/g, " ").toLowerCase().replace(/&/g, " and ").replace(/[^a-z0-9]+/g, " ")
+  .replace(/\bthe\b/g, " ").replace(/\s+/g, " ").trim();
 
 module.exports = async function (b, check) {
   /* ---- the server: one rule each, and they stack ------------------------ */
@@ -94,6 +100,41 @@ module.exports = async function (b, check) {
   const manualsForTwo = await api("api/library.php?docs=1&players=1&versions=all&grouped=0");
   check("and they stack with the others: has a manual, for two", manualsForTwo.games.every((g) => g.docs && g.players !== 1), true);
 
+  /* Texture packs: Has texture packs is a pack listed for the game, found as its
+     tab finds them (by its title or its file's name), or one installed; Texture
+     pack installed is one Xsegon put in that is still in place. A stand-in list
+     names one of this copy's games, and two stand-in installs, one whose folder
+     is there and one whose folder has gone. */
+  {
+    const DATA = lib.DATA, kept = new Guard(["texpacks-list.json", "texpacks.json"]), room = path.join(DATA, "texpacks-try");
+    try {
+      const TP = ["Nintendo 64", "Sony Playstation 2", "Nintendo GameCube", "Nintendo Wii"];
+      const mine = files.games.filter((g) => TP.includes(g.platform) && !g.local && /^[\x20-\x7e]+$/.test(g.title) && tpWords(g.title));
+      const listed = mine[0], put = mine.find((g) => tpWords(g.title) !== tpWords(listed.title)),
+            gone = mine.find((g) => g !== put && tpWords(g.title) !== tpWords(listed.title) && tpWords(g.title) !== tpWords(put.title));
+      if (!listed || !put || !gone) {
+        check("this copy has three games on the consoles texture packs are for", false);
+      } else {
+        fs.mkdirSync(path.join(room, "pack1"), { recursive: true });
+        fs.writeFileSync(path.join(DATA, "texpacks-list.json"), JSON.stringify({ consoles: { [listed.platform.toLowerCase()]: [{ k: "t1", t: listed.title, by: "the testers" }] } }));
+        const rec = (at) => ({ emu: "mupen", key: "TEST", packs: [{ id: "p1", from: "", path: "", at, kind: "folder", when: 1, files: 1, bytes: 1 }] });
+        fs.writeFileSync(path.join(DATA, "texpacks.json"), JSON.stringify({ [put.id]: rec(path.join(room, "pack1")), [gone.id]: rec(path.join(room, "gone")) }));
+        const named = (g) => g.platform === listed.platform && [tpWords(g.title), tpWords(String(g.file || "").replace(/\.[^.]*$/, ""))].includes(tpWords(listed.title));
+        const has = await api("api/library.php?texpacks=1&versions=all&grouped=0");
+        const inst = await api("api/library.php?texinstalled=1&versions=all&grouped=0");
+        check("Has texture packs lets in exactly the games the list names a pack for, and the ones with a pack installed",
+              [ids(has.games) === ids(files.games.filter((g) => named(g) || g.id === put.id)), has.filtered !== null], [true, true]);
+        check("Texture pack installed lets in only the one whose pack is still in place, not the one whose folder has gone",
+              [ids(inst.games), inst.games.some((g) => g.id === gone.id) || has.games.some((g) => g.id === gone.id)], [put.id, false]);
+        const texForTwo = await api("api/library.php?texpacks=1&players=1&versions=all&grouped=0");
+        check("and it stacks with the others: texture packs, for two", texForTwo.games.every((g) => (named(g) || g.id === put.id) && g.players !== 1), true);
+      }
+    } finally {
+      kept.restore();
+      fs.rmSync(room, { recursive: true, force: true });
+    }
+  }
+
   // The console with the most for two, and one with none if this library has one.
   const busiest = names.slice().sort((x, y) => seats[y] - seats[x])[0];
   const solo = Object.keys(all.platforms).find((k) => !seats[k]) || null;
@@ -132,7 +173,8 @@ module.exports = async function (b, check) {
   const words = fw(`w.querySelector(".flt-now-w").textContent`);
   const clearUp = fw(`!w.querySelector(".set-head button").hidden`);
   const lit = fw(`[...w.querySelectorAll(".flt-star")].filter(s => !s.classList.contains("off")).length`);
-  const hackSaid = fw(`[...w.querySelectorAll(".flt-ans.on")].map(n => n.textContent).join("|")`);
+  const hackSaid = fw(`[...w.querySelectorAll('.opt[data-key="hack"] .flt-ans.on')].map(n => n.textContent).join("|")`);
+  const texSaid = fw(`[...w.querySelectorAll('.opt[data-key="texpack"] .flt-ans.on')].map(n => n.textContent).join("|")`);
   await b.openPlatform(busiest);
   check("the Faves and 2+ Players buttons are gone from the bar",
         await b.ev(`!document.getElementById("btn-fav") && !document.getElementById("btn-players")`));
@@ -144,15 +186,15 @@ module.exports = async function (b, check) {
   check("nor is there an x on it to clear filters, with none to clear", await b.ev(xUp), false);
   await b.openFilters();
   check("it opens the Filter by window", await b.ev(FILTERS_UP));
-  check("in five sections, each under a heading that folds", await b.ev(fw(`[...w.querySelectorAll(".set-sect")].map(s => (s.querySelector(":scope > .sect-head .sect-name") || {}).textContent)`)), HEADS);
+  check("in six sections, each under a heading that folds", await b.ev(fw(`[...w.querySelectorAll(".set-sect")].map(s => (s.querySelector(":scope > .sect-head .sect-name") || {}).textContent)`)), HEADS);
   check("a row to each filter, in order, its name and no line of words under it", [await b.ev(rowNames), await b.ev(fw(`w.querySelectorAll(".hint").length`))], [NAMES, 0]);
   check("two columns side by side, the whole window on the screen, and nothing in it scrolls", await b.ev(fw(`(() => {
     const c = [...w.querySelectorAll(".flt-col")].map(x => x.getBoundingClientRect()), r = w.getBoundingClientRect(), body = w.querySelector(".flt-cols");
     return [c.length, c[1].left > c[0].right, r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight, body.scrollHeight <= body.clientHeight + 1]; })()`)), [2, true, true, true]);
   check("F and 2 shown as their keys", await b.ev(fw(`["fav", "players"].map(k => (w.querySelector('.opt[data-key="' + k + '"] .flt-keys') || {}).textContent)`)), ["F", "2"]);
-  check("with nothing on: the top says so, no Clear, Hacks on All, no star lit, and the count the list has",
-        [await b.ev(words), await b.ev(clearUp), await b.ev(hackSaid), await b.ev(lit), await b.until(fw(`w.querySelector(".flt-now-n").textContent`), (await b.ev(`document.getElementById("count").textContent`)) + " games")],
-        ["nothing", false, "All", 0, (await b.ev(`document.getElementById("count").textContent`)) + " games"]);
+  check("with nothing on: the top says so, no Clear, Hacks and Texture packs on All, no star lit, and the count the list has",
+        [await b.ev(words), await b.ev(clearUp), await b.ev(hackSaid) + "|" + await b.ev(texSaid), await b.ev(lit), await b.until(fw(`w.querySelector(".flt-now-n").textContent`), (await b.ev(`document.getElementById("count").textContent`)) + " games")],
+        ["nothing", false, "All|All", 0, (await b.ev(`document.getElementById("count").textContent`)) + " games"]);
   // Your tags: small buttons, six at most and never more than two lines of them; a button after them opens the rest.
   check("your tags as buttons, six at most on no more than two lines, with a button for the rest where there are more",
         await b.ev(fw(`(() => { const t = w.querySelectorAll(".flt-tags .flt-tag[data-tag]"), more = w.querySelector(".flt-more");
@@ -325,6 +367,20 @@ module.exports = async function (b, check) {
     await b.filterRow("Hacks");
     await b.waitFor(`${funnelN} === "1" && ${rows} === ${seats[busiest]}`, 6000);
     check("and a press on the row steps it round to All", [await b.ev(hackSaid), await b.ev(rows)], ["All", seats[busiest]]);
+    // Texture packs: the same, Has packs or Installed, one at a time.
+    const texHere = (await api("api/library.php?players=1&texpacks=1&grouped=0&platform=" + encodeURIComponent(busiest))).count;
+    const instHere = (await api("api/library.php?players=1&texinstalled=1&grouped=0&platform=" + encodeURIComponent(busiest))).count;
+    const cut = (n) => `(${rows} === ${n} || (${n} === 0 && !!document.querySelector("#view .empty")))`;
+    await b.ev(answer("Has packs"));
+    await b.waitFor(`${funnelN} === "2" && ${cut(texHere)}`, 6000);
+    check("Texture packs > Has packs: that answer lit alone, the list cut to them, and the funnel naming it",
+          [await b.ev(texSaid), texHere ? await b.ev(rows) : 0, await b.ev(funnelSays)], ["Has packs", texHere, "Filtered: two players or more, has texture packs. Press to change"]);
+    await b.ev(answer("Installed"));
+    await b.waitFor(`${funnelSays} === "Filtered: two players or more, texture pack installed. Press to change" && ${cut(instHere)}`, 6000);
+    check("Installed takes its place, one answer at a time", [await b.ev(texSaid), await b.ev(funnelN), instHere ? await b.ev(rows) : 0], ["Installed", "2", instHere]);
+    await b.filterRow("Texture packs");
+    await b.waitFor(`${funnelN} === "1" && ${rows} === ${seats[busiest]}`, 6000);
+    check("and a press on its row steps it round to All", [await b.ev(texSaid), await b.ev(rows)], ["All", seats[busiest]]);
     await b.key("Escape");
     await b.waitFor(shut, 3000);
     await sleep(150);

@@ -511,7 +511,9 @@ export var FILTERS = [
   { key: "docs",     label: "Has a manual",        word: "has a manual",  hint: null, tip: TIPS.docsOnly, group: "files" },
   { key: "hacks",    label: "Hacks only",          word: "hacks only",    hint: null, tip: TIPS.hacksOnly, group: "hacks" },
   { key: "nohacks",  label: "Leave hacks out",     word: "no hacks",      hint: null, tip: TIPS.noHacks, group: "hacks" },
-  { key: "cheats",   label: "Cheats on",           word: "cheats on",     hint: null, tip: TIPS.cheatsOn, group: "play" }
+  { key: "cheats",   label: "Cheats on",           word: "cheats on",     hint: null, tip: TIPS.cheatsOn, group: "play" },
+  { key: "texpacks", label: "Has texture packs",   word: "has texture packs", hint: null, tip: TIPS.texPacks, group: "texpacks" },
+  { key: "texinstalled", label: "Texture pack installed", word: "texture pack installed", hint: null, tip: TIPS.texInstalled, group: "texpacks" }
 ];
 // tags: the tags selected in Filter by, by name. Each is a condition of its
 // own, so two are the games that carry both (api\library.php).
@@ -520,7 +522,7 @@ export var FILTERS = [
 // and Clear filters turns it off like any other.
 // myrating: your rating at least, 1 to 5 stars; 0 is off. The one filter with a value.
 export var filters = { fav: false, players: false, ready: false, unplayed: false, unrated: false, missing: false, docs: false, hacks: false, nohacks: false,
-                       cheats: false, myrating: 0, fails: false, tags: [] };
+                       cheats: false, texpacks: false, texinstalled: false, myrating: 0, fails: false, tags: [] };
 
 function onNow() { return FILTERS.filter(function (f) { return filters[f.key]; }); }
 // "your rating 4+", or nothing while it is off.
@@ -562,6 +564,9 @@ export function toggleFilter(key, quiet) {
   // And so can Hacks only with Leave hacks out.
   if (key === "hacks" && filters.hacks) { filters.nohacks = false; }
   if (key === "nohacks" && filters.nohacks) { filters.hacks = false; }
+  // Texture packs is one answer at a time in Filter by, as Hacks is: one lets go of the other.
+  if (key === "texpacks" && filters.texpacks) { filters.texinstalled = false; }
+  if (key === "texinstalled" && filters.texinstalled) { filters.texpacks = false; }
   L("NAV", "filter " + key + " " + (filters[key] ? "on" : "off"));
   afterFilters(quiet);
 }
