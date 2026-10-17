@@ -34,7 +34,8 @@ module.exports = async function (b, check) {
 
     /* ---- the tab ---------------------------------------------------------- */
     const TABS = `[...document.querySelectorAll("#details .dtabs .dtab")]`;
-    const tabOn = `(t => (t ? t.textContent : null))(${TABS}.find((x) => x.classList.contains("on")))`;
+    // What is open: a part of More (File check, Notes) when More is, else the tab.
+    const tabOn = `(t => (t ? t.textContent : null))([...document.querySelectorAll("#details .dparts:not([hidden]) .dtab")].find((x) => x.classList.contains("on")) || ${TABS}.find((x) => x.classList.contains("on")))`;
     const BOX = `document.querySelector("#details .dtab-pane.is-notes .nt-box")`;
     const inBox = `document.activeElement === ${BOX}`;
     const open = async (id) => {
@@ -47,7 +48,7 @@ module.exports = async function (b, check) {
     await b.setView("list");
     await b.openPlatform("Nintendo 64");
     check("(the game's details open)", await open(g.id), true);
-    check("details has a Notes tab, the last one", await b.until(`${TABS}.map((x) => x.textContent).slice(-2)`, ["Accompanied files", "Notes"], 8000), ["Accompanied files", "Notes"]);
+    check("details has More last, after Files: Notes is in it", await b.until(`${TABS}.map((x) => x.textContent.replace(/ \\(\\d+\\)$/, "")).slice(-2)`, ["Files", "More"], 8000), ["Files", "More"]);
     await b.key("n");
     check("N opens it: an empty box that says what it is for",
       [await b.until(tabOn, "Notes", 4000), await b.waitFor(`!!${BOX}`, 6000), await b.ev(`${BOX}.value`), await b.ev(`/Star Fox 64|${g.title.replace(/[^A-Za-z0-9 ]/g, ".")}/.test(${BOX}.placeholder)`)],
@@ -78,7 +79,7 @@ module.exports = async function (b, check) {
     await b.ev(`(() => { const x = ${BOX}; x.focus(); x.value = "find dn and more"; x.dispatchEvent(new Event("input", { bubbles: true })); })()`);
     await b.clickSel(`#details .dtab[data-tab="about"]`);
     check("changing tab straight after writing keeps what was written", await storedIs("find dn and more"), true);
-    await b.clickSel(`#details .dtab[data-tab="notes"]`);
+    await b.clickSel(`#details .dtab[data-tab="more"]`);
     check("and coming back shows it", await b.until(`(${BOX} || {}).value`, "find dn and more", 6000), "find dn and more");
     await b.ev(`(() => { const x = ${BOX}; x.focus(); x.value = "closed while writing"; x.dispatchEvent(new Event("input", { bubbles: true })); x.blur(); })()`);
     await b.key("Escape");
@@ -92,7 +93,7 @@ module.exports = async function (b, check) {
     await b.until(`document.getElementById("details").hidden`, true, 6000);
 
     check("(the first game's details open again)", await open(g.id), true);
-    check("its tab wears the mark before it is opened", await b.until(`${TABS}.map((x) => x.textContent).slice(-1)`, ["Notes •"], 8000), ["Notes •"]);
+    check("More wears the mark before Notes is opened", await b.until(`${TABS}.map((x) => x.textContent).slice(-1)`, ["More •"], 8000), ["More •"]);
     await b.key("n");
     await b.waitFor(`!!${BOX}`, 6000);
     await b.ev(`(() => { const x = ${BOX}; x.focus(); x.value = ""; x.dispatchEvent(new Event("input", { bubbles: true })); x.blur(); })()`);

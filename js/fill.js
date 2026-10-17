@@ -15,10 +15,11 @@
  *  WHOSE DECISION (includes\fill.php, xs_fill_sort):
  *
  *      Ready to fill      Xsegon is sure; selected
- *      For you to check   a guess, or two of your games matched to one
- *                         entry; never selected for you, not by Fill in all
- *                         and not by Select all
- *      Nothing found      Change... searches by hand
+ *      For you to check   a name that only starts the same, a guess, or two
+ *                         of your games matched to one entry; never selected
+ *                         for you, not by Fill in all and not by Select all
+ *      Nothing found      Change... searches by hand; also a game named only
+ *                         after its console, which gets no guess
  *      Already filled     folded away: filling them again only takes time
  */
 
@@ -31,13 +32,14 @@ import { sound } from "./sound.js";
 import { $editor } from "./state.js";
 import { el } from "./util.js";
 
-var WORDS = { sure: "sure", likely: "probably", maybe: "a guess", none: "nothing in the database with these words", linked: "chosen before" };
+var WORDS = { sure: "sure", likely: "probably", maybe: "a guess", none: "nothing in the database with these words", linked: "chosen before",
+              console: "named only after its console, so no guess" };
 var LR_NONE = "not on libretro's lists";
 var LOOK_MS = 600;
 
 var GROUPS = [
   ["ready", "Ready to fill", "Xsegon is sure of these."],
-  ["check", "For you to check", "A guess, or two of your games matched to one entry. None of these is filled unless you select it: look at each, and use Change... where it is wrong."],
+  ["check", "For you to check", "Xsegon is not sure of these: a name that only starts the same, a guess, or two of your games matched to one entry. None of these is filled unless you select it: look at each, and use Change... where it is wrong."],
   ["none", "Nothing found", "Nothing under these names. Change... searches for the game yourself."],
   ["done", "Already filled", "Filled before, each with its box. Select one to look for its other pictures again."]
 ];
@@ -99,7 +101,7 @@ export function openFillTool(onBack, auto, only) {
       var b = m.best && m.best.id === g.dbId ? m.best : null;
       return (b ? b.title + (b.year ? "  ·  " + b.year : "") : (lr ? g.dbId : "database #" + g.dbId)) + "  ·  " + WORDS.linked;
     }
-    if (!m.best) { return lr ? LR_NONE : WORDS.none; }
+    if (!m.best) { return g.why === "console" ? WORDS.console : lr ? LR_NONE : WORDS.none; }
     return m.best.title + (m.best.platform !== g.platform ? "  (" + m.best.platform + ")" : "") +
            (m.best.year ? "  ·  " + m.best.year : "") + "  ·  " +
            (g.why === "clash" ? "also the match for " + (g.with || []).join(", ") : (WORDS[m.confidence] || m.confidence));

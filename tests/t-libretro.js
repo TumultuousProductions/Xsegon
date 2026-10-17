@@ -15,6 +15,7 @@ const NAMES = {
   zeldaEu: "Legend of Zelda, The - Ocarina of Time (Europe)",
   kart: "Mario Kart 64 (USA)",
   wave: "Wave Race 64 (USA)",
+  fzero: "F-Zero X (USA)",
 };
 // Which of libretro's folders has a picture for which game.
 const HAS = {
@@ -62,7 +63,8 @@ module.exports = async function (b, check) {
   }
   const before = (await api("api/settings.php")).settings;
   const lbBefore = before.paths.launchbox, fromBefore = (before.library || {}).detailsFrom || "gamesdb";
-  const ids = { mario: "xs-scan-lrt-mario", zelda: "xs-scan-lrt-zelda", kart: "xs-scan-lrt-kart", wave: "xs-scan-lrt-wave", home: "xs-scan-lrt-home" };
+  const ids = { mario: "xs-scan-lrt-mario", zelda: "xs-scan-lrt-zelda", kart: "xs-scan-lrt-kart", wave: "xs-scan-lrt-wave", home: "xs-scan-lrt-home",
+                fzero: "xs-scan-lrt-fzero" };
   const roms = path.join(DATA, "fixtures", "libretro-roms");
   const scanned = [
     { id: ids.mario, title: "Super Mario 64 (USA)", platform: "Nintendo 64", rom: path.join(roms, "Super Mario 64 (USA).z64") },
@@ -70,6 +72,7 @@ module.exports = async function (b, check) {
     { id: ids.kart, title: "Mario Kart 64", platform: "Nintendo 64", rom: path.join(roms, "Mario Kart 64 [!].z64") },
     { id: ids.wave, title: "Wave Race 64", platform: "Nintendo 64", rom: path.join(roms, "WR64.z64") },
     { id: ids.home, title: "Homebrew Thing", platform: "Nintendo 64", rom: path.join(roms, "Homebrew Thing.z64") },
+    { id: ids.fzero, title: "F-Zero X (USA)", platform: "Nintendo 64", rom: path.join(roms, "F-Zero X (USA).z64") },
   ];
   try {
     // No LaunchBox, and libretro chosen: the Games Database ships with Xsegon,
@@ -91,7 +94,7 @@ module.exports = async function (b, check) {
     check("and a game on no list has no match", [conf(ids.home), best(ids.home).id], ["none", undefined]);
     check("the name a person reads: The first, a colon for the subtitle, no region",
       best(ids.zelda).title, "The Legend of Zelda: Ocarina of Time");
-    check("sure and probable are counted to be selected", list.sure, 3);
+    check("only sure ones are counted to be selected: a probable one waits for a person", [conf(ids.fzero), list.sure], ["sure", 3]);
 
     const search = await api("api/fill.php?id=" + ids.home + "&search=zelda ocarina");
     check("Change... searches that console's list, USA first", (search.results || []).map((r) => r.id), [NAMES.zelda, NAMES.zeldaEu]);
@@ -121,11 +124,11 @@ module.exports = async function (b, check) {
     check("a name that is not on the list is refused", (await api("api/fill.php", { id: ids.home, dbId: "Something Else (USA)" })).ok, false);
 
     const guide = (await api("api/setup.php")).guide || {};
-    check("Getting started counts a libretro match as looked up", guide.bare, 3);
+    check("Getting started counts a libretro match as looked up", guide.bare, 4);
 
     /* ---- Fill in all, as a job in the background ---------------------------
-       Two filled, one probable, one a guess, one on no list: the job fills the
-       probable one only, since a guess is a person's to check. */
+       Two filled, one sure, one probable, one a guess, one on no list: the job
+       fills the sure one only, since a probable match and a guess are a person's to check. */
     check("Get Pictures starts a pass in the background", (await api("api/fill.php", { job: "start", mode: "all" })).started, true);
     let job = null;
     for (const end = Date.now() + 60000; Date.now() < end;) {
@@ -133,17 +136,18 @@ module.exports = async function (b, check) {
       if (job && job.state !== "running") { break; }
       await sleep(300);
     }
-    check("which looks all five up on libretro, fills the one it is sure of and leaves two for a person",
-      [job.state, job.source, job.scanned, job.total, job.done, job.failed, job.left], ["done", "libretro", 5, 1, 1, 0, 2]);
+    check("which looks all six up on libretro, fills the one it is sure of and leaves three for a person",
+      [job.state, job.source, job.scanned, job.total, job.done, job.failed, job.left], ["done", "libretro", 6, 1, 1, 0, 3]);
     const rows = (await api("api/fill.php?job=rows")).rows || [];
     const state = (id) => (rows.find((g) => g.id === id) || {}).state;
-    check("each game sorted by whose decision it is: filled before, ready, a guess to check, nothing found",
-      [state(ids.mario), state(ids.zelda), state(ids.kart), state(ids.wave), (rows.find((g) => g.id === ids.wave) || {}).why, state(ids.home)],
-      ["done", "done", "ready", "check", "guess", "none"]);
+    const why = (id) => (rows.find((g) => g.id === id) || {}).why;
+    check("each game sorted by whose decision it is: filled before, ready, probable and a guess to check, nothing found",
+      [state(ids.mario), state(ids.zelda), state(ids.fzero), state(ids.kart), why(ids.kart), state(ids.wave), why(ids.wave), state(ids.home)],
+      ["done", "done", "ready", "check", "guess", "check", "guess", "none"]);
     const after = JSON.parse(fs.readFileSync(path.join(DATA, "overrides.json"), "utf8"));
-    check("the probable one is filled and remembered, the guess is not touched",
-      [(after[ids.kart] || {}).lrName, after[ids.wave] === undefined], [NAMES.kart, true]);
-    check("its pictures stored by the worker, the box among them", [job.pictures >= 1, fs.readdirSync(path.join(DATA, "art")).some((n) => n.startsWith(ids.kart + "-box."))], [true, true]);
+    check("the sure one is filled and remembered, the probable one and the guess are not touched",
+      [(after[ids.fzero] || {}).lrName, after[ids.kart] === undefined, after[ids.wave] === undefined], [NAMES.fzero, true, true]);
+    check("its pictures stored by the worker, the box among them", [job.pictures >= 1, fs.readdirSync(path.join(DATA, "art")).some((n) => n.startsWith(ids.fzero + "-box."))], [true, true]);
 
     /* ---- LaunchBox's picture server giving nothing: libretro's thumbnails stand in ----
        The picture server's stand-in is taken away for one pass; libretro knows

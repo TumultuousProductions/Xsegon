@@ -88,6 +88,8 @@ function xs_backup_skipped(): array
         ['path' => 'extras',         'why' => 'box sides, cartridges and discs fetched for your games: they can be fetched again'],
         ['path' => 'screenscraper.json', 'why' => 'your ScreenScraper logins: passwords are never put in an archive, type them in again'],
         ['path' => 'screenscraper-shared.dat', 'why' => "Xsegon's own ScreenScraper developer ID, sealed to this computer: fetched again at the next check"],
+        ['path' => 'achievements.json', 'why' => 'your RetroAchievements key, sealed to this computer: paste it again from the site'],
+        ['path' => 'achievements',   'why' => "RetroAchievements' lists, answers and badge pictures: fetched again when a game's tab opens"],
         ['path' => 'emulators',      'why' => 'the RetroArch Xsegon downloaded for you, and its cores: Settings > Emulators gets them again'],
         ['path' => 'sounds-staged',  'why' => 'a sound you chose, for the moment it is being checked'],
         ['path' => 'gamesdb.sqlite', 'why' => "a copy of the Games Database: made again from the packed copy"],

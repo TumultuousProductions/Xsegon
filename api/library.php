@@ -18,6 +18,7 @@ require_once __DIR__ . '/../includes/tags.php';
 require_once __DIR__ . '/../includes/scan.php';     // xs_disc_info
 require_once __DIR__ . '/../includes/extras.php';   // documents, spines, cartridges and discs
 require_once __DIR__ . '/../includes/hackof.php';   // which games are hacks, or in doubt
+require_once __DIR__ . '/../includes/achconsoles.php';   // which games get the Achievements tab
 
 // Which games have a documents folder: one listing, not a look per game.
 $docsHave = xs_docs_have();
@@ -431,6 +432,7 @@ foreach ($games as $g) {
         'playable'  => $g['launch'] !== null,
         // The emulator it runs in, when that is not RetroArch: the menu's Open Ryujinx (api\emuopen.php).
         'emu'       => xs_emu_name($g['launch']),
+        'ach'       => xs_ach_for($g),                 // RetroArch plays it, on a console RetroAchievements has
         'why'       => $g['launchError'],
         'ready'     => $canStart($g),      // can start now: playable, and its folder is here
         'needsFix'  => $rcFailed[$id] ?? null,         // greyed, NEEDS FIX (includes\needsfix.php)
@@ -453,7 +455,7 @@ foreach ($games as $g) {
         // A game known to be one of several discs, from its own files:
         // see xs_disc_info() in includes\scan.php. null for every other game.
         'discs'     => xs_acc_disc_info($g, xs_disc_info($g, $s)),
-        // Files said to go with this game (its Accompanied files tab), and, for a file
+        // Files said to go with this game (its Files tab), and, for a file
         // whose game is not in the library, what it is (includes\accompanied.php).
         'accompanied' => count($g['accompanied'] ?? []),
         'accompanies' => $g['accompanies'] ?? null,

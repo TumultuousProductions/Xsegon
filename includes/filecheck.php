@@ -281,19 +281,20 @@ function xs_fc_feed_7z(string $file, callable $sink, array &$about, ?string &$wh
 /**
  * Reads the game once and sums it as it stands and, where something only
  * wraps it (a header, a copier's header, another byte order), without that.
+ * With $algo 'md5' (RetroAchievements' sum), 'sha1' and 'alt' hold MD5s.
  */
-function xs_fc_read(string $platform, string $file, ?string &$why = null): ?array
+function xs_fc_read(string $platform, string $file, ?string &$why = null, string $algo = 'sha1'): ?array
 {
-    $st = ['n' => 0, 'head' => '', 'sha' => hash_init('sha1'), 'crc' => hash_init('crc32b'),
+    $st = ['n' => 0, 'head' => '', 'sha' => hash_init($algo), 'crc' => hash_init('crc32b'),
            'alt' => null, 'fix' => null, 'skip' => 0, 'order' => '', 'carry' => '', 'first' => true];
-    $sink = static function (string $chunk) use (&$st, $platform): void {
+    $sink = static function (string $chunk) use (&$st, $platform, $algo): void {
         if ($chunk === '') {
             return;
         }
         if ($st['first']) {
             $st['first'] = false;
             [$st['fix'], $st['skip'], $st['order']] = xs_fc_wrap($platform, $chunk);
-            $st['alt'] = $st['fix'] === null ? null : hash_init('sha1');
+            $st['alt'] = $st['fix'] === null ? null : hash_init($algo);
         }
         hash_update($st['sha'], $chunk);
         hash_update($st['crc'], $chunk);

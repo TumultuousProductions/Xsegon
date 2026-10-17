@@ -1,7 +1,7 @@
 /*  Files that may go with a game (includes\accompanied.php): files whose names say
     they are an install or bonus disc. Opened from the mailbox's message; a press says
     which game each goes with, or that it is a game of its own.
-    Also here: saying it, for this window and the Accompanied files tab. */
+    Also here: saying it, for this window and the Files tab. */
 
 import { setEditorOnClose, toolFrame } from "./editors.js";
 import { showStrip } from "./launch.js";
@@ -115,7 +115,7 @@ export function openAccSettle() {
       var inner = toolFrame("FILES THAT MAY GO WITH A GAME", { cls: "hs-inner" });
       inner.appendChild(el("p", "group-help",
         "Files whose names say they are an install disc or a bonus disc: they come with a game and are not played themselves. " +
-        "Say which game each goes with and it leaves the lists for that game's Accompanied files tab, with Play greyed; that game wears the multi-disc mark. " +
+        "Say which game each goes with and it leaves the lists for that game's Files tab, with Play greyed; that game wears the multi-disc mark. " +
         "Until you say, each stays a game in its list and plays like one. Nothing on the disk is moved or changed."));
       inner.appendChild(el("p", "rp-verdict " + (rows.length ? "warn" : "good"),
         rows.length ? rows.length + (rows.length === 1 ? " file waits" : " files wait") + " for your word."

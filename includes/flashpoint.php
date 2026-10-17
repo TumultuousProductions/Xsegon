@@ -212,11 +212,11 @@ function xs_fp_count(string $root): ?int
 }
 
 /** These games' facts from Flashpoint's list, by its ID; null with $why. */
-function xs_fp_facts(string $root, array $ids, ?string &$why = null): ?array
+function xs_fp_facts(string $root, array $ids, ?string &$why = null, array $hide = []): ?array
 {
     $why = null;
     $ask = xs_data_path('.flashpoint-ask.json');
-    if (@file_put_contents($ask, json_encode(array_values($ids))) === false) {
+    if (@file_put_contents($ask, json_encode(['ids' => array_values($ids), 'hide' => array_values($hide)])) === false) {
         $why = 'the question for Flashpoint\'s game list could not be written';
         return null;
     }
@@ -227,6 +227,47 @@ function xs_fp_facts(string $root, array $ids, ?string &$why = null): ?array
         return null;
     }
     return is_array($r['games'] ?? null) ? $r['games'] : [];
+}
+
+/**
+ * What Flashpoint's own settings hide from its lists, as its launcher works it out: the tags of
+ * every hide group switched on, and of every extreme one while extreme games are not shown;
+ * and games marked broken unless they are shown. ['tags' => [names], 'broken' => bool].
+ */
+function xs_fp_hides(string $root): array
+{
+    $p = xs_read_json($root . DIRECTORY_SEPARATOR . 'preferences.json', []);
+    $p = is_array($p) ? $p : [];
+    $showExtreme = ($p['browsePageShowExtreme'] ?? false) === true;
+    $tags = [];
+    foreach ((array) ($p['tagFilters'] ?? []) as $g) {
+        if (is_array($g) && (!empty($g['enabled']) || (!empty($g['extreme']) && !$showExtreme))) {
+            foreach ((array) ($g['tags'] ?? []) as $t) {
+                if (is_string($t) && trim($t) !== '') {
+                    $tags[] = trim($t);
+                }
+            }
+        }
+    }
+    return ['tags' => array_values(array_unique($tags)), 'broken' => ($p['showBrokenGames'] ?? false) !== true];
+}
+
+/**
+ * Flashpoint's own pick of its best games, offered first to a person with no favourites in it:
+ * its Super Hall of Fame playlist's file, or null when there are favourites or it has no such list.
+ */
+function xs_fp_starter(array $playlists): ?string
+{
+    $best = null;
+    foreach ($playlists as $p) {
+        if ($p['favourites'] && $p['count'] > 0) {
+            return null;
+        }
+        if (!$p['favourites'] && $p['count'] > 0 && preg_match('/super hall of fame/i', $p['title'])) {
+            $best = $p['file'];
+        }
+    }
+    return $best;
 }
 
 /** Your games brought in from Flashpoint, by their Flashpoint ID: [fp id => index in the entries]. */
@@ -245,13 +286,17 @@ function xs_fp_here(array $entries): array
 /**
  * A playlist's games brought in as games of your own under Flashpoint, each started through
  * the helper beside it. One already here is brought up to date where it is empty and keeps
- * what you changed; none is ever taken away. What came: ['added', 'kept', 'unknown',
- * 'online', 'ids' (Xsegon's ids, for their pictures)], or null with $why.
+ * what you changed; none is ever taken away. From a list other than your favourites, a game
+ * Flashpoint's own settings hide is left out unless it is already here. What came: ['added',
+ * 'kept', 'unknown', 'online', 'hidden', 'hiddenWhy' (tag or "broken" => count), 'ids'
+ * (Xsegon's ids, for their pictures)], or null with $why.
  */
 function xs_fp_bring(string $root, array $list, bool $dry, ?string &$why = null): ?array
 {
     require_once __DIR__ . '/local.php';
-    $facts = xs_fp_facts($root, $list['ids'], $why);
+    // Your favourites are your own picks: Flashpoint's hiding is for its lists.
+    $hides = !empty($list['favourites']) ? null : xs_fp_hides($root);
+    $facts = xs_fp_facts($root, $list['ids'], $why, $hides['tags'] ?? []);
     if ($facts === null) {
         return null;
     }
@@ -259,7 +304,7 @@ function xs_fp_bring(string $root, array $list, bool $dry, ?string &$why = null)
     $here = xs_fp_here($entries);
     $run = $root . DIRECTORY_SEPARATOR . XS_FP_HELPER;
     $date = static fn(string $v): string => preg_match('/^\d{4}(-\d{2}(-\d{2})?)?$/', substr(trim($v), 0, 10)) ? substr(trim($v), 0, 10) : '';
-    $got = ['added' => 0, 'kept' => 0, 'unknown' => 0, 'online' => 0, 'ids' => []];
+    $got = ['added' => 0, 'kept' => 0, 'unknown' => 0, 'online' => 0, 'hidden' => 0, 'hiddenWhy' => [], 'ids' => []];
     foreach ($list['ids'] as $fid) {
         $f = $facts[$fid] ?? null;
         if (!is_array($f) || trim((string) ($f['title'] ?? '')) === '') {
@@ -267,6 +312,13 @@ function xs_fp_bring(string $root, array $list, bool $dry, ?string &$why = null)
             continue;
         }
         $at = $here[$fid] ?? null;
+        $by = $hides === null || $at !== null ? ''
+            : ((string) ($f['hiddenBy'] ?? '') !== '' ? (string) $f['hiddenBy'] : ($hides['broken'] && !empty($f['broken']) ? 'broken' : ''));
+        if ($by !== '') {
+            $got['hidden']++;
+            $got['hiddenWhy'][$by] = ($got['hiddenWhy'][$by] ?? 0) + 1;
+            continue;
+        }
         $e = $at === null ? ['title' => trim((string) $f['title']), 'platform' => XS_FP_PLATFORM] : $entries[$at];
         // How it starts follows where Flashpoint is now; everything else only fills what is empty.
         $e['run'] = $run;
@@ -357,6 +409,40 @@ function xs_fp_pictures(string $root, string $id, string $fid): array
         $out[$kind] = xs_own_art_store($id, $kind, $bytes, false, $w) !== null ? $from : 'failed: ' . $w;
     }
     return $out;
+}
+
+/**
+ * The controller as a Flashpoint game's keys (bin\padtokeys.ps1): ['map', 'windows', 'fullScreen',
+ * 'fullScreenIn', 'own' (the game has an entry of its own)], the person's own entry first
+ * (data\flashpoint-pad.json), then the shipped one, then the default.
+ * Null when neither list reads.
+ */
+function xs_fp_padkeys(string $fid): ?array
+{
+    $ship = xs_read_json(XS_ROOT . DIRECTORY_SEPARATOR . 'includes' . DIRECTORY_SEPARATOR . 'extensions' . DIRECTORY_SEPARATOR . 'flashpoint-pad.json', null);
+    $own = xs_read_json(xs_data_path('flashpoint-pad.json'), null);
+    $fid = strtolower($fid);
+    $entry = (is_array($own) ? ($own['games'][$fid] ?? null) : null) ?? (is_array($ship) ? ($ship['games'][$fid] ?? null) : null);
+    $base = (is_array($own) ? ($own['default'] ?? null) : null) ?? (is_array($ship) ? ($ship['default'] ?? null) : null);
+    if (!is_array($base) && !is_array($entry)) {
+        return null;
+    }
+    // The game's own value where it is a good one, else the default's; one that is not is never handed on.
+    $pick = static function (string $k, string $fits) use ($entry, $base): string {
+        foreach ([$entry[$k] ?? null, $base[$k] ?? null] as $v) {
+            if (is_string($v) && preg_match($fits, $v)) {
+                return $v;
+            }
+        }
+        return '';
+    };
+    $names = '/^[A-Za-z0-9_.*-]+(,[A-Za-z0-9_.*-]+)*$/';
+    $out = ['map' => $pick('map', '/^[a-z]+=[A-Za-z0-9]+(,[a-z]+=[A-Za-z0-9]+)*$/'),
+            'windows' => $pick('windows', $names),
+            'fullScreen' => $pick('fullScreen', '/^[A-Za-z0-9]+(\+[A-Za-z0-9]+)*$/'),
+            'fullScreenIn' => $pick('fullScreenIn', $names),
+            'own' => is_array($entry)];
+    return $out['map'] !== '' && $out['windows'] !== '' ? $out : null;
 }
 
 /** How a game of yours from Flashpoint cannot start, or null when it can: said where Play is pressed. */

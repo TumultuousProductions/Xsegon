@@ -69,7 +69,7 @@ var BADGES = [
 export function discWords(g) {
   var d = g && g.discs;
   if (!d) { return ""; }
-  if (d.acc) { return d.n + " discs: Play starts the game, and " + (d.acc === 1 ? "the other is" : d.acc + " are") + " in its Accompanied files tab, not played"; }
+  if (d.acc) { return d.n + " discs: Play starts the game, and " + (d.acc === 1 ? "the other is" : d.acc + " are") + " in its Files tab, not played"; }
   if (d.set && d.pick) { return d.n + " discs, each its own file: " + (g.chosen ? "Play starts the selected disc" : "Play asks which disc to start"); }
   if (d.set) { return d.n + " discs, as a playlist: change disc in the emulator"; }
   return "Disc " + d.disc + " of a set, no playlist: the other discs cannot be reached from here" +

@@ -1,4 +1,4 @@
-/*  The Accompanied files tab of a game's details (js\detailtabs.js,
+/*  The Files tab of a game's details (js\detailtabs.js,
     includes\accompanied.php): the files that go with this game and are not
     played, each with Play greyed. It also says what this file itself goes with:
     until someone says, the choices stand first, with the game Xsegon would name. */
@@ -13,7 +13,7 @@ import { sound } from "./sound.js";
 import { el } from "./util.js";
 
 export function accTabLabel(g) {
-  return "Accompanied files" + (g && g.accompanied ? " (" + g.accompanied + ")" : "");
+  return "Files" + (g && g.accompanied ? " (" + g.accompanied + ")" : "");
 }
 
 export function accPane(pane, g) {
@@ -129,7 +129,7 @@ function paint(pane, g, res, asking, choosing) {
   } else if (res.state === "ask" || choosing) {
     var kind = res.words.toLowerCase();
     inner.appendChild(el("p", "group-help", (res.state === "ask" ? "This file's name says it is " + (/^[aeiou]/.test(kind) ? "an " : "a ") + kind + ". " : "")
-      + "Say which game it goes with: it then leaves the lists and shows in that game's Accompanied files tab, with Play greyed. Nothing on the disk is touched."));
+      + "Say which game it goes with: it then leaves the lists and shows in that game's Files tab, with Play greyed. Nothing on the disk is touched."));
     if (s) { rows.push({ act: "say", with: s.id, name: "Yes, " + accWords(res.words, s.title), sub: "Xsegon's reading: " + s.why, words: "goes with " + s.title }); }
     rows.push({ act: "homes", name: s ? "It goes with another game…" : "Pick the game it goes with…", sub: "from the games of " + g.platform });
     rows.push({ act: "say", with: "", name: "It goes with a game that is not in the library", sub: "it stays in the list, with Play greyed", words: "goes with a game that is not in the library" });

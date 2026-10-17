@@ -731,7 +731,7 @@ function xs_scan_walk(?string $rootOverride = null): array
                 }
             }
         }
-        // A file in its game's Accompanied files tab is out of the list, not unknown.
+        // A file in its game's Files tab is out of the list, not unknown.
         foreach ($g['accompanied'] ?? [] as $f) {
             $known[strtolower(str_replace('/', '\\', (string) $f['romPath']))] = true;
         }

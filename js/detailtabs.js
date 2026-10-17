@@ -8,6 +8,7 @@
     comes back out to the tabs. Left and right change tab, as LB and RB do. */
 
 import { accPane, accTabLabel } from "./acctab.js";
+import { achPane, achTabLabel } from "./achtab.js";
 import { cheatsPane, cheatsTabLabel } from "./cheattab.js";
 import { aboutPane } from "./details.js";
 import { fileCheckPane, fileCheckTabLabel } from "./filecheck.js";
@@ -23,15 +24,21 @@ import { texPacksFor, texPacksPane, texPacksTabLabel } from "./texpacktab.js";
 import { el } from "./util.js";
 import { versionsPane, versionsTabLabel } from "./versionstab.js";
 
+/* Tabs with a group share one button in the row, which opens the part last
+   used there; the open group's parts stand in a smaller row under it. The
+   keys and the pad still walk every part, in this order; F and N open theirs. */
+var DGROUPS = { more: "More" };
+
 function dtabs(g) {
   var t = [
     { key: "about",  label: function () { return "About"; }, build: aboutPane },
     { key: "media",  label: mediaTabLabel, build: mediaPane },
     { key: "saves",  label: savesTabLabel, build: savesPane },
-    { key: "filecheck", label: fileCheckTabLabel, build: fileCheckPane },
     { key: "cheats", label: cheatsTabLabel, build: cheatsPane },
     { key: "hacks", label: hacksTabLabel, build: hacksPane }
   ];
+  // A game RetroArch starts, on a console RetroAchievements has sets for (api\library.php ach).
+  if (g && g.ach) { t.push({ key: "achievements", label: achTabLabel, build: achPane }); }
   // Only a game of a console whose emulator here loads texture packs.
   if (texPacksFor(g)) { t.push({ key: "texpacks", label: texPacksTabLabel, build: texPacksPane }); }
   // Only a card holding several versions gets the tab: one file is nothing
@@ -39,12 +46,20 @@ function dtabs(g) {
   if (g && g.versions && g.versions.length > 1) { t.push({ key: "versions", label: versionsTabLabel, build: versionsPane, row: true }); }
   // A program of yours or a Steam game is no file of a console: nothing goes with it.
   if (g && !g.local && !g.steam) { t.push({ key: "accompanied", label: accTabLabel, build: accPane }); }
-  t.push({ key: "notes", label: notesTabLabel, build: notesPane });
+  t.push({ key: "filecheck", label: fileCheckTabLabel, build: fileCheckPane, group: "more" },
+         { key: "notes", label: notesTabLabel, build: notesPane, group: "more" });
   return t;
+}
+
+/* A group's button: its name, wearing a part's mark (a note written: "Notes •"). */
+function groupLabel(group, g, full) {
+  var marked = dtabs(g).some(function (t) { return t.group === group && / •$/.test(t.label(g, full)); });
+  return DGROUPS[group] + (marked ? " •" : "");
 }
 
 var dtabGame = null;      // whose details the tab is remembered for
 var dtabKey = "about";
+var dgroupAt = {};        // the part each group last showed, for that game
 var dtabUp = null;        // { g, full, bar, pane } while details is built
 var dtabRows = null;      // the open tab's list, when it has one
 var dtabIn = false;       // the keys are inside that list
@@ -54,27 +69,48 @@ var dtabLeave = null;     // what the open tab does when it is left (a note not 
    where it was while the same game is redrawn (the full record arriving, a
    save), and a new game opens on About. */
 export function detailTabs(right, g, full) {
-  if (dtabGame !== g.id) { dtabGame = g.id; dtabKey = "about"; }
+  if (dtabGame !== g.id) { dtabGame = g.id; dtabKey = "about"; dgroupAt = {}; }
   var all = dtabs(g);
   if (!all.some(function (t) { return t.key === dtabKey; })) { dtabKey = "about"; }
   var bar = el("div", "dtabs");
   bar.setAttribute("role", "tablist");
+  var shown = {};
   all.forEach(function (t) {
-    var b = el("button", "dtab", t.label(g, full));
+    if (t.group && shown[t.group]) { return; }
+    if (t.group) { shown[t.group] = true; }
+    var b = el("button", "dtab", t.group ? groupLabel(t.group, g, full) : t.label(g, full));
     b.type = "button";
-    b.dataset.tab = t.key;
+    b.dataset.tab = t.group || t.key;
     b.setAttribute("role", "tab");
-    b.addEventListener("click", function () { if (t.key !== dtabKey) { sound("select"); showTab(t.key); } });
+    b.addEventListener("click", function () {
+      var to = t.group ? partOf(t.group) : t.key;
+      if (to !== dtabKey) { sound("select"); showTab(to); }
+    });
     bar.appendChild(b);
   });
+  var parts = el("div", "dparts");
+  parts.setAttribute("role", "tablist");
   var pane = el("div", "dtab-pane");
   pane.setAttribute("role", "tabpanel");
   // A press inside the pane gives its list the keys, as a press on a picker does.
   pane.addEventListener("mousedown", function () { if (dtabRows && !dtabIn) { intoRows(false); } });
   right.appendChild(bar);
+  right.appendChild(parts);
   right.appendChild(pane);
-  dtabUp = { g: g, full: full, bar: bar, pane: pane };
+  dtabUp = { g: g, full: full, bar: bar, parts: parts, pane: pane };
   fillTab();
+}
+
+// The part a group's button opens: the one last shown there, else its first.
+function partOf(group) {
+  var keys = dtabs(dtabUp.g).filter(function (t) { return t.group === group; }).map(function (t) { return t.key; });
+  return keys.indexOf(dgroupAt[group]) >= 0 ? dgroupAt[group] : keys[0];
+}
+
+// One button of a row, lit when it is the open one.
+function tabButton(b, on) {
+  b.classList.toggle("on", on);
+  b.setAttribute("aria-selected", on ? "true" : "false");
 }
 
 /* A tab with something still to keep says so here; it is called once, when
@@ -94,13 +130,27 @@ function fillTab() {
   leaveTab();
   dtabRows = null;
   dtabIn = false;
-  up.bar.querySelectorAll(".dtab").forEach(function (b) {
-    b.classList.toggle("on", b.dataset.tab === dtabKey);
-    b.setAttribute("aria-selected", b.dataset.tab === dtabKey ? "true" : "false");
-  });
+  var all = dtabs(up.g);
+  var tab = all.filter(function (t) { return t.key === dtabKey; })[0];
+  if (tab.group) { dgroupAt[tab.group] = dtabKey; }
+  up.bar.querySelectorAll(".dtab").forEach(function (b) { tabButton(b, b.dataset.tab === (tab.group || dtabKey)); });
+  // The open group's parts, when it has more than one here.
+  var mine = tab.group ? all.filter(function (t) { return t.group === tab.group; }) : [];
+  up.parts.textContent = "";
+  up.parts.hidden = mine.length < 2;
+  if (mine.length > 1) {
+    mine.forEach(function (t) {
+      var b = el("button", "dtab dpart", t.label(up.g, up.full));
+      b.type = "button";
+      b.dataset.tab = t.key;
+      b.setAttribute("role", "tab");
+      tabButton(b, t.key === dtabKey);
+      b.addEventListener("click", function () { if (t.key !== dtabKey) { sound("select"); showTab(t.key); } });
+      up.parts.appendChild(b);
+    });
+  }
   up.pane.className = "dtab-pane is-" + dtabKey;
   up.pane.textContent = "";
-  var tab = dtabs(up.g).filter(function (t) { return t.key === dtabKey; })[0];
   // Details is drawn twice, from the row and then from the full record: a
   // tab that asks the server for its own words waits for the second.
   if (!up.full && dtabKey !== "about" && !tab.row) { up.pane.appendChild(el("p", "dtab-wait", "…")); return; }
@@ -145,8 +195,12 @@ export function relabelTabs(change, forId) {
   if (!dtabUp || !dtabUp.bar.isConnected || (forId && dtabUp.g.id !== forId)) { return; }
   if (dtabUp.full) { Object.assign(dtabUp.full, change); }
   dtabs(dtabUp.g).forEach(function (t) {
-    var b = dtabUp.bar.querySelector('.dtab[data-tab="' + t.key + '"]');
+    var b = (t.group ? dtabUp.parts : dtabUp.bar).querySelector('.dtab[data-tab="' + t.key + '"]');
     if (b) { b.textContent = t.label(dtabUp.g, dtabUp.full); }
+  });
+  Object.keys(DGROUPS).forEach(function (group) {
+    var b = dtabUp.bar.querySelector('.dtab[data-tab="' + group + '"]');
+    if (b) { b.textContent = groupLabel(group, dtabUp.g, dtabUp.full); }
   });
 }
 
