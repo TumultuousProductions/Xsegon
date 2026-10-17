@@ -85,8 +85,12 @@ $game = xs_game_or_404($id, 'no such game');
 if ($what === 'texpack') {
     require_once __DIR__ . '/../includes/texpacks.php';
     $t = xs_tp_target($game);
-    if ($t !== null && $t['file'] !== null && is_file($t['file']) && !is_dir($t['into'])) {
-        xs_reveal_folder(dirname($t['file']), !empty($body['dry']));       // an N64 core's .hts, in its cache folder
+    if ($t !== null && !is_dir($t['into'])) {
+        foreach (xs_tp_packs($t, xs_tp_record_for($game, $t)) as $p) {
+            if (!empty($p['file'])) {
+                xs_reveal_folder(dirname($p['paths'][0]), !empty($body['dry']));   // an N64 core's .hts or .htc, in its cache folder
+            }
+        }
     }
     if ($t === null || !is_dir($t['into'])) {
         xs_fail('this game has no texture pack now', 404);

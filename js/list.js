@@ -27,8 +27,8 @@ import { badgeClasses, badgesEl, discWords, el, fixWords, hhmm, titleText } from
    which is why it is the only `1fr`, and why it cannot be put away: a list
    of blank rows with a Year on them is not a list of games. */
 /* `alias` is an older class name for the cell: the favourite star, the struck-through
-   dead title, the no-video clapperboard and the cheats mark are painted off those
-   names in CSS that other views share. */
+   dead title and the no-video clapperboard are painted off those names in CSS that
+   other views share. */
 /* `group` is the picker's heading the column is offered under. This list's
    order is the usual order: the table's until a header is carried somewhere
    else (js\listmove.js), and what the picker's way back returns to. */

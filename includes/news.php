@@ -290,6 +290,9 @@ function xs_trouble_launch_key(array $err): string
 /** How old trouble may be and still be news: older is noted as said, with no message. */
 const XS_TROUBLE_NEWS_DAYS = 3;
 
+/** Seconds a syntax error waits before it is kept: an edit in two steps leaves one for that moment. */
+const XS_FAULT_TEXT_WAIT = 120;
+
 /**
  * Keep one piece of trouble. $stamp names the occurrence: the same one is
  * kept once. True when a message was written.
@@ -438,8 +441,24 @@ function xs_trouble_sweep(): int
     // a place in the code. Read plainly: a note caught half written is taken at the next look.
     $raw   = @file_get_contents(xs_data_path('last-fault.json'));
     $fault = is_string($raw) ? json_decode($raw, true) : null;
+    $where = is_array($fault) ? (string) ($fault['where'] ?? '?') : '';
+    // A file that would not read waits a while: one changed since was caught half edited, and is let go once.
+    if (is_array($fault) && !empty($fault['text']) && (string) ($fault['at'] ?? '') !== '') {
+        if ((int) @filemtime((string) ($fault['file'] ?? '')) !== (int) ($fault['mtime'] ?? 0)) {
+            $said = xs_read_json(xs_trouble_said_path(), []);
+            $said = is_array($said) ? $said : [];
+            if ((string) ($said['fault:' . $where] ?? '') !== (string) $fault['at']) {
+                unset($said['fault:' . $where]);
+                $said['fault:' . $where] = (string) $fault['at'];
+                xs_write_json(xs_trouble_said_path(), array_slice($said, -300, null, true));
+                xs_log('NEWS', 'not kept: ' . $where . ' would not read, and the file has changed since (caught half edited)');
+            }
+            $fault = null;
+        } elseif (time() - (int) strtotime((string) $fault['at']) < XS_FAULT_TEXT_WAIT) {
+            $fault = null;
+        }
+    }
     if (is_array($fault) && (string) ($fault['at'] ?? '') !== '') {
-        $where = (string) ($fault['where'] ?? '?');
         $new += (int) xs_messages_trouble('fault:' . $where, (string) $fault['at'], [
             'kind'  => 'fault',
             'at'    => xs_trouble_when($fault['at']),

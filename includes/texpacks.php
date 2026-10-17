@@ -10,9 +10,12 @@
  *             Mupen64Plus-   .hts in its cache folder), config\Mupen64Plus-Next\<game>.opt
  *             Next core
  *
- * The emulator's switch is turned on for the one game and put back as it was on
- * Remove. What Xsegon put in place is kept in data\texpacks.json, by game. The packs
- * listed are includes\texpacks\list.json, built by tools\build-texpacks.js.
+ * A game may hold several packs, each in a folder of its own inside the game's (the
+ * emulators read every folder under it); an N64 .hts or .htc pack is loaded alone.
+ * The emulator's switch is turned on for the one game and put back as it was when
+ * its last pack is uninstalled. What Xsegon put in place is kept in
+ * data\texpacks.json, by game. The packs listed are includes\texpacks\list.json,
+ * built by tools\build-texpacks.js.
  */
 declare(strict_types=1);
 
@@ -48,8 +51,10 @@ function xs_tp_has_tab(array $game): bool
 
 /**
  * Where a pack for this game goes and what turns it on, or null with $why in words:
- *   ['emu', 'emulator', 'exe', 'home', 'key', 'keyWords', 'base', 'into', 'file',
+ *   ['emu', 'emulator', 'exe', 'home', 'key', 'keyWords', 'base', 'into', 'file', 'cache',
  *    'switch' => ['kind' => 'ini'|'opt', 'file', ...], 'global', 'setWords']
+ * 'file' is where an N64 .hts pack goes; 'cache' is the N64 core's own .htc, which it
+ * makes from the packs at a start and reads in their place after.
  */
 function xs_tp_target(array $game, ?string &$why = null): ?array
 {
@@ -115,7 +120,7 @@ function xs_tp_pcsx2(string $exe, string $rom, ?string &$why): ?array
     $tex = xs_pcsx2_folder($ini, $home, 'Textures', 'textures');
     return ['emu' => 'pcsx2', 'emulator' => 'PCSX2', 'exe' => $exe, 'home' => $home, 'key' => $serial,
             'keyWords' => 'its textures folder for ' . $serial . ', your disc\'s own ID',
-            'base' => $tex, 'into' => $tex . '\\' . $serial . '\\replacements', 'file' => null, 'dir' => $tex . '\\' . $serial,
+            'base' => $tex, 'into' => $tex . '\\' . $serial . '\\replacements', 'file' => null, 'cache' => null, 'dir' => $tex . '\\' . $serial,
             'switch' => ['kind' => 'ini', 'file' => $home . '\\gamesettings\\' . $serial . '_' . $crc . '.ini',
                          'section' => 'EmuCore/GS', 'key' => 'LoadTextureReplacements', 'on' => 'true'],
             'global' => strtolower(trim((string) (($ini['EmuCore/GS']['LoadTextureReplacements'] ?? [])[0] ?? ''))) === 'true',
@@ -152,7 +157,7 @@ function xs_tp_dolphin(string $exe, string $rom, ?string &$why): ?array
     $tex = $home . '\\Load\\Textures';
     return ['emu' => 'dolphin', 'emulator' => 'Dolphin', 'exe' => $exe, 'home' => $home, 'key' => $id,
             'keyWords' => 'its Load\\Textures folder for ' . $id . ', your disc\'s own ID',
-            'base' => $tex, 'into' => $tex . '\\' . $id, 'file' => null, 'dir' => $tex . '\\' . $id,
+            'base' => $tex, 'into' => $tex . '\\' . $id, 'file' => null, 'cache' => null, 'dir' => $tex . '\\' . $id,
             'switch' => ['kind' => 'ini', 'file' => $home . '\\GameSettings\\' . $id . '.ini',
                          'section' => 'Video_Settings', 'key' => 'HiresTextures', 'on' => 'True'],
             'global' => strtolower(trim((string) (($gfx['Settings']['HiresTextures'] ?? [])[0] ?? ''))) === 'true',
@@ -195,7 +200,7 @@ function xs_tp_mupen(array $launch, string $rom, ?string &$why): ?array
     return ['emu' => 'mupen', 'emulator' => 'RetroArch', 'exe' => $ra . '\\retroarch.exe', 'home' => $ra, 'key' => $name,
             'keyWords' => 'its hi-res texture folder for ' . $name . ', the name inside your cartridge',
             'base' => $sys, 'into' => $sys . '\\hires_texture\\' . $name, 'file' => $sys . '\\cache\\' . $name . '_HIRESTEXTURES.hts',
-            'dir' => $sys . '\\hires_texture\\' . $name, 'switch' => $sw,
+            'cache' => $sys . '\\cache\\' . $name . '_HIRESTEXTURES.htc', 'dir' => $sys . '\\hires_texture\\' . $name, 'switch' => $sw,
             'global' => strtolower(xs_tp_opt_keys($from, ['mupen64plus-txHiresEnable'])['mupen64plus-txHiresEnable'] ?? '') === 'true',
             'setWords' => 'the Mupen64Plus-Next core\'s hi-res textures'];
 }
@@ -222,7 +227,61 @@ function xs_tp_record_set(string $id, ?array $rec): void
 function xs_tp_record_for(array $game, array $t): ?array
 {
     $rec = xs_tp_records()[(string) $game['id']] ?? null;
-    return is_array($rec) && ($rec['emu'] ?? 'pcsx2') === $t['emu'] && strcasecmp((string) ($rec['key'] ?? $rec['serial'] ?? ''), $t['key']) === 0 ? $rec : null;
+    return is_array($rec) && ($rec['emu'] ?? 'pcsx2') === $t['emu'] && strcasecmp((string) ($rec['key'] ?? $rec['serial'] ?? ''), $t['key']) === 0 ? xs_tp_rec_norm($rec) : null;
+}
+
+/**
+ * A game's record as a list of packs: ['emu', 'key', 'setting', 'cache', 'packs' => [
+ * ['id', 'from', 'path', 'k' (the listed pack's key, when got from the list), 'at',
+ *  'kind' => 'folder'|'file'|'loose', 'when', 'files', 'bytes', 'for']]].
+ * A record from when a game held one pack is read as that one, its files loose in the game's folder.
+ */
+function xs_tp_rec_norm(array $rec): array
+{
+    if (is_array($rec['packs'] ?? null)) {
+        return $rec;
+    }
+    $at   = (string) ($rec['into'] ?? '');
+    $key  = (string) ($rec['key'] ?? $rec['serial'] ?? '');
+    $file = (bool) preg_match('/\.ht[sc]$/i', $at);
+    $cache = null;
+    if (($rec['emu'] ?? '') === 'mupen' && $at !== '') {
+        $cache = ($file ? dirname($at) : dirname($at, 2) . '\\cache') . '\\' . $key . '_HIRESTEXTURES.htc';
+    }
+    return ['emu' => (string) ($rec['emu'] ?? 'pcsx2'), 'key' => $key, 'setting' => $rec['setting'] ?? null, 'cache' => $cache,
+            'packs' => $at === '' ? [] : [['id' => xs_tp_pack_id($at, (int) ($rec['when'] ?? 0)), 'from' => (string) ($rec['from'] ?? ''),
+                'path' => (string) ($rec['path'] ?? ''), 'at' => $at, 'kind' => $file ? 'file' : 'loose', 'when' => (int) ($rec['when'] ?? 0),
+                'files' => (int) ($rec['files'] ?? 0), 'bytes' => (int) ($rec['bytes'] ?? 0), 'for' => $rec['for'] ?? null]]];
+}
+
+/** A pack's name in the tab and the api: where it is and when it came. */
+function xs_tp_pack_id(string $at, int $when): string
+{
+    return substr(md5(strtolower($at) . '|' . $when), 0, 10);
+}
+
+/** A pack is there: its own folder or file, or for one from before, files loose in the game's folder. */
+function xs_tp_pack_there(array $p, array $loose): bool
+{
+    return ($p['kind'] ?? '') === 'folder' ? is_dir((string) $p['at']) : (($p['kind'] ?? '') === 'file' ? is_file((string) $p['at']) : $loose !== []);
+}
+
+/** What lies in the game's folder outside the packs in folders of their own: a pack from before, or one put there by hand. */
+function xs_tp_loose(array $t, ?array $rec): array
+{
+    $own = [];
+    foreach ((array) ($rec['packs'] ?? []) as $p) {
+        if (($p['kind'] ?? '') === 'folder') {
+            $own[strtolower(basename((string) $p['at']))] = true;
+        }
+    }
+    $out = [];
+    foreach (is_dir($t['into']) ? (@scandir($t['into']) ?: []) : [] as $n) {
+        if ($n[0] !== '.' && !isset($own[strtolower($n)])) {   // the N64 core skips a name starting with a dot
+            $out[] = $t['into'] . '\\' . $n;
+        }
+    }
+    return $out;
 }
 
 /** The install or removal as its worker left it, or null; a worker that is gone is said. */
@@ -240,24 +299,121 @@ function xs_tp_job(): ?array
     return $job;
 }
 
-/** The pack there now: its folder and an N64 core's .hts, counted (once at the install, by the record). */
-function xs_tp_there(array $t, ?array $rec): ?array
+/**
+ * The packs there now, in the order they came: Xsegon's counted once at the install,
+ * by the record; then what was put there by hand, counted now, as one ('id' 'hand').
+ * Each with 'paths', what goes when it is uninstalled.
+ */
+function xs_tp_packs(array $t, ?array $rec): array
 {
-    $dir  = is_dir($t['into']) && (@scandir($t['into']) ?: ['.', '..']) !== ['.', '..'];
-    $file = $t['file'] !== null && is_file($t['file']);
-    if (!$dir && !$file) {
-        return null;
+    $loose = xs_tp_loose($t, $rec);
+    $out = [];
+    $owned = false;                                      // the loose files are a pack from before
+    $files = [];
+    foreach ((array) ($rec['packs'] ?? []) as $p) {
+        if (!xs_tp_pack_there($p, $loose)) {
+            continue;
+        }
+        $owned = $owned || $p['kind'] === 'loose';
+        $files[] = strtolower((string) $p['at']);
+        $out[] = ['id' => (string) $p['id'], 'from' => (string) $p['from'], 'files' => (int) $p['files'], 'bytes' => (int) $p['bytes'], 'whole' => true,
+                  'when' => (int) $p['when'], 'mine' => true, 'file' => $p['kind'] === 'file', 'for' => $p['for'] ?? null,
+                  'k' => (string) ($p['k'] ?? ''), 'path' => (string) ($p['path'] ?? ''), 'paths' => $p['kind'] === 'loose' ? $loose : [(string) $p['at']]];
     }
-    if ($rec !== null) {
-        return ['files' => (int) ($rec['files'] ?? 0), 'bytes' => (int) ($rec['bytes'] ?? 0), 'whole' => true,
-                'from' => (string) ($rec['from'] ?? ''), 'when' => (int) ($rec['when'] ?? 0), 'mine' => true];
+    $hand = $owned ? [] : $loose;
+    if ($t['file'] !== null && is_file($t['file']) && !in_array(strtolower($t['file']), $files, true)) {
+        $hand[] = $t['file'];
     }
-    $n = $dir ? xs_tp_count($t['into'], 100000) : ['files' => 0, 'bytes' => 0, 'whole' => true];
-    if ($file) {
-        $n['files']++;
-        $n['bytes'] += (int) @filesize($t['file']);
+    if ($hand) {
+        $n = ['files' => 0, 'bytes' => 0, 'whole' => true];
+        foreach ($hand as $h) {
+            $c = is_dir($h) ? xs_tp_count($h, max(1, 100000 - $n['files'])) : ['files' => 1, 'bytes' => (int) @filesize($h), 'whole' => true];
+            $n = ['files' => $n['files'] + $c['files'], 'bytes' => $n['bytes'] + $c['bytes'], 'whole' => $n['whole'] && $c['whole']];
+        }
+        $out[] = $n + ['id' => 'hand', 'from' => '', 'when' => 0, 'mine' => false, 'file' => $hand === [$t['file']], 'for' => null,
+                       'k' => '', 'path' => '', 'paths' => $hand];
     }
-    return $n + ['from' => '', 'when' => 0, 'mine' => false];
+    return $out;
+}
+
+/** The packs as the page has them: what goes on an uninstall, and where a pack came from, are the server's alone. */
+function xs_tp_packs_said(array $packs): array
+{
+    return array_map(static fn (array $p): array => array_diff_key($p, ['paths' => true, 'path' => true, 'k' => true]), $packs);
+}
+
+/**
+ * Which listed pack each pack there is, so the list's own row shows it installed:
+ * by the listed pack's key it was got by, else by its download (the address, its file's
+ * name, or that name unpacked into a folder). Rows get 'pack' (the id there, or
+ * null), packs get 'listed' (the row's key, or null); the download addresses go.
+ */
+function xs_tp_match(array $found, array $packs): array
+{
+    $file = static fn (string $p): string => strtolower(basename(str_replace('\\', '/', $p)));
+    foreach ($packs as $i => $p) {
+        $packs[$i]['listed'] = null;
+        foreach ($found as $j => $f) {
+            if (isset($found[$j]['pack'])) {
+                continue;
+            }
+            $url  = (string) ($f['url'] ?? '');
+            $name = $url !== '' ? $file((string) parse_url($url, PHP_URL_PATH)) : '';
+            $stem = (string) preg_replace('/\.(zip|7z)$/', '', $name);
+            $mine = $file((string) $p['path']);
+            if (($p['k'] !== '' && $p['k'] === $f['k'])
+                || ($name !== '' && $mine !== '' && ($mine === $name || (strlen($stem) >= 8 && $mine === $stem)))) {
+                $found[$j]['pack'] = $p['id'];
+                $packs[$i]['listed'] = $f['k'];
+                break;
+            }
+        }
+    }
+    foreach ($found as $j => $f) {
+        $found[$j] = array_diff_key($f, ['url' => true]) + ['pack' => null];
+    }
+    return [$found, $packs];
+}
+
+/**
+ * The N64 core reads every pack whole at the start after one comes or goes, and makes
+ * its .htc of them: until it has, RetroArch's window does not answer. The bytes it
+ * reads then, or 0 when its .htc is made already or there is nothing to read.
+ */
+function xs_tp_reads_first(?array $rec): int
+{
+    if ($rec === null || ($rec['emu'] ?? '') !== 'mupen' || (string) ($rec['cache'] ?? '') === '' || is_file((string) $rec['cache'])) {
+        return 0;
+    }
+    $bytes = 0;
+    foreach ((array) ($rec['packs'] ?? []) as $p) {
+        $at = (string) ($p['at'] ?? '');
+        if (($p['kind'] ?? '') !== 'file' && $at !== '' && is_dir($at)) {
+            $bytes += (int) ($p['bytes'] ?? 0);
+        }
+    }
+    return $bytes;
+}
+
+/** As xs_tp_reads_first(), by the game's id, for a start: one small file read, no folder walked. */
+function xs_tp_reads_first_for(string $id): int
+{
+    $rec = xs_tp_records()[$id] ?? null;
+    return is_array($rec) ? xs_tp_reads_first(xs_tp_rec_norm($rec)) : 0;
+}
+
+/** Can a pack sit beside the ones there? Not an N64 .hts or .htc: the core loads one of those alone. */
+function xs_tp_beside_ok(array $t, array $packs, ?array $src): bool
+{
+    if ($t['emu'] !== 'mupen') {
+        return true;
+    }
+    foreach ($packs as $p) {
+        if (!empty($p['file'])) {
+            return false;
+        }
+    }
+    return ($src['kind'] ?? '') !== 'file';
 }
 
 /** What the tab shows: where a pack goes, the one there now, whether it loads, and the packs listed for the game. */
@@ -266,14 +422,24 @@ function xs_tp_state(array $game): array
     $why = null;
     $t = xs_tp_target($game, $why);
     $job = xs_tp_job();
-    $mine = is_array($job) && ($job['id'] ?? '') === (string) $game['id'] && ($job['state'] ?? '') === 'running' ? $job : null;
+    // Only what the tab's own bar needs, of the work at hand for this game.
+    $mine = is_array($job) && ($job['id'] ?? '') === (string) $game['id'] && ($job['state'] ?? '') === 'running'
+        ? ['action' => (string) ($job['action'] ?? ''), 'phase' => (string) ($job['phase'] ?? ''), 'bytes' => (int) ($job['bytes'] ?? 0),
+           'total' => (int) ($job['total'] ?? 0), 'at' => (int) ($job['at'] ?? 0), 'files' => (int) ($job['files'] ?? 0),
+           'name' => (string) (($job['source']['title'] ?? '') !== '' ? $job['source']['title'] : ($job['source']['name'] ?? ''))] : null;
     $found = xs_tp_found($game, $t['key'] ?? null);
     if ($t === null) {
-        return ['ok' => true, 'can' => false, 'why' => $why, 'emulator' => null, 'job' => $mine, 'found' => $found];
+        return ['ok' => true, 'can' => false, 'why' => $why, 'emulator' => null, 'job' => $mine, 'found' => xs_tp_match($found, [])[0]];
     }
     $own = xs_tp_switch_now($t['switch']);
+    $rec = xs_tp_record_for($game, $t);
+    [$found, $packs] = xs_tp_match($found, xs_tp_packs($t, $rec));
+    $file = null;
+    foreach ($packs as $p) {
+        $file = $file ?? (!empty($p['file']) && !is_dir($t['into']) ? $p['paths'][0] : null);   // an N64 .hts or .htc, in the core's cache folder
+    }
     return ['ok' => true, 'can' => true, 'why' => null, 'emulator' => $t['emulator'], 'key' => $t['key'], 'where' => $t['keyWords'],
-            'folder' => $t['file'] !== null && is_file($t['file']) ? $t['file'] : $t['into'], 'installed' => xs_tp_there($t, xs_tp_record_for($game, $t)),
+            'folder' => $file ?? $t['into'], 'packs' => xs_tp_packs_said($packs), 'readsFirst' => xs_tp_reads_first($rec),
             'own' => $own, 'loads' => $own ?? $t['global'], 'setWords' => $t['setWords'], 'job' => $mine, 'found' => $found];
 }
 
@@ -343,25 +509,31 @@ function xs_tp_source(string $from, ?string &$why = null): ?array
 }
 
 /**
- * Start putting a pack in place for a game (from a file or folder chosen, or one
- * of its listed packs' own download), or taking the one there away (both null).
- * A pack already there is only replaced when $replace says so; until then $ask is
- * filled with what is there and false comes back with no $why.
+ * Start putting a pack in place for a game, or uninstalling one of its packs.
+ * $want: 'from' (a file or folder chosen) or 'get' (a listed pack's own download),
+ * with 'how' => 'beside' | 'replace' once the person has said; or 'remove' => a
+ * pack's id ('' for the game's only one). With packs there and no 'how', $ask is
+ * filled with them and whether one more can go beside them, and false comes back
+ * with no $why.
  */
-function xs_tp_start(array $game, ?string $from, ?string $get, bool $replace, ?string &$why = null, ?array &$ask = null): bool
+function xs_tp_start(array $game, array $want, ?string &$why = null, ?array &$ask = null): bool
 {
     $why = null;
     $ask = null;
     if ((xs_tp_job()['state'] ?? '') === 'running') {
-        $why = 'a texture pack is being put in place or taken away already: that has to finish first';
+        $why = 'a texture pack is being installed or uninstalled already: that has to finish first';
         return false;
     }
     $t = xs_tp_target($game, $why);
     if ($t === null || !xs_tp_can_write($t, $why)) {
         return false;
     }
+    $from  = isset($want['from']) ? (string) $want['from'] : null;
+    $get   = isset($want['get']) ? (string) $want['get'] : null;
+    $how   = in_array($want['how'] ?? null, ['beside', 'replace'], true) ? (string) $want['how'] : null;
     $rec   = xs_tp_record_for($game, $t);
-    $there = xs_tp_there($t, $rec) !== null;
+    $packs = xs_tp_packs($t, $rec);
+    $drop  = null;
     $src   = null;
     if ($get !== null) {
         $row = xs_tp_row($game, $get);
@@ -371,7 +543,7 @@ function xs_tp_start(array $game, ?string $from, ?string $get, bool $replace, ?s
             return false;
         }
         $src = ['kind' => 'url', 'url' => $url, 'path' => $url, 'name' => (string) ($row['get']['name'] ?? basename((string) parse_url($url, PHP_URL_PATH))),
-                'bytes' => (int) ($row['get']['bytes'] ?? 0), 'by' => (string) ($row['by'] ?? ''), 'title' => (string) ($row['name'] ?? '')];
+                'bytes' => (int) ($row['get']['bytes'] ?? 0), 'by' => (string) ($row['by'] ?? ''), 'title' => (string) ($row['name'] ?? ''), 'k' => $get];
     } elseif ($from !== null) {
         $src = xs_tp_source($from, $why);
         if ($src === null) {
@@ -381,16 +553,32 @@ function xs_tp_start(array $game, ?string $from, ?string $get, bool $replace, ?s
             $why = 'that is inside ' . $t['emulator'] . '\'s own texture folder already';
             return false;
         }
-    } elseif (!$there) {
-        $why = 'there is no texture pack for this game to take away';
+    } elseif (!$packs) {
+        $why = 'there is no texture pack for this game to uninstall';
+        return false;
+    } else {
+        $id = (string) ($want['remove'] ?? '');
+        foreach ($packs as $p) {
+            if ($p['id'] === $id || ($id === '' && count($packs) === 1)) {
+                $drop = $p + ['last' => count($packs) === 1];
+            }
+        }
+        if ($drop === null) {
+            $why = $id === '' ? 'this game has ' . count($packs) . ' texture packs: which one is to be uninstalled is not said' : 'that texture pack is not installed for this game now';
+            return false;
+        }
+    }
+    if ($src !== null && $packs && $how === null) {
+        $ask = ['packs' => xs_tp_packs_said($packs), 'beside' => xs_tp_beside_ok($t, $packs, $src)];
         return false;
     }
-    if ($src !== null && $there && !$replace) {
-        $ask = xs_tp_there($t, $rec);
+    if ($src !== null && $how === 'beside' && !xs_tp_beside_ok($t, $packs, $src)) {
+        $why = 'the N64 core loads an .hts or .htc pack alone, so this one cannot go beside the one there: choose Replace';
         return false;
     }
     $job = ['state' => 'running', 'phase' => 'starting', 'started' => time(), 'action' => $src !== null ? 'install' : 'remove',
             'id' => (string) $game['id'], 'title' => (string) ($game['title'] ?? ''), 'target' => $t, 'source' => $src, 'record' => $rec,
+            'how' => $src === null ? '' : ($packs ? (string) $how : 'new'), 'drop' => $drop, 'beside' => count($packs),
             'bytes' => 0, 'total' => 0, 'at' => 0, 'files' => 0, 'said' => ''];
     @unlink(xs_tp_stop_path());
     if (!xs_write_json(xs_tp_job_path(), $job, $why)) {
@@ -401,8 +589,10 @@ function xs_tp_start(array $game, ?string $from, ?string $get, bool $replace, ?s
         xs_write_json(xs_tp_job_path(), ['state' => 'failed', 'error' => $why] + $job);
         return false;
     }
-    xs_log('TPAK', ($src !== null ? 'asked to put ' . $src['name'] . ' (' . $src['kind'] . ') in place' : 'asked to take the pack away')
-        . ' for ' . $job['title'] . ' (' . $t['emulator'] . ', ' . $t['key'] . '): ' . $t['into'] . ($there && $src !== null ? ', replacing the one there' : ''));
+    xs_log('TPAK', ($src !== null ? 'asked to put ' . $src['name'] . ' (' . $src['kind'] . ') in place'
+            : 'asked to uninstall ' . ($drop['from'] !== '' ? $drop['from'] : 'the pack put there by hand') . ($drop['last'] ? ', its last' : ', ' . (count($packs) - 1) . ' staying'))
+        . ' for ' . $job['title'] . ' (' . $t['emulator'] . ', ' . $t['key'] . '): ' . $t['into']
+        . ($packs && $src !== null ? ($how === 'beside' ? ', beside the ' . count($packs) . ' there' : ', replacing the ' . count($packs) . ' there') : ''));
     return true;
 }
 
@@ -476,7 +666,7 @@ function xs_tp_found(array $game, ?string $key): array
         $out[] = ['k' => (string) $r['k'], 'name' => (string) ($r['name'] ?? ''), 'by' => (string) ($r['by'] ?? ''), 'kind' => (string) ($r['kind'] ?? ''),
                   'status' => (string) ($r['st'] ?? ''), 'note' => $note, 'same' => $mine !== '' && $mine === $region, 'size' => (int) ($r['bytes'] ?? 0),
                   'pay' => (string) ($r['pay'] ?? 'free'), 'where' => (string) ($r['where'] ?? ''), 'tip' => ($r['tip'] ?? '') !== '',
-                  'get' => xs_tp_get_ok((string) ($r['get']['url'] ?? ''))];
+                  'get' => xs_tp_get_ok((string) ($r['get']['url'] ?? '')), 'url' => (string) ($r['get']['url'] ?? '')];
     }
     $rank = static fn (array $r): array => [$r['kind'] === 'hand' ? 0 : ($r['kind'] === 'ai' ? 2 : 1), $r['same'] ? 0 : 1, $r['status'] === 'Complete' ? 0 : 1];
     usort($out, static fn (array $a, array $b): int => $rank($a) <=> $rank($b));

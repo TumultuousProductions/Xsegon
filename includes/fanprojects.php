@@ -120,7 +120,8 @@ function xs_fan_makes(array $p): bool
         $game = $m['game'] ?? null;
         return is_string($m['asset'] ?? null) && is_string($m['run'] ?? null) && !str_contains($m['run'], '..')
             && preg_match('/^[A-Za-z0-9][A-Za-z0-9 ._()+-]{0,60}$/', (string) ($m['folder'] ?? '')) === 1
-            && is_array($game) && (isset($game['to']) || isset($game['discs']) || isset($game['ini'], $game['section'], $game['key']))
+            && is_array($game) && (isset($game['to']) || isset($game['discs']) || isset($game['ini'], $game['section'], $game['key'])
+                                   || (($game['args'] ?? null) === true && str_contains((string) ($m['args'] ?? ''), '{disc}')))
             && !array_filter(array_merge([$game['to'] ?? '', $game['discs'] ?? '', $game['ini'] ?? ''], (array) ($m['need'] ?? [])),
                              static fn($f) => str_contains((string) $f, '..') || str_contains((string) $f, ':'))
             && !array_filter((array) ($m['write'] ?? []), static fn($f) => !preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]{0,60}$/', (string) $f));

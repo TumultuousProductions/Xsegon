@@ -248,13 +248,13 @@ function xs_jobs(): array
         if (is_array($j) && $told($files['texpacks'], $state)) {
             $phase = (string) ($j['phase'] ?? '');
             $total = (int) ($j['total'] ?? 0);
-            $files = (int) ($j['files'] ?? 0);
+            $count = (int) ($j['files'] ?? 0);          // not $files: that is every job's file, read by the blocks after this one
             $sized = ($phase === 'unpacking' || $phase === 'copying' || $phase === 'fetching') && $total > 0;
             $line  = $sized ? ($phase === 'fetching' ? 'downloading' : $phase) . ': ' . xs_jobs_size((int) ($j['bytes'] ?? 0)) . ' of ' . xs_jobs_size($total)
                    : ($phase === 'fetching' ? 'downloading: ' . xs_jobs_size((int) ($j['bytes'] ?? 0))
-                   : ($phase === 'removing' ? 'taking it away: ' . number_format((int) ($j['at'] ?? 0)) . ' of ' . $n($files, 'file', 'files')
+                   : ($phase === 'removing' ? 'uninstalling: ' . number_format((int) ($j['at'] ?? 0)) . ' of ' . $n($count, 'file', 'files')
                    : ($phase === 'reading' ? 'reading what is in it' : ($phase === 'placing' || $phase === 'setting' || $phase === 'tidying' ? 'putting it in place' : 'starting'))));
-            $frac  = $sized ? (int) ($j['bytes'] ?? 0) / $total : ($phase === 'removing' && $files > 0 ? (int) ($j['at'] ?? 0) / $files : null);
+            $frac  = $sized ? (int) ($j['bytes'] ?? 0) / $total : ($phase === 'removing' && $count > 0 ? (int) ($j['at'] ?? 0) / $count : null);
             $out[] = xs_jobs_row('texpacks', 'Texture pack for ' . (string) ($j['title'] ?? 'a game'), $state === 'running' ? 'running' : ($state === 'done' ? 'done' : 'failed'),
                 (int) ($j['started'] ?? 0), $line, $frac, ($j['action'] ?? '') !== 'remove',
                 (string) (($j['error'] ?? '') !== '' ? $j['error'] : (($j['said'] ?? '') !== '' ? $j['said'] : 'nothing was done')));

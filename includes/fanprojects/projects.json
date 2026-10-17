@@ -1,5 +1,5 @@
 {
-  "about": "Fan projects made from games a person owns (roadmap AQ, doc/ideas/49-fan-projects.md). Each entry was read from the team's own page on 2026-10-15: 'page' is their website, 'repo' their GitHub (a project or its owner's page), each checked against GitHub's own answer; at least one is given. A base names the releases it takes by their No-Intro name (cartridges), disc ID (discs), or every disc ID of a set ('discs': all must be in the library, in one .pbp or .m3u or as separate discs): fit 'fits' is what the team asks for, 'works' is taken with a note. 'make' says how Xsegon makes it (includes/fanmake.php). A patch: the team's own list of releases ('list', newest first, each with 'version' and 'files'), which file of a release to take ('take'), where those files are ('from'), the kind of patch, the base's byte order and MD5, the made file's ending; every address on the team's website or GitHub, the patch checked against the CRC32 the team's GitHub release lists for it. 'how': 'release': the Windows download ('asset', a pattern) of the team's latest GitHub release or of 'tag', unpacked into 'folder' in the console's Ports folder; 'run' (with 'args', '{folder}' for where it went) joins the 'list' (Windows unless named); 'game' says where your game goes: 'to' (a copy, '{release}' for its release name, its 'format' and the 'md5' or 'sha1' the team takes), 'discs' (every disc of the set, a .pbp's written out as .bin and .cue), or 'ini' (the port's own emulator pointed at your disc where it is); 'need' files the download must hold, 'write' empty files a port reads as a switch, 'first' what its first start asks. 'how': 'build': the team's source at the newest commit of 'branch', the 'tools' their build guide names (GitHub release downloads of the size given), and their 'compile' line run in its folder. 'how': 'pack': a Riivolution pack from the team's own server ('hosts'), as their installer takes it: the full pack ('install'), each newer update ('updates') and what each takes away ('deletes'), only the 'take' folders kept, and a Dolphin start file booting your disc with the pack's 'xml' and 'options'. 'yours' finds a copy already in the library: a patched cartridge by its header, or a PC version kept as a game of your own by its title, its build named in a file beside what it runs. Xsegon never supplies a game and never hosts a team's files. The list changes with each Xsegon release.",
+  "about": "Fan projects made from games a person owns (roadmap AQ, doc/ideas/49-fan-projects.md). Each entry was read from the team's own page on 2026-10-15 or 2026-10-16: 'page' is their website, 'repo' their GitHub (a project or its owner's page), each checked against GitHub's own answer; at least one is given. A base names the releases it takes by their No-Intro name (cartridges), disc ID (discs), or every disc ID of a set ('discs': all must be in the library, in one .pbp or .m3u or as separate discs): fit 'fits' is what the team asks for, 'works' is taken with a note. 'make' says how Xsegon makes it (includes/fanmake.php). A patch: the team's own list of releases ('list', newest first, each with 'version' and 'files'), which file of a release to take ('take'), where those files are ('from'), the kind of patch, the base's byte order and MD5, the made file's ending; every address on the team's website or GitHub, the patch checked against the CRC32 the team's GitHub release lists for it. 'how': 'release': the Windows download ('asset', a pattern) of the team's latest GitHub release or of 'tag', unpacked into 'folder' in the console's Ports folder; 'run' (with 'args', '{folder}' for where it went) joins the 'list' (Windows unless named); 'game' says where your game goes: 'to' (a copy, '{release}' for its release name, its 'format' and the 'md5' or 'sha1' the team takes), 'discs' (every disc of the set, a .pbp's written out as .bin and .cue), 'ini' (the port's own emulator pointed at your disc where it is), or 'args' (your disc where it is, named to the port as it starts by '{disc}' in its 'args'); 'need' files the download must hold, 'write' empty files a port reads as a switch, 'first' what its first start asks. 'how': 'build': the team's source at the newest commit of 'branch', the 'tools' their build guide names (GitHub release downloads of the size given), and their 'compile' line run in its folder. 'how': 'pack': a Riivolution pack from the team's own server ('hosts'), as their installer takes it: the full pack ('install'), each newer update ('updates') and what each takes away ('deletes'), only the 'take' folders kept, and a Dolphin start file booting your disc with the pack's 'xml' and 'options'. 'yours' finds a copy already in the library: a patched cartridge by its header, or a PC version kept as a game of your own by its title, its build named in a file beside what it runs. Xsegon never supplies a game and never hosts a team's files. The list changes with each Xsegon release.",
   "projects": [
     {
       "id": "smash-remix",
@@ -141,6 +141,33 @@
       }
     },
     {
+      "id": "banjo-recompiled",
+      "name": "Banjo: Recompiled",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Banjo-Kazooie recompiled for PC: high frame rates, widescreen, a dual analog camera, notes kept between levels, and mods and texture packs",
+      "tags": ["widescreen"],
+      "team": "the Banjo: Recompiled team",
+      "repo": "https://github.com/BanjoRecomp/BanjoRecomp",
+      "community": "https://discord.gg/AWZThJ4dPf",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Banjo-Kazooie (USA)",
+        "db": { "id": 162, "title": "Banjo-Kazooie", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Banjo-Kazooie (USA)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "-Windows\\.zip$",
+        "folder": "Banjo Recompiled",
+        "run": "BanjoRecompiled.exe",
+        "write": ["portable.txt"],
+        "game": { "to": "bk.n64.us.1.0.z64", "format": "z64", "sha1": ["1fe1632098865f639e22c11b9a81ee8f29c75d7a"] },
+        "first": "Its own window opens first: press Start game there. Mods and texture packs go in its own mods folder."
+      },
+      "yours": { "console": "Windows", "title": "Banjo Recompiled" }
+    },
+    {
       "id": "starship",
       "name": "Starship",
       "kind": "pc",
@@ -187,7 +214,8 @@
         "run": "Spaghettify.exe",
         "game": { "to": "{release}.z64", "format": "z64", "sha1": ["579c48e211ae952530ffc8738709f078d5dd215e"] },
         "first": "Its first start makes its game files from your copy beside it: press Yes, then OK."
-      }
+      },
+      "yours": { "console": "Windows", "title": "SpaghettiKart" }
     },
     {
       "id": "ghostship",
@@ -213,6 +241,137 @@
         "game": { "to": "{release}.z64", "format": "z64", "sha1": ["9bef1128717f958171a4afac3ed78ee2bb4e86ce"] },
         "first": "Its first start makes its game files from your copy beside it: answer Yes to its questions."
       }
+    },
+    {
+      "id": "dk64-rekongpiled",
+      "name": "DK64 Rekongpiled",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Donkey Kong 64 recompiled for PC: high frame rates, widescreen and ultrawide, low input lag, instant loads, extra control options, and mods and texture packs",
+      "tags": ["widescreen"],
+      "team": "the DK64 Rekongpiled team",
+      "page": "https://dk64recomp.com",
+      "repo": "https://github.com/Rainchus/Donkey-Kong-64-Recompiled",
+      "community": "https://discord.gg/yrMw2CfuEZ",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Donkey Kong 64 (USA)",
+        "db": { "id": 250, "title": "Donkey Kong 64", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Donkey Kong 64 (USA)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "-Windows-Release(-[0-9]+)*\\.zip$",
+        "folder": "DK64 Rekongpiled",
+        "run": "DK64Recompiled.exe",
+        "write": ["portable.txt"],
+        "game": { "to": "DK64.z64", "format": "z64", "sha1": ["cf806ff2603640a748fca5026ded28802f1f4a50"] },
+        "first": "Its own window opens first: press Start Game there. Mods come from its Mods menu."
+      }
+    },
+    {
+      "id": "harvestmoon64recomp",
+      "name": "Harvest Moon 64: Recompiled",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Harvest Moon 64 recompiled for PC: high frame rates, widescreen and ultrawide, instant loads, and mods and texture packs",
+      "tags": ["widescreen"],
+      "team": "the Harvest Moon 64: Recompiled team",
+      "repo": "https://github.com/HarvestMoon64Recomp/HarvestMoon64Recomp",
+      "community": "https://discord.gg/AWZThJ4dPf",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Harvest Moon 64 (USA)",
+        "db": { "id": 1114, "title": "Harvest Moon 64", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Harvest Moon 64 (USA)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "-Windows\\.zip$",
+        "folder": "Harvest Moon 64 Recompiled",
+        "run": "HarvestMoon64Recompiled.exe",
+        "write": ["portable.txt"],
+        "game": { "to": "harvest_moon_64.z64", "format": "z64", "sha1": ["90631460f1876a14849df0541d534012b410a34c"] },
+        "first": "Its own window opens first: press Start Game there. Mods for it are on Thunderstore."
+      }
+    },
+    {
+      "id": "bmhero-recompiled",
+      "name": "Bomberman Hero: Recompiled",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Bomberman Hero recompiled for PC: high frame rates, widescreen and ultrawide, low input lag, and mods and texture packs; still a test release",
+      "tags": ["widescreen"],
+      "team": "RevoSucks",
+      "repo": "https://github.com/RevoSucks/BMHeroRecomp",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Bomberman Hero (USA)",
+        "db": { "id": 245, "title": "Bomberman Hero", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Bomberman Hero (USA)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "tag": "v0.7.1",
+        "asset": "^BMHeroRecompiled-Windows-[A-Za-z]+\\.zip$",
+        "folder": "Bomberman Hero Recompiled",
+        "run": "BMHeroRecompiled.exe",
+        "write": ["portable.txt"],
+        "game": { "to": "bmhero.z64", "format": "z64", "sha1": ["a36364b7e59351f7551ab351cb3b41ebc4be285b"] },
+        "first": "Its own window opens first: press Start Game there. Its team still calls it a test release."
+      }
+    },
+    {
+      "id": "quest64-recompiled",
+      "name": "Quest 64: Recompiled",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Quest 64 recompiled for PC: high frame rates, widescreen and mods; an early, bare-bones first release",
+      "tags": ["widescreen"],
+      "team": "Rainchus",
+      "repo": "https://github.com/Rainchus/Quest64-Recomp",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Quest 64 (USA)",
+        "db": { "id": 1185, "title": "Quest 64", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Quest 64 (USA)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "^Quest64Recompiled(v[0-9.]+|-Windows-[A-Za-z]+)\\.zip$",
+        "folder": "Quest 64 Recompiled",
+        "run": "Quest64Recompiled.exe",
+        "write": ["portable.txt"],
+        "game": { "to": "quest64_us.z64", "format": "z64", "sha1": ["91b96e938c6d91699057fad91d726ee5a23ce33a"] },
+        "first": "Its own window opens first: press Start game there. While playing, F1 opens more settings."
+      }
+    },
+    {
+      "id": "smb-remastered",
+      "name": "Super Mario Bros. Remastered",
+      "kind": "pc",
+      "console": "Nintendo Entertainment System",
+      "adds": "Super Mario Bros., The Lost Levels, Special and All Night Nippon remade for PC, with a level editor, custom characters and resource packs",
+      "tags": ["levels"],
+      "team": "JHDev2006 and contributors",
+      "repo": "https://github.com/JHDev2006/Super-Mario-Bros.-Remastered-Public",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Super Mario Bros. (World)",
+        "db": { "id": 140, "title": "Super Mario Bros.", "platform": "Nintendo Entertainment System" },
+        "match": [ { "console": "Nintendo Entertainment System", "name": "Super Mario Bros. (World)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "tag": "1.1-stable",
+        "asset": "^Windows\\.zip$",
+        "folder": "Super Mario Bros Remastered",
+        "run": "SMB1R.exe",
+        "write": ["portable.txt"],
+        "game": { "to": "config/baserom.nes", "format": "nes", "sha1": ["33d23c2f2cfa4c9efec87f7bc1321ce3ce6c89bd"] },
+        "first": "Its first start makes its own picture files from your game, then opens at the title screen. Resource packs go in its config\\resource_packs folder."
+      },
+      "yours": { "console": "Windows", "title": "Super Mario Bros. Remastered" }
     },
     {
       "id": "zelda3",
@@ -300,6 +459,33 @@
       }
     },
     {
+      "id": "sonic3air",
+      "name": "Sonic 3 A.I.R.",
+      "kind": "pc",
+      "console": "Sega Genesis",
+      "adds": "Sonic 3 & Knuckles remastered for PC: widescreen, many options and mods",
+      "tags": ["widescreen"],
+      "team": "Eukaryot",
+      "page": "https://sonic3air.org",
+      "repo": "https://github.com/Eukaryot/sonic3air",
+      "community": "https://dc.railgun.works/s3air",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Sonic & Knuckles + Sonic The Hedgehog 3 (USA)",
+        "db": { "id": 14066, "title": "Sonic & Knuckles / Sonic the Hedgehog 3", "platform": "Sega Genesis" },
+        "match": [ { "console": "Sega Genesis", "name": "Sonic & Knuckles + Sonic The Hedgehog 3 (USA) (Lock-On)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "^sonic3air_game\\.zip$",
+        "folder": "Sonic 3 AIR",
+        "run": "Sonic3AIR.exe",
+        "game": { "to": "savedata/Sonic_Knuckles_wSonic3.bin", "format": "md", "sha1": ["cfbf98c36c776677290a872547ac47c53d2761d6"] },
+        "first": "It opens straight into the game, its settings and saves kept in its savedata folder. The remastered music is an optional download from its Options menu."
+      },
+      "yours": { "console": "Windows", "title": "Sonic 3 A.I.R." }
+    },
+    {
       "id": "severed-chains",
       "name": "Severed Chains",
       "kind": "pc",
@@ -329,6 +515,70 @@
         "console": "Windows",
         "title": "Severed Chains",
         "build": "^lod-game-([0-9a-f]{7})[0-9a-f]*\\.jar$"
+      }
+    },
+    {
+      "id": "dusklight",
+      "name": "Dusklight",
+      "kind": "pc",
+      "console": "Nintendo GameCube",
+      "adds": "Twilight Princess rebuilt as a native PC game, with higher resolutions and frame rates, quality-of-life options and mods",
+      "tags": ["widescreen"],
+      "team": "Twilit Realm",
+      "page": "https://twilitrealm.dev",
+      "repo": "https://github.com/TwilitRealm/dusklight",
+      "community": "https://discord.gg/6NpMhefCK9",
+      "licence": "CC0-1.0",
+      "base": {
+        "title": "The Legend of Zelda: Twilight Princess (USA)",
+        "db": { "id": 448239, "title": "The Legend of Zelda: Twilight Princess", "platform": "Nintendo GameCube" },
+        "match": [
+          { "console": "Nintendo GameCube", "disc": "GZ2E01", "fit": "fits" },
+          { "console": "Nintendo GameCube", "disc": "GZ2P01", "fit": "fits" },
+          { "console": "Nintendo GameCube", "disc": "GZ2J01", "fit": "fits" },
+          { "console": "Nintendo Wii", "disc": "RZDE01", "fit": "works", "note": "works; a Wii disc plays with the GameCube version's screen layout" },
+          { "console": "Nintendo Wii", "disc": "RZDP01", "fit": "works", "note": "works; a Wii disc plays with the GameCube version's screen layout" },
+          { "console": "Nintendo Wii", "disc": "RZDJ01", "fit": "works", "note": "works; a Wii disc plays with the GameCube version's screen layout" }
+        ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "-win32-x86_64\\.zip$",
+        "folder": "Dusklight",
+        "run": "dusklight.exe",
+        "args": "--user-dir \"{folder}\\data\" --dvd \"{disc}\"",
+        "game": { "args": true },
+        "first": "It reads your disc where it is and keeps its settings and saves in its data folder. Its first start asks which look you want, Classic or Dusklight, and whether to send crash reports."
+      }
+    },
+    {
+      "id": "slippi",
+      "name": "Slippi",
+      "kind": "disc",
+      "console": "Nintendo GameCube",
+      "adds": "Melee with rollback online play, matchmaking and replays saved automatically",
+      "tags": [],
+      "team": "Project Slippi",
+      "page": "https://slippi.gg",
+      "repo": "https://github.com/project-slippi",
+      "community": "https://discord.gg/pPfEaW5",
+      "licence": "GPL-2.0",
+      "base": {
+        "title": "Super Smash Bros. Melee (USA) (Rev 2)",
+        "db": { "id": 5654, "title": "Super Smash Bros. Melee", "platform": "Nintendo GameCube" },
+        "match": [ { "console": "Nintendo GameCube", "disc": "GALE01", "version": 2, "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "repo": "https://github.com/project-slippi/Ishiiruka",
+        "asset": "^FM-Slippi-[0-9.]+-Win\\.zip$",
+        "folder": "Slippi",
+        "run": "Slippi Dolphin.exe",
+        "args": "-b -e \"{disc}\"",
+        "list": "Nintendo GameCube",
+        "title": "Super Smash Bros. Melee: Slippi",
+        "game": { "args": true },
+        "first": "It plays in the Dolphin that comes with it, which reads your Melee where it is. To play online, log in from its Online menu; Windows may ask to let it through the firewall, and online play needs its newest version."
       }
     },
     {

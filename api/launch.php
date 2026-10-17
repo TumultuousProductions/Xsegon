@@ -594,6 +594,13 @@ if ($follow !== null) {
     $params['ViaSteam'] = $viaSteam;
 }
 
+// An N64 game whose texture packs the core has not read yet: this start reads them all, RetroArch's window still meanwhile.
+$texRead = 0;
+if (($launch['kind'] ?? '') === 'retroarch' && strtolower((string) ($game['platform'] ?? '')) === 'nintendo 64') {
+    require_once __DIR__ . '/../includes/texpacks.php';
+    $texRead = xs_tp_reads_first_for((string) $game['id']);
+}
+
 // The call as PowerShell text: readable in a dry run and the launch log.
 $command = xs_ps_call($script, $params);
 
@@ -605,6 +612,7 @@ if ($dry) {
              'slot' => $slot >= 0 ? $slot : null, 'loads' => $slot < 0 ? null : ($netPort > 0 ? 'sent' : 'hotkey'),
              'follow' => $follow['dir'] ?? null, 'viaSteam' => $viaSteam, 'direct' => $direct,
              'asks' => $netPort > 0 ? $netPort : null,     // the port the launcher asks RetroArch on
+             'texRead' => $texRead ?: null,                 // bytes of texture packs this start reads first
              'raFix' => $raFix]);                           // what was found wrong in RetroArch's settings, and where it would be put right
 }
 
@@ -624,6 +632,7 @@ xs_log('LNCH', $shown['title'] . ' via ' . $launch['via'] . ' exe=' . basename($
        . ($keysEvery !== null ? ' keysEvery=' . $keysEvery : '')
        . ($hot !== null ? ' hot=' . $hot : '')
        . ($slot >= 0 ? ' slot=' . $slot . ($netPort > 0 ? ' load=sent' : ' load=hotkey') : '')
+       . ($texRead > 0 ? ' texread=' . round($texRead / 1048576) . 'MB' : '')
        . ($follow !== null ? ' follow=' . basename((string) $follow['dir']) : ''));
 // Detached: this returns now, the game runs on.
 if (!xs_spawn_ps($command)) {
@@ -642,6 +651,7 @@ xs_json([
     'detached' => true,
     'slot'     => $slot >= 0 ? $slot : null,
     'loads'    => $slot < 0 ? null : ($netPort > 0 ? 'sent' : 'hotkey'),
+    'texRead'  => $texRead ?: null,
     // the key the page tells the person to press, as RetroArch has it set
     'hotkey'   => $slot >= 0 && isset($flags) ? strtoupper((string) (($flags['input_load_state'] ?? '') ?: 'F4')) : null,
 ]);

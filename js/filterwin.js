@@ -4,8 +4,9 @@
     is read again; nothing here is saved (js\library.js says why).
 
     Hacks is one row with three answers, since Hacks only and Leave hacks out can
-    never both be on. Your tags are small buttons, at most two lines of them; the
-    rest open as a list, so no number of tags pushes the window off the screen. */
+    never both be on; Texture packs the same, Has packs or Installed. Your tags
+    are small buttons, at most two lines of them; the rest open as a list, so no
+    number of tags pushes the window off the screen. */
 
 import { setEditorOnClose, toolFrame } from "./editors.js";
 import { iconEl } from "./icons.js";
@@ -23,19 +24,24 @@ var TAG_LINES = 2;           // and no more lines of them than this: one fewer g
 var PER_COL = 10;            // the rest, in columns this long, so their list never scrolls
 var ICON = { fav: "star", players: "gamepad", unplayed: "play", cheats: "wand", ready: "check", missing: "image", docs: "book", unrated: "star" };
 // The sections, left column then right: [heading, FILTERS group].
-var LEFT = [["Play", "play"], ["Ratings", "ratings"]], RIGHT = [["Files and pictures", "files"], ["Hacks", "hacks"], ["Your tags", "tags"]];
+var LEFT = [["Play", "play"], ["Ratings", "ratings"], ["Texture packs", "texpacks"]], RIGHT = [["Files and pictures", "files"], ["Hacks", "hacks"], ["Your tags", "tags"]];
 var HACKS = [["", "All"], ["hacks", "Only hacks"], ["nohacks", "No hacks"]];
+var TEXPACKS = [["", "All"], ["texpacks", "Has packs"], ["texinstalled", "Installed"]];
 var STEP = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] };
 
 var win = null;              // the window, while it is up
 var paints = [];             // what each part does to show how things now stand
 var tagsBox = null, tagsSig = "", tagsFit = TAGS_SHOWN, restWasUp = false;
 
-function hackNow() { return filters.hacks ? "hacks" : filters.nohacks ? "nohacks" : ""; }
+// The answer on now of a row of answers, by the filter it turns on; "" is All.
+function answerNow(answers) {
+  var on = answers.filter(function (a) { return a[0] && filters[a[0]]; })[0];
+  return on ? on[0] : "";
+}
 // How many filters of a section are on, for its heading while it is folded.
 function onIn(group) {
   if (group === "tags") { return filters.tags.length; }
-  if (group === "hacks") { return hackNow() ? 1 : 0; }
+  if (group === "hacks") { return answerNow(HACKS) ? 1 : 0; }
   return FILTERS.filter(function (f) { return f.group === group && filters[f.key]; }).length + (group === "ratings" && filters.myrating ? 1 : 0);
 }
 
@@ -98,27 +104,28 @@ function starsRow() {
   return r;
 }
 
-/* Hacks: with the rest, only them, or left out, one answer at a time. A
-   press on an answer is that one; a press on the row steps to the next and
-   round, as the stars do. */
-function hacksRow() {
-  var r = filterRow("bolt", "Hacks", "hack", "The games marked HACK: shown with the rest, only them, or left out. Press an answer, or press the row to step to the next."),
-      seg = el("span", "seg flt-seg"), all = [];
-  // The one asked for goes on and lets go of the other; All takes off the one that is on.
-  var set = function (v) { if (v !== hackNow()) { toggleFilter(v || hackNow()); paint(); } };
-  var said = function () { return HACKS.filter(function (h) { return h[0] === hackNow(); })[0]; };
-  HACKS.forEach(function (h) {
-    var b = el("span", "flt-ans", h[1]);
-    b.dataset.hack = h[0];
-    b.addEventListener("click", function (e) { e.stopPropagation(); set(h[0]); });
+/* A row of answers, one at a time: Hacks (with the rest, only them, or left
+   out) and Texture packs (any game, the ones with a pack, the ones with one
+   installed). A press on an answer is that one; a press on the row steps to
+   the next and round, as the stars do. */
+function answersRow(icon, words, key, tip, answers) {
+  var r = filterRow(icon, words, key, tip), seg = el("span", "seg flt-seg"), all = [];
+  var now = function () { return answerNow(answers); };
+  // The one asked for goes on and lets go of the other (toggleFilter); All takes off the one that is on.
+  var set = function (v) { if (v !== now()) { toggleFilter(v || now()); paint(); } };
+  var said = function () { return answers.filter(function (a) { return a[0] === now(); })[0]; };
+  answers.forEach(function (a) {
+    var b = el("span", "flt-ans", a[1]);
+    b.dataset.answer = a[0];
+    b.addEventListener("click", function (e) { e.stopPropagation(); set(a[0]); });
     all.push(seg.appendChild(b));
   });
   r.setAttribute("role", "button");
-  pressable(r, function () { set(HACKS[(HACKS.indexOf(said()) + 1) % HACKS.length][0]); });
+  pressable(r, function () { set(answers[(answers.indexOf(said()) + 1) % answers.length][0]); });
   r.appendChild(seg);
   paints.push(function () {
-    all.forEach(function (b) { b.classList.toggle("on", b.dataset.hack === hackNow()); });
-    r.setAttribute("aria-label", "Hacks: " + said()[1]);
+    all.forEach(function (b) { b.classList.toggle("on", b.dataset.answer === now()); });
+    r.setAttribute("aria-label", words + ": " + said()[1]);
   });
   return r;
 }
@@ -237,8 +244,12 @@ function section(name, group) {
   });
   box.appendChild(head);
   if (group === "ratings") { box.appendChild(starsRow()); }
-  if (group === "hacks") { box.appendChild(hacksRow()); }
-  else if (group === "tags") { tagsBox = box.appendChild(el("div", "flt-tags")); }
+  if (group === "hacks") {
+    box.appendChild(answersRow("bolt", "Hacks", "hack", "The games marked HACK: shown with the rest, only them, or left out. Press an answer, or press the row to step to the next.", HACKS));
+  } else if (group === "texpacks") {
+    box.appendChild(answersRow("sparkle", "Texture packs", "texpack", "The games with a texture pack: one listed in their Texture packs tab, or one Xsegon installed that is still in place. " +
+      "Press an answer, or press the row to step to the next.", TEXPACKS));
+  } else if (group === "tags") { tagsBox = box.appendChild(el("div", "flt-tags")); }
   else { FILTERS.filter(function (f) { return f.group === group; }).forEach(function (f) { box.appendChild(switchRow(f)); }); }
   paints.push(function () {
     var shut = box.classList.contains("shut"), on = onIn(group);

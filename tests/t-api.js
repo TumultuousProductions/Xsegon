@@ -955,6 +955,61 @@ module.exports = async function (b, check) {
       [both.length, /stand-in fault/.test((both[0] || {}).body || ""), (both[0] || {}).times, (both[1] || {}).times], [2, true, 2, 1]);
     for (const m of both) { await api("api/news.php", { action: "delete", id: m.id }); }
     check("deleted, they are not written again by the next look", (await faults()).length, 0);
+
+    /* A syntax error is what an edit in two steps leaves for a moment: it waits two minutes
+       before it is kept, and one whose file changed meanwhile is let go. */
+    const broken = path.join(DATA, "boom-parse.php"), noteFile = path.join(DATA, "last-fault.json");
+    try {
+      fs.writeFileSync(broken, "<?php\nfunction (;\n");
+      const parseRes = await fetch(BASE + "/api/boom.php?parse=1");
+      const note = JSON.parse(fs.readFileSync(noteFile, "utf8"));
+      check("a syntax error answers as a 500 too, and its note says the file would not read",
+        [parseRes.status, note.where, note.text, path.resolve(note.file || ".") === path.resolve(broken)], [500, "boom-parse.php:2", true, true]);
+      check("it is not in the mailbox at once: the rest of an edit may be on its way", (await faults()).length, 0);
+      fs.writeFileSync(broken, "<?php\n");
+      const later = new Date(Date.now() + 5000);
+      fs.utimesSync(broken, later, later);
+      check("its file changed meanwhile: the fault is let go, and the log says why",
+        [(await faults()).length, /NEWS +not kept: boom-parse\.php:2 would not read, and the file has changed since/.test(logNow())], [0, true]);
+      // A file left as it was for two minutes is kept: the note is dated back rather than waited for.
+      fs.writeFileSync(broken, "<?php\nfunction (;\n");
+      await fetch(BASE + "/api/boom.php?parse=1");
+      const stale = JSON.parse(fs.readFileSync(noteFile, "utf8"));
+      stale.at = new Date(Date.now() - 180000).toISOString();
+      fs.writeFileSync(noteFile, JSON.stringify(stale));
+      const left = await faults();
+      check("a file still broken two minutes on is in the mailbox, saying where",
+        [left.length, /^While answering boom\.php: syntax error, .*\(boom-parse\.php:2\)\./.test((left[0] || {}).body || "")], [1, true]);
+      for (const m of left) { await api("api/news.php", { action: "delete", id: m.id }); }
+    } finally {
+      fs.rmSync(broken, { force: true });
+    }
+
+    /* On the command line only Xsegon's own scripts are for the mailbox: a scratch file or php -r
+       from outside is someone trying something, and is in the log alone. */
+    const cli = (args) => {
+      try { require("child_process").execFileSync((st.build || {}).phpExe, args, { env: Object.assign({}, process.env, { XSEGON_DATA: DATA }), stdio: "ignore", windowsHide: true }); }
+      catch (e) { /* each one throws on purpose */ }
+    };
+    const scratch = fs.mkdtempSync(path.join(require("os").tmpdir(), "xsegon-scratch-"));
+    try {
+      const boot = path.join(__dirname, "..", "includes", "boot.php").replace(/\\/g, "/");
+      fs.writeFileSync(path.join(scratch, "trying.php"), "<?php\nrequire '" + boot + "';\nthrow new RuntimeException('a stand-in fault from a scratch file');\n");
+      const before = fs.readFileSync(noteFile, "utf8");
+      cli([path.join(scratch, "trying.php")]);
+      cli(["-r", "require '" + boot + "'; throw new RuntimeException('a stand-in fault from php -r');"]);
+      const log = logNow();
+      check("a fault in a script from outside Xsegon, or in php -r, is in the log and not in the mailbox",
+        [fs.readFileSync(noteFile, "utf8") === before, /PHPE +uncaught RuntimeException: a stand-in fault from a scratch file/.test(log),
+         /PHPE +not for the mailbox: .*trying\.php is not one of Xsegon's/.test(log), /PHPE +not for the mailbox: a script given on the command line/.test(log)],
+        [true, true, true, true]);
+      cli([path.join(__dirname, "..", "api", "boom.php")]);
+      const own = (await kept()).filter((m) => /^While running boom\.php: a stand-in fault, thrown on purpose/.test(m.body || ""));
+      check("and a fault in one of Xsegon's own scripts, run on the command line, still is", own.length, 1);
+      for (const m of own) { await api("api/news.php", { action: "delete", id: m.id }); }
+    } finally {
+      fs.rmSync(scratch, { recursive: true, force: true });
+    }
   }
 
   /* The window never stays stuck: the app window's status poll is its heartbeat,
