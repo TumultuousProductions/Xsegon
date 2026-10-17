@@ -332,11 +332,19 @@ function xs_scan_program_folder(string $dir): ?string
         && is_dir($dir . DIRECTORY_SEPARATOR . 'includes')) {
         return 'a copy of Xsegon';
     }
-    static $data = null;
+    static $data = null, $made = null;
     if ($data === null) {
         $data = strtolower(rtrim((string) (realpath(xs_data_dir()) ?: xs_data_dir()), '\\/'));
+        // A PC version Fan projects set up is a program's folder, though it may hold a disc's files (an Xbox port's game folder).
+        $made = [];
+        foreach ((array) xs_read_json(xs_data_path('fan-made.json'), []) as $rec) {
+            if (is_array($rec) && isset($rec['folder'])) {
+                $made[strtolower(rtrim((string) (realpath((string) $rec['folder']) ?: $rec['folder']), '\\/'))] = true;
+            }
+        }
     }
-    return strtolower(rtrim((string) (realpath($dir) ?: $dir), '\\/')) === $data ? 'Xsegon\'s data folder' : null;
+    $here = strtolower(rtrim((string) (realpath($dir) ?: $dir), '\\/'));
+    return $here === $data ? 'Xsegon\'s data folder' : (isset($made[$here]) ? 'a PC version Fan projects set up' : null);
 }
 
 /**
@@ -603,7 +611,7 @@ function xs_scan_dive(string $dir, bool $disc, int $depth = 0): ?string
         }
         $full = $dir . DIRECTORY_SEPARATOR . $n;
         if (is_dir($full)) {
-            if (preg_match(XS_SCAN_NOT_GAMES, $n)) {
+            if (preg_match(XS_SCAN_NOT_GAMES, $n) || xs_scan_program_folder($full) !== null) {
                 continue;
             }
             $found = xs_scan_dive($full, $disc, $depth + 1);

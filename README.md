@@ -367,11 +367,13 @@ wants a logo taken out has only to ask: help@tumultuousproductions.site.
   [Texture Packs Archive](https://docs.google.com/spreadsheets/d/1sif8FeRGJRbytK8wFRXgF6Hke9V6GUFs),
   the community's list kept by Sad Origami. Every pack is its maker's own,
   named on its row with its maker's tip page. Xsegon carries the list and
-  none of the packs: a press opens a pack's own page, or, for the N64 packs
+  none of the packs: a press opens a pack's own page, or, for the packs
   of [Emulation King](https://emulationking.com) and
   [evilgames.eu](https://evilgames.eu), fetches the pack from there on the
   person's own PC ([includes/texpacks/ABOUT.txt](includes/texpacks/ABOUT.txt);
-  `node tools\build-texpacks.js` makes the list).
+  `node tools\build-texpacks.js` makes the list). A few packs the Archive
+  does not list are added by hand (`tools\texpacks-more.json`), marked so on
+  their rows.
 - Cutting those recordings: `ffmpeg.exe` from the
   [FFmpeg project](https://ffmpeg.org), the release essentials build for
   Windows by [Gyan Doshi](https://www.gyan.dev/ffmpeg/builds/), shipped

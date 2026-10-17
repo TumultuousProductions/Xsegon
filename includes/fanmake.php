@@ -536,10 +536,11 @@ function xs_fm_disc_sources(array $games, string $words, array $need, ?string &$
 
 /**
  * The discs of a set written into $dir as "<name> (Disc N)": a .pbp's disc as a .bin and its
- * .cue, a disc image copied as it is. $tick(bytes so far) is told; it stops it by answering
- * false. The names written, or null with $why.
+ * .cue, a disc image copied as it is, or with $rename a one-track image's .bin and .cue under
+ * that name too. $tick(bytes so far) is told; it stops it by answering false. The names
+ * written, or null with $why.
  */
-function xs_fm_disc_write(array $sources, string $dir, string $name, callable $tick, ?string &$why = null): ?array
+function xs_fm_disc_write(array $sources, string $dir, string $name, callable $tick, ?string &$why = null, bool $rename = false): ?array
 {
     require_once __DIR__ . '/pbp.php';
     $why = null;
@@ -556,9 +557,21 @@ function xs_fm_disc_write(array $sources, string $dir, string $name, callable $t
             }
             $wrote[] = basename($bin);
         } else {
-            // Copied under their own names: a .cue names its files as they are.
+            // Copied under their own names, as a .cue names its files; renamed, a port's fixed name
+            // ("ctr-u.bin") is given to the one .bin, and its .cue is made to name it.
+            $renamed = $rename && count(array_filter($src['files'], static fn($f) => strtolower(pathinfo($f, PATHINFO_EXTENSION)) === 'bin')) === 1;
             foreach ($src['files'] as $f) {
-                $to = $dir . DIRECTORY_SEPARATOR . basename($f);
+                $end = strtolower(pathinfo($f, PATHINFO_EXTENSION));
+                if ($renamed && $end === 'cue') {
+                    $cue = (string) preg_replace('/^(\s*FILE\s+)(?:"[^"]+"|\S+)/mi', '${1}"' . $stem . '.bin"', (string) @file_get_contents($f, false, null, 0, 65536));
+                    if (@file_put_contents($dir . DIRECTORY_SEPARATOR . $stem . '.cue', $cue) === false) {
+                        $why = $stem . '.cue could not be written (' . xs_file_error_reason() . ')';
+                        return null;
+                    }
+                    $wrote[] = $stem . '.cue';
+                    continue;
+                }
+                $to = $dir . DIRECTORY_SEPARATOR . ($renamed && $end === 'bin' ? $stem . '.bin' : basename($f));
                 $in = @fopen($f, 'rb');
                 $out = $in === false ? false : @fopen($to, 'wb');
                 if ($in === false || $out === false) {
@@ -583,7 +596,7 @@ function xs_fm_disc_write(array $sources, string $dir, string $name, callable $t
                 }
                 fclose($in);
                 fclose($out);
-                $wrote[] = basename($f);
+                $wrote[] = basename($to);
             }
             continue;
         }

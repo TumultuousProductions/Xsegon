@@ -1,5 +1,5 @@
 {
-  "about": "Fan projects made from games a person owns (roadmap AQ, doc/ideas/49-fan-projects.md). Each entry was read from the team's own page on 2026-10-15 or 2026-10-16: 'page' is their website, 'repo' their GitHub (a project or its owner's page), each checked against GitHub's own answer; at least one is given. A base names the releases it takes by their No-Intro name (cartridges), disc ID (discs), or every disc ID of a set ('discs': all must be in the library, in one .pbp or .m3u or as separate discs): fit 'fits' is what the team asks for, 'works' is taken with a note. 'make' says how Xsegon makes it (includes/fanmake.php). A patch: the team's own list of releases ('list', newest first, each with 'version' and 'files'), which file of a release to take ('take'), where those files are ('from'), the kind of patch, the base's byte order and MD5, the made file's ending; every address on the team's website or GitHub, the patch checked against the CRC32 the team's GitHub release lists for it. 'how': 'release': the Windows download ('asset', a pattern) of the team's latest GitHub release or of 'tag', unpacked into 'folder' in the console's Ports folder; 'run' (with 'args', '{folder}' for where it went) joins the 'list' (Windows unless named); 'game' says where your game goes: 'to' (a copy, '{release}' for its release name, its 'format' and the 'md5' or 'sha1' the team takes), 'discs' (every disc of the set, a .pbp's written out as .bin and .cue), 'ini' (the port's own emulator pointed at your disc where it is), or 'args' (your disc where it is, named to the port as it starts by '{disc}' in its 'args'); 'need' files the download must hold, 'write' empty files a port reads as a switch, 'first' what its first start asks. 'how': 'build': the team's source at the newest commit of 'branch', the 'tools' their build guide names (GitHub release downloads of the size given), and their 'compile' line run in its folder. 'how': 'pack': a Riivolution pack from the team's own server ('hosts'), as their installer takes it: the full pack ('install'), each newer update ('updates') and what each takes away ('deletes'), only the 'take' folders kept, and a Dolphin start file booting your disc with the pack's 'xml' and 'options'. 'yours' finds a copy already in the library: a patched cartridge by its header, or a PC version kept as a game of your own by its title, its build named in a file beside what it runs. Xsegon never supplies a game and never hosts a team's files. The list changes with each Xsegon release.",
+  "about": "Fan projects made from games a person owns (roadmap AQ, doc/ideas/49-fan-projects.md). Each entry was read from the team's own page on 2026-10-15, 2026-10-16 or 2026-10-17: 'page' is their website, 'repo' their GitHub (a project or its owner's page), each checked against GitHub's own answer; at least one is given. A base names the releases it takes by their No-Intro name (cartridges), disc ID (discs; an Xbox disc by its title ID, with 'code' the SHA-1 its default.xbe keeps of its .text, which tells one release from another of the same ID), an arcade game's MAME set ('set', its file's name), or every disc ID of a set ('discs': all must be in the library, in one .pbp or .m3u or as separate discs); a PS4 dump and a Switch game's extracted files are named by their title ID and cannot be read yet: fit 'fits' is what the team asks for, 'works' is taken with a note. 'make' says how Xsegon makes it (includes/fanmake.php). A patch: the team's own list of releases ('list', newest first, each with 'version' and 'files'), which file of a release to take ('take'), where those files are ('from'), the kind of patch, the base's byte order and MD5, the made file's ending; every address on the team's website or GitHub, the patch checked against the CRC32 the team's GitHub release lists for it. 'how': 'release': the Windows download ('asset', a pattern) of the team's latest GitHub release or of 'tag', unpacked into 'folder' in the console's Ports folder; 'run' (with 'args', '{folder}' for where it went) joins the 'list' (Windows unless named); 'game' says where your game goes: 'to' (a copy, '{release}' for its release name, its 'format' and the 'md5' or 'sha1' the team takes), 'discs' (every disc of the set, a .pbp's written out as .bin and .cue), 'xiso' (an Xbox disc's files written out into this folder), 'ini' (the port's own emulator pointed at your disc where it is), or 'args' (your disc where it is, named to the port as it starts by '{disc}' in its 'args'); 'need' files the download must hold, 'write' empty files a port reads as a switch, 'first' what its first start asks. 'how': 'build': the team's source at the newest commit of 'branch', the 'tools' their build guide names (GitHub release downloads of the size given), and their 'compile' line run in its folder. 'how': 'pack': a Riivolution pack from the team's own server ('hosts'), as their installer takes it: the full pack ('install'), each newer update ('updates') and what each takes away ('deletes'), only the 'take' folders kept, and a Dolphin start file booting your disc with the pack's 'xml' and 'options'. 'yours' finds a copy already in the library: a patched cartridge by its header, or a PC version kept as a game of your own by its title, its build named in a file beside what it runs. 'soon' is a project not out yet: one line saying where it stands, shown under Coming soon, never made. 'team' is who made it, as they name themselves (their name and GitHub account, as their repo and licence give them); 'basedon' credits the work it stands on with its makers (the project it is forked from, the decompilation or recompiler it is built on), shown under the team and written into the made game's notes beside it. Xsegon never supplies a game and never hosts a team's files. The list changes with each Xsegon release.",
   "projects": [
     {
       "id": "smash-remix",
@@ -39,7 +39,8 @@
       "console": "Nintendo 64",
       "adds": "Split-screen, mouse aim, 60 fps and widescreen",
       "tags": ["coop", "widescreen"],
-      "team": "the perfect-dark-pc-port team",
+      "team": "fgsfds and the perfect-dark-pc-port contributors",
+      "basedon": "the Perfect Dark decompilation by Ryan Dwyer and n64decomp",
       "repo": "https://github.com/perfect-dark-pc-port/perfect_dark",
       "licence": "MIT",
       "base": {
@@ -69,6 +70,7 @@
       "adds": "Ocarina of Time rebuilt for PC: widescreen, 60 fps and many options",
       "tags": ["widescreen"],
       "team": "Harbour Masters",
+      "basedon": "the Ocarina of Time decompilation by the Zelda Reverse Engineering Team (zeldaret), and libultraship by Kenix3 and Harbour Masters",
       "page": "https://shipofharkinian.com",
       "repo": "https://github.com/HarbourMasters/Shipwright",
       "licence": "none given",
@@ -99,6 +101,7 @@
       "adds": "Majora's Mask rebuilt for PC: widescreen, 60 fps and many options",
       "tags": ["widescreen"],
       "team": "Harbour Masters",
+      "basedon": "the Majora's Mask decompilation by the Zelda Reverse Engineering Team (zeldaret), and libultraship by Kenix3 and Harbour Masters",
       "repo": "https://github.com/2ship2harkinian/2ship2harkinian",
       "licence": "CC0-1.0",
       "base": {
@@ -123,6 +126,7 @@
       "adds": "Majora's Mask recompiled for PC: high frame rates, widescreen and mods",
       "tags": ["widescreen"],
       "team": "the Zelda 64: Recompiled team",
+      "basedon": "N64Recomp by Wiseguy and RT64 by Dario, and the Majora's Mask decompilation by the Zelda Reverse Engineering Team (zeldaret)",
       "repo": "https://github.com/Zelda64Recomp/Zelda64Recomp",
       "licence": "GPL-3.0",
       "base": {
@@ -148,6 +152,7 @@
       "adds": "Banjo-Kazooie recompiled for PC: high frame rates, widescreen, a dual analog camera, notes kept between levels, and mods and texture packs",
       "tags": ["widescreen"],
       "team": "the Banjo: Recompiled team",
+      "basedon": "N64Recomp by Wiseguy and RT64 by Dario",
       "repo": "https://github.com/BanjoRecomp/BanjoRecomp",
       "community": "https://discord.gg/AWZThJ4dPf",
       "licence": "GPL-3.0",
@@ -175,6 +180,7 @@
       "adds": "Star Fox 64 rebuilt for PC: higher frame rates and widescreen",
       "tags": ["widescreen"],
       "team": "Harbour Masters",
+      "basedon": "the Star Fox 64 decompilation by sonicdcer and Petrie911, and libultraship by Kenix3 and Harbour Masters",
       "repo": "https://github.com/HarbourMasters/Starship",
       "licence": "CC0-1.0",
       "base": {
@@ -199,6 +205,7 @@
       "adds": "Mario Kart 64 rebuilt for PC: 4K, 120 fps, ultrawide and a track editor",
       "tags": ["widescreen", "levels"],
       "team": "Harbour Masters",
+      "basedon": "the Mario Kart 64 decompilation by n64decomp, and libultraship by Kenix3 and Harbour Masters",
       "page": "https://harbourmasters.github.io/SpaghettiKart/",
       "repo": "https://github.com/HarbourMasters/SpaghettiKart",
       "licence": "none given",
@@ -224,7 +231,8 @@
       "console": "Nintendo 64",
       "adds": "Super Mario 64 rebuilt for PC",
       "tags": ["widescreen"],
-      "team": "Harbour Masters",
+      "team": "Lywx and Harbour Masters",
+      "basedon": "the Super Mario 64 decompilation by n64decomp, and libultraship by Kenix3 and Harbour Masters",
       "page": "https://ghostship.net64.dev/",
       "repo": "https://github.com/HarbourMasters/Ghostship",
       "licence": "MIT",
@@ -250,6 +258,7 @@
       "adds": "Donkey Kong 64 recompiled for PC: high frame rates, widescreen and ultrawide, low input lag, instant loads, extra control options, and mods and texture packs",
       "tags": ["widescreen"],
       "team": "the DK64 Rekongpiled team",
+      "basedon": "N64Recomp by Wiseguy and RT64 by Dario",
       "page": "https://dk64recomp.com",
       "repo": "https://github.com/Rainchus/Donkey-Kong-64-Recompiled",
       "community": "https://discord.gg/yrMw2CfuEZ",
@@ -277,6 +286,7 @@
       "adds": "Harvest Moon 64 recompiled for PC: high frame rates, widescreen and ultrawide, instant loads, and mods and texture packs",
       "tags": ["widescreen"],
       "team": "the Harvest Moon 64: Recompiled team",
+      "basedon": "N64Recomp by Wiseguy and RT64 by Dario",
       "repo": "https://github.com/HarvestMoon64Recomp/HarvestMoon64Recomp",
       "community": "https://discord.gg/AWZThJ4dPf",
       "licence": "GPL-3.0",
@@ -302,7 +312,8 @@
       "console": "Nintendo 64",
       "adds": "Bomberman Hero recompiled for PC: high frame rates, widescreen and ultrawide, low input lag, and mods and texture packs; still a test release",
       "tags": ["widescreen"],
-      "team": "RevoSucks",
+      "team": "Revo (RevoSucks)",
+      "basedon": "N64Recomp by Wiseguy and RT64 by Dario",
       "repo": "https://github.com/RevoSucks/BMHeroRecomp",
       "licence": "GPL-3.0",
       "base": {
@@ -329,6 +340,7 @@
       "adds": "Quest 64 recompiled for PC: high frame rates, widescreen and mods; an early, bare-bones first release",
       "tags": ["widescreen"],
       "team": "Rainchus",
+      "basedon": "N64Recomp by Wiseguy and RT64 by Dario",
       "repo": "https://github.com/Rainchus/Quest64-Recomp",
       "licence": "GPL-3.0",
       "base": {
@@ -353,7 +365,7 @@
       "console": "Nintendo Entertainment System",
       "adds": "Super Mario Bros., The Lost Levels, Special and All Night Nippon remade for PC, with a level editor, custom characters and resource packs",
       "tags": ["levels"],
-      "team": "JHDev2006 and contributors",
+      "team": "Joe H (JHDev2006) and contributors",
       "repo": "https://github.com/JHDev2006/Super-Mario-Bros.-Remastered-Public",
       "licence": "GPL-3.0",
       "base": {
@@ -381,6 +393,7 @@
       "adds": "A Link to the Past rebuilt to run on PC",
       "tags": ["widescreen"],
       "team": "snesrev",
+      "basedon": "the PPU and DSP of LakeSnes by elzo_d",
       "repo": "https://github.com/snesrev/zelda3",
       "community": "https://discord.gg/AJJbJAzNNJ",
       "licence": "its own terms",
@@ -406,6 +419,7 @@
       "adds": "Super Metroid rebuilt to run on PC, an early version",
       "tags": [],
       "team": "snesrev",
+      "basedon": "the PPU and DSP of LakeSnes by elzo_d",
       "repo": "https://github.com/snesrev/sm",
       "community": "https://discord.gg/AJJbJAzNNJ",
       "licence": "its own terms",
@@ -441,6 +455,7 @@
       "adds": "Super Mario World rebuilt to run on PC",
       "tags": [],
       "team": "snesrev",
+      "basedon": "the PPU and DSP of LakeSnes by elzo_d",
       "repo": "https://github.com/snesrev/smw",
       "community": "https://discord.gg/AJJbJAzNNJ",
       "licence": "its own terms",
@@ -525,6 +540,7 @@
       "adds": "Twilight Princess rebuilt as a native PC game, with higher resolutions and frame rates, quality-of-life options and mods",
       "tags": ["widescreen"],
       "team": "Twilit Realm",
+      "basedon": "the Twilight Princess decompilation by the Zelda Reverse Engineering Team (zeldaret), and Aurora",
       "page": "https://twilitrealm.dev",
       "repo": "https://github.com/TwilitRealm/dusklight",
       "community": "https://discord.gg/6NpMhefCK9",
@@ -559,6 +575,7 @@
       "adds": "Melee with rollback online play, matchmaking and replays saved automatically",
       "tags": [],
       "team": "Project Slippi",
+      "basedon": "Dolphin by the Dolphin team, through its Ishiiruka fork",
       "page": "https://slippi.gg",
       "repo": "https://github.com/project-slippi",
       "community": "https://discord.gg/pPfEaW5",
@@ -626,6 +643,7 @@
       "adds": "Brawl played like Melee, with Mewtwo, Roy and Knuckles and new stages",
       "tags": ["fighters", "levels"],
       "team": "the Project+ team",
+      "basedon": "Dolphin by the Dolphin team",
       "page": "https://projectplusgame.com",
       "repo": "https://github.com/Project-Plus-Development-Team",
       "licence": "none given",
@@ -646,6 +664,2722 @@
         "game": { "ini": "user/Config/Dolphin.ini", "section": "Core", "key": "DefaultISO" },
         "first": "It plays in the Dolphin that comes with it, which reads your Brawl where it is."
       }
+    },
+    {
+      "id": "ngbrecomp",
+      "name": "Ninja Gaiden Black Recompiled",
+      "kind": "pc",
+      "console": "Microsoft Xbox",
+      "adds": "Ninja Gaiden Black recompiled for PC: up to 10x resolution, widescreen and ultrawide, keyboard and mouse, and a steady 60 fps",
+      "tags": ["widescreen"],
+      "team": "gamboozino",
+      "basedon": "xboxrecomp by sp00nz, with parts of xemu",
+      "repo": "https://github.com/gamboozino/ngbrecomp",
+      "licence": "GPL-2.0",
+      "base": {
+        "title": "Ninja Gaiden Black (USA)",
+        "db": { "id": 6105, "title": "Ninja Gaiden Black", "platform": "Microsoft Xbox" },
+        "match": [ { "console": "Microsoft Xbox", "disc": "5443000D", "code": "91f59d9646910f36ac9fb025a7271d58e2fcffbf", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "tag": "v0.9.12",
+        "asset": "^NinjaGaidenBlack-windows-x64\\.zip$",
+        "folder": "Ninja Gaiden Black",
+        "run": "NinjaGaidenBlack.exe",
+        "title": "Ninja Gaiden Black Recompiled",
+        "write": ["portable.txt"],
+        "game": { "xiso": "game" },
+        "first": "It reads your game from the game folder beside it, written out of your disc once (about 6 GB), and keeps its saves, settings and its own Xbox hard drive in its userdata folder: about 11 GB in all. It needs a graphics card with Vulkan 1.3; its releases are all test builds so far."
+      }
+    },
+    {
+      "id": "jsrf-unleashed",
+      "name": "JSRF Unleashed",
+      "kind": "pc",
+      "console": "Microsoft Xbox",
+      "adds": "Jet Set Radio Future recompiled to run natively on PC, drawn at up to 4x the Xbox's resolution",
+      "tags": [],
+      "team": "JuMatt",
+      "basedon": "xboxrecomp by sp00nz, with parts of xemu",
+      "repo": "https://github.com/JuMatt/JetSetRadioFuture-Unleashed",
+      "licence": "MIT",
+      "base": {
+        "title": "Jet Set Radio Future (USA)",
+        "db": { "id": 6082, "title": "JSRF: Jet Set Radio Future", "platform": "Microsoft Xbox" },
+        "match": [ { "console": "Microsoft Xbox", "disc": "5345000A", "fit": "works", "note": "fits if it is the USA disc, the only one the team takes; a Japanese disc has the same ID" } ]
+      }
+    },
+    {
+      "id": "mercenaries-recompiled",
+      "name": "Mercenaries Recompiled",
+      "kind": "pc",
+      "console": "Microsoft Xbox",
+      "adds": "Mercenaries recompiled for PC: keyboard and mouse, resolution and aspect-ratio options and a frame rate cap",
+      "tags": ["widescreen"],
+      "team": "KraftMacAndChee",
+      "basedon": "xboxrecomp by sp00nz, with parts of xemu",
+      "repo": "https://github.com/KraftMacAndChee/Mercenaries-Recompiled",
+      "licence": "MIT",
+      "base": {
+        "title": "Mercenaries: Playground of Destruction (USA)",
+        "db": { "id": 8015, "title": "Mercenaries: Playground of Destruction", "platform": "Microsoft Xbox" },
+        "match": [ { "console": "Microsoft Xbox", "disc": "4C410015", "fit": "works", "note": "fits if it is the USA disc, the one the team takes; the European ones have the same ID" } ]
+      }
+    },
+    {
+      "id": "doaxvb-re",
+      "name": "DOAXVB Native PC Port",
+      "kind": "pc",
+      "console": "Microsoft Xbox",
+      "adds": "Dead or Alive Xtreme Beach Volleyball recompiled for PC; the team's own tools build it on your PC from your disc",
+      "tags": [],
+      "team": "NoRain211",
+      "repo": "https://github.com/NoRain211/doaxvb-re",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Dead or Alive Xtreme Beach Volleyball (USA)",
+        "db": { "id": 15547, "title": "Dead or Alive: Xtreme Beach Volleyball", "platform": "Microsoft Xbox" },
+        "match": [ { "console": "Microsoft Xbox", "disc": "54430007", "fit": "works", "note": "fits if it is the USA disc, the only one the team takes; every other has the same ID" } ]
+      }
+    },
+    {
+      "id": "urban-reign-recomp",
+      "name": "Urban Reign PC Port",
+      "kind": "pc",
+      "console": "Sony Playstation 2",
+      "adds": "Urban Reign recompiled for PC: 60 fps, real widescreen, up to 8x resolution, HD texture packs and up to 8 players",
+      "tags": ["widescreen"],
+      "team": "Thiago R (thiagordsfx)",
+      "basedon": "PS2Recomp by ran-j",
+      "repo": "https://github.com/thiagordsfx/urban-reign-recomp",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Urban Reign (USA)",
+        "db": { "id": 9836, "title": "Urban Reign", "platform": "Sony Playstation 2" },
+        "match": [ { "console": "Sony Playstation 2", "disc": "SLUS-21209", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "rerac",
+      "name": "ReRAC",
+      "kind": "pc",
+      "console": "Sony Playstation 2",
+      "adds": "Ratchet & Clank rewritten as a native PC game; an early alpha, not yet playable from start to finish",
+      "tags": [],
+      "team": "the ReRAC contributors",
+      "page": "https://re-rac.github.io/",
+      "repo": "https://github.com/re-rac",
+      "licence": "ISC",
+      "base": {
+        "title": "Ratchet & Clank (USA)",
+        "db": { "id": 7797, "title": "Ratchet & Clank", "platform": "Sony Playstation 2" },
+        "match": [ { "console": "Sony Playstation 2", "disc": "SCUS-97199", "fit": "works", "note": "fits if it is version 1.00 of the disc, the one the team takes" } ]
+      }
+    },
+    {
+      "id": "vf2-recomp",
+      "name": "Virtua Fighter 2 Recomp",
+      "kind": "pc",
+      "console": "Arcade",
+      "adds": "The arcade Virtua Fighter 2 recompiled to native code: render scales up to 6x, widescreen, and smooth motion at any refresh rate",
+      "tags": ["widescreen"],
+      "team": "Mr Finster",
+      "basedon": "MAME's work on Sega's Model 2 (Farfetch'd, R. Belmont and the MAME team)",
+      "page": "https://vf2-recomp.pages.dev",
+      "repo": "https://github.com/mr-finster/vf2-recomp",
+      "licence": "MIT",
+      "base": {
+        "title": "Virtua Fighter 2 (Version 2.1)",
+        "db": { "id": 16866, "title": "Virtua Fighter 2", "platform": "Arcade" },
+        "match": [ { "console": "Arcade", "set": "vf2", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "daytona-recomp",
+      "name": "Daytona USA static recompilation",
+      "kind": "pc",
+      "console": "Arcade",
+      "adds": "The arcade Daytona USA rebuilt as native code; the team's own setup builds it on your PC from your ROM set",
+      "tags": [],
+      "team": "Ben Templeman (alphanu1) and contributors",
+      "basedon": "parts of MAME by the MAME team",
+      "repo": "https://github.com/alphanu1/daytona-arcade-recomp",
+      "licence": "BSD-3-Clause",
+      "base": {
+        "title": "Daytona USA (Revision A, or Deluxe '93)",
+        "db": { "id": 7994, "title": "Daytona USA", "platform": "Arcade" },
+        "match": [ { "console": "Arcade", "set": "daytona", "fit": "fits" }, { "console": "Arcade", "set": "daytona93", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "las-recomp",
+      "name": "LAS Recomp",
+      "kind": "pc",
+      "console": "Nintendo Switch",
+      "adds": "The Switch Link's Awakening recompiled for PC, with a randomizer built in; it takes the game's extracted files, not an .nsp or .xci",
+      "tags": [],
+      "team": "Peiikai",
+      "repo": "https://github.com/peiikai/LASRecomp",
+      "community": "https://discord.gg/DhrgdYqdcY",
+      "licence": "MIT",
+      "base": {
+        "title": "The Legend of Zelda: Link's Awakening (version 1.0.0, its files extracted)",
+        "db": { "id": 168410, "title": "The Legend of Zelda: Link's Awakening", "platform": "Nintendo Switch" },
+        "match": [ { "console": "Nintendo Switch", "disc": "01006BB00C6F0000", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "bloodborne-pc",
+      "name": "Bloodborne for Windows",
+      "kind": "pc",
+      "console": "Sony Playstation 4",
+      "adds": "Bloodborne's own PS4 code run on PC, its graphics translated to Vulkan: 60 fps and more with the community patches, and online play (beta)",
+      "tags": ["widescreen"],
+      "team": "Supermedo (Mohammed Albarghouthi)",
+      "basedon": "bbport by deadinside28, and shadPS4's video core by the shadPS4 team",
+      "repo": "https://github.com/Supermedo/bloodborne_pc",
+      "community": "https://discord.gg/yTMG8c4Bqm",
+      "licence": "GPL-2.0",
+      "base": {
+        "title": "Bloodborne (a dump of your own PS4 copy, version 1.09)",
+        "db": { "id": 20960, "title": "Bloodborne", "platform": "Sony Playstation 4" },
+        "match": [
+          { "console": "Sony Playstation 4", "disc": "CUSA00900", "fit": "fits" },
+          { "console": "Sony Playstation 4", "disc": "CUSA00207", "fit": "fits" },
+          { "console": "Sony Playstation 4", "disc": "CUSA00208", "fit": "fits" },
+          { "console": "Sony Playstation 4", "disc": "CUSA00299", "fit": "fits" },
+          { "console": "Sony Playstation 4", "disc": "CUSA01363", "fit": "fits" },
+          { "console": "Sony Playstation 4", "disc": "CUSA03173", "fit": "fits" },
+          { "console": "Sony Playstation 4", "disc": "CUSA03179", "fit": "fits" },
+          { "console": "Sony Playstation 4", "disc": "CUSA03014", "fit": "fits" },
+          { "console": "Sony Playstation 4", "disc": "CUSA03023", "fit": "fits" }
+        ]
+      }
+    },
+    {
+      "id": "uncharted-pc",
+      "name": "Uncharted: The Nathan Drake Collection for Windows",
+      "kind": "pc",
+      "console": "Sony Playstation 4",
+      "adds": "The three Uncharted games of the PS4 collection on PC: 60 or 120 fps, FSR and DLSS, keyboard and mouse",
+      "tags": ["widescreen"],
+      "team": "Supermedo (Mohammed Albarghouthi)",
+      "basedon": "bbport by deadinside28, and shadPS4's video core by the shadPS4 team",
+      "repo": "https://github.com/Supermedo/uncharted_pc",
+      "community": "https://discord.gg/s3RgH6cRfJ",
+      "licence": "GPL-2.0",
+      "base": {
+        "title": "Uncharted: The Nathan Drake Collection (a dump of your own PS4 copy)",
+        "db": { "id": 31758, "title": "Uncharted: The Nathan Drake Collection", "platform": "Sony Playstation 4" },
+        "match": [
+          { "console": "Sony Playstation 4", "disc": "CUSA02343", "fit": "fits" },
+          { "console": "Sony Playstation 4", "disc": "CUSA02320", "fit": "fits" }
+        ]
+      }
+    },
+    {
+      "id": "gow3-pc",
+      "name": "God of War III Remastered for PC",
+      "kind": "pc",
+      "console": "Sony Playstation 4",
+      "adds": "God of War III Remastered's own PS4 code run on PC, its graphics translated to Vulkan, at high frame rates",
+      "tags": ["widescreen"],
+      "team": "Felipe Prado (FelipePrado0)",
+      "basedon": "Supermedo's Windows port of bbport by deadinside28, and shadPS4's video core by the shadPS4 team",
+      "repo": "https://github.com/FelipePrado0/gow3_pc",
+      "licence": "GPL-2.0",
+      "base": {
+        "title": "God of War III Remastered (a dump of your own PS4 copy, version 1.00 or 1.02)",
+        "db": { "id": 30763, "title": "God of War III: Remastered", "platform": "Sony Playstation 4" },
+        "match": [
+          { "console": "Sony Playstation 4", "disc": "CUSA01623", "fit": "fits" },
+          { "console": "Sony Playstation 4", "disc": "CUSA01715", "fit": "fits" }
+        ]
+      }
+    },
+    {
+      "id": "sotc-pc",
+      "name": "Shadow of the Colossus PC",
+      "kind": "pc",
+      "console": "Sony Playstation 4",
+      "adds": "The PS4 Shadow of the Colossus run on PC, its graphics translated to Vulkan; its sound needs two system files from your own PS4",
+      "tags": [],
+      "team": "AjncSystem",
+      "basedon": "bbport's loader by deadinside28, and shadPS4's video core by the shadPS4 team",
+      "repo": "https://github.com/AjncSystem/ShadowOfTheColossus-PC",
+      "licence": "GPL-2.0",
+      "base": {
+        "title": "Shadow of the Colossus (a dump of your own PS4 copy, CUSA08809)",
+        "db": { "id": 129103, "title": "Shadow of the Colossus", "platform": "Sony Playstation 4" },
+        "match": [ { "console": "Sony Playstation 4", "disc": "CUSA08809", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "ctr-high-octane",
+      "name": "Crash Team Racing: High Octane",
+      "kind": "pc",
+      "console": "Sony Playstation",
+      "adds": "Crash Team Racing as a native PC game built from its decompilation, with high frame rates, widescreen and modern controls",
+      "tags": ["widescreen"],
+      "team": "Alessio Tosto (Rinnegatamante)",
+      "basedon": "ctr-native by the CTR-tools team, itself built on the CTR-ModSDK decompilation",
+      "repo": "https://github.com/Rinnegatamante/Crash-Team-Racing-High-Octane",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "CTR: Crash Team Racing (USA)",
+        "db": { "id": 1007, "title": "CTR: Crash Team Racing", "platform": "Sony Playstation" },
+        "match": [ { "console": "Sony Playstation", "discs": ["SCUS-94426"], "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "^ctr-high-octane-(x64[.]win|win[.]x64)[.]zip$",
+        "folder": "CTR High Octane",
+        "run": "Crash Team Racing - High Octane.exe",
+        "game": { "discs": "assets", "name": "ctr-u", "rename": true },
+        "first": "It reads your disc from its assets folder and starts."
+      }
+    },
+    {
+      "id": "silent-hill-pc",
+      "name": "Silent Hill PC port",
+      "kind": "pc",
+      "console": "Sony Playstation",
+      "adds": "Silent Hill as a native PC game built from its decompilation, playable start to finish, with widescreen and higher resolutions. Its team says it was made largely with AI.",
+      "tags": ["widescreen"],
+      "team": "SlickAmogus",
+      "basedon": "the Silent Hill decompilation by the shdecompilations team, and PsyCross by SoapyMan",
+      "page": "https://sh1pc.com",
+      "repo": "https://github.com/SlickAmogus/silent-hill-decomp",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Silent Hill (USA)",
+        "db": { "id": 1014, "title": "Silent Hill", "platform": "Sony Playstation" },
+        "match": [ { "console": "Sony Playstation", "discs": ["SLUS-00707"], "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "tag": "crossplatform-beta",
+        "asset": "^SHPC_beta-[0-9.]+[.]zip$",
+        "folder": "Silent Hill PC",
+        "run": "SilentHillPC.exe",
+        "game": { "discs": "gamedata" },
+        "first": "It reads your disc from its gamedata folder and starts."
+      }
+    },
+    {
+      "id": "dkc1-recomp",
+      "name": "DKC1Recomp",
+      "kind": "pc",
+      "console": "Super Nintendo Entertainment System",
+      "adds": "Donkey Kong Country recompiled to run natively on PC, with widescreen and modern options. Its team says it was made with AI help.",
+      "tags": ["widescreen"],
+      "team": "elliotttate and the DKC1Recomp contributors",
+      "repo": "https://github.com/elliotttate/DKC1Recomp",
+      "licence": "MIT",
+      "base": {
+        "title": "Donkey Kong Country (USA)",
+        "db": { "id": 131, "title": "Donkey Kong Country", "platform": "Super Nintendo Entertainment System" },
+        "match": [ { "console": "Super Nintendo Entertainment System", "name": "Donkey Kong Country (USA)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "-Windows-x64[.]zip$",
+        "folder": "DKC1Recomp",
+        "run": "DKC1Recomp.exe",
+        "args": "\"{folder}\\rom\\Donkey Kong Country (USA).sfc\"",
+        "game": { "to": "rom/Donkey Kong Country (USA).sfc", "format": "sfc", "sha1": ["0fcee45d9af5d2f62995ed4b04d22146b906c86b"] },
+        "first": "It starts with your game from its rom folder."
+      }
+    },
+    {
+      "id": "dkc3-recomp",
+      "name": "DKC3Recomp",
+      "kind": "pc",
+      "console": "Super Nintendo Entertainment System",
+      "adds": "Donkey Kong Country 3 recompiled to run natively on PC, with widescreen and modern options. Its team says it was made with AI help.",
+      "tags": ["widescreen"],
+      "team": "elliotttate and the DKC3Recomp contributors",
+      "repo": "https://github.com/elliotttate/DKC3Recomp",
+      "licence": "MIT",
+      "base": {
+        "title": "Donkey Kong Country 3 - Dixie Kong's Double Trouble! (USA) (En,Fr)",
+        "db": { "id": 1526, "title": "Donkey Kong Country 3: Dixie Kong's Double Trouble!", "platform": "Super Nintendo Entertainment System" },
+        "match": [ { "console": "Super Nintendo Entertainment System", "name": "Donkey Kong Country 3 - Dixie Kong's Double Trouble! (USA) (En,Fr)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "-windows-x64[.]zip$",
+        "folder": "DKC3Recomp",
+        "run": "DKC3Recomp.exe",
+        "game": { "to": "rom/Donkey Kong Country 3 (USA) (En,Fr).sfc", "format": "sfc", "sha1": ["d737e90d91dba8620fd5c2985eb6ff2cda7f23f9"] },
+        "first": "Its launcher asks for your game once: pick the file in its rom folder."
+      }
+    },
+    {
+      "id": "fzero-snes-recomp",
+      "name": "F-Zero SNES Recomp",
+      "kind": "pc",
+      "console": "Super Nintendo Entertainment System",
+      "adds": "F-Zero recompiled to run natively on PC, with widescreen, CRT shaders and modern controls",
+      "tags": ["widescreen"],
+      "team": "Matthew Stanley (mstan)",
+      "repo": "https://github.com/mstan/FZeroSNESRecomp",
+      "licence": "MIT",
+      "base": {
+        "title": "F-Zero (USA)",
+        "db": { "id": 10779, "title": "F-Zero", "platform": "Super Nintendo Entertainment System" },
+        "match": [ { "console": "Super Nintendo Entertainment System", "name": "F-Zero (USA)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "-windows-x64[.]zip$",
+        "folder": "F-Zero SNES Recomp",
+        "run": "FZeroSNESRecomp.exe",
+        "game": { "to": "F-Zero (USA).sfc", "format": "sfc", "sha1": ["d3efd32b68f1fe37a82db9d9929b7ca7cc1a3af4"] },
+        "first": "It finds your game beside it; if it asks, pick F-Zero (USA).sfc in its folder, and it remembers it."
+      }
+    },
+    {
+      "id": "ffta-recomp",
+      "name": "FFTARecomp",
+      "kind": "pc",
+      "console": "Nintendo Game Boy Advance",
+      "adds": "Final Fantasy Tactics Advance recompiled to run natively on PC: its installer builds the game from your own copy, on your PC",
+      "tags": ["widescreen"],
+      "team": "Jorge Rios (Jorge262007)",
+      "basedon": "gba-recomp by JRickey",
+      "repo": "https://github.com/Jorge262007/FFTARecomp",
+      "licence": "MIT",
+      "base": {
+        "title": "Final Fantasy Tactics Advance (USA)",
+        "db": { "id": 2497, "title": "Final Fantasy Tactics Advance", "platform": "Nintendo Game Boy Advance" },
+        "match": [ { "console": "Nintendo Game Boy Advance", "name": "Final Fantasy Tactics Advance (USA)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "^FFTARecomp-windows-x86_64[.]zip$",
+        "folder": "FFTARecomp",
+        "run": "Installer.exe",
+        "game": { "to": "rom/Final Fantasy Tactics Advance (USA).gba", "format": "gba", "sha1": ["4ac05441f4de70a4ec3dd932116346c61b8783d9"] },
+        "first": "Its installer opens first: pick the file in its rom folder and press Recompile & Install. It builds the game into your user folder, which takes a few minutes, then starts it."
+      }
+    },
+    {
+      "id": "z2rs",
+      "name": "z2rs",
+      "kind": "pc",
+      "console": "Nintendo Entertainment System",
+      "adds": "Zelda II rebuilt from scratch in Rust: real widescreen, HD sprite packs, two-player co-op on one PC or online, save states, a randomizer and optional gameplay changes",
+      "tags": ["widescreen", "coop"],
+      "team": "Troy Edwards Jr. (troyedwardsjr)",
+      "basedon": "a CC0 Zelda II disassembly",
+      "repo": "https://github.com/troyedwardsjr/z2rs",
+      "licence": "MIT",
+      "base": {
+        "title": "Zelda II - The Adventure of Link (USA)",
+        "db": { "id": 2758, "title": "Zelda II: The Adventure of Link", "platform": "Nintendo Entertainment System" },
+        "match": [ { "console": "Nintendo Entertainment System", "name": "Zelda II - The Adventure of Link (USA)", "fit": "fits" } ]
+      },
+      "yours": { "console": "Windows", "title": "z2rs" },
+      "make": {
+        "how": "release",
+        "asset": "-x86_64-pc-windows-msvc[.]zip$",
+        "folder": "z2rs",
+        "run": "z2rs-launcher.exe",
+        "game": { "to": "rom/Zelda II - The Adventure of Link (USA).nes", "format": "nes", "sha1": ["353489a57f24a429572e76bd455bc51d821f7036"] },
+        "first": "Its launcher asks for your game once: pick the file in its rom folder."
+      }
+    },
+    {
+      "id": "epoch-equinox",
+      "name": "Epoch & Equinox",
+      "kind": "pc",
+      "console": "Nintendo Game Boy Color",
+      "adds": "The Legend of Zelda: Oracle of Ages and Oracle of Seasons recompiled to run natively on PC",
+      "tags": [],
+      "team": "ZakyPew and the Epoch & Equinox contributors",
+      "basedon": "gb-recompiled (GB-Recomp's fork of arcanite24's)",
+      "repo": "https://github.com/ZakyPew/epoch-equinox",
+      "licence": "MIT",
+      "base": {
+        "title": "Legend of Zelda, The - Oracle of Ages (USA, Australia)",
+        "db": { "id": 6122, "title": "The Legend of Zelda: Oracle of Ages", "platform": "Nintendo Game Boy Color" },
+        "match": [
+          { "console": "Nintendo Game Boy Color", "name": "Legend of Zelda, The - Oracle of Ages (USA, Australia)", "fit": "fits" },
+          { "console": "Nintendo Game Boy Color", "name": "Legend of Zelda, The - Oracle of Seasons (USA, Australia)", "fit": "fits" }
+        ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "^epoch-equinox-windows-x64[.]zip$",
+        "folder": "Epoch and Equinox",
+        "run": "Epoch & Equinox Launcher.exe",
+        "game": { "to": "roms/{release}.gbc", "format": "gbc", "sha1": ["880374fb978b18af4aa529e2e32f7ffb4d7dd2f4", "ba1268290fb2b1b70505d2d7b5825fc8a4816a4b"] },
+        "first": "It lists your game from its roms folder. To play the other Oracle game too, put it in that folder."
+      }
+    },
+    {
+      "id": "the-oracles-project",
+      "name": "The Oracles Project",
+      "kind": "pc",
+      "console": "Nintendo Game Boy Color",
+      "adds": "Oracle of Ages and Oracle of Seasons in an unchanged SameBoy core with a widescreen Enhanced mode that shows the rooms around you, a smooth camera, item hotkeys and Lua mods. Its team says it was made with AI help.",
+      "tags": ["widescreen"],
+      "team": "thibautbus",
+      "basedon": "SameBoy by Lior Halphon and mGBA by Vicki Pfau",
+      "repo": "https://github.com/thibautbus/top",
+      "licence": "MIT",
+      "base": {
+        "title": "Legend of Zelda, The - Oracle of Ages (USA, Australia)",
+        "db": { "id": 6122, "title": "The Legend of Zelda: Oracle of Ages", "platform": "Nintendo Game Boy Color" },
+        "match": [
+          { "console": "Nintendo Game Boy Color", "name": "Legend of Zelda, The - Oracle of Ages (USA, Australia)", "fit": "fits" },
+          { "console": "Nintendo Game Boy Color", "name": "Legend of Zelda, The - Oracle of Seasons (USA, Australia)", "fit": "fits" }
+        ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "-windows[.]zip$",
+        "folder": "The Oracles Project",
+        "run": "the-oracles-project.exe",
+        "game": { "to": "roms/{release}.gbc", "format": "gbc", "sha1": ["880374fb978b18af4aa529e2e32f7ffb4d7dd2f4", "ba1268290fb2b1b70505d2d7b5825fc8a4816a4b"] },
+        "first": "Its launcher asks for your game: on its Cartridge page pick the file in its roms folder."
+      }
+    },
+    {
+      "id": "gen1recomp",
+      "name": "Gen1Recomp (G1R Deluxe)",
+      "kind": "pc",
+      "console": "Nintendo Game Boy",
+      "adds": "Based on the Pokemon Gen 1 Recompilation Project by BOIS CLUB GAMES, LLC (https://github.com/bryanthaboi/gen1recomp). Pokemon Red to Crystal rebuilt by hand for PC, with an optional 3D look, online battles and trades, and mods; Gen 2 is still being built. Its team says it was made with AI help.",
+      "tags": [],
+      "team": "BOIS CLUB GAMES, LLC",
+      "basedon": "the pret Pokemon disassemblies",
+      "repo": "https://github.com/bryanthaboi/gen1recomp",
+      "licence": "GPL-3.0 with additional terms: this credit shown, and its own launcher passed on only unchanged",
+      "base": {
+        "title": "Pokemon - Red Version (USA, Europe) (SGB Enhanced)",
+        "db": { "id": 2356, "title": "Pokemon Red Version", "platform": "Nintendo Game Boy" },
+        "match": [
+          { "console": "Nintendo Game Boy", "name": "Pokemon - Red Version (USA, Europe) (SGB Enhanced)", "fit": "fits" },
+          { "console": "Nintendo Game Boy", "name": "Pokemon - Blue Version (USA, Europe) (SGB Enhanced)", "fit": "fits" },
+          { "console": "Nintendo Game Boy", "name": "Pokemon - Yellow Version - Special Pikachu Edition (USA, Europe) (CGB+SGB Enhanced)", "fit": "fits" },
+          { "console": "Nintendo Game Boy Color", "name": "Pokemon - Gold Version (USA, Europe) (SGB Enhanced) (GB Compatible)", "fit": "fits" },
+          { "console": "Nintendo Game Boy Color", "name": "Pokemon - Silver Version (USA, Europe) (SGB Enhanced) (GB Compatible)", "fit": "fits" },
+          { "console": "Nintendo Game Boy Color", "name": "Pokemon - Crystal Version (USA, Europe) (Rev 1)", "fit": "fits" }
+        ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "^gen1recomp-[0-9.]+-windows[.]zip$",
+        "folder": "Gen1Recomp",
+        "run": "gen1recomp.exe",
+        "credit": "Based on the Pokemon Gen 1 Recompilation Project by BOIS CLUB GAMES, LLC (https://github.com/bryanthaboi/gen1recomp)",
+        "game": { "to": "roms/{release}.gb", "format": "gb", "sha1": ["ea9bcae617fdf159b045185467ae58b2e4a48b9a", "d7037c83e1ae5b39bde3c30787637ba1d4c48ce2", "cc7d03262ebfaf2f06772c1a480c7d9d5f4a38e1", "d8b8a3600a465308c9953dfa04f0081c05bdcb94", "49b163f7e57702bc939d642a18f591de55d92dae", "f2f52230b536214ef7c9924f483392993e226cfb"] },
+        "first": "Its launcher asks for your game: pick the one in its roms folder. Your other Pokemon games can be picked where they are."
+      }
+    },
+    {
+      "id": "megaman64-recompiled",
+      "name": "Mega Man 64: Recompiled",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Mega Man 64 recompiled for PC: high frame rates, widescreen, instant loads and modern controls",
+      "tags": ["widescreen"],
+      "team": "RaieFox and the Mega Man 64: Recompiled team",
+      "basedon": "N64Recomp by Wiseguy",
+      "repo": "https://github.com/MegaMan64Recomp/MegaMan64Recompiled",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Mega Man 64 (USA)",
+        "db": { "id": 1138, "title": "Mega Man 64", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Mega Man 64 (USA)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "-Windows\\.zip$",
+        "folder": "Mega Man 64 Recompiled",
+        "run": "MegaMan64Recompiled.exe",
+        "write": ["portable.txt"],
+        "game": { "to": "megaman.n64.us.1.0.z64", "format": "z64", "sha1": ["f24fe0aff01aec018e2dd558ec4f076cf328129f"] },
+        "first": "Its own window opens first: press Start Game there."
+      }
+    },
+    {
+      "id": "snap64-recomp",
+      "name": "Snap64 Recomp",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Pokemon Snap as a native PC game: it plays like the cartridge by default, with widescreen, higher frame rates and more to switch on. Its team says it was made largely with AI.",
+      "tags": ["widescreen"],
+      "team": "JackandBeans",
+      "basedon": "N64Recomp by Wiseguy and RT64 by Dario",
+      "repo": "https://github.com/JackandBeans/Snap64Recomp",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Pokemon Snap (USA)",
+        "db": { "id": 390, "title": "Pokemon Snap", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Pokemon Snap (USA)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "-win64\\.zip$",
+        "folder": "Snap64 Recomp",
+        "run": "Snap64Recomp.exe",
+        "game": { "to": "pokemonsnap.z64", "format": "z64", "sha1": ["edc7c49cc568c045fe48be0d18011c30f393cbaf"] },
+        "first": "It reads your game from pokemonsnap.z64 beside it and starts."
+      }
+    },
+    {
+      "id": "cbfd-recompiled",
+      "name": "Conker's Bad Fur Day: Recompiled",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Conker's Bad Fur Day recompiled for PC, with widescreen, smooth frame rates and modern controls. Its team says it was made largely with AI.",
+      "tags": ["widescreen"],
+      "team": "Sean Ciaschi (sciaschi)",
+      "basedon": "N64Recomp by Wiseguy and RT64 by Dario",
+      "repo": "https://github.com/sciaschi/CBFD-Recompiled",
+      "licence": "MIT",
+      "base": {
+        "title": "Conker's Bad Fur Day (USA)",
+        "db": { "id": 249, "title": "Conker's Bad Fur Day", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Conker's Bad Fur Day (USA)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "-Windows\\.zip$",
+        "folder": "Conker Recompiled",
+        "run": "ConkerRecomp.exe",
+        "write": ["portable.txt"],
+        "game": { "to": "conker.n64.us.1.0.z64", "format": "z64", "sha1": ["4cbadd3c4e0729dec46af64ad018050eada4f47a"] },
+        "first": "Its own window opens first: press Start Game there."
+      }
+    },
+    {
+      "id": "conkerbfd-reloaded",
+      "name": "Conker's Bad Fur Day: Reloaded",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Conker's Bad Fur Day running natively on PC, with a Classic mode true to the N64 and a Modern mode with widescreen and a smooth frame rate",
+      "tags": ["widescreen"],
+      "team": "Dah Sidi Abdallah (DahSidiAbdallah)",
+      "basedon": "N64Recomp by Wiseguy and RT64 by Dario",
+      "repo": "https://github.com/DahSidiAbdallah/ConkerBFDReloaded",
+      "licence": "MIT",
+      "base": {
+        "title": "Conker's Bad Fur Day (USA)",
+        "db": { "id": 249, "title": "Conker's Bad Fur Day", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Conker's Bad Fur Day (USA)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "-Windows\\.zip$",
+        "folder": "Conker Reloaded",
+        "run": "ConkerBFDReloaded.exe",
+        "write": ["portable.txt"],
+        "game": { "to": "conker.n64.us.1.0.z64", "format": "z64", "sha1": ["4cbadd3c4e0729dec46af64ad018050eada4f47a"] },
+        "first": "Its own window opens first: press Start Game there."
+      }
+    },
+    {
+      "id": "dkr-r",
+      "name": "DKR-R: Diddy Kong Racing Recompiled",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Diddy Kong Racing recompiled for PC, with widescreen, high frame rates, custom tracks and music, and online play. Its team says it was made with AI help.",
+      "tags": ["widescreen", "levels"],
+      "team": "ThatGuyMcd and the DKR-R contributors",
+      "basedon": "N64Recomp by Wiseguy and RT64 by Dario",
+      "repo": "https://github.com/ThatGuyMcd/DKR-R",
+      "community": "https://discord.com/invite/AMWfXdBjNP",
+      "licence": "MIT",
+      "base": {
+        "title": "Diddy Kong Racing (USA) (En,Fr) (Rev 1)",
+        "db": { "id": 178, "title": "Diddy Kong Racing", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Diddy Kong Racing (USA) (En,Fr) (Rev 1)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "-Windows-x64\\.zip$",
+        "folder": "DKR-R",
+        "run": "DKR-R.exe",
+        "game": { "to": "rom/Diddy Kong Racing (USA) (En,Fr) (Rev 1).z64", "format": "z64", "sha1": ["6d96743d46f8c0cd0edb0ec5600b003c89b93755"] },
+        "first": "Its own window asks for your game: choose Play, then Add a ROM, and pick the file in its rom folder."
+      }
+    },
+    {
+      "id": "golden-balloon",
+      "name": "Golden Balloon",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Diddy Kong Racing as a native PC game built from its decompilation, with widescreen and high frame rates",
+      "tags": ["widescreen"],
+      "team": "akratch and the Golden Balloon contributors",
+      "basedon": "the Diddy Kong Racing decompilation",
+      "repo": "https://github.com/akratch/goldenballoon",
+      "community": "https://discord.gg/xfjEEHx5X9",
+      "licence": "MIT",
+      "base": {
+        "title": "Diddy Kong Racing (USA) (En,Fr) (Rev 1)",
+        "db": { "id": 178, "title": "Diddy Kong Racing", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Diddy Kong Racing (USA) (En,Fr) (Rev 1)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "-windows-x64\\.zip$",
+        "folder": "Golden Balloon",
+        "run": "GoldenBalloon.exe",
+        "args": "--rom \"{folder}\\rom\\Diddy Kong Racing (USA) (En,Fr) (Rev 1).z64\"",
+        "game": { "to": "rom/Diddy Kong Racing (USA) (En,Fr) (Rev 1).z64", "format": "z64", "sha1": ["6d96743d46f8c0cd0edb0ec5600b003c89b93755"] },
+        "first": "It starts with your game from its rom folder."
+      }
+    },
+    {
+      "id": "goldeneye-pc-port",
+      "name": "GoldenEye 007 PC Port",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "GoldenEye 007 as a native PC game built from its decompilation, with widescreen, mouse aiming and split screen. Its team says it was made with AI help.",
+      "tags": ["widescreen", "coop"],
+      "team": "James Dansereau (jkdansereau)",
+      "basedon": "the GoldenEye 007 decompilation by n64decomp",
+      "page": "https://jkdansereau.github.io/goldeneye-pc-port/",
+      "repo": "https://github.com/jkdansereau/goldeneye-pc-port",
+      "licence": "MIT",
+      "base": {
+        "title": "GoldenEye 007 (USA)",
+        "db": { "id": 160, "title": "GoldenEye 007", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "GoldenEye 007 (USA)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "-win64\\.zip$",
+        "folder": "GoldenEye PC Port",
+        "run": "ge007.x86_64.exe",
+        "game": { "to": "data/ge007.ntsc-final.z64", "format": "z64", "sha1": ["abe01e4aeb033b6c0836819f549c791b26cfde83"] },
+        "first": "Its first start reads your game from its data folder, which takes a few extra seconds."
+      }
+    },
+    {
+      "id": "birdman64",
+      "name": "Birdman64",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Pilotwings 64 as a native PC game, with widescreen, 144 Hz and up, and gamepads. Its team says it was made largely with AI.",
+      "tags": ["widescreen"],
+      "team": "Noah van der Vleuten (NoahVl) and the Birdman64 contributors",
+      "basedon": "the Pilotwings 64 decompilation",
+      "repo": "https://github.com/NoahVl/Birdman64",
+      "licence": "MIT",
+      "base": {
+        "title": "Pilotwings 64 (USA)",
+        "db": { "id": 961, "title": "Pilotwings 64", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Pilotwings 64 (USA)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "^Birdman64-windows-x64\\.zip$",
+        "folder": "Birdman64",
+        "run": "Birdman64.exe",
+        "game": { "to": "rom/Pilotwings 64 (USA).z64", "format": "z64", "sha1": ["ec771aedf54ee1b214c25404fb4ec51cfd43191a"] },
+        "first": "It finds your game in its rom folder and starts."
+      }
+    },
+    {
+      "id": "cvlod-recomp",
+      "name": "Castlevania: Legacy of Darkness Recomp",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Castlevania: Legacy of Darkness recompiled for PC, with widescreen and higher frame rates. Its team says it was made with AI help.",
+      "tags": ["widescreen"],
+      "team": "fliperama86",
+      "basedon": "N64Recomp by Wiseguy and RT64 by Dario",
+      "repo": "https://github.com/fliperama86/cvlod_recomp",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Castlevania - Legacy of Darkness (USA)",
+        "db": { "id": 246, "title": "Castlevania: Legacy of Darkness", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Castlevania - Legacy of Darkness (USA)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "-windows-x64\\.zip$",
+        "folder": "Legacy of Darkness Recomp",
+        "run": "LodRecomp.exe",
+        "game": { "to": "rom.z64", "format": "z64", "sha1": ["879ead98f197fd05edda867655da5b1ce25aa5b8"] },
+        "first": "It reads your game from rom.z64 beside it and starts."
+      }
+    },
+    {
+      "id": "body-harvest-recomp",
+      "name": "Body Harvest: Recompiled",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Body Harvest recompiled for PC with RT64, with widescreen, higher frame rates, saves and rumble. Its team says it was made with AI help.",
+      "tags": ["widescreen"],
+      "team": "danielgomesvieira2000 and the Body Harvest: Recompiled contributors",
+      "basedon": "N64Recomp by Wiseguy and RT64 by Dario",
+      "repo": "https://github.com/danielgomesvieira2000/body-harvest-recomp",
+      "licence": "MIT",
+      "base": {
+        "title": "Body Harvest (USA)",
+        "db": { "id": 244, "title": "Body Harvest", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Body Harvest (USA)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "^body-harvest-recomp-[0-9.]+-windows-x64\\.zip$",
+        "folder": "Body Harvest Recompiled",
+        "run": "body-harvest-recomp.exe",
+        "args": "\"{folder}\\Body Harvest (USA).z64\"",
+        "game": { "to": "Body Harvest (USA).z64", "format": "z64", "sha1": ["bbb6666f5014a473747ee4145f036d9fb25d7348"] },
+        "first": "It starts with your game beside it."
+      }
+    },
+    {
+      "id": "glover-r",
+      "name": "Glover-R",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Glover recompiled for PC, with widescreen and higher frame rates",
+      "tags": ["widescreen"],
+      "team": "ThatGuyMcd",
+      "basedon": "Rocket-R by ThatGuyMcd, and N64Recomp by Wiseguy and RT64 by Dario",
+      "repo": "https://github.com/ThatGuyMcd/Glover-R",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Glover (USA)",
+        "db": { "id": 1110, "title": "Glover", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Glover (USA)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "-Windows-x64\\.zip$",
+        "folder": "Glover-R",
+        "run": "Glover-R.exe",
+        "game": { "to": "rom/Glover (USA).z64", "format": "z64", "sha1": ["270be17b3c8da9b88a7b99c2a545b0bce16837f4"] },
+        "first": "Its own window asks for your game: pick the file in its rom folder, then Play."
+      }
+    },
+    {
+      "id": "starcraft64-native",
+      "name": "StarCraft 64 native port",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "StarCraft 64 as a native PC game, its program made from your game on your PC at its first start",
+      "tags": [],
+      "team": "Nomadic (n0madic) and the StarCraft 64 native port contributors",
+      "basedon": "N64Recomp by Wiseguy",
+      "repo": "https://github.com/n0madic/StarCraft64-recomp",
+      "licence": "MIT",
+      "base": {
+        "title": "StarCraft 64 (USA)",
+        "db": { "id": 1207, "title": "StarCraft 64", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "StarCraft 64 (USA)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "-launcher-windows-x86_64\\.zip$",
+        "folder": "StarCraft 64",
+        "run": "StarCraft64.exe",
+        "game": { "to": "rom/StarCraft 64 (USA).z64", "format": "z64", "sha1": ["a36d91b5aac7bb95df0d7de5f9814f5270e25c2b"] },
+        "first": "Its own window asks for your game: press Select ROM and pick the file in its rom folder; its first start then builds the game, which takes a while."
+      }
+    },
+    {
+      "id": "btga-pc-port",
+      "name": "BattleTanx: Global Assault PC Port",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "BattleTanx: Global Assault as a native PC game, with split screen and online play",
+      "tags": ["coop"],
+      "team": "TheGh0stShip",
+      "basedon": "N64Recomp by Wiseguy and RT64 by Dario",
+      "repo": "https://github.com/TheGh0stShip/BattleTanx-Global-Assault-PC-Port",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "BattleTanx - Global Assault (USA)",
+        "db": { "id": 242, "title": "BattleTanx: Global Assault", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "BattleTanx - Global Assault (USA)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "-windows-x64-portable\\.zip$",
+        "folder": "BattleTanx GA PC Port",
+        "run": "BattleTanxGA.exe",
+        "args": "\"{folder}\\rom\\BattleTanx - Global Assault (USA).z64\"",
+        "game": { "to": "rom/BattleTanx - Global Assault (USA).z64", "format": "z64", "sha1": ["805248fb0a0ee694cad8d7dc927b631d860dd8cf"] },
+        "first": "It starts with your game from its rom folder."
+      }
+    },
+    {
+      "id": "btga-recompiled",
+      "name": "BattleTanx: Global Assault Recompiled",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "BattleTanx: Global Assault recompiled for PC, with widescreen and higher frame rates. Its team says it was made with AI help.",
+      "tags": ["widescreen"],
+      "team": "wootbeer",
+      "basedon": "N64Recomp by Wiseguy and RT64 by Dario",
+      "repo": "https://github.com/wootbeer/btgarecomp",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "BattleTanx - Global Assault (USA)",
+        "db": { "id": 242, "title": "BattleTanx: Global Assault", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "BattleTanx - Global Assault (USA)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "-windows\\.zip$",
+        "folder": "BattleTanx GA Recompiled",
+        "run": "BattleTanxGARecompiled.exe",
+        "write": ["portable.txt"],
+        "game": { "to": "btga.n64.us.1.0.z64", "format": "z64", "sha1": ["805248fb0a0ee694cad8d7dc927b631d860dd8cf"] },
+        "first": "Its own window opens first: press Start Game there."
+      }
+    },
+    {
+      "id": "battletanx-recompiled",
+      "name": "BattleTanx Recompiled",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "BattleTanx recompiled for PC, with widescreen and higher frame rates. Its team says it was made with AI help.",
+      "tags": ["widescreen"],
+      "team": "wootbeer",
+      "basedon": "N64Recomp by Wiseguy and RT64 by Dario",
+      "repo": "https://github.com/wootbeer/btrecomp",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "BattleTanx (USA)",
+        "db": { "id": 241, "title": "BattleTanx", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "BattleTanx (USA)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "-windows\\.zip$",
+        "folder": "BattleTanx Recompiled",
+        "run": "BattleTanxRecompiled.exe",
+        "write": ["portable.txt"],
+        "game": { "to": "btx.n64.us.1.0.z64", "format": "z64", "sha1": ["535860d941738ac1210c20a9b80114fea0e0ff17"] },
+        "first": "Its own window opens first: press Start Game there."
+      }
+    },
+    {
+      "id": "dinotale",
+      "name": "DinoTale: Yoshi's Story Recompiled",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Yoshi's Story recompiled for PC, with widescreen and higher frame rates. Its team says it was made with AI help.",
+      "tags": ["widescreen"],
+      "team": "wootbeer",
+      "basedon": "N64Recomp by Wiseguy and RT64 by Dario",
+      "repo": "https://github.com/wootbeer/dinotale",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Yoshi's Story (USA) (En,Ja)",
+        "db": { "id": 419, "title": "Yoshi's Story", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Yoshi's Story (USA) (En,Ja)", "fit": "fits" } ]
+      },
+      "make": {
+        "how": "release",
+        "asset": "-windows\\.zip$",
+        "folder": "DinoTale",
+        "run": "DinoTale.exe",
+        "write": ["portable.txt"],
+        "game": { "to": "yoshisstory.n64.us.z64", "format": "z64", "sha1": ["b13072fef6c6df48c07d8822c01e5bc59036f6da"] },
+        "first": "Its own window opens first: press Start Game there."
+      }
+    },
+    {
+      "id": "pokemon-stadium-recomp",
+      "name": "Pokemon Stadium Recomp",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Pokemon Stadium recompiled for PC (a beta; the team has archived it). Its team says it was made with AI help.",
+      "tags": [],
+      "team": "Matthew Stanley (mstan)",
+      "basedon": "a fork of N64Recomp by Wiseguy, and RT64 by Dario",
+      "repo": "https://github.com/mstan/PokemonStadiumRecomp",
+      "community": "https://discord.gg/Ad9BwSzctP",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Pokemon Stadium (USA)",
+        "db": { "id": 391, "title": "Pokemon Stadium", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Pokemon Stadium (USA)", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "paperboat",
+      "name": "PaperBoat",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Paper Mario rebuilt for PC from its decompilation: widescreen and ultrawide, higher frame rates, HD texture packs, a save editor and many options.",
+      "tags": ["widescreen"],
+      "team": "Harbour Masters",
+      "basedon": "the Paper Mario decompilation by pmret, and libultraship by Kenix3 and Harbour Masters",
+      "page": "https://www.harbourmasters.org",
+      "repo": "https://github.com/HarbourMasters/PaperBoat",
+      "community": "https://discord.gg/harbourmasters",
+      "licence": "CC0-1.0",
+      "base": {
+        "title": "Paper Mario (USA)",
+        "db": { "id": 141, "title": "Paper Mario", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Paper Mario (USA)", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "bm64-recompiled",
+      "name": "Bomberman 64: Recompiled",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Bomberman 64 recompiled for PC: high frame rates, widescreen and ultrawide, low input lag, instant loads, and mods and texture packs.",
+      "tags": ["widescreen"],
+      "team": "Revo (RevoSucks)",
+      "basedon": "N64Recomp by Wiseguy and RT64 by Dario",
+      "repo": "https://github.com/RevoSucks/BM64Recomp",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Bomberman 64 (USA)",
+        "db": { "id": 1072, "title": "Bomberman 64", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Bomberman 64 (USA)", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "extremeg-recompiled",
+      "name": "Extreme-G: Recompiled",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Extreme-G recompiled for PC: high frame rates, widescreen and ultrawide, low input lag, instant loads, and mods and texture packs.",
+      "tags": ["widescreen"],
+      "team": "Sonic Dreamcaster",
+      "basedon": "N64Recomp by Wiseguy and RT64 by Dario",
+      "page": "https://gitlab.com/sonicdcer/ExtremeGRecomp",
+      "repo": "https://github.com/ExtremeGRecomp/ExtremeGRecomp",
+      "community": "https://discord.gg/AWZThJ4dPf",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Extreme-G (USA)",
+        "db": { "id": 957, "title": "Extreme-G", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Extreme-G (USA)", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "snowboardkids2-recompiled",
+      "name": "Snowboard Kids 2: Recompiled",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Snowboard Kids 2 recompiled for PC: high frame rates, widescreen and ultrawide, low input lag, instant loads, and mods and texture packs. Its author says the decompilation under it was made with AI help.",
+      "tags": ["widescreen"],
+      "team": "Chris Lewis (cdlewis)",
+      "basedon": "N64Recomp by Wiseguy and RT64 by Dario",
+      "repo": "https://github.com/cdlewis/snowboardkids2-recomp",
+      "community": "https://discord.gg/bwQ85rUED",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Snowboard Kids 2 (USA)",
+        "db": { "id": 1203, "title": "Snowboard Kids 2", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Snowboard Kids 2 (USA)", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "snowboardkids-recompiled",
+      "name": "Snowboard Kids: Recompiled",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Snowboard Kids recompiled for PC: high frame rates, widescreen and ultrawide, low input lag, instant loads, and mods and texture packs. Its author says the decompilation under it was made with AI help.",
+      "tags": ["widescreen"],
+      "team": "Chris Lewis (cdlewis)",
+      "basedon": "N64Recomp by Wiseguy and RT64 by Dario",
+      "repo": "https://github.com/cdlewis/snowboardkids-recomp",
+      "community": "https://discord.gg/bwQ85rUED",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Snowboard Kids (USA)",
+        "db": { "id": 1202, "title": "Snowboard Kids", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Snowboard Kids (USA)", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "drmario64-recompiled",
+      "name": "Dr. Mario 64 Recompiled",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Dr. Mario 64 recompiled for PC: smooth motion at 60 fps and more, pills drawn on the graphics card, 4-player controller support and CRT effects; very lightly tested.",
+      "tags": [],
+      "team": "theboy181",
+      "basedon": "Dr. Mario 64 Recompiled by AngheloAlf, and N64Recomp by Wiseguy",
+      "repo": "https://github.com/theboy181/drmario64_recomp_plus",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Dr. Mario 64 (USA)",
+        "db": { "id": 1090, "title": "Dr. Mario 64", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Dr. Mario 64 (USA)", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "project-picori",
+      "name": "Project Picori",
+      "kind": "pc",
+      "console": "Nintendo Game Boy Advance",
+      "adds": "The Minish Cap rebuilt as a native PC game: sharp or smooth upscaling, shader filters, quicksaves, a built-in randomizer and text-to-speech; still a work in progress.",
+      "tags": [],
+      "team": "999sian and the Project Picori contributors",
+      "basedon": "Matheo Vignaud's Minish Cap port, and the Minish Cap decompilation by the Zelda Reverse Engineering Team (zeldaret)",
+      "repo": "https://github.com/999sian/tmc",
+      "licence": "GPL-3.0-or-later (its own work; the zeldaret/tmc decompilation it builds on has no licence)",
+      "base": {
+        "title": "Legend of Zelda, The - The Minish Cap (USA)",
+        "db": { "id": 5954, "title": "The Legend of Zelda: The Minish Cap", "platform": "Nintendo Game Boy Advance" },
+        "match": [
+          { "console": "Nintendo Game Boy Advance", "name": "Legend of Zelda, The - The Minish Cap (USA)", "fit": "fits" },
+          { "console": "Nintendo Game Boy Advance", "name": "Legend of Zelda, The - The Minish Cap (Europe) (En,Fr,De,Es,It)", "fit": "fits" },
+          { "console": "Nintendo Game Boy Advance", "name": "Zelda no Densetsu - Fushigi no Boushi (Japan)", "fit": "fits" }
+        ]
+      }
+    },
+    {
+      "id": "metroid-prime-port",
+      "name": "Metroid Prime Port",
+      "kind": "pc",
+      "console": "Nintendo GameCube",
+      "adds": "Metroid Prime rebuilt as a native PC game: widescreen, uncapped frame rate, mouse and twin-stick aim, skippable cutscenes, a randomizer, Archipelago multiworld and HD texture packs. Its team says it was made with AI help.",
+      "tags": ["widescreen"],
+      "team": "Odrannnn and the Metroid Prime Port contributors",
+      "basedon": "the Metroid Prime decompilation by the PrimeDecomp team, and Aurora",
+      "repo": "https://github.com/Odrannnn/MetroidPrimePort",
+      "licence": "MIT (its own code; the game's code it carries is not licensed)",
+      "base": {
+        "title": "Metroid Prime (USA)",
+        "db": { "id": 172, "title": "Metroid Prime", "platform": "Nintendo GameCube" },
+        "match": [
+          { "console": "Nintendo GameCube", "disc": "GM8E01", "fit": "fits" },
+          { "console": "Nintendo GameCube", "disc": "GM8P01", "fit": "works", "note": "works; the team calls PAL support experimental" }
+        ]
+      }
+    },
+    {
+      "id": "acgc-pc-port",
+      "name": "Animal Crossing PC Port",
+      "kind": "pc",
+      "console": "Nintendo GameCube",
+      "adds": "Animal Crossing rebuilt as a native PC game: up to 4K, an unlocked frame rate option, Dolphin HD texture packs and Dolphin saves; still a playtest release. Its team says it was made with AI help.",
+      "tags": [],
+      "team": "FlyingMeta (flyngmt)",
+      "basedon": "the Animal Crossing decompilation by the ACreTeam (ac-decomp)",
+      "repo": "https://github.com/flyngmt/ACGC-PC-Port",
+      "licence": "MIT (its port layer; the ac-decomp decompilation under it is CC0-1.0)",
+      "base": {
+        "title": "Animal Crossing (USA)",
+        "db": { "id": 5768, "title": "Animal Crossing", "platform": "Nintendo GameCube" },
+        "match": [ { "console": "Nintendo GameCube", "disc": "GAFE01", "version": 0, "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "chaotix-recompiled",
+      "name": "Knuckles' Chaotix Recompiled",
+      "kind": "pc",
+      "console": "Sega 32X",
+      "adds": "Knuckles' Chaotix recompiled to native code, with true widescreen in levels, a time attack stage select, achievements and cheats.",
+      "tags": ["widescreen"],
+      "team": "YuutaTsubasa",
+      "repo": "https://github.com/YuutaTsubasa/ChaotixRecompiled",
+      "licence": "MIT (its own code; the translated game code in its builds is not licensed)",
+      "base": {
+        "title": "Knuckles' Chaotix (Japan, USA) (En)",
+        "db": { "id": 2290, "title": "Knuckles' Chaotix", "platform": "Sega 32X" },
+        "match": [ { "console": "Sega 32X", "name": "Knuckles' Chaotix (Japan, USA) (En)", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "bluewake",
+      "name": "BlueWake",
+      "kind": "pc",
+      "console": "Nintendo GameCube",
+      "adds": "The Wind Waker recompiled to native code: widescreen, up to 4x render resolution, smooth motion up to 240 fps, HD texture packs and Better Wind Waker options. Its team says it was made largely with AI.",
+      "tags": ["widescreen"],
+      "team": "Chris Sotraidis and Elliott Tate",
+      "basedon": "DolRecomp by Chris Sotraidis and Aurora, with the Wind Waker decompilation by the Zelda Reverse Engineering Team (zeldaret) as a reference",
+      "repo": "https://github.com/chrissotraidis/bluewake",
+      "community": "https://discord.gg/xwHfUD2bxW",
+      "licence": "GPL-3.0-or-later (its own code; the game code translated into its Windows build is not licensed)",
+      "base": {
+        "title": "The Legend of Zelda: The Wind Waker (USA)",
+        "db": { "id": 174, "title": "The Legend of Zelda: The Wind Waker", "platform": "Nintendo GameCube" },
+        "match": [ { "console": "Nintendo GameCube", "disc": "GZLE01", "version": 0, "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "zeldawwhd-recomp",
+      "name": "ZeldaWWHDRecomp",
+      "kind": "pc",
+      "console": "Wii U",
+      "adds": "The Wii U Wind Waker HD recompiled to native code: 60 fps and more, up to 3x resolution, ultrawide, and quest mods installed from inside the game; its setup builds the game on your PC from your own dump.",
+      "tags": [],
+      "team": "ZeldaWWHDRecomp",
+      "repo": "https://github.com/ZeldaWWHDRecomp/ZeldaWWHDRecomp",
+      "licence": "MPL-2.0",
+      "base": {
+        "title": "The Legend of Zelda: The Wind Waker HD (USA)",
+        "db": { "id": 17824, "title": "The Legend of Zelda: The Wind Waker HD", "platform": "Nintendo Wii U" },
+        "match": [
+          { "console": "Wii U", "disc": "00050000-10143500", "fit": "fits" },
+          { "console": "Wii U", "disc": "00050000-10143600", "fit": "fits" }
+        ]
+      }
+    },
+    {
+      "id": "nebula",
+      "name": "Nebula",
+      "kind": "pc",
+      "console": "Nintendo Wii",
+      "adds": "Super Mario Galaxy recompiled to native code: screens up to 32:9, internal resolution up to 16x, anti-aliasing, keyboard and mouse, and faster text; its setup builds the game on your PC from your own disc. Its team says it was made largely with AI.",
+      "tags": [],
+      "team": "keepvaibin",
+      "repo": "https://github.com/keepvaibin/nebula",
+      "community": "https://discord.gg/2fJEdhAw2f",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Super Mario Galaxy (USA)",
+        "db": { "id": 40, "title": "Super Mario Galaxy", "platform": "Nintendo Wii" },
+        "match": [ { "console": "Nintendo Wii", "disc": "RMGE01", "version": 0, "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "foxhollow",
+      "name": "Foxhollow",
+      "kind": "pc",
+      "console": "Nintendo GameCube",
+      "adds": "Star Fox Adventures rebuilt as a native PC game, kept close to the original; its launcher keeps it up to date, manages saves and installs mods.",
+      "tags": [],
+      "team": "Jack Price-Burns",
+      "page": "https://foxhollow.dev",
+      "repo": "https://github.com/JackPriceBurns/foxhollow",
+      "community": "https://discord.gg/d8tTREg56j",
+      "licence": "CC0-1.0",
+      "base": {
+        "title": "Star Fox Adventures (USA)",
+        "db": { "id": 6263, "title": "Star Fox Adventures", "platform": "Nintendo GameCube" },
+        "match": [
+          { "console": "Nintendo GameCube", "disc": "GSAE01", "fit": "fits" },
+          { "console": "Nintendo GameCube", "disc": "GSAP01", "fit": "fits" },
+          { "console": "Nintendo GameCube", "disc": "GSAJ01", "fit": "fits" }
+        ]
+      }
+    },
+    {
+      "id": "triaevum",
+      "name": "TriAevum",
+      "kind": "pc",
+      "console": "Nintendo 3DS",
+      "adds": "Ocarina of Time 3D recompiled for PC on one screen: widescreen, 60 or 90 fps motion, toon shading, ambient occlusion and custom textures; an untested beta. Its team says it was made largely with AI.",
+      "tags": ["widescreen"],
+      "team": "coccofresco",
+      "repo": "https://github.com/coccofresco/TriAevum",
+      "licence": "GPL-3.0-or-later (its own work; the translated game code in its Windows build, the iMMERSE module and NVIDIA's DLSS files are under their own terms)",
+      "base": {
+        "title": "Legend of Zelda, The - Ocarina of Time 3D (USA) (En,Fr,Es)",
+        "db": { "id": 12698, "title": "The Legend of Zelda: Ocarina of Time 3D", "platform": "Nintendo 3DS" },
+        "match": [
+          { "console": "Nintendo 3DS", "name": "Legend of Zelda, The - Ocarina of Time 3D (USA) (En,Fr,Es)", "fit": "fits" },
+          { "console": "Nintendo 3DS", "name": "Legend of Zelda, The - Ocarina of Time 3D (USA) (En,Fr,Es) (Rev 1)", "fit": "fits" },
+          { "console": "Nintendo 3DS", "name": "Legend of Zelda, The - Ocarina of Time 3D (Europe) (En,Fr,De,Es,It)", "fit": "fits" },
+          { "console": "Nintendo 3DS", "name": "Legend of Zelda, The - Ocarina of Time 3D (Europe) (En,Fr,De,Es,It) (Rev 1)", "fit": "fits" }
+        ]
+      }
+    },
+    {
+      "id": "rekhcom",
+      "name": "ReKHCoM",
+      "kind": "pc",
+      "console": "Nintendo Game Boy Advance",
+      "adds": "Kingdom Hearts: Chain of Memories rebuilt as a native PC game: 16:9 and ultrawide, optional HD text, and a Re:Chain of Memories mode with PS2-style difficulty levels.",
+      "tags": ["widescreen"],
+      "team": "MatyMeatBoy",
+      "basedon": "the Chain of Memories decompilation by Pheenoh (khcom)",
+      "page": "https://matymeatboy.github.io/ReKHCoM/",
+      "repo": "https://github.com/MatyMeatBoy/ReKHCoM",
+      "licence": "CC0-1.0",
+      "base": {
+        "title": "Kingdom Hearts - Chain of Memories (USA)",
+        "db": { "id": 2335, "title": "Kingdom Hearts: Chain of Memories", "platform": "Nintendo Game Boy Advance" },
+        "match": [
+          { "console": "Nintendo Game Boy Advance", "name": "Kingdom Hearts - Chain of Memories (USA)", "fit": "fits" },
+          { "console": "Nintendo Game Boy Advance", "name": "Kingdom Hearts - Chain of Memories (Europe) (En,Fr,De,Es,It)", "fit": "fits" },
+          { "console": "Nintendo Game Boy Advance", "name": "Kingdom Hearts - Chain of Memories (Japan)", "fit": "fits" }
+        ]
+      }
+    },
+    {
+      "id": "opendana",
+      "name": "OpenDana",
+      "kind": "pc",
+      "console": "Nintendo Entertainment System",
+      "adds": "Fire 'n Ice (Solomon's Key 2) remade as a native PC game, with a level editor, save states, gamepad support and mods.",
+      "tags": ["levels"],
+      "team": "David Vilela (dvilelaf)",
+      "repo": "https://github.com/dvilelaf/opendana",
+      "licence": "GPL-3.0-or-later",
+      "base": {
+        "title": "Solomon's Key 2 (Europe)",
+        "db": { "id": 20097, "title": "Fire 'n Ice", "platform": "Nintendo Entertainment System" },
+        "match": [ { "console": "Nintendo Entertainment System", "name": "Solomon's Key 2 (Europe)", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "openmadoola",
+      "name": "OpenMadoola",
+      "kind": "pc",
+      "console": "Nintendo Entertainment System",
+      "adds": "The Wing of Madoola remade for PC with bug fixes, no slowdown or flicker, saved progress, optional improvements and a mode recreating the arcade version.",
+      "tags": [],
+      "team": "nfroggy",
+      "page": "https://www.infochunk.com/madoola/openmadoola.html",
+      "repo": "https://github.com/nfroggy/openmadoola",
+      "licence": "GPL-2.0-or-later",
+      "base": {
+        "title": "Madoola no Tsubasa (Japan)",
+        "db": { "id": 26252, "title": "Madoola no Tsubasa", "platform": "Nintendo Entertainment System" },
+        "match": [ { "console": "Nintendo Entertainment System", "name": "Madoola no Tsubasa (Japan)", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "mightyweenie",
+      "name": "Mighty Weenie",
+      "kind": "pc",
+      "console": "Sega Genesis",
+      "adds": "Mutant League Hockey rebuilt from scratch in Godot: a switchable 3D rink, smooth motion at any frame rate and online play for up to 12; widescreen and local play for 12 are in its 0.2 test release. Its team says it was made largely with AI.",
+      "tags": [],
+      "team": "Sharkcheese (scheeseman486) and the mightyweenie authors",
+      "repo": "https://github.com/scheeseman486/mightyweenie",
+      "licence": "BSD-3-Clause",
+      "base": {
+        "title": "Mutant League Hockey (USA, Europe)",
+        "db": { "id": 1970, "title": "Mutant League Hockey", "platform": "Sega Genesis" },
+        "match": [ { "console": "Sega Genesis", "name": "Mutant League Hockey (USA, Europe)", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "sm64ds-coop",
+      "name": "Super Mario 64 DS COOP",
+      "kind": "pc",
+      "console": "Nintendo DS",
+      "adds": "Super Mario 64 DS as a native PC game with online co-op joined by a lobby code, Lua resource packs and a Super Mario 64 style camera; a Windows preview. Its team says the decompilation under it was made with AI help.",
+      "tags": [],
+      "team": "Tango (SCOPIC64)",
+      "repo": "https://github.com/SCOPIC64/sm64ds-coop-port",
+      "licence": "MIT",
+      "base": {
+        "title": "Super Mario 64 DS (Europe) (En,Fr,De,Es,It)",
+        "db": { "id": 6886, "title": "Super Mario 64 DS", "platform": "Nintendo DS" },
+        "match": [ { "console": "Nintendo DS", "name": "Super Mario 64 DS (Europe) (En,Fr,De,Es,It)", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "openlara",
+      "name": "OpenLara",
+      "kind": "pc",
+      "console": "Sony Playstation",
+      "adds": "A rebuilt engine for the classic Tomb Raider, with two-player split screen, VR and graphics options; it reads the game's files, not a disc image.",
+      "tags": ["coop"],
+      "team": "Timur Gagiev (XProger)",
+      "page": "https://xproger.info/projects/OpenLara/",
+      "repo": "https://github.com/XProger/OpenLara",
+      "community": "https://discord.gg/EF8JaQB",
+      "licence": "BSD-2-Clause",
+      "base": {
+        "title": "Tomb Raider (USA)",
+        "db": { "id": 2780, "title": "Tomb Raider", "platform": "Sony Playstation" },
+        "match": [ { "console": "Sony Playstation", "disc": "SLUS-00152", "fit": "works", "note": "works with the files copied off the disc (its PSXDATA folder), not the disc image" } ]
+      }
+    },
+    {
+      "id": "psydoom",
+      "name": "PsyDoom",
+      "kind": "pc",
+      "console": "Sony Playstation",
+      "adds": "PlayStation Doom and Final Doom backported to PC: a Vulkan renderer with widescreen and high resolutions, mods, and the link-cable two-player mode over a network.",
+      "tags": ["widescreen"],
+      "team": "Bodb Dearg (BodbDearg)",
+      "basedon": "PSXDOOM-RE by Erick194",
+      "repo": "https://github.com/BodbDearg/PsyDoom",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Doom (USA)",
+        "db": { "id": 11578, "title": "DOOM", "platform": "Sony Playstation" },
+        "match": [
+          { "console": "Sony Playstation", "disc": "SLUS-00077", "fit": "fits" },
+          { "console": "Sony Playstation", "disc": "SLES-00132", "fit": "fits" },
+          { "console": "Sony Playstation", "disc": "SLPS-00308", "fit": "fits" },
+          { "console": "Sony Playstation", "disc": "SLUS-00331", "fit": "fits" },
+          { "console": "Sony Playstation", "disc": "SLES-00487", "fit": "fits" },
+          { "console": "Sony Playstation", "disc": "SLPS-00727", "fit": "fits" }
+        ]
+      }
+    },
+    {
+      "id": "unleashed-recomp",
+      "name": "Unleashed Recompiled",
+      "kind": "pc",
+      "console": "Microsoft Xbox 360",
+      "adds": "Sonic Unleashed recompiled for PC from its Xbox 360 version, with high frame rates, widescreen and modern options",
+      "tags": ["widescreen"],
+      "team": "hedge-dev",
+      "repo": "https://github.com/hedge-dev/UnleashedRecomp",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Sonic Unleashed (USA)",
+        "db": { "id": 8480, "title": "Sonic Unleashed", "platform": "Microsoft Xbox 360" },
+        "match": [ { "console": "Microsoft Xbox 360", "disc": "53450812", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "reblue",
+      "name": "re:Blue",
+      "kind": "pc",
+      "console": "Microsoft Xbox 360",
+      "adds": "Blue Dragon recompiled for PC from its Xbox 360 version, with keyboard and mouse and modern options; its installer copies the game from your three discs",
+      "tags": [],
+      "team": "zolaware",
+      "basedon": "the ReXGlue SDK",
+      "repo": "https://github.com/zolaware/reblue",
+      "licence": "BSD-3-Clause",
+      "base": {
+        "title": "Blue Dragon (USA)",
+        "db": { "id": 7150, "title": "Blue Dragon", "platform": "Microsoft Xbox 360" },
+        "match": [ { "console": "Microsoft Xbox 360", "disc": "4D5307DF", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "lost-odyssey-recomp",
+      "name": "Lost Odyssey Recomp",
+      "kind": "pc",
+      "console": "Microsoft Xbox 360",
+      "adds": "Lost Odyssey recompiled for PC from its Xbox 360 version (an early version: no one has reported playing it to the end yet)",
+      "tags": [],
+      "team": "freefrank",
+      "basedon": "XenonRecomp and XenosRecomp by hedge-dev",
+      "repo": "https://github.com/freefrank/LostOdysseyRecomp",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Lost Odyssey (USA)",
+        "db": { "id": 39, "title": "Lost Odyssey", "platform": "Microsoft Xbox 360" },
+        "match": [ { "console": "Microsoft Xbox 360", "disc": "4D5307FA", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "eternal-sonata-reprise",
+      "name": "Eternal Sonata: Reprise",
+      "kind": "pc",
+      "console": "Microsoft Xbox 360",
+      "adds": "Eternal Sonata recompiled for PC from its Xbox 360 version",
+      "tags": [],
+      "team": "Marco Andronaco (birabittoh)",
+      "basedon": "the ReXGlue SDK",
+      "page": "https://goopie.xyz/#/library/eternalsonata",
+      "repo": "https://github.com/birabittoh/EternalSonataReprise",
+      "licence": "MIT",
+      "base": {
+        "title": "Eternal Sonata (USA)",
+        "db": { "id": 13189, "title": "Eternal Sonata", "platform": "Microsoft Xbox 360" },
+        "match": [ { "console": "Microsoft Xbox 360", "disc": "4E4D07E4", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "dprecomp",
+      "name": "Deadly Premonition Recompilation",
+      "kind": "pc",
+      "console": "Microsoft Xbox 360",
+      "adds": "Deadly Premonition recompiled for PC from its Xbox 360 version, drawn with DirectX 12 at up to 4x resolution. Its team says it was made with AI (Claude).",
+      "tags": [],
+      "team": "Little Bit (LittleBitUA) and the DPRecomp contributors",
+      "basedon": "the ReXGlue SDK",
+      "repo": "https://github.com/LittleBitUA/DPRecomp",
+      "licence": "MIT",
+      "base": {
+        "title": "Deadly Premonition (USA)",
+        "db": { "id": 11991, "title": "Deadly Premonition", "platform": "Microsoft Xbox 360" },
+        "match": [ { "console": "Microsoft Xbox 360", "disc": "4D5607D1", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "downpour-recomp",
+      "name": "DownpourRecomp",
+      "kind": "pc",
+      "console": "Microsoft Xbox 360",
+      "adds": "Silent Hill: Downpour recompiled for PC from its Xbox 360 version, at an unlocked 60 fps",
+      "tags": [],
+      "team": "Little Bit (LittleBitUA) and the DownpourRecomp contributors",
+      "basedon": "the ReXGlue SDK",
+      "repo": "https://github.com/LittleBitUA/DownpourRecomp",
+      "licence": "BSD-3-Clause",
+      "base": {
+        "title": "Silent Hill: Downpour (USA)",
+        "db": { "id": 3907, "title": "Silent Hill: Downpour", "platform": "Microsoft Xbox 360" },
+        "match": [ { "console": "Microsoft Xbox 360", "disc": "4B4E0823", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "edge-of-time-recomp",
+      "name": "Edge of Time Recompiled",
+      "kind": "pc",
+      "console": "Microsoft Xbox 360",
+      "adds": "Spider-Man: Edge of Time recompiled for PC from its Xbox 360 version",
+      "tags": [],
+      "team": "the GoliathEngine Reverse-Engineering Team (goliathret)",
+      "basedon": "the ReXGlue SDK",
+      "repo": "https://github.com/goliathret/EdgeOfTimeRecomp",
+      "licence": "BSD-3-Clause",
+      "base": {
+        "title": "Spider-Man: Edge of Time (USA)",
+        "db": { "id": 8889, "title": "Spider-Man: Edge of Time", "platform": "Microsoft Xbox 360" },
+        "match": [ { "console": "Microsoft Xbox 360", "disc": "415608B2", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "nocturne-recomp",
+      "name": "NocturneRecomp",
+      "kind": "pc",
+      "console": "Microsoft Xbox 360",
+      "adds": "Castlevania: Symphony of the Night recompiled for PC from its Xbox Live Arcade version",
+      "tags": [],
+      "team": "Marco Andronaco (birabittoh)",
+      "basedon": "the ReXGlue SDK",
+      "page": "https://goopie.xyz/#/library/nocturnerecomp",
+      "repo": "https://github.com/birabittoh/NocturneRecomp",
+      "licence": "MIT",
+      "base": {
+        "title": "Castlevania: Symphony of the Night (Xbox Live Arcade)",
+        "db": { "id": 14523, "title": "Castlevania: Symphony of the Night", "platform": "Microsoft Xbox 360" },
+        "match": [ { "console": "Microsoft Xbox 360", "disc": "58410847", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "condemned2-recomp",
+      "name": "Condemned2Recomp",
+      "kind": "pc",
+      "console": "Microsoft Xbox 360",
+      "adds": "Condemned 2: Bloodshot recompiled for PC from its Xbox 360 version",
+      "tags": [],
+      "team": "psxrestore",
+      "basedon": "the ReXGlue SDK",
+      "repo": "https://github.com/psxrestore/Condemned2Recomp",
+      "licence": "BSD-3-Clause",
+      "base": {
+        "title": "Condemned 2: Bloodshot (USA)",
+        "db": { "id": 12108, "title": "Condemned 2: Bloodshot", "platform": "Microsoft Xbox 360" },
+        "match": [ { "console": "Microsoft Xbox 360", "disc": "534507EF", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "army-of-two-recomp",
+      "name": "ArmyOfTwoRecomp",
+      "kind": "pc",
+      "console": "Microsoft Xbox 360",
+      "adds": "Army of Two recompiled for PC from its Xbox 360 version, for one player or two",
+      "tags": ["coop"],
+      "team": "Nikolai Gorb (nikolaygorb)",
+      "basedon": "the ReXGlue SDK",
+      "repo": "https://github.com/nikolaygorb/ArmyOfTwoRecomp",
+      "licence": "MIT",
+      "base": {
+        "title": "Army of Two",
+        "db": { "id": 11, "title": "Army of Two", "platform": "Microsoft Xbox 360" },
+        "match": [ { "console": "Microsoft Xbox 360", "disc": "4541084C", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "saints-reborn",
+      "name": "Saints Reborn",
+      "kind": "pc",
+      "console": "Microsoft Xbox 360",
+      "adds": "Saints Row recompiled for PC from its Xbox 360 version",
+      "tags": [],
+      "team": "whompay",
+      "basedon": "the ReXGlue SDK",
+      "repo": "https://github.com/whompay/SaintsReborn",
+      "licence": "Apache-2.0",
+      "base": {
+        "title": "Saints Row (USA)",
+        "db": { "id": 7572, "title": "Saints Row", "platform": "Microsoft Xbox 360" },
+        "match": [ { "console": "Microsoft Xbox 360", "disc": "545107D1", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "fnc-reborn",
+      "name": "FNC Reborn",
+      "kind": "pc",
+      "console": "Microsoft Xbox 360",
+      "adds": "Fight Night Champion recompiled for PC from its Xbox 360 version",
+      "tags": [],
+      "team": "whompay",
+      "basedon": "the ReXGlue SDK",
+      "repo": "https://github.com/whompay/FNCReborn",
+      "licence": "Apache-2.0",
+      "base": {
+        "title": "Fight Night Champion (USA)",
+        "db": { "id": 12384, "title": "Fight Night Champion", "platform": "Microsoft Xbox 360" },
+        "match": [ { "console": "Microsoft Xbox 360", "disc": "45410915", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "skate2-pc",
+      "name": "Skate 2 PC",
+      "kind": "pc",
+      "console": "Microsoft Xbox 360",
+      "adds": "Skate 2 recompiled for PC from its Xbox 360 version, with controller support, adjustable quality and an unlocked frame rate",
+      "tags": [],
+      "team": "Christian Ortel (christianortel) and the Skate 2 PC contributors",
+      "basedon": "the ReXGlue SDK",
+      "repo": "https://github.com/christianortel/skate2-recompile-pc",
+      "licence": "MIT",
+      "base": {
+        "title": "Skate 2 (USA)",
+        "db": { "id": 14789, "title": "Skate 2", "platform": "Microsoft Xbox 360" },
+        "match": [ { "console": "Microsoft Xbox 360", "disc": "4541087F", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "crackdown-recompiled",
+      "name": "Crackdown Recompiled",
+      "kind": "pc",
+      "console": "Microsoft Xbox 360",
+      "adds": "Crackdown recompiled for PC from its Xbox 360 version, with high frame rates, 4K, ultrawide and offline achievements",
+      "tags": ["widescreen"],
+      "team": "Saulo Benigno (saulob)",
+      "basedon": "the ReXGlue SDK",
+      "repo": "https://github.com/saulob/crackdown-xbox360-recompiled",
+      "licence": "GPL-2.0",
+      "base": {
+        "title": "Crackdown (USA)",
+        "db": { "id": 7167, "title": "Crackdown", "platform": "Microsoft Xbox 360" },
+        "match": [ { "console": "Microsoft Xbox 360", "disc": "4D5307DC", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "mw2-recompiled",
+      "name": "mw2-recompiled",
+      "kind": "pc",
+      "console": "Microsoft Xbox 360",
+      "adds": "Call of Duty: Modern Warfare 2 recompiled for PC from its Xbox 360 version (disc version 1.0.557), with LAN play",
+      "tags": [],
+      "team": "Paul Combaldieu (PaulCombal)",
+      "repo": "https://github.com/PaulCombal/mw2-recompiled",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Call of Duty: Modern Warfare 2 (USA)",
+        "db": { "id": 10914, "title": "Call of Duty: Modern Warfare 2", "platform": "Microsoft Xbox 360" },
+        "match": [ { "console": "Microsoft Xbox 360", "disc": "41560817", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "free-riders-recompiled",
+      "name": "Free Riders Recompiled",
+      "kind": "pc",
+      "console": "Microsoft Xbox 360",
+      "adds": "Sonic Free Riders recompiled for PC from its Xbox 360 version, with controller and keyboard in place of Kinect, or a Kinect itself",
+      "tags": [],
+      "team": "YuutaTsubasa",
+      "basedon": "XenonRecomp and XenosRecomp by hedge-dev",
+      "repo": "https://github.com/YuutaTsubasa/Free-Riders-Recompiled",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Sonic Free Riders (USA)",
+        "db": { "id": 15786, "title": "Sonic Free Riders", "platform": "Microsoft Xbox 360" },
+        "match": [ { "console": "Microsoft Xbox 360", "disc": "5345084D", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "pinyon-shift",
+      "name": "Pinyon Shift",
+      "kind": "pc",
+      "console": "Microsoft Xbox 360",
+      "adds": "Forza Horizon recompiled for PC from its Xbox 360 version, a playable preview",
+      "tags": [],
+      "team": "Brandon G. Neri (arcanite24) and the Pinyon Shift contributors",
+      "basedon": "the ReXGlue SDK",
+      "page": "https://arcanite24.github.io/pinyon-shift/",
+      "repo": "https://github.com/arcanite24/pinyon-shift",
+      "licence": "BSD-3-Clause",
+      "base": {
+        "title": "Forza Horizon (USA)",
+        "db": { "id": 11977, "title": "Forza Horizon", "platform": "Microsoft Xbox 360" },
+        "match": [ { "console": "Microsoft Xbox 360", "disc": "4D5309C9", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "fh1-reimagined",
+      "name": "Forza Horizon 1: ReImagined",
+      "kind": "pc",
+      "console": "Microsoft Xbox 360",
+      "adds": "Forza Horizon recompiled for PC from its Xbox 360 version and rebuilt around a modern Horizon: online free roam, leaderboards and rivals, 120 and 144 fps",
+      "tags": [],
+      "team": "Maximiliano Militzer (Dyotson) and the Forza Horizon 1: ReImagined contributors",
+      "basedon": "the ReXGlue SDK",
+      "repo": "https://github.com/Dyotson/ForzaHorizon1-ReImagined",
+      "licence": "MIT",
+      "base": {
+        "title": "Forza Horizon (USA)",
+        "db": { "id": 11977, "title": "Forza Horizon", "platform": "Microsoft Xbox 360" },
+        "match": [ { "console": "Microsoft Xbox 360", "disc": "4D5309C9", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "wet-recomp",
+      "name": "wet-recomp",
+      "kind": "pc",
+      "console": "Microsoft Xbox 360",
+      "adds": "WET recompiled for PC from its Xbox 360 version",
+      "tags": [],
+      "team": "Supermedo",
+      "basedon": "the ReXGlue SDK",
+      "repo": "https://github.com/Supermedo/wet-recomp",
+      "licence": "MIT",
+      "base": {
+        "title": "WET (USA)",
+        "db": { "id": 108, "title": "Wet", "platform": "Microsoft Xbox 360" },
+        "match": [ { "console": "Microsoft Xbox 360", "disc": "425307DB", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "svr07-recomp",
+      "name": "SVR07-Recomp",
+      "kind": "pc",
+      "console": "Microsoft Xbox 360",
+      "adds": "WWE SmackDown vs. Raw 2007 recompiled for PC from its Xbox 360 version",
+      "tags": [],
+      "team": "HollywoodAkeem",
+      "basedon": "the ReXGlue SDK",
+      "repo": "https://github.com/HollywoodAkeem/SVR07-Recomp",
+      "licence": "BSD-3-Clause",
+      "base": {
+        "title": "WWE SmackDown vs. Raw 2007 (USA)",
+        "db": { "id": 7707, "title": "WWE SmackDown vs. Raw 2007", "platform": "Microsoft Xbox 360" },
+        "match": [ { "console": "Microsoft Xbox 360", "disc": "545107E0", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "takedawn",
+      "name": "Takedawn",
+      "kind": "pc",
+      "console": "Microsoft Xbox",
+      "adds": "Burnout 3: Takedown recompiled for PC from its Xbox version, every mode, one player or two in split screen. Its team says it was made with AI coding agents doing much of the typing.",
+      "tags": ["coop"],
+      "team": "xenophobentx and sp00nz",
+      "basedon": "xboxrecomp by sp00nz, with parts of xemu",
+      "repo": "https://github.com/xenophobentx/takedawn",
+      "licence": "MIT",
+      "base": {
+        "title": "Burnout 3: Takedown (USA)",
+        "db": { "id": 6011, "title": "Burnout 3: Takedown", "platform": "Microsoft Xbox" },
+        "match": [ { "console": "Microsoft Xbox", "disc": "4541005B", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "defjam-ffny-recomp",
+      "name": "Def Jam: Fight for NY Recompiled",
+      "kind": "pc",
+      "console": "Microsoft Xbox",
+      "adds": "Def Jam: Fight for NY recompiled for PC from its Xbox version. Its team says it was made with AI help.",
+      "tags": ["fighters"],
+      "team": "Vlad Yanhursky (vyanhursky)",
+      "basedon": "xboxrecomp by sp00nz, with parts of xemu",
+      "repo": "https://github.com/vyanhursky/DefJamFFNY-recomp",
+      "licence": "MIT",
+      "base": {
+        "title": "Def Jam: Fight for NY (USA)",
+        "db": { "id": 6045, "title": "Def Jam: Fight for NY", "platform": "Microsoft Xbox" },
+        "match": [ { "console": "Microsoft Xbox", "disc": "45410049", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "opengoal",
+      "name": "OpenGOAL",
+      "kind": "pc",
+      "console": "Sony Playstation 2",
+      "adds": "Jak and Daxter ported to PC as native code: 60, 100 or 150 fps, 16:9 or a picture fitted to any screen, and texture packs and mods through its launcher; Jak II also plays (still in beta) and Jak 3 has a good amount of work left",
+      "tags": ["widescreen"],
+      "team": "OpenGOAL Team",
+      "page": "https://opengoal.dev",
+      "repo": "https://github.com/open-goal/jak-project",
+      "community": "https://discord.gg/VZbXMHXzWv",
+      "licence": "ISC",
+      "base": {
+        "title": "Jak and Daxter: The Precursor Legacy (USA)",
+        "db": { "id": 4865, "title": "Jak and Daxter: The Precursor Legacy", "platform": "Sony Playstation 2" },
+        "match": [
+          { "console": "Sony Playstation 2", "disc": "SCUS-97124", "fit": "fits" },
+          { "console": "Sony Playstation 2", "disc": "SCES-50361", "fit": "fits" },
+          { "console": "Sony Playstation 2", "disc": "SCPS-15021", "fit": "fits" },
+          { "console": "Sony Playstation 2", "disc": "SCPS-56003", "fit": "fits" }
+        ]
+      }
+    },
+    {
+      "id": "redriver2",
+      "name": "REDRIVER2",
+      "kind": "pc",
+      "console": "Sony Playstation",
+      "adds": "Driver 2 rebuilt from its own code to run natively on PC: any window size, the map and bars at the screen's corners, a longer draw distance, street lights, fast loading, the game's bugs fixed and its texture and car models open to mods",
+      "tags": ["widescreen"],
+      "team": "SoapyMan and OpenDriver2",
+      "page": "https://opendriver2.github.io/",
+      "repo": "https://github.com/OpenDriver2/REDRIVER2",
+      "licence": "MIT",
+      "base": {
+        "title": "Driver 2 (USA)",
+        "db": { "id": 521, "title": "Driver 2: The Wheelman Is Back", "platform": "Sony Playstation" },
+        "match": [
+          { "console": "Sony Playstation", "discs": ["SLUS-01161", "SLUS-01318"], "fit": "fits" },
+          { "console": "Sony Playstation", "discs": ["SLES-02993", "SLES-12993"], "fit": "fits" }
+        ]
+      }
+    },
+    {
+      "id": "fukami",
+      "name": "Fukami",
+      "kind": "pc",
+      "console": "Sony Playstation 2",
+      "adds": "Ridge Racer V recompiled for PC: native 60 fps, up to 8x resolution, real widescreen, more cars at full detail, a longer draw distance and faster loading",
+      "tags": ["widescreen"],
+      "team": "Dani Sandoval (danisandoval)",
+      "basedon": "PS2Recomp by ran-j",
+      "repo": "https://github.com/danisandoval/fukami",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Ridge Racer V (USA)",
+        "db": { "id": 4795, "title": "Ridge Racer V", "platform": "Sony Playstation 2" },
+        "match": [ { "console": "Sony Playstation 2", "disc": "SLUS-20002", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "tenkaichi3decomp",
+      "name": "Tenkaichi3Decomp",
+      "kind": "pc",
+      "console": "Sony Playstation 2",
+      "adds": "Budokai Tenkaichi 3's own code compiled for PC: up to 8x resolution, widescreen without stretching the fight, optional smooth motion up to 240 fps, online play with rollback, PCSX2 texture packs and extra stages and songs. Its team says it was made with AI help.",
+      "tags": ["widescreen", "levels"],
+      "team": "z3xox",
+      "repo": "https://github.com/z3xox/Tenkaichi3Decomp",
+      "community": "https://discord.gg/RsPFr4pkaN",
+      "licence": "AGPL-3.0 (its own code; the game's code it carries is not licensed)",
+      "base": {
+        "title": "Dragon Ball Z: Budokai Tenkaichi 3 (USA)",
+        "db": { "id": 7224, "title": "Dragon Ball Z: Budokai Tenkaichi 3", "platform": "Sony Playstation 2" },
+        "match": [ { "console": "Sony Playstation 2", "disc": "SLUS-21678", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "ico-pc",
+      "name": "ico-pc",
+      "kind": "pc",
+      "console": "Sony Playstation 2",
+      "adds": "ICO's own code run as a PC program: a sharper picture, widescreen, smoother motion, a mouse camera, texture and model packs, and Mirror mode and New Game+",
+      "tags": ["widescreen"],
+      "team": "Nathanial Fine (nathanialf) and the ico decompilation contributors",
+      "page": "https://nathanialf.github.io/ico-pc/",
+      "repo": "https://github.com/nathanialf/ico-pc",
+      "licence": "MIT (its own code; it grants no rights in the game)",
+      "base": {
+        "title": "ICO (Europe)",
+        "db": { "id": 2239, "title": "ICO", "platform": "Sony Playstation 2" },
+        "match": [ { "console": "Sony Playstation 2", "disc": "SCES-50760", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "def-jam-vendetta-recomp",
+      "name": "Def Jam Vendetta Recompiled",
+      "kind": "pc",
+      "console": "Sony Playstation 2",
+      "adds": "Def Jam Vendetta recompiled for PC: up to 16x resolution, widescreen matches, sharp 2D, full-detail fighters in every match, up to 4 players and two other camera styles; its settings program builds the game on your PC from your disc",
+      "tags": ["widescreen"],
+      "team": "jcsix694",
+      "basedon": "PS2Recomp by ran-j",
+      "repo": "https://github.com/jcsix694/def-jam-vendetta-recomp",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Def Jam Vendetta (USA)",
+        "db": { "id": 7206, "title": "Def Jam Vendetta", "platform": "Sony Playstation 2" },
+        "match": [ { "console": "Sony Playstation 2", "disc": "SLUS-20639", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "road-trip-recomp",
+      "name": "Road Trip Recomp",
+      "kind": "pc",
+      "console": "Sony Playstation 2",
+      "adds": "Road Trip (Choro Q HG 2) recompiled for PC: widescreen, up to 4x resolution, 120 and 240 Hz, HD texture packs, save states and modern driving controls; it builds the game on your PC from your disc. Its team says it was made with AI help.",
+      "tags": ["widescreen"],
+      "team": "silentsudin",
+      "basedon": "PS2Recomp by ran-j",
+      "repo": "https://github.com/silentsudin/RoadTripAdventure-recomp",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Road Trip (USA)",
+        "db": { "id": 18758, "title": "Road Trip", "platform": "Sony Playstation 2" },
+        "match": [ { "console": "Sony Playstation 2", "disc": "SLUS-20398", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "dq8-recomp",
+      "name": "DQ8Recomp",
+      "kind": "pc",
+      "console": "Sony Playstation 2",
+      "adds": "Dragon Quest VIII recompiled to run natively on PC, built on your PC from your disc; a development project that boots, loads saves and reaches field play, not yet a finished port. Its team says it was made with AI help.",
+      "tags": [],
+      "team": "Sinan (Sinan-Karakaya)",
+      "basedon": "PS2Recomp by ran-j",
+      "repo": "https://github.com/Sinan-Karakaya/DQ8-Recompiled",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Dragon Quest VIII: Journey of the Cursed King (USA)",
+        "db": { "id": 7226, "title": "Dragon Quest VIII: Journey of the Cursed King", "platform": "Sony Playstation 2" },
+        "match": [ { "console": "Sony Playstation 2", "disc": "SLUS-21207", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "lain-psx",
+      "name": "lain-psx-decompiled",
+      "kind": "pc",
+      "console": "Sony Playstation",
+      "adds": "Serial Experiments Lain's own code run natively on PC: resolution scaling, optional 60 fps motion at the original speed, subtitle and dub packs, memory card saves an emulator can read, and mods",
+      "tags": [],
+      "team": "Y0oshi",
+      "basedon": "PsyCross by SoapyMan",
+      "repo": "https://github.com/Y0oshi/lain-psx-decompiled",
+      "licence": "MIT",
+      "base": {
+        "title": "Serial Experiments Lain (Japan)",
+        "db": { "id": 143850, "title": "Serial Experiments Lain", "platform": "Sony Playstation" },
+        "match": [ { "console": "Sony Playstation", "discs": ["SLPS-01603", "SLPS-01604"], "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "pure-recomp",
+      "name": "Wipeout Pure: Recompiled",
+      "kind": "pc",
+      "console": "Sony PSP",
+      "adds": "Wipeout Pure recompiled for PC: your display's resolution, any window shape including ultrawide, 60 fps where the PSP ran at 30, your PSP saves and the US download packs. Its team says it was made largely with AI.",
+      "tags": ["widescreen"],
+      "team": "erreib",
+      "basedon": "PSPRecomp and PortableKit",
+      "repo": "https://github.com/erreib/pure-recomp",
+      "licence": "GPL-2.0-or-later",
+      "base": {
+        "title": "WipEout Pure (USA)",
+        "db": { "id": 7123, "title": "WipEout Pure", "platform": "Sony PSP" },
+        "match": [ { "console": "Sony PSP", "disc": "UCUS-98612", "fit": "works", "note": "fits if it is version 2.00 (the Greatest Hits edition), the only one the team takes" } ]
+      }
+    },
+    {
+      "id": "lcs-recomp",
+      "name": "LCS Recomp",
+      "kind": "pc",
+      "console": "Sony PSP",
+      "adds": "GTA: Liberty City Stories recompiled for PC: higher resolutions, widescreen, a longer draw distance, mouse and keyboard and no island loading screen; it takes the disc's files and a decrypted EBOOT, not an .iso",
+      "tags": ["widescreen"],
+      "team": "elmasas and the PSPRecomp contributors",
+      "basedon": "PSPRecomp",
+      "repo": "https://github.com/elmasas/lcs-recomp",
+      "licence": "MIT (its own code; the game's code it carries is not licensed)",
+      "base": {
+        "title": "Grand Theft Auto: Liberty City Stories (USA)",
+        "db": { "id": 7085, "title": "Grand Theft Auto: Liberty City Stories", "platform": "Sony PSP" },
+        "match": [ { "console": "Sony PSP", "disc": "ULUS-10041", "fit": "works", "note": "fits if it is version 1.05, the only one the team takes" } ]
+      }
+    },
+    {
+      "id": "smash64-recompiled",
+      "name": "Smash 64 Recompiled",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Super Smash Bros. recompiled for PC, with Smash Remix running on it as a mod",
+      "tags": ["fighters"],
+      "team": "SrBananaMan64 and Boopie",
+      "repo": "https://github.com/Smash64Recomp",
+      "licence": "not published yet (its main code is not public)",
+      "base": {
+        "title": "Super Smash Bros. (USA)",
+        "db": { "id": 404, "title": "Super Smash Bros.", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Super Smash Bros. (USA)", "fit": "fits" } ]
+      },
+      "soon": "Trailer out 2026-10-12, coming soon with no date; its main code is not public yet"
+    },
+    {
+      "id": "kirby64-recomp",
+      "name": "Kirby 64: Recompiled",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Kirby 64: The Crystal Shards recompiled for PC",
+      "tags": [],
+      "team": "Kirby64Ret",
+      "basedon": "Zelda 64: Recompiled's code by the Zelda 64: Recompiled team, N64Recomp by Wiseguy and RT64 by Dario",
+      "repo": "https://github.com/Kirby64Ret/Kirby64Recomp",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Kirby 64 - The Crystal Shards (USA)",
+        "db": { "id": 262, "title": "Kirby 64: The Crystal Shards", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Kirby 64 - The Crystal Shards (USA)", "fit": "fits" } ]
+      },
+      "soon": "No downloads yet, the team says; last worked on 2026-09-18"
+    },
+    {
+      "id": "goldenrecomp",
+      "name": "GoldenRecomp",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "GoldenEye 007 recompiled for PC by people, no AI",
+      "tags": [],
+      "team": "kholdfuzion and sonicdcer",
+      "basedon": "N64Recomp by Wiseguy and RT64 by Dario",
+      "repo": "https://github.com/kholdfuzion/GoldenRecomp",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "GoldenEye 007 (USA)",
+        "db": { "id": 160, "title": "GoldenEye 007", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "GoldenEye 007 (USA)", "fit": "fits" } ]
+      },
+      "soon": "The game works, the team says; multiplayer screens and skies still to do"
+    },
+    {
+      "id": "bm64tsa-recomp",
+      "name": "Bomberman 64: The Second Attack! Recompiled",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Bomberman 64: The Second Attack! recompiled for PC",
+      "tags": [],
+      "team": "Revo (RevoSucks)",
+      "repo": "https://github.com/RevoSucks/BM64TSARecomp",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Bomberman 64 - The Second Attack! (USA)",
+        "db": { "id": 1071, "title": "Bomberman 64: The Second Attack!", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Bomberman 64 - The Second Attack! (USA)", "fit": "fits" } ]
+      },
+      "soon": "Does not build yet, the team says; last worked on 2026-06-13"
+    },
+    {
+      "id": "bar-recomp",
+      "name": "Beetle Adventure Racing! Recomp",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Beetle Adventure Racing! recompiled for PC, led by people",
+      "tags": [],
+      "team": "SynaMax (synamaxmusic)",
+      "repo": "https://github.com/synamaxmusic/bar-recomp",
+      "licence": "AGPL-3.0",
+      "base": {
+        "title": "Beetle Adventure Racing! (USA) (En,Fr,De)",
+        "db": { "id": 1067, "title": "Beetle Adventure Racing!", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Beetle Adventure Racing! (USA) (En,Fr,De)", "fit": "fits" } ]
+      },
+      "soon": "No release yet; last worked on 2026-08-31"
+    },
+    {
+      "id": "mario-party3-recomp",
+      "name": "Mario Party 3 Recomp",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Mario Party 3 recompiled for PC",
+      "tags": ["coop"],
+      "team": "Rainchus",
+      "basedon": "N64Recomp by Wiseguy and RT64 by Dario",
+      "repo": "https://github.com/Rainchus/MarioParty3-Recomp",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Mario Party 3 (USA)",
+        "db": { "id": 960, "title": "Mario Party 3", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Mario Party 3 (USA)", "fit": "fits" } ]
+      },
+      "soon": "No release yet; the team last worked on it 2026-02-06"
+    },
+    {
+      "id": "rockman-dash-recompiled",
+      "name": "Rockman Dash Recompiled",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Rockman Dash, the Japanese Mega Man 64, recompiled for PC",
+      "tags": [],
+      "team": "Rainchus",
+      "basedon": "N64Recomp by Wiseguy and RT64 by Dario",
+      "repo": "https://github.com/Rainchus/RockmanDash-Recompiled",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Rockman Dash - Hagane no Boukenshin (Japan)",
+        "db": { "id": 1138, "title": "Mega Man 64", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Rockman Dash - Hagane no Boukenshin (Japan)", "fit": "fits" } ]
+      },
+      "soon": "No release; the team last worked on it 2025-05-24"
+    },
+    {
+      "id": "dkrrecomp",
+      "name": "DKRRecomp",
+      "kind": "pc",
+      "console": "Nintendo 64",
+      "adds": "Diddy Kong Racing recompiled for PC",
+      "tags": [],
+      "team": "LittleCube (LittleCube-hax)",
+      "basedon": "N64Recomp by Wiseguy and RT64 by Dario",
+      "repo": "https://github.com/LittleCube-hax/DKRRecomp",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Diddy Kong Racing (USA) (En,Fr) (Rev 1)",
+        "db": { "id": 178, "title": "Diddy Kong Racing", "platform": "Nintendo 64" },
+        "match": [ { "console": "Nintendo 64", "name": "Diddy Kong Racing (USA) (En,Fr) (Rev 1)", "fit": "works", "note": "which release the team takes is not said yet" } ]
+      },
+      "soon": "No release; the team stopped working on it in December 2024"
+    },
+    {
+      "id": "phantom-hourglass-recomp",
+      "name": "Phantom Hourglass Recomp",
+      "kind": "pc",
+      "console": "Nintendo DS",
+      "adds": "The Legend of Zelda: Phantom Hourglass recompiled for PC",
+      "tags": [],
+      "team": "Daniel Guillot (dguillot-gh)",
+      "basedon": "the Phantom Hourglass decompilation by the Zelda Reverse Engineering Team (zeldaret)",
+      "repo": "https://github.com/dguillot-gh/phantom-hourglass-recomp",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Legend of Zelda, The - Phantom Hourglass (USA) (En,Fr,Es)",
+        "db": { "id": 2245, "title": "The Legend of Zelda: Phantom Hourglass", "platform": "Nintendo DS" },
+        "match": [ { "console": "Nintendo DS", "name": "Legend of Zelda, The - Phantom Hourglass (USA) (En,Fr,Es)", "fit": "fits" } ]
+      },
+      "soon": "Source only for now: you build it yourself, with about 10 GB of tools"
+    },
+    {
+      "id": "fzerogx-recomp",
+      "name": "F-Zero GX Recomp",
+      "kind": "pc",
+      "console": "Nintendo GameCube",
+      "adds": "F-Zero GX recompiled for PC",
+      "tags": [],
+      "team": "Ethan Nicholas (ethannicholas)",
+      "repo": "https://github.com/ethannicholas/fzerogx-recomp",
+      "licence": "MIT",
+      "base": {
+        "title": "F-Zero GX (USA)",
+        "db": { "id": 2498, "title": "F-Zero GX", "platform": "Nintendo GameCube" },
+        "match": [ { "console": "Nintendo GameCube", "disc": "GFZE01", "fit": "fits" } ]
+      },
+      "soon": "No release yet; the team last worked on it 2026-10-15"
+    },
+    {
+      "id": "mariokartdd-recomp",
+      "name": "Mario Kart: Double Dash!! Recomp",
+      "kind": "pc",
+      "console": "Nintendo GameCube",
+      "adds": "Mario Kart: Double Dash!! recompiled for PC",
+      "tags": ["coop"],
+      "team": "Ethan Nicholas (ethannicholas)",
+      "repo": "https://github.com/ethannicholas/mariokartdd-recomp",
+      "licence": "MIT",
+      "base": {
+        "title": "Mario Kart: Double Dash!! (USA)",
+        "db": { "id": 166, "title": "Mario Kart: Double Dash!!", "platform": "Nintendo GameCube" },
+        "match": [ { "console": "Nintendo GameCube", "disc": "GM4E01", "fit": "fits" } ]
+      },
+      "soon": "No release yet; the team last worked on it 2026-10-16"
+    },
+    {
+      "id": "prime-recomp",
+      "name": "Metroid Prime Recomp",
+      "kind": "pc",
+      "console": "Nintendo GameCube",
+      "adds": "Metroid Prime recompiled for PC",
+      "tags": [],
+      "team": "Ethan Nicholas (ethannicholas)",
+      "repo": "https://github.com/ethannicholas/prime-recomp",
+      "licence": "MIT",
+      "base": {
+        "title": "Metroid Prime (USA)",
+        "db": { "id": 172, "title": "Metroid Prime", "platform": "Nintendo GameCube" },
+        "match": [ { "console": "Nintendo GameCube", "disc": "GM8E01", "fit": "fits" } ]
+      },
+      "soon": "No release yet; the team last worked on it 2026-10-16"
+    },
+    {
+      "id": "bluestorm-recomp",
+      "name": "Wave Race: Blue Storm Recomp",
+      "kind": "pc",
+      "console": "Nintendo GameCube",
+      "adds": "Wave Race: Blue Storm recompiled for PC, with VR",
+      "tags": [],
+      "team": "Ethan Nicholas (ethannicholas)",
+      "repo": "https://github.com/ethannicholas/bluestorm-recomp",
+      "licence": "MIT",
+      "base": {
+        "title": "Wave Race: Blue Storm (USA)",
+        "db": { "id": 2328, "title": "Wave Race: Blue Storm", "platform": "Nintendo GameCube" },
+        "match": [ { "console": "Nintendo GameCube", "disc": "GWRE01", "fit": "fits" } ]
+      },
+      "soon": "No release yet; the team last worked on it 2026-10-16"
+    },
+    {
+      "id": "luigis-mansion-recomp",
+      "name": "Luigi's Mansion Static Recompilation",
+      "kind": "pc",
+      "console": "Nintendo GameCube",
+      "adds": "Luigi's Mansion recompiled for PC. Its team says it was made largely with AI.",
+      "tags": [],
+      "team": "Ned Heller (sp00nz)",
+      "repo": "https://github.com/sp00nznet/luigismansion",
+      "licence": "MIT",
+      "base": {
+        "title": "Luigi's Mansion (USA)",
+        "db": { "id": 2237, "title": "Luigi's Mansion", "platform": "Nintendo GameCube" },
+        "match": [ { "console": "Nintendo GameCube", "disc": "GLME01", "fit": "fits" } ]
+      },
+      "soon": "No release yet: you build it yourself"
+    },
+    {
+      "id": "pokemon-gold-recomp",
+      "name": "Pokemon Gold, Statically Recompiled",
+      "kind": "pc",
+      "console": "Nintendo Game Boy Color",
+      "adds": "Pokemon Gold recompiled to a native PC program. Its team says it was made largely with AI.",
+      "tags": [],
+      "team": "Ned Heller (sp00nz)",
+      "basedon": "the pret Pokemon disassemblies",
+      "repo": "https://github.com/sp00nznet/pokemon-gold",
+      "licence": "MIT",
+      "base": {
+        "title": "Pokemon - Gold Version (USA, Europe) (SGB Enhanced) (GB Compatible)",
+        "db": { "id": 2360, "title": "Pokemon Gold Version", "platform": "Nintendo Game Boy Color" },
+        "match": [ { "console": "Nintendo Game Boy Color", "name": "Pokemon - Gold Version (USA, Europe) (SGB Enhanced) (GB Compatible)", "fit": "fits" } ]
+      },
+      "soon": "No release yet: you build it yourself"
+    },
+    {
+      "id": "pokemon-silver-recomp",
+      "name": "Pokemon Silver, Statically Recompiled",
+      "kind": "pc",
+      "console": "Nintendo Game Boy Color",
+      "adds": "Pokemon Silver recompiled to a native PC program. Its team says it was made largely with AI.",
+      "tags": [],
+      "team": "Ned Heller (sp00nz)",
+      "basedon": "the pret Pokemon disassemblies",
+      "repo": "https://github.com/sp00nznet/pokemon-silver",
+      "licence": "MIT",
+      "base": {
+        "title": "Pokemon - Silver Version (USA, Europe) (SGB Enhanced) (GB Compatible)",
+        "db": { "id": 2361, "title": "Pokemon Silver Version", "platform": "Nintendo Game Boy Color" },
+        "match": [ { "console": "Nintendo Game Boy Color", "name": "Pokemon - Silver Version (USA, Europe) (SGB Enhanced) (GB Compatible)", "fit": "fits" } ]
+      },
+      "soon": "No release yet: you build it yourself"
+    },
+    {
+      "id": "pokemon-crystal-recomp",
+      "name": "Pokemon Crystal, Statically Recompiled",
+      "kind": "pc",
+      "console": "Nintendo Game Boy Color",
+      "adds": "Pokemon Crystal recompiled to a native PC program. Its team says it was made largely with AI.",
+      "tags": [],
+      "team": "Ned Heller (sp00nz)",
+      "basedon": "the pret Pokemon disassemblies",
+      "repo": "https://github.com/sp00nznet/pokemon-crystal",
+      "licence": "MIT",
+      "base": {
+        "title": "Pokemon - Crystal Version (USA, Europe) (Rev 1)",
+        "db": { "id": 2362, "title": "Pokemon Crystal Version", "platform": "Nintendo Game Boy Color" },
+        "match": [ { "console": "Nintendo Game Boy Color", "name": "Pokemon - Crystal Version (USA, Europe) (Rev 1)", "fit": "works", "note": "which release the team takes is not said yet" } ]
+      },
+      "soon": "No release yet: you build it yourself"
+    },
+    {
+      "id": "ladx-recomp",
+      "name": "Link's Awakening DX Static Recompilation",
+      "kind": "pc",
+      "console": "Nintendo Game Boy Color",
+      "adds": "The Legend of Zelda: Link's Awakening DX recompiled to a native PC program. Its team says it was made largely with AI.",
+      "tags": [],
+      "team": "Ned Heller (sp00nz)",
+      "repo": "https://github.com/sp00nznet/LinksAwakening",
+      "licence": "MIT",
+      "base": {
+        "title": "Legend of Zelda, The - Link's Awakening DX (USA, Europe) (Rev 2) (SGB Enhanced) (GB Compatible)",
+        "db": { "id": 425347, "title": "The Legend of Zelda: Link's Awakening DX", "platform": "Nintendo Game Boy Color" },
+        "match": [ { "console": "Nintendo Game Boy Color", "name": "Legend of Zelda, The - Link's Awakening DX (USA, Europe) (Rev 2) (SGB Enhanced) (GB Compatible)", "fit": "works", "note": "which release the team takes is not said yet" } ]
+      },
+      "soon": "No release yet: you build it yourself"
+    },
+    {
+      "id": "oracle-recompiled",
+      "name": "Oracle of Ages and Oracle of Seasons Static Recompilation",
+      "kind": "pc",
+      "console": "Nintendo Game Boy Color",
+      "adds": "Oracle of Ages and Oracle of Seasons recompiled to native PC programs. Its team says it was made largely with AI.",
+      "tags": [],
+      "team": "Ned Heller (sp00nz)",
+      "repo": "https://github.com/sp00nznet/oracle-recompiled",
+      "licence": "MIT",
+      "base": {
+        "title": "Legend of Zelda, The - Oracle of Ages (USA, Australia)",
+        "db": { "id": 6122, "title": "The Legend of Zelda: Oracle of Ages", "platform": "Nintendo Game Boy Color" },
+        "match": [
+          { "console": "Nintendo Game Boy Color", "name": "Legend of Zelda, The - Oracle of Ages (USA, Australia)", "fit": "fits" },
+          { "console": "Nintendo Game Boy Color", "name": "Legend of Zelda, The - Oracle of Seasons (USA, Australia)", "fit": "fits" }
+        ]
+      },
+      "soon": "No release yet: you build it yourself"
+    },
+    {
+      "id": "smk-recomp",
+      "name": "Super Mario Kart Static Recompilation",
+      "kind": "pc",
+      "console": "Super Nintendo Entertainment System",
+      "adds": "Super Mario Kart recompiled to a native PC program. Its team says it was made largely with AI.",
+      "tags": ["coop"],
+      "team": "Ned Heller (sp00nz)",
+      "repo": "https://github.com/sp00nznet/mk",
+      "licence": "MIT",
+      "base": {
+        "title": "Super Mario Kart (USA)",
+        "db": { "id": 41, "title": "Super Mario Kart", "platform": "Super Nintendo Entertainment System" },
+        "match": [ { "console": "Super Nintendo Entertainment System", "name": "Super Mario Kart (USA)", "fit": "fits" } ]
+      },
+      "soon": "No release yet: you build it yourself"
+    },
+    {
+      "id": "crazytaxi-recomp",
+      "name": "Crazy Taxi, Statically Recompiled",
+      "kind": "pc",
+      "console": "Sega Dreamcast",
+      "adds": "Crazy Taxi recompiled to a native PC program. Its team says it was made largely with AI.",
+      "tags": [],
+      "team": "Ned Heller (sp00nz)",
+      "repo": "https://github.com/sp00nznet/crazytaxi",
+      "licence": "MIT",
+      "base": {
+        "title": "Crazy Taxi (USA)",
+        "db": { "id": 3649, "title": "Crazy Taxi", "platform": "Sega Dreamcast" },
+        "match": [ { "console": "Sega Dreamcast", "disc": "51035", "fit": "works", "note": "fits if it is the USA disc; the team's notes name no other" } ]
+      },
+      "soon": "No release yet: you build it yourself; last worked on 2026-08-26"
+    },
+    {
+      "id": "demons-crest-recomp",
+      "name": "Demon's Crest Recomp",
+      "kind": "pc",
+      "console": "Super Nintendo Entertainment System",
+      "adds": "Demon's Crest recompiled to run natively on PC",
+      "tags": [],
+      "team": "Magno Paz (magnopaz)",
+      "repo": "https://github.com/magnopaz/DemonsCrestSNESRecomp",
+      "licence": "MIT",
+      "base": {
+        "title": "Demon's Crest (USA)",
+        "db": { "id": 1577, "title": "Demon's Crest", "platform": "Super Nintendo Entertainment System" },
+        "match": [ { "console": "Super Nintendo Entertainment System", "name": "Demon's Crest (USA)", "fit": "fits" } ]
+      },
+      "soon": "No release yet; the team last worked on it 2026-10-10"
+    },
+    {
+      "id": "soulcalibur-recomp",
+      "name": "Soulcalibur: Recompiled",
+      "kind": "pc",
+      "console": "Sega Dreamcast",
+      "adds": "Soulcalibur recompiled for PC from its Dreamcast version. Its team says it was made with AI help.",
+      "tags": ["fighters"],
+      "team": "danielgomesvieira2000",
+      "repo": "https://github.com/danielgomesvieira2000/soulcalibur-recomp",
+      "licence": "GPL-2.0",
+      "base": {
+        "title": "SoulCalibur (USA)",
+        "db": { "id": 29739, "title": "SoulCalibur", "platform": "Sega Dreamcast" },
+        "match": [ { "console": "Sega Dreamcast", "disc": "T-1401N", "fit": "fits" } ]
+      },
+      "soon": "No release yet; the team last worked on it 2026-10-08"
+    },
+    {
+      "id": "pds-tools",
+      "name": "Panzer Dragoon Saga Decompilation",
+      "kind": "pc",
+      "console": "Sega Saturn",
+      "adds": "Panzer Dragoon Saga decompiled and rebuilt in a modern engine",
+      "tags": [],
+      "team": "blythos and the PDS Decompilation contributors",
+      "repo": "https://github.com/blythos/pds-tools",
+      "licence": "MIT",
+      "base": {
+        "title": "Panzer Dragoon Saga (USA)",
+        "db": { "id": 6828, "title": "Panzer Dragoon Saga", "platform": "Sega Saturn" },
+        "match": [ { "console": "Sega Saturn", "discs": ["MK-81307"], "fit": "fits" } ]
+      },
+      "soon": "A decompilation and a new engine under way; no release yet"
+    },
+    {
+      "id": "pc-albertodyssey",
+      "name": "pc-albertodyssey",
+      "kind": "pc",
+      "console": "Sega Saturn",
+      "adds": "Toward a native PC version of Albert Odyssey: Legend of Eldean",
+      "tags": [],
+      "team": "Samuele Voltan (vs-sr-dev)",
+      "repo": "https://github.com/vs-sr-dev/pc-albertodyssey",
+      "licence": "MIT",
+      "base": {
+        "title": "Albert Odyssey: Legend of Eldean (USA)",
+        "db": { "id": 9611, "title": "Albert Odyssey: Legend of Eldean", "platform": "Sega Saturn" },
+        "match": [ { "console": "Sega Saturn", "disc": "T-12705H", "fit": "fits" } ]
+      },
+      "soon": "Tools and notes for now; a PC version is the aim"
+    },
+    {
+      "id": "pc-deepfear",
+      "name": "pc-deepfear",
+      "kind": "pc",
+      "console": "Sega Saturn",
+      "adds": "Toward a native PC version of Deep Fear by static recompilation",
+      "tags": [],
+      "team": "Samuele Voltan (vs-sr-dev)",
+      "repo": "https://github.com/vs-sr-dev/pc-deepfear",
+      "licence": "MIT",
+      "base": {
+        "title": "Deep Fear (Europe)",
+        "db": { "id": 11230, "title": "Deep Fear", "platform": "Sega Saturn" },
+        "match": [ { "console": "Sega Saturn", "disc": "MK-81804", "fit": "works", "note": "the disc the team names" } ]
+      },
+      "soon": "Tools and notes for now; a PC version is the aim"
+    },
+    {
+      "id": "caferecomp",
+      "name": "CafeRecomp",
+      "kind": "pc",
+      "console": "Wii U",
+      "adds": "A Wii U recompilation framework, The Legend of Zelda: Breath of the Wild first",
+      "tags": [],
+      "team": "hardkiller2565123123",
+      "repo": "https://github.com/hardkiller2565123123/CafeRecomp",
+      "licence": "MPL-2.0",
+      "base": {
+        "title": "The Legend of Zelda: Breath of the Wild (USA)",
+        "db": { "id": 123994, "title": "The Legend of Zelda: Breath of the Wild", "platform": "Nintendo Wii U" },
+        "match": [ { "console": "Wii U", "disc": "ALZE01", "fit": "fits" } ]
+      },
+      "soon": "An early proof of concept; no release yet"
+    },
+    {
+      "id": "sms-pc-port",
+      "name": "Super Mario Sunshine Native PC Port",
+      "kind": "pc",
+      "console": "Nintendo GameCube",
+      "adds": "Super Mario Sunshine as a native PC game",
+      "tags": [],
+      "team": "Chase Myers (chasem-dev) and SoftwareAura LLC",
+      "repo": "https://github.com/chasem-dev/sms-pc-port",
+      "licence": "MIT",
+      "base": {
+        "title": "Super Mario Sunshine (USA)",
+        "db": { "id": 2236, "title": "Super Mario Sunshine", "platform": "Nintendo GameCube" },
+        "match": [ { "console": "Nintendo GameCube", "disc": "GMSE01", "fit": "fits" } ]
+      },
+      "soon": "Patches only for now: you build it yourself from your own disc"
+    },
+    {
+      "id": "verdite1",
+      "name": "Verdite1",
+      "kind": "pc",
+      "console": "Sony Playstation",
+      "adds": "The first, Japan-only King's Field rebuilt for PC with an English translation, widescreen, 60+ fps, smoother lighting and fog, and twin-stick mouse and keyboard controls, with mod support. Its team says it was made largely with AI.",
+      "tags": ["widescreen"],
+      "team": "Andrew (Voicedrew11)",
+      "basedon": "RecompOne by BlackLabelHQ",
+      "repo": "https://github.com/Voicedrew11/verdite1",
+      "community": "https://discord.gg/R4EKCs8RWH",
+      "licence": "MIT",
+      "base": {
+        "title": "King's Field (Japan)",
+        "db": { "id": 501, "title": "King's Field (JP)", "platform": "Sony Playstation" },
+        "match": [ { "console": "Sony Playstation", "disc": "SLPS-00017", "fit": "fits" } ]
+      },
+      "soon": "Plays start to finish, the team says, but there is no release yet"
+    },
+    {
+      "id": "lostworld-recomp",
+      "name": "The Lost World: Jurassic Park (static recompilation)",
+      "kind": "pc",
+      "console": "Arcade",
+      "adds": "Sega's Model 3 light-gun game recompiled to native code: aim with the mouse, a pad or a Sinden gun, play two players over the network, with save states, cheats and the US English text.",
+      "tags": ["coop"],
+      "team": "Ned Heller (sp00nz)",
+      "basedon": "model3recomp by sp00nz, with parts of MAME by the MAME team",
+      "repo": "https://github.com/sp00nznet/lostworld",
+      "licence": "MIT",
+      "base": {
+        "title": "The Lost World: Jurassic Park (Japan, MAME set lostwsga)",
+        "db": { "id": 19716, "title": "The Lost World: Jurassic Park", "platform": "Arcade" },
+        "match": [ { "console": "Arcade", "set": "lostwsga", "fit": "fits" } ]
+      },
+      "soon": "Plays all five stages, but no release: you build it yourself"
+    },
+    {
+      "id": "god-of-war-recomp",
+      "name": "God of War (PS2 Static Recompilation)",
+      "kind": "pc",
+      "console": "Sony Playstation 2",
+      "adds": "God of War recompiled to run natively on Windows, drawn at twice the PS2's resolution, with keyboard or controller.",
+      "tags": [],
+      "team": "KIexster",
+      "basedon": "PS2Recomp by ran-j",
+      "repo": "https://github.com/KIexster/god-of-war-recomp",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "God of War (USA)",
+        "db": { "id": 26, "title": "God of War", "platform": "Sony Playstation 2" },
+        "match": [ { "console": "Sony Playstation 2", "disc": "SCUS-97399", "fit": "fits" } ]
+      },
+      "soon": "Reaches gameplay, but no release: you build it yourself on Windows"
+    },
+    {
+      "id": "mksm-recomp",
+      "name": "MKSM Recomp",
+      "kind": "pc",
+      "console": "Sony Playstation 2",
+      "adds": "Mortal Kombat: Shaolin Monks recompiled from the PS2's own code to run natively on PC.",
+      "tags": [],
+      "team": "OGmidway",
+      "basedon": "PS2Recomp by ran-j",
+      "repo": "https://github.com/OGmidway/mksm-recomp",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Mortal Kombat: Shaolin Monks (USA)",
+        "db": { "id": 5388, "title": "Mortal Kombat: Shaolin Monks", "platform": "Sony Playstation 2" },
+        "match": [ { "console": "Sony Playstation 2", "disc": "SLUS-21087", "fit": "fits" } ]
+      },
+      "soon": "Early: reaches the menus and the opening movie; not playable yet"
+    },
+    {
+      "id": "halo2-decomp",
+      "name": "Halo 2 Decompilation",
+      "kind": "pc",
+      "console": "Microsoft Xbox",
+      "adds": "Halo 2's code rebuilt as readable C and C++ that compiles back byte for byte, the ground for a native PC version.",
+      "tags": [],
+      "team": "kirklandsig",
+      "repo": "https://github.com/kirklandsig/halo2-decompiled",
+      "licence": "CC0-1.0",
+      "base": {
+        "title": "Halo 2 (USA, Europe)",
+        "db": { "id": 6079, "title": "Halo 2", "platform": "Microsoft Xbox" },
+        "match": [ { "console": "Microsoft Xbox", "disc": "4D530064", "code": "4020603bab43751bdf5511b07558277dc7f0dcc8", "fit": "fits" } ]
+      },
+      "soon": "A decompilation, under way; a native PC version is its last step"
+    },
+    {
+      "id": "gearsue3",
+      "name": "GearsUE3",
+      "kind": "pc",
+      "console": "Microsoft Xbox 360",
+      "adds": "Gears of War running natively with keyboard and mouse, 1440p and up to 120 frames a second, and campaign checkpoints that save.",
+      "tags": [],
+      "team": "SomeoneIsWorking and the GearsUE3 contributors",
+      "basedon": "a fork of Xenia by the Xenia team",
+      "repo": "https://github.com/SomeoneIsWorking/gears1",
+      "licence": "MIT (its own code; the Xenia fork it carries is BSD-3-Clause)",
+      "base": {
+        "title": "Gears of War (the one retail revision the team takes)",
+        "db": { "id": 7481, "title": "Gears of War", "platform": "Microsoft Xbox 360" },
+        "match": [ { "console": "Microsoft Xbox 360", "disc": "4D5307D5", "fit": "works", "note": "fits if it is the one retail revision the team takes; its launcher checks the disc's default.xex" } ]
+      },
+      "soon": "Early: plays the opening fights on Linux; no Windows version or release yet"
+    },
+    {
+      "id": "dmc-recomp",
+      "name": "dmc-recomp",
+      "kind": "pc",
+      "console": "Sony Playstation 2",
+      "adds": "Devil May Cry recompiled from the PS2's own code to run natively on PC. Its team says it was made largely with AI.",
+      "tags": [],
+      "team": "Gui Tora (Gui-Tora)",
+      "basedon": "PS2Recomp by ran-j",
+      "repo": "https://github.com/Gui-Tora/dmc-recomp",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Devil May Cry (Europe, version 1.02)",
+        "db": { "id": 15, "title": "Devil May Cry", "platform": "Sony Playstation 2" },
+        "match": [ { "console": "Sony Playstation 2", "disc": "SLES-50358", "fit": "works", "note": "fits if it is version 1.02, the only one the team takes" } ]
+      },
+      "soon": "Not playable yet: it reaches the title screen and the opening scenes"
+    },
+    {
+      "id": "dw5xl-recomp",
+      "name": "DW5XL Recomp",
+      "kind": "pc",
+      "console": "Sony Playstation 2",
+      "adds": "Dynasty Warriors 5: Xtreme Legends recompiled to run natively, drawn through Vulkan with optional supersampling up to 16x.",
+      "tags": [],
+      "team": "Kenneth Hansen (TheSlackbringer)",
+      "basedon": "PS2Recomp by ran-j",
+      "repo": "https://github.com/TheSlackbringer/dw5xl-recomp",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Dynasty Warriors 5: Xtreme Legends (Europe, English)",
+        "db": { "id": 19744, "title": "Dynasty Warriors 5: Xtreme Legends", "platform": "Sony Playstation 2" },
+        "match": [ { "console": "Sony Playstation 2", "disc": "SLES-53860", "fit": "fits" } ]
+      },
+      "soon": "Battles run, on Linux only; a Windows version and a release are planned"
+    },
+    {
+      "id": "sotc-vibe-pc",
+      "name": "Shadow of the Colossus native PC port",
+      "kind": "pc",
+      "console": "Sony Playstation 2",
+      "adds": "Shadow of the Colossus recompiled for Windows: a steady 60 fps where the PS2 often ran at 20 to 30, widescreen with a matching interface, mouse camera and save states. Its team says it was made largely with AI.",
+      "tags": ["widescreen"],
+      "team": "LightVelox",
+      "basedon": "PS2Recomp by ran-j",
+      "repo": "https://github.com/LightVelox/sotc-vibe-pc",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Shadow of the Colossus (Europe, Australia), version 1.00",
+        "db": { "id": 2240, "title": "Shadow of the Colossus", "platform": "Sony Playstation 2" },
+        "match": [ { "console": "Sony Playstation 2", "disc": "SCES-53326", "fit": "works", "note": "fits if it is version 1.00, the only one the team takes" } ]
+      },
+      "soon": "All 16 colossi beaten in the team's tests, but no release: you build it yourself"
+    },
+    {
+      "id": "sotc-decomp",
+      "name": "Shadow of the Colossus Decompilation",
+      "kind": "pc",
+      "console": "Sony Playstation 2",
+      "adds": "Shadow of the Colossus's code rebuilt as C that compiles back byte for byte, the ground for a native PC version. Its team says it was made with AI help.",
+      "tags": [],
+      "team": "TheRealestNwah",
+      "repo": "https://github.com/TheRealestNwah/sotc-decomp",
+      "licence": "CC0-1.0",
+      "base": {
+        "title": "Shadow of the Colossus (USA)",
+        "db": { "id": 2240, "title": "Shadow of the Colossus", "platform": "Sony Playstation 2" },
+        "match": [ { "console": "Sony Playstation 2", "disc": "SCUS-97472", "fit": "fits" } ]
+      },
+      "soon": "A decompilation for now; a native PC version is the aim"
+    },
+    {
+      "id": "crash2-launcher",
+      "name": "Crash Bandicoot 2 Launcher",
+      "kind": "pc",
+      "console": "Sony Playstation",
+      "adds": "Crash Bandicoot 2 recompiled from the PlayStation's own code to run natively on Windows.",
+      "tags": [],
+      "team": "Matteo Cioffi (Matteo842)",
+      "basedon": "RecompOne by BlackLabelHQ",
+      "repo": "https://github.com/Matteo842/CrashBandicoot2-Launcher",
+      "licence": "MIT",
+      "base": {
+        "title": "Crash Bandicoot 2: Cortex Strikes Back (Europe)",
+        "db": { "id": 5689, "title": "Crash Bandicoot 2: Cortex Strikes Back", "platform": "Sony Playstation" },
+        "match": [ { "console": "Sony Playstation", "disc": "SCES-00967", "fit": "fits" } ]
+      },
+      "soon": "Very early: two levels play a little; the team last worked on it 2026-09-16"
+    },
+    {
+      "id": "kings-field-decomp",
+      "name": "King's Field Decompilation",
+      "kind": "pc",
+      "console": "Sony Playstation",
+      "adds": "The first King's Field's code rebuilt as C that compiles back to the original, the base for a native port to Linux and the web.",
+      "tags": [],
+      "team": "sushi-shi",
+      "repo": "https://github.com/sushi-shi/kings-field-decomp",
+      "licence": "CC0-1.0",
+      "base": {
+        "title": "King's Field (Japan)",
+        "db": { "id": 501, "title": "King's Field (JP)", "platform": "Sony Playstation" },
+        "match": [ { "console": "Sony Playstation", "disc": "SLPS-00017", "fit": "fits" } ]
+      },
+      "soon": "Nearly all decompiled; a port for Linux and the web is planned, not built"
+    },
+    {
+      "id": "lom-decomp",
+      "name": "Legend of Mana PSX Decompilation",
+      "kind": "pc",
+      "console": "Sony Playstation",
+      "adds": "Legend of Mana's code fully rebuilt as C that compiles back to the original, the base for modding and later ports.",
+      "tags": [],
+      "team": "Christopher Harris (celophi)",
+      "repo": "https://github.com/celophi/lom-decomp",
+      "licence": "MIT",
+      "base": {
+        "title": "Legend of Mana (USA or Japan)",
+        "db": { "id": 560, "title": "Legend of Mana", "platform": "Sony Playstation" },
+        "match": [
+          { "console": "Sony Playstation", "disc": "SLUS-01013", "fit": "fits" },
+          { "console": "Sony Playstation", "disc": "SLPS-02170", "fit": "fits" }
+        ]
+      },
+      "soon": "Fully decompiled; a port to other systems is a later step, not started"
+    },
+    {
+      "id": "marathon-recompiled",
+      "name": "Marathon Recompiled",
+      "kind": "pc",
+      "console": "Microsoft Xbox 360",
+      "adds": "Sonic the Hedgehog (2006) recompiled to run natively on PC, with its own menus, achievements and any aspect ratio.",
+      "tags": ["widescreen"],
+      "team": "sonicnext-dev",
+      "basedon": "XenonRecomp and XenosRecomp by hedge-dev",
+      "repo": "https://github.com/sonicnext-dev/MarathonRecomp",
+      "licence": "GPL-3.0",
+      "base": {
+        "title": "Sonic the Hedgehog (2006) (Xbox 360)",
+        "db": { "id": 7581, "title": "Sonic the Hedgehog (2006)", "platform": "Microsoft Xbox 360" },
+        "match": [ { "console": "Microsoft Xbox 360", "disc": "534507D6", "fit": "fits" } ]
+      },
+      "soon": "Not for public use yet, the team says; no release so far"
+    },
+    {
+      "id": "burnout3-recomp",
+      "name": "Burnout 3: Takedown (static recompilation)",
+      "kind": "pc",
+      "console": "Microsoft Xbox",
+      "adds": "Burnout 3: Takedown recompiled to run natively on Windows, every mode with one player or two in split screen.",
+      "tags": [],
+      "team": "Ned Heller (sp00nz)",
+      "basedon": "xboxrecomp by sp00nz",
+      "repo": "https://github.com/sp00nznet/burnout3",
+      "licence": "MIT",
+      "base": {
+        "title": "Burnout 3: Takedown (USA)",
+        "db": { "id": 6011, "title": "Burnout 3: Takedown", "platform": "Microsoft Xbox" },
+        "match": [ { "console": "Microsoft Xbox", "disc": "4541005B", "fit": "works", "note": "fits if it is the USA disc, the one the team's notes are made from" } ]
+      },
+      "soon": "Every mode plays, but at 2 to 4 fps; no release: you build it yourself"
+    },
+    {
+      "id": "syphon-filter-pc",
+      "name": "Syphon Filter PC",
+      "kind": "pc",
+      "console": "Sony Playstation",
+      "adds": "Syphon Filter running natively on Windows at any resolution and aspect, with dynamic lights and shadows, remappable mouse and keyboard controls and a launcher.",
+      "tags": ["widescreen"],
+      "team": "Madxbio97 and the SyphonFilterPC contributors",
+      "basedon": "PsyCross by SoapyMan",
+      "repo": "https://github.com/Madxbio97/SF-pc-port",
+      "licence": "MIT",
+      "base": {
+        "title": "Syphon Filter (USA, version 1.1)",
+        "db": { "id": 7808, "title": "Syphon Filter", "platform": "Sony Playstation" },
+        "match": [ { "console": "Sony Playstation", "disc": "SCUS-94240", "fit": "works", "note": "fits if it is version 1.1, the only one the team takes" } ]
+      }
+    },
+    {
+      "id": "future-cop-mit",
+      "name": "Future Cop: MIT",
+      "kind": "pc",
+      "console": "Sony Playstation",
+      "adds": "An open re-creation of Future Cop's engine; for now it shows the game's maps and models, read from your own copy.",
+      "tags": [],
+      "team": "Ghoster738",
+      "repo": "https://github.com/Ghoster738/Future-Cop-MIT",
+      "licence": "MIT",
+      "base": {
+        "title": "Future Cop: L.A.P.D. (USA)",
+        "db": { "id": 13026, "title": "Future Cop: L.A.P.D.", "platform": "Sony Playstation" },
+        "match": [ { "console": "Sony Playstation", "disc": "SLUS-00739", "fit": "works", "note": "the team reads PlayStation data with no region named, and reads the Windows version best" } ]
+      },
+      "soon": "A map and model viewer for now; no gameplay yet"
     }
   ]
 }

@@ -21,8 +21,8 @@ function fanPbp(ids) {
   ids.forEach((id, i) => { b.writeUInt32LE(at[i], 64 + 0x200 + 4 * i); b.write("PSISOIMG0000", 64 + at[i], "latin1"); b.write("_" + id, 64 + at[i] + 0x400, "latin1"); });
   return b;
 }
-function fanDisc(sector, boot) {
-  const s = (n) => n * sector + (sector === 2352 ? 24 : 0), b = Buffer.alloc(20 * sector), name = "SYSTEM.CNF;1", cnf = "BOOT = cdrom:\\" + boot + ";1\r\n";
+function fanDisc(sector, boot, key) {
+  const s = (n) => n * sector + (sector === 2352 ? 24 : 0), b = Buffer.alloc(20 * sector), name = "SYSTEM.CNF;1", cnf = (key || "BOOT = cdrom:") + "\\" + boot + ";1\r\n";
   b[s(16)] = 1;
   b.write("CD001", s(16) + 1, "latin1");
   b.writeUInt32LE(18, s(16) + 158);        // the root directory: sector 18, one sector long
@@ -34,6 +34,53 @@ function fanDisc(sector, boot) {
   b.write(name, s(18) + 33, "latin1");
   b.write(cnf, s(19), "latin1");
   return b;
+}
+
+/* A stand-in Xbox disc, an XISO (includes\xiso.php): the file system's mark at sector 32, each
+   folder one sector of entries, and a default.xbe naming its title ID in its certificate and
+   keeping its one section's SHA-1, named .text, in its header. */
+function fanXiso(titleId, code, files) {
+  const S = 2048, xbe = Buffer.alloc(0x1000), blobs = [];
+  xbe.write("XBEH", 0, "latin1");
+  xbe.writeUInt32LE(0x10000, 0x104);                 // where it loads: every address below less this is a place in the file
+  xbe.writeUInt32LE(0x10200, 0x118);                 // the certificate, its title ID 8 bytes in
+  xbe.writeUInt32LE(titleId, 0x208);
+  xbe.writeUInt32LE(1, 0x11C);                       // one section, its header at 0x300, its name at 0x380
+  xbe.writeUInt32LE(0x10300, 0x120);
+  xbe.writeUInt32LE(0x10380, 0x314);
+  Buffer.from(code, "hex").copy(xbe, 0x324);
+  xbe.write(".text", 0x380, "latin1");
+  const tree = { dirs: {}, files: [["default.xbe", xbe]] };
+  for (const [p, d] of files) {
+    const parts = p.split("/");
+    let t = tree;
+    for (const dir of parts.slice(0, -1)) { t = t.dirs[dir] = t.dirs[dir] || { dirs: {}, files: [] }; }
+    t.files.push([parts[parts.length - 1], d]);
+  }
+  let next = 33;
+  const place = (t) => {
+    const at = next++, buf = Buffer.alloc(S, 0xFF);
+    let o = 0;
+    const entry = (name, sector, size, attr) => {
+      buf.writeUInt32LE(0, o);                       // no tree links: entries are read in a line
+      buf.writeUInt32LE(sector, o + 4);
+      buf.writeUInt32LE(size, o + 8);
+      buf[o + 12] = attr;
+      buf[o + 13] = name.length;
+      buf.write(name, o + 14, "latin1");
+      o += (14 + name.length + 3) & ~3;
+    };
+    blobs.push([at, buf]);
+    for (const [name, sub] of Object.entries(t.dirs)) { entry(name, place(sub), S, 0x10); }
+    for (const [name, d] of t.files) { const s = next; next += Math.max(1, Math.ceil(d.length / S)); blobs.push([s, d]); entry(name, s, d.length, 0x80); }
+    return at;
+  };
+  const root = place(tree), img = Buffer.alloc(next * S);
+  img.write("MICROSOFT*XBOX*MEDIA", 32 * S, "latin1");
+  img.writeUInt32LE(root, 32 * S + 20);
+  img.writeUInt32LE(S, 32 * S + 24);
+  for (const [s, b] of blobs) { b.copy(img, s * S); }
+  return img;
 }
 
 /* Stand-ins for Make: an xdelta that copies the whole game and adds a few bytes, with the
@@ -172,7 +219,7 @@ module.exports = async function (b, check) {
     ])));
     const fixtureDb = { id: 999993, title: "Fan Fixture", platform: PS };
     fs.writeFileSync(path.join(DATA, "fanprojects.json"), JSON.stringify({ projects: [
-      one("t-fits", { tags: ["coop"], community: "https://example.com/talk", repo: "https://github.com/xsegon-test/t-fits",
+      one("t-fits", { tags: ["coop"], community: "https://example.com/talk", repo: "https://github.com/xsegon-test/t-fits", basedon: "the Test decompilation by the decompers",
                       base: base(krec.name, [{ console: kgame.platform, name: krec.name, fit: "fits" }]) }),
       one("t-works", { base: base(krec.name, [{ console: kgame.platform, name: "No Such Release (USA)", fit: "fits" },
                                               { console: kgame.platform, name: krec.name, fit: "works", note: "works; another is better" }]) }),
@@ -186,6 +233,10 @@ module.exports = async function (b, check) {
                       yours: { console: "Windows", title: "Fixture Port", build: "^port-([0-9a-f]{7})[0-9a-f]*\\.jar$" } }),
       one("t-set", { console: PS, base: base("Fan Fixture (USA)", [{ console: PS, discs: ["TEST-00001", "TEST-00002"], fit: "fits" }], fixtureDb) }),
       one("t-set3", { console: PS, base: base("Fan Fixture (USA)", [{ console: PS, discs: ["TEST-00003", "TEST-00004", "TEST-00005"], fit: "fits" }], fixtureDb) }),
+      // Not out yet, though its game fits and it carries a recipe: Coming soon, nothing to make.
+      one("t-soon", { kind: "pc", repo: "https://github.com/xsegon-test/t-soon", soon: "No Windows release yet",
+                      base: base(krec.name, [{ console: kgame.platform, name: krec.name, fit: "fits" }]),
+                      make: { how: "release", asset: "-Windows\\.zip$", folder: "Fan Soon", run: "soon.exe", game: { to: "soon.bin" } } }),
       one("t-plain", { page: "http://example.com/plain", base: base("x", [{ console: kgame.platform, name: "x", fit: "fits" }]) }),
       one("t-offhub", { repo: "https://example.com/not-github", base: base("x", [{ console: kgame.platform, name: "x", fit: "fits" }]) }),
       one("T bad id", { base: base("x", [{ console: kgame.platform, name: "x", fit: "fits" }]) }),
@@ -193,7 +244,10 @@ module.exports = async function (b, check) {
     const mineList = await api("api/fanprojects.php");
     const by = Object.fromEntries((mineList.projects || []).map((p) => [p.id, p]));
     check("a test copy's own list is read, and entries with a bad id, a page that is not https or a GitHub that is not GitHub are left out",
-      Object.keys(by).sort(), ["t-fits", "t-missing", "t-other", "t-port", "t-set", "t-set3", "t-works", "t-yours"]);
+      Object.keys(by).sort(), ["t-fits", "t-missing", "t-other", "t-port", "t-set", "t-set3", "t-soon", "t-works", "t-yours"]);
+    check("a project not out yet: where it stands is said, its game still read, and Make is neither offered nor started",
+      [by["t-soon"].soon, by["t-soon"].base.state, by["t-soon"].make, (await api("api/fanprojects.php", { make: "t-soon" })).ok],
+      ["No Windows release yet", "fits", false, false]);
     check("a release the file check knows fits", [by["t-fits"].base.state, by["t-fits"].base.gameId, by["t-fits"].base.release], ["fits", kid, krec.name]);
     check("the best fit is taken, with its note", [by["t-works"].base.state, by["t-works"].base.note], ["works", "works; another is better"]);
     check("the same game in another release is said so", [by["t-other"].base.state, by["t-other"].base.gameId], ["other", kid]);
@@ -225,11 +279,11 @@ module.exports = async function (b, check) {
     await b.settled();
     check("Fan projects is the last card on the consoles screen", await b.ev(`((document.querySelector("#syswall .sel") || {}).textContent || "").includes("Fan projects")`), true);
     await b.key("Enter");
-    check("Enter on it opens the page", await b.waitFor(`!!document.getElementById("fanpage") && !document.getElementById("fanpage").hidden && document.querySelectorAll("#fanpage .tile").length === 8`, 10000));
+    check("Enter on it opens the page", await b.waitFor(`!!document.getElementById("fanpage") && !document.getElementById("fanpage").hidden && document.querySelectorAll("#fanpage .tile").length === 9`, 10000));
     check("in place of the consoles screen", await b.ev(`document.getElementById("syswall").hidden`), true);
     check("its headings in the order a person acts, with their counts",
       await b.ev(`[...document.querySelectorAll("#fanpage .ghead")].map((h) => h.textContent)`),
-      ["In your library2", "Ready to make3", "You have another release2", "Needs a game you do not have1"]);
+      ["In your library2", "Ready to make3", "You have another release2", "Needs a game you do not have1", "Coming soon1"]);
     check("the first is chosen and the panel names it",
       await b.ev(`document.querySelector("#fanpage .tile.sel .cap").firstChild.textContent === document.querySelector("#fanpage .hero-name").textContent`), true);
     check("the panel: its kind, name and makers over the picture, the details and buttons under it",
@@ -242,6 +296,10 @@ module.exports = async function (b, check) {
     check("a project with a website, a GitHub and a community: a button for each after its first",
       await b.until(`[...document.querySelectorAll("#fanpage .hero .bar button")].map((x) => x.textContent)`, ["Make", "Website", "GitHub", "Community"], 3000),
       ["Make", "Website", "GitHub", "Community"]);
+    check("its makers credited under its name, and the work it is based on with theirs; one based on nothing says only its makers",
+      [await b.ev(`[...document.querySelectorAll("#fanpage .fan-top .fan-by")].map((x) => x.textContent)`),
+       (by["t-missing"] || {}).basedon === null],
+      [["by the testers", "based on the Test decompilation by the decompers"], true]);
     await b.key("Home");
     check("the legend says what the keys do here", await b.ev(`document.getElementById("help").textContent.includes("the panel's first button")`), true);
     await b.key("ArrowDown");
@@ -250,6 +308,13 @@ module.exports = async function (b, check) {
     check("a game you lack, already wanted: said on its first button",
       await b.waitFor(`(document.querySelector("#fanpage .hero .bar button") || {}).textContent === "On your wanted list"`, 3000));
     check("its tile says what it needs", await b.ev(`document.querySelector("#fanpage .tile.sel .fan-st").textContent`), "Needs No Such Game (USA)");
+    await b.ev(`[...document.querySelectorAll("#fanpage .tile")].find((t) => t.textContent.includes("Test soon")).click()`);
+    const soonSaid = ["No Windows release yet", ["Coming soon=No Windows release yet", "Built from=" + krec.name, "Yours=Your " + kgame.title + " fits"], ["Website", "GitHub"]];
+    check("a project not out yet: its tile says where it stands, the panel that and whether your game fits, its first button its website",
+      await b.until(`[document.querySelector("#fanpage .tile.sel .fan-st").textContent,
+                      [...document.querySelectorAll("#fanpage .hero-stats .k")].slice(0, 3).map((k) => k.textContent + "=" + k.nextElementSibling.textContent),
+                      [...document.querySelectorAll("#fanpage .hero .bar button")].map((x) => x.textContent)]`, soonSaid, 3000),
+      soonSaid);
     await b.ev(`(() => { const i = document.querySelector("#fanpage input[type=search]"); i.value = "works"; i.dispatchEvent(new Event("input", { bubbles: true })); })()`);
     check("typing finds a project", await b.waitFor(`document.querySelectorAll("#fanpage .tile").length === 1`, 3000));
     await b.ev(`(() => { const i = document.querySelector("#fanpage input[type=search]"); i.value = ""; i.dispatchEvent(new Event("input", { bubbles: true })); i.blur(); })()`);
@@ -272,14 +337,14 @@ module.exports = async function (b, check) {
     await b.setView("grid");
     await b.openBar("games");
     await b.menuItem(/Fan projects/);
-    check("Games > Fan projects opens it from the games", await b.waitFor(`!document.getElementById("fanpage").hidden && document.querySelectorAll("#fanpage .tile").length === 8`, 10000));
+    check("Games > Fan projects opens it from the games", await b.waitFor(`!document.getElementById("fanpage").hidden && document.querySelectorAll("#fanpage .tile").length === 9`, 10000));
     await b.key("Escape");
     check("and Escape goes back to them", await b.waitFor(`document.getElementById("fanpage").hidden && !document.getElementById("main").hidden`, 5000));
 
     /* ---- every other way out puts the page away, one screen left up ------- */
     // Each step's window rules are checked by the helpers too (setView, menuItem): the page and another screen never both show.
     const shown = `["fanpage", "syswall", "main", "details"].filter((id) => !document.getElementById(id).hidden).join()`;
-    const pageUp = `!document.getElementById("fanpage").hidden && document.querySelectorAll("#fanpage .tile").length === 8`;
+    const pageUp = `!document.getElementById("fanpage").hidden && document.querySelectorAll("#fanpage .tile").length === 9`;
     const fromGames = async () => { await b.openBar("games"); await b.menuItem(/Fan projects/); await b.waitFor(pageUp, 10000); };
     const fromWall = async () => { await b.key("End"); await b.settled(); await b.key("Enter"); await b.waitFor(pageUp, 10000); };
     await fromGames();
@@ -385,12 +450,19 @@ module.exports = async function (b, check) {
     // A set of two discs in one .pbp, for a port that reads discs.
     const discA = fanRawDisc(20, 1), discB = fanRawDisc(17, 9);
     fs.writeFileSync(path.join(fix, "discs.pbp"), fanPbpDiscs([["TEST_00011", discA], ["TEST_00012", discB]]));
+    // One disc as a .cue and its .bin, for a port that reads it under a fixed name of its own (as CTR: High Octane reads ctr-u.bin).
+    const cueBin = fanDisc(2352, "TEST_000.21");
+    fs.mkdirSync(path.join(fix, "cue"), { recursive: true });
+    fs.writeFileSync(path.join(fix, "cue", "Fan Cue Base (USA).bin"), cueBin);
+    fs.writeFileSync(path.join(fix, "cue", "Fan Cue Base (USA).cue"), "FILE \"Fan Cue Base (USA).bin\" BINARY\r\n  TRACK 01 MODE2/2352\r\n    INDEX 01 00:00:00\r\n");
     const own2 = JSON.parse(fs.readFileSync(ownFile, "utf8"));
-    fs.writeFileSync(ownFile, JSON.stringify(own2.concat([{ id: "xs-fa0000000011", title: "Fan Disc Base", platform: PS, run: path.join(fix, "discs.pbp") }])));
+    fs.writeFileSync(ownFile, JSON.stringify(own2.concat([{ id: "xs-fa0000000011", title: "Fan Disc Base", platform: PS, run: path.join(fix, "discs.pbp") },
+                                                          { id: "xs-fa0000000012", title: "Fan Cue Base", platform: PS, run: path.join(fix, "cue", "Fan Cue Base (USA).cue") }])));
     const porter = (id, repo, over) => one(id, Object.assign({ name: "Fan " + id.slice(2), kind: "pc", console: N64, repo: "https://github.com/xsegon-test/" + repo,
-      community: "https://example.com/talk", team: "the porters",
+      community: "https://example.com/talk", team: "the porters", basedon: "the Fan decompilation by the decompers",
       base: base("Fan Make Base (USA)", [{ console: N64, name: "Fan Make Base (USA)", fit: "fits" }], { id: 999995, title: "Fan Make Base", platform: N64 }),
       make: { how: "release", asset: "-win64\\.zip$", folder: "Fan " + id.slice(2), run: "port.exe", first: "Its first start reads your game.",
+              credit: "Based on the Fan Port by the porters (https://github.com/xsegon-test/" + repo + ")",
               game: { to: "data/base.z64", format: "z64", md5: [md5(game)] } } }, over));
     fs.writeFileSync(path.join(DATA, "fanprojects.json"), JSON.stringify({ projects: [
       porter("t-port", "fanport"), porter("t-portbad", "fanportbad"),
@@ -398,6 +470,8 @@ module.exports = async function (b, check) {
       porter("t-portaway", "fanport", { make: { how: "release", repo: "https://github.com/someone-else/fanport", asset: "-win64\\.zip$", folder: "x", run: "port.exe", game: { to: "base.z64" } } }),
       porter("t-discs", "fanport", { console: PS, base: base("Fan Disc Base (USA)", [{ console: PS, discs: ["TEST-00011", "TEST-00012"], fit: "fits" }], { id: 999996, title: "Fan Disc Base", platform: PS }),
                                       make: { how: "release", asset: "-win64\\.zip$", folder: "Fan discs", run: "port.exe", game: { discs: "isos", name: "Fan Disc Base" } } }),
+      porter("t-rename", "fanport", { console: PS, base: base("Fan Cue Base (USA)", [{ console: PS, discs: ["TEST-00021"], fit: "fits" }], { id: 999998, title: "Fan Cue Base", platform: PS }),
+                                       make: { how: "release", asset: "-win64\\.zip$", folder: "Fan rename", run: "port.exe", game: { discs: "assets", name: "port-u", rename: true } } }),
     ] }));
     const pc = Object.fromEntries(((await api("api/fanprojects.php")).projects || []).map((p) => [p.id, p]));
     check("a PC version: Make is offered from the project's own GitHub, never another's",
@@ -420,9 +494,11 @@ module.exports = async function (b, check) {
       ["done", true, md5(game)]);
     const ownNow = (await api("api/local.php")).games || [];
     const added = ownNow.find((g) => g.id === ((portJob && portJob.made) || {}).id) || {};
-    check("added to your Windows list, run from its folder, the team's links in its notes",
-      [added.platform, added.run, /github\.com\/xsegon-test\/fanport/.test(added.notes || "") && /example\.com\/talk/.test(added.notes || "")],
-      ["Windows", path.join(portDir, "port.exe"), true]);
+    check("added to your Windows list, run from its folder, the team's links in its notes, the credit its licence asks for first, its makers and the work it is based on",
+      [added.platform, added.run, /github\.com\/xsegon-test\/fanport/.test(added.notes || "") && /example\.com\/talk/.test(added.notes || ""),
+       (added.notes || "").startsWith("Based on the Fan Port by the porters (https://github.com/xsegon-test/fanport)\n\n"),
+       (added.notes || "").includes("Fan port is made by the porters, based on the Fan decompilation by the decompers:\n")],
+      ["Windows", path.join(portDir, "port.exe"), true, true, true]);
     const portAfter = ((await api("api/fanprojects.php")).projects || []).find((p) => p.id === "t-port") || {};
     check("the page has it as yours, its version the release's tag", (portAfter.yours || []).map((y) => [y.id, y.version, y.local]), [[added.id, "v1.2", true]]);
     check("the corner bar's ending names where it went and what its first start does",
@@ -436,6 +512,13 @@ module.exports = async function (b, check) {
       [discJob && discJob.state, fs.existsSync(binOf(1)) && md5(fs.readFileSync(binOf(1))), fs.existsSync(binOf(2)) && md5(fs.readFileSync(binOf(2))),
        fs.existsSync(path.join(isos, "Fan Disc Base (Disc 2).cue")) && fs.readFileSync(path.join(isos, "Fan Disc Base (Disc 2).cue"), "latin1")],
       ["done", md5(discA), md5(discB), "FILE \"Fan Disc Base (Disc 2).bin\" BINARY\r\n  TRACK 01 MODE2/2352\r\n    INDEX 01 00:00:00\r\n"]);
+    await api("api/fanprojects.php", { make: "t-rename" });
+    const renameJob = await ended();
+    const assets = path.join(DATA, "fan-made", PS, "Ports", "Fan rename", "assets");
+    check("one disc given the name its port reads: its .bin copied as that name, its .cue made to name it, nothing under the old name",
+      [renameJob && renameJob.state, fs.existsSync(path.join(assets, "port-u.bin")) && md5(fs.readFileSync(path.join(assets, "port-u.bin"))),
+       fs.existsSync(path.join(assets, "port-u.cue")) && fs.readFileSync(path.join(assets, "port-u.cue"), "latin1"), fs.existsSync(assets) ? fs.readdirSync(assets).sort() : []],
+      ["done", md5(cueBin), "FILE \"port-u.bin\" BINARY\r\n  TRACK 01 MODE2/2352\r\n    INDEX 01 00:00:00\r\n", ["port-u.bin", "port-u.cue"]]);
 
     /* ---- a port with an emulator of its own, a build from source, a Riivolution pack ---------- */
     const file = (name, text) => [name, Buffer.from(text), crc32(Buffer.from(text))];
@@ -530,6 +613,47 @@ module.exports = async function (b, check) {
       [n64Now.some((g) => g.id === packId), (hackOf2[packId] || {}).of,
        ((((await api("api/fanprojects.php")).projects || []).find((p) => p.id === "t-pack") || {}).yours || []).map((y) => y.version)],
       [true, BASEID, ["1.0.1"]]);
+
+    /* ---- an Xbox disc, a PS2 disc and an arcade set (roadmap AQ12) ---------- */
+    // An Xbox disc known by its title ID and its code's fingerprint; a PS2 disc by its BOOT2 line, opening
+    // with six letters a GameCube ID was once taken from; an arcade game by its set's file name.
+    const XB = "Microsoft Xbox", PS2 = "Sony Playstation 2", code = "1234567890abcdef1234567890abcdef12345678";
+    const boxFiles = [["Media/a.bin", Buffer.from("the first file of the stand-in disc")], ["Media/Sub/b.bin", Buffer.alloc(5000, 7)]];
+    const boxIso = fanXiso(0x58540001, code, boxFiles), twoIso = fanDisc(2048, "TEST_212.09", "BOOT2 = cdrom0:");
+    twoIso.write("EEEEEEEE", 0, "latin1");
+    fs.writeFileSync(path.join(fix, "box.iso"), boxIso);
+    fs.writeFileSync(path.join(fix, "two.iso"), twoIso);
+    fs.writeFileSync(path.join(fix, "fanset.zip"), fanZipOf([]));
+    const own3 = JSON.parse(fs.readFileSync(ownFile, "utf8"));
+    fs.writeFileSync(ownFile, JSON.stringify(own3.concat([
+      { id: "xs-fa0000000021", title: "Fan Fixture Box", platform: XB, run: path.join(fix, "box.iso") },
+      { id: "xs-fa0000000022", title: "Fan Fixture Two", platform: PS2, run: path.join(fix, "two.iso") },
+      { id: "xs-fa0000000023", title: "Fan Fixture Arcade", platform: "Arcade", run: path.join(fix, "fanset.zip") },
+    ])));
+    const boxDb = { id: 999997, title: "Fan Fixture Box", platform: XB };
+    fs.writeFileSync(path.join(DATA, "fanprojects.json"), JSON.stringify({ projects: [
+      porter("t-box", "fanport", { console: XB, base: base("Fan Fixture Box (USA)", [{ console: XB, disc: "58540001", code, fit: "fits" }], boxDb),
+                                   make: { how: "release", asset: "-win64\\.zip$", folder: "Fan box", run: "port.exe", write: ["portable.txt"], game: { xiso: "game" } } }),
+      porter("t-boxcode", "fanport", { console: XB, base: base("Fan Fixture Box (USA)", [{ console: XB, disc: "58540001", code: "0".repeat(40), fit: "fits" }], boxDb) }),
+      porter("t-boxname", "fanport", { console: XB, base: base("No Such Box (USA)", [{ console: XB, disc: "58540001", fit: "fits" }], { id: 999998, title: "No Such Box", platform: XB }) }),
+      porter("t-two", "fanport", { console: PS2, base: base("Fan Fixture Two (USA)", [{ console: PS2, disc: "TEST-21209", fit: "fits" }], { id: 999999, title: "Fan Fixture Two", platform: PS2 }) }),
+      porter("t-arcade", "fanport", { console: "Arcade", base: base("Fan Fixture Arcade", [{ console: "Arcade", set: "fanset", fit: "fits" }], { id: 999989, title: "Fan Fixture Arcade", platform: "Arcade" }) }),
+    ] }));
+    const box = Object.fromEntries(((await api("api/fanprojects.php")).projects || []).map((p) => [p.id, p]));
+    const where = (id) => (box[id] ? [box[id].base.state, box[id].base.release] : null);
+    check("an Xbox disc by its title ID and its code's fingerprint; the same ID with other code is another release",
+      [where("t-box"), where("t-boxcode"), box["t-box"] && box["t-box"].make], [["fits", "58540001"], ["other", "58540001"], true]);
+    check("an Xbox disc is read only for a game carrying the project's game name", (where("t-boxname") || [])[0], "missing");
+    check("a PS2 disc by its BOOT2 line, though it opens with six letters like a GameCube disc's ID", where("t-two"), ["fits", "TEST-21209"]);
+    check("an arcade game by its MAME set's file name", where("t-arcade"), ["fits", "fanset"]);
+    await api("api/fanprojects.php", { make: "t-box" });
+    const boxJob = await ended();
+    const boxDir = path.join(DATA, "fan-made", XB, "Ports", "Fan box");
+    const got = (rel) => { const f = path.join(boxDir, "game", ...rel.split("/")); return fs.existsSync(f) ? fs.readFileSync(f) : Buffer.alloc(0); };
+    check("Make for an Xbox disc: the release unpacked, every file of the disc written out into its game folder as it is, the switch file beside it, the disc unchanged",
+      [boxJob && boxJob.state, fs.existsSync(path.join(boxDir, "port.exe")), boxFiles.map(([n, d]) => got(n).equals(d)),
+       got("default.xbe").subarray(0, 4).toString("latin1"), fs.existsSync(path.join(boxDir, "portable.txt")), md5(fs.readFileSync(path.join(fix, "box.iso")))],
+      ["done", true, [true, true], "XBEH", true, md5(boxIso)]);
   } finally {
     kept.restore();
     fs.rmSync(fix, { recursive: true, force: true });

@@ -7,9 +7,12 @@
     Writes includes\texpacks\list.json, which ships with Xsegon: a person's PC
     asks nobody for it. Run before a release. The consoles are the ones whose
     emulator here loads packs. Anyone on the sheet's own Blacklist tab is left
-    out. A pack whose page is emulationking.com, evilgames.eu or a GitHub
-    project gets its own download and size, asked of that page here, so Xsegon
-    can fetch it with one press; every other pack is opened at its page.    */
+    out, and so is a row filed under a console its pack is not for (NOT_FOR).
+    tools\texpacks-more.json adds the few packs the sheet lacks, each read from
+    its own page by a person. A pack whose page is emulationking.com,
+    evilgames.eu or a GitHub project gets its own download and size, asked of
+    that page here, so Xsegon can fetch it with one press; every other pack is
+    opened at its page.    */
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -19,6 +22,12 @@ const crypto = require("crypto");
 const SHEET = "1sif8FeRGJRbytK8wFRXgF6Hke9V6GUFs";
 const OUT = path.join(__dirname, "..", "includes", "texpacks", "list.json");
 const TABS = { PS2: "sony playstation 2", GC: "nintendo gamecube", Wii: "nintendo wii", N64: "nintendo 64" };
+const MORE = path.join(__dirname, "texpacks-more.json");
+// Rows the sheet files under a console whose emulator cannot load their pack.
+const NOT_FOR = [
+  // RE:Enhance is for the PC release: "for the Classic Rebirth version of the game ONLY. Dolphin is not supported" (its ModDB page).
+  { console: "nintendo 64", page: /^https:\/\/www\.moddb\.com\/mods\/re-?enhance-/i },
+];
 const UA = { "User-Agent": "Xsegon texture pack list builder" };
 const pause = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -110,10 +119,15 @@ async function directOf(url, console_) {
   }
   if (host === "evilgames.eu") {
     const html = await page(url);
-    const files = [...html.matchAll(/href="([^"]+\.(?:zip|7z))"/g)].map((m) => new URL(m[1], url).href);
-    const want = console_ === "nintendo 64" ? [/gliden64-png-hd\.zip$/, /gliden64-hts-hd\.7z$/, /gliden64/] : [/dolphin-png-hd\.zip$/, /dolphin-png/, /dolphin/];
+    const files = [...html.matchAll(/href="([^"]+\.(?:zip|7z))"/g)].map((m) => new URL(m[1], url).href).filter((f) => /\/files\/texture-packs\//.test(f));
+    // A file names the emulator it is for, or none ("re2-reloaded-v2.0.0-png-hd.zip"): another's, or a pack of two games, is left out.
+    const n64 = console_ === "nintendo 64";
+    const other = n64 ? /dolphin|jabo|sm64ex|sm64rt|-gs-|2ship|soh|battleship|combo|o2r/ : /gliden64|-hts|jabo|sm64ex|sm64rt|-gs-|2ship|soh|battleship|combo|o2r/;
+    const mine = files.filter((f) => !other.test(f.split("/").pop()));
+    // A PNG .zip first: it sits beside other packs, where an N64 .hts is loaded alone.
+    const want = n64 ? [/-png-hd\.zip$/, /-png\.zip$/, /-hts-hd\.7z$/, /-hts\.7z$/] : [/-png-hd\.zip$/, /-png\.zip$/, /-dds(-hd)?\.7z$/];
     for (const w of want) {
-      const f = files.find((x) => w.test(x));
+      const f = mine.find((x) => w.test(x));
       if (f) { return { url: f, bytes: await sizeOf(f), name: title(html, /\s*[|-].*$/) }; }
     }
     return null;
@@ -149,8 +163,14 @@ const https = (u) => (u && /^https:\/\/[^\s"]+$/.test(u) ? u : "");
   }
   const all = sheets(unzip(buf));
   const banned = new Set((all.Blacklist || []).map((r) => (r.B || {}).v || "").filter((n) => n && n !== "Author").map((n) => n.toLowerCase()));
-  const out = { made: new Date().toISOString().slice(0, 10), from: "Texture Packs Archive, kept by Sad Origami: https://docs.google.com/spreadsheets/d/" + SHEET, consoles: {} };
-  let direct = 0, left = 0;
+  const more = JSON.parse(fs.readFileSync(MORE, "utf8")).packs;
+  for (const m of more) {
+    if (!Object.values(TABS).includes(m.console) || !m.t || !m.by || !https(m.page)) { throw new Error(path.basename(MORE) + ": a pack needs a console of the list's, a title, a maker and an https page: " + JSON.stringify(m)); }
+  }
+  const out = { made: new Date().toISOString().slice(0, 10), from: "Texture Packs Archive, kept by Sad Origami: https://docs.google.com/spreadsheets/d/" + SHEET,
+                also: "a few packs the Archive lacks, marked from: xsegon, kept in tools\\texpacks-more.json", consoles: {} };
+  const keyOf = (console_, t, by, link) => crypto.createHash("sha1").update(console_ + "|" + t + "|" + by + "|" + link).digest("hex").slice(0, 12);
+  let direct = 0, left = 0, wrong = 0, ours = 0;
   for (const [tab, console_] of Object.entries(TABS)) {
     const rows = all[tab] || [];
     if (!rows.length) { throw new Error("the sheet has no " + tab + " tab: its layout changed"); }
@@ -165,16 +185,27 @@ const https = (u) => (u && /^https:\/\/[^\s"]+$/.test(u) ? u : "");
       const t = cell(r, "Game Title").v, by = cell(r, "Pack Author").v, link = https(cell(r, "Download").u);
       if (!t || (!link)) { continue; }
       if (banned.has(by.toLowerCase())) { left++; continue; }
+      if (NOT_FOR.some((n) => n.console === console_ && n.page.test(link))) { wrong++; continue; }
       const get = await directOf(link, console_).catch(() => null);
       if (get) { direct++; }
       const region = cell(r, "Region").v;
       list.push({
-        k: crypto.createHash("sha1").update(console_ + "|" + t + "|" + by + "|" + link).digest("hex").slice(0, 12),
+        k: keyOf(console_, t, by, link),
         t, name: get && get.name ? get.name : "", by, kind: kind(cell(r, "Type").v), st: status(cell(r, "Status").v),
         r: /^(NTSC-U|PAL|NTSC-J)$/.test(region) ? region : "", bytes: get && get.bytes ? get.bytes : bytes(cell(r, "Size").v),
         pay: pay(cell(r, "Restriction").v), page: link, where: new URL(link).host.replace(/^www\./, ""),
         tip: https(cell(r, "Tip the Author").u), get: get ? { url: get.url, bytes: get.bytes, name: get.name } : null,
       });
+    }
+    // Xsegon's own few, unless the sheet has come to list the same page.
+    for (const m of more.filter((x) => x.console === console_)) {
+      if (list.some((r) => r.page === m.page)) { console.log("  the sheet lists " + m.t + " by " + m.by + " now: " + path.basename(MORE) + "'s row is not needed"); continue; }
+      const get = await directOf(m.page, console_).catch(() => null);
+      if (get) { direct++; }
+      ours++;
+      list.push({ k: keyOf(console_, m.t, m.by, m.page), t: m.t, name: m.name || (get && get.name) || "", by: m.by, kind: m.kind || "", st: m.st || "",
+                  r: m.r || "", bytes: get && get.bytes ? get.bytes : m.bytes || 0, pay: m.pay || "free", page: m.page, where: new URL(m.page).host.replace(/^www\./, ""),
+                  tip: https(m.tip), get: get ? { url: get.url, bytes: get.bytes, name: get.name } : null, from: "xsegon", says: m.says || "" });
     }
     list.sort((a, b) => a.t.localeCompare(b.t) || a.by.localeCompare(b.by));
     out.consoles[console_] = list;
@@ -182,5 +213,6 @@ const https = (u) => (u && /^https:\/\/[^\s"]+$/.test(u) ? u : "");
   }
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
   fs.writeFileSync(OUT, JSON.stringify(out, null, 1) + "\n");
-  console.log("wrote " + OUT + ": " + direct + " with a download of their own, " + left + " left out (on the sheet's blacklist)");
+  console.log("wrote " + OUT + ": " + direct + " with a download of their own, " + left + " left out (on the sheet's blacklist), "
+    + wrong + " left out (not for that console's emulator), " + ours + " from " + path.basename(MORE));
 })().catch((e) => { console.error("!! " + e.message); process.exit(1); });
