@@ -2,6 +2,7 @@ import { openPlatformArtEditor } from "./art-editors.js";
 import { measureChrome } from "./chrome.js";
 import { dropDetails } from "./details.js";
 import { dragAte } from "./drag.js";
+import { EXT_KEY, dropExtPage, openExtPage } from "./extensions.js";
 import { FAN_KEY, dropFanPage, openFanPage } from "./fanprojects.js";
 import { openFilterWindow } from "./filterwin.js";
 import { paintHelp } from "./help.js";
@@ -50,6 +51,8 @@ function buildSysList() {
                    collection: true, note: c.note || null });
   });
   // Fan projects rides last: a page of its own, not a list of games (js\fanprojects.js).
+  // Extensions just before it: programs Xsegon works with, a page of its own too (js\extensions.js).
+  sysList.push({ name: EXT_KEY, label: "Extensions", count: 0, show: null, collection: true, ext: true, note: null });
   sysList.push({ name: FAN_KEY, label: "Fan projects", count: 0, show: null, collection: true, fan: true, note: null });
   if (sysSel >= sysList.length) { sysSel = 0; }
 }
@@ -70,6 +73,7 @@ export function repaintWall() {
 // is only honest with its condition beside it.
 function countLabel(p) {
   if (p.fan) { return "Hacks, mods and PC versions"; }
+  if (p.ext) { return "Programs Xsegon works with"; }
   if (p.note) { return p.note; }         // an empty collection says why instead of "0 games"
   var words = filterWords();
   return p.count + (p.count === 1 ? " game" : " games") + (words ? " · " + words : "");
@@ -85,6 +89,7 @@ export function enterSystems() {
   L("NAV", "the wall, " + sysStyle());
   dropDetails();                         // nothing of a game's stays over the consoles
   dropFanPage();                         // nor the Fan projects page
+  dropExtPage();                         // nor the Extensions page
   stopVideo();
   setSysStage("wall");
   buildSysList();
@@ -104,6 +109,7 @@ export function backToWall() {
   L("NAV", "back to the wall from " + ($platform.value || "all"));
   dropDetails();
   dropFanPage();
+  dropExtPage();
   stopVideo();
   // Built here too, not only on the way in: the wall can be reached without
   // ever having been entered (opening on every game in List or Grid, or the
@@ -133,6 +139,7 @@ export function backToWall() {
    shape, so they open the whole library and the back arrow goes back. */
 export function chooseSystem(name) {
   if (name === FAN_KEY) { openFanPage(); return; }
+  if (name === EXT_KEY) { openExtPage(); return; }
   // An empty collection stays on the rim, greyed, so it can explain its
   // rule instead of vanishing and reading as broken. Opening it would show
   // nothing; the answer is the rule, from every door that leads here.
@@ -169,6 +176,7 @@ export function chooseSystem(name) {
    request it names the wall's shape over a list. */
 function showInside(name) {
   dropFanPage();                         // a console or every game, chosen from over the Fan projects page
+  dropExtPage();                         // or over the Extensions page
   setSysStage("inside");
   // The game view is whatever the dropdown says: systems first is a toggle,
   // so the systems wheel can open into the game wheel.
@@ -378,7 +386,7 @@ function paintSysArt(p) {
   if (!sysInfoEl || !p) { return; }
   if (!SI || SI.host !== sysInfoEl) { buildSysInfo(); }
   SI.p = p;
-  SI.mark.textContent = p.fan ? "✦" : "★";
+  SI.mark.textContent = p.fan ? "✦" : p.ext ? "⬇" : "★";
   var url = platformArtUrl(p.name, "device");
   if (SI.img.getAttribute("src") !== url) {
     SI.img.hidden = false;

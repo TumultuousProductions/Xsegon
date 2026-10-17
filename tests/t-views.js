@@ -1459,9 +1459,9 @@ module.exports = async function (b, check) {
     const s2 = await b.ev(shown);
     check("Esc goes to the consoles", s2.wall, true);
     // The list of consoles must be built on this road too, which never went in.
-    // Fan projects is the one entry the server does not send.
+    // Extensions and Fan projects are the two entries the server does not send.
     check("with every console on it, though it was never entered",
-          await b.ev(`document.querySelectorAll("#syswall .syscard").length`), (await api("api/library.php")).collections.length + Object.keys((await api("api/library.php")).platforms).length + 1);
+          await b.ev(`document.querySelectorAll("#syswall .syscard").length`), (await api("api/library.php")).collections.length + Object.keys((await api("api/library.php")).platforms).length + 2);
     check("and the dropdown names the consoles' shape, not the list", s2.dropdown, "carousel");
     check("while the legend says what a console opens into",
           await b.ev(`[...document.querySelectorAll("#help .hl")].map(x => x.textContent).join("|")`).then((t) => /open in list/.test(t)));
