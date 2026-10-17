@@ -1,0 +1,39 @@
+{
+  "about": "Programs Xsegon works with, for the Extensions page (roadmap AU11, js/extensions.js, includes/extensions.php). Each entry was read from its makers' own page on 2026-10-17. Xsegon never ships or hosts any of them: 'get' is the makers' own download, named on the page 'listed', with the size and the SHA-256 that page publishes, fetched only when a person presses Get. 'helper' is a program of another team's that Xsegon puts beside it to start its games, one release for each version of the program it fits ('fits': 'flashpoint' is the version series it targets, as its release names it; 'size' and 'sha256' are the release's zip, as GitHub gives them or as read from the download that day; 'exeSize' tells which release a program already there is). 'page' is the makers' website, 'repo' their source. The list changes with each Xsegon release.",
+  "extensions": [
+    {
+      "id": "flashpoint",
+      "name": "Flashpoint Archive",
+      "kind": "Game collection",
+      "adds": "Web games and animations from the Flash era and after (Flash, Shockwave, Java, HTML5 and more), over 190,000 of them, kept playable by its own team. Xsegon brings your Flashpoint favourites in as a Flashpoint list and starts them without Flashpoint's own window.",
+      "by": "the Flashpoint Archive team",
+      "licence": "MIT (its launcher); each game belongs to its makers",
+      "page": "https://flashpointarchive.org/",
+      "repo": "https://github.com/FlashpointProject/launcher",
+      "size": "a 1.1 GB download, 1 to 4 GB once set up; each game downloads the first time it is played",
+      "get": {
+        "version": "14.0.3",
+        "released": "2025-11-21",
+        "file": "Flashpoint Infinity 14.0.3.7z",
+        "url": "https://download.unstable.life/archive/infinity/Flashpoint%20Infinity%2014.0.3.7z",
+        "size": 1148857725,
+        "sha256": "17f6ab93a7ca1f0adc468649f3d376aa3deb30caa808837a7735e8a6dc0e7502",
+        "listed": "https://flashpointarchive.org/downloads"
+      },
+      "helper": {
+        "name": "CLIFp",
+        "by": "oblivioncth",
+        "licence": "AGPL-3.0",
+        "repo": "https://github.com/oblivioncth/CLIFp",
+        "fits": [
+          { "flashpoint": "12.1", "tag": "v0.9.10", "asset": "CLIFp_v0.9.10_Windows_Static_x64.msvc.zip", "size": 10817416,
+            "sha256": "ac3e272b55534a8b3d6e1e53b5b186679840ca9a677cc471989623cdc8cb056b", "exeSize": 23285760 },
+          { "flashpoint": "13.0", "tag": "v0.9.12", "asset": "CLIFp_v0.9.12_Windows_Static_x64.msvc.zip", "size": 10920517,
+            "sha256": "5c0c42b87d53675b19dbbf860b75eb763c32635a5fdc7ed76ad35fd24cdc19f9", "exeSize": 23627264 },
+          { "flashpoint": "14.0", "tag": "v0.9.16", "asset": "CLIFp_v0.9.16_Windows_Static_x64.zip", "size": 24554972,
+            "sha256": "a5491d89a0e77237c1540d5e861a388a6f001c039c809086421612cce23d37ee", "exeSize": 23942656 }
+        ]
+      }
+    }
+  ]
+}

@@ -63,6 +63,7 @@ export var TIPS = {
   hackSettle: "The games that may be hacks, each with the game Xsegon would name for it: say yes, another game, or no hack. A hack shows in the Hacks tab of the game it comes from.",
   wanted: "Every game on record for a console that is not in your library. Star the ones you want and export them as a list.",
   fanProjects: "Hacks, mods and PC versions made from games you own: each one checked against your copy, with a way to the team that made it.",
+  extensions: "Programs Xsegon works with, such as Flashpoint for web games: found on this PC, or fetched from their makers when you press for it.",
   runcheck: "Starts each game for a few seconds to see which ones boot. Games open on the screen while it runs.",
   bios: "Which consoles need startup files of their own, and whether they are in place. It never downloads one.",
   emuAdd: "Adds an emulator of your own, such as Dolphin or PCSX2: choose its program, select its consoles, and their games start in it.",

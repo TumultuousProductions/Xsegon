@@ -1,4 +1,5 @@
 import { openDetails } from "./details.js";
+import { dropExtPage } from "./extensions.js";
 import { dropFanPage } from "./fanprojects.js";
 import { paintHelp } from "./help.js";
 import { iconEl } from "./icons.js";
@@ -443,6 +444,7 @@ export function openLocalEditor(g, onBack) {
               // From the consoles screen (the + in the masthead) this lands
               // inside the new game's platform; the Back button applies.
               dropFanPage();             // the + pressed over the Fan projects page: what it covered is where it lands
+              dropExtPage();             // or over the Extensions page
               if ($syswall && !$syswall.hidden) {
                 setSysStage("inside");
                 $syswall.hidden = true;

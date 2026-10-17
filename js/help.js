@@ -28,7 +28,9 @@ var HELP = {
   settings: [["↑↓", "move"], ["←→", "change"], ["Enter", "open"],
              ["Esc", "back"], ["Type", "find a setting"]],
   // the Fan projects page (js\fanprojects.js)
-  fanprojects: [["↑↓←→", "choose"], ["Enter", "the panel's first button"], ["Type", "find a project"], ["Esc", "back"]]
+  fanprojects: [["↑↓←→", "choose"], ["Enter", "the panel's first button"], ["Type", "find a project"], ["Esc", "back"]],
+  // the Extensions page (js\extensions.js)
+  extensions: [["↑↓", "choose"], ["Enter", "the panel's first button"], ["Esc", "back"]]
 };
 
 /* The same legend in the pad's words. The moment a pad is used
@@ -44,7 +46,8 @@ var HELP_PAD = {
   details:  [["LB RB", "tabs"], ["▾", "the list"], ["A", "play"], ["Y", "documents"], ["B", "back"]],
   tabrows:  [["✥", "move"], ["A", "select"], ["B", "back to the tabs"]],
   settings: [["✥", "move"], ["◂▸", "change"], ["A", "open"], ["B", "back"]],
-  fanprojects: [["✥", "choose"], ["A", "the panel's first button"], ["X", "their page"], ["B", "back"]]
+  fanprojects: [["✥", "choose"], ["A", "the panel's first button"], ["X", "their page"], ["B", "back"]],
+  extensions: [["✥", "choose"], ["A", "the panel's first button"], ["X", "its website"], ["B", "back"]]
 };
 export var padMode = false;
 var helpCtx = "browse";
