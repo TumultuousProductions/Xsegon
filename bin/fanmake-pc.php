@@ -55,8 +55,8 @@ if (isset($game['discs'])) {
     }
     $room = (int) array_sum(array_column($discs, 'bytes'));
     xs_log('FAN', 'make ' . $name . ': ' . count($discs) . ' discs found, ' . implode(', ', array_map(static fn($d) => isset($d['pbp']) ? basename($d['pbp']) . ' disc ' . $d['disc']['id'] : basename($d['files'][0]), $discs)));
-} elseif (isset($game['ini'])) {
-    // A port with an emulator of its own is pointed at your disc where it is: nothing is copied.
+} elseif (isset($game['ini']) || !empty($game['args'])) {
+    // A port with an emulator of its own, or one told its disc when it starts, reads your disc where it is: nothing is copied.
     $room = 0;
 } else {
     $bytes = xs_fm_game_bytes($rom, (string) ($game['format'] ?? ''), $w);
@@ -184,6 +184,8 @@ if ($discs !== null) {
         $fail((string) $w);
     }
     $placed = $game['ini'] . ' pointed at your ' . $job['baseTitle'] . ' (' . $rom . ')';
+} elseif (!empty($game['args'])) {
+    $placed = 'started with your ' . $job['baseTitle'] . ' where it is (' . $rom . ')';
 } else {
     $to = $tmp . $DS . xs_fm_game_to((string) $game['to'], (string) ($job['release'] ?? ''), (string) $job['baseTitle']);
     if (!is_dir(dirname($to)) && !@mkdir(dirname($to), 0777, true) && !is_dir(dirname($to))) {
@@ -215,9 +217,9 @@ $links = array_filter([$p['page'] ?? null, $p['repo'] ?? null, $p['community'] ?
 $notes = $name . ' is made by ' . $p['team'] . ":\n" . implode("\n", $links) . "\n\n"
     . 'Set up by Xsegon\'s Fan projects from your ' . $job['baseTitle'] . ', ' . $rel['tag'] . ($tag !== '' ? ' of ' . $rel['day'] : '')
     . ' downloaded from the team\'s GitHub.' . (isset($m['first']) ? ' ' . $m['first'] : '');
-// "{folder}" in its words is where it was put, for a file it is told to open.
+// "{folder}" in its words is where it was put, for a file it is told to open; "{disc}" is your disc where it is.
 $took = $ask('/api/local.php', ['set' => ['title' => (string) ($m['title'] ?? $name), 'platform' => $list, 'run' => $exe,
-                                          'args' => str_replace('{folder}', $out, (string) ($m['args'] ?? '')), 'developer' => (string) $p['team'], 'notes' => $notes]]);
+                                          'args' => str_replace(['{folder}', '{disc}'], [$out, $rom], (string) ($m['args'] ?? '')), 'developer' => (string) $p['team'], 'notes' => $notes]]);
 $id = (string) ($took['game']['id'] ?? '');
 if ($id !== '') {
     $kept = xs_fm_made();

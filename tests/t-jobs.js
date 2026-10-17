@@ -7,8 +7,12 @@ const fs = require("fs");
 const path = require("path");
 const { api, DATA, BASE, Guard, sleep } = require("./lib");
 
-const FILES = ["steamvid-job.json", "screenscraper-job.json", "emumove-job.json", "unpack-job.json",
-  "thumbs-job-box.json", "thumbs-job-logo.json", "thumbs-job-box3d.json", "thumbs-job-shot.json", "thumbs-job-fanart.json"];
+// Every kind of job the server's list reads (xs_jobs_files), so one added later is in the all-at-once check too.
+const KINDS = [...fs.readFileSync(path.join(__dirname, "..", "includes", "jobs.php"), "utf8")
+  .matchAll(/'(\w+)'\s*=>\s*xs_data_path\('([\w-]+\.json)'\)/g)].map((m) => ({ key: m[1], file: m[2] }));
+const FILES = [...new Set(["steamvid-job.json", "screenscraper-job.json", "emumove-job.json", "unpack-job.json",
+  "thumbs-job-box.json", "thumbs-job-logo.json", "thumbs-job-box3d.json", "thumbs-job-shot.json", "thumbs-job-fanart.json",
+  ...KINDS.map((k) => k.file)])];
 const now = () => Math.floor(Date.now() / 1000);
 const put = (name, value) => fs.writeFileSync(path.join(DATA, name), JSON.stringify(value));
 const BARS = `[...document.querySelectorAll("#corner-bars .job-bar")].filter((b) => !b.hidden)`;
@@ -26,6 +30,15 @@ module.exports = async function (b, check) {
     /* ---- the server's one answer ----------------------------------------- */
     check("with no job at work there is nothing to show, and the status look says nothing of jobs",
       [(await api("api/jobs.php")).jobs, "jobs" in (await api("api/running.php"))], [[], false]);
+
+    /* Each kind's block reads its own file in one function: a block that spoils a name the next one
+       reads costs the whole list its answer, and only shows with both at work. */
+    for (const k of KINDS) { put(k.file, { state: "running", phase: "starting", started: now(), pid: process.pid, games: [] }); }
+    const allRes = await fetch(BASE + "/api/jobs.php");
+    const all = await allRes.json().catch(() => ({}));
+    check("with every kind of job at work at once, the list still answers, with a row for each",
+      [KINDS.length >= 10, allRes.status, (all.jobs || []).map((j) => j.key).sort()], [true, 200, KINDS.map((k) => k.key).sort()]);
+    for (const k of KINDS) { fs.rmSync(path.join(DATA, k.file), { force: true }); }
 
     /* An old ending whose file was only written again (a restore, a copied data folder) is not news:
        only a run a page saw at work, or started itself, is announced. */

@@ -432,16 +432,51 @@ try {
         <#  A window is not a game: RetroArch shows it before the core runs,
             and a load sent then is dropped. So GET_STATUS is asked until it
             answers PLAYING, and the load goes a moment after. If RetroArch
-            never answers, --command sends the load once anyway.          #>
+            never answers, --command sends the load once anyway.
+            A core at work before its first frame (the N64 core reading its
+            texture packs, minutes for a big one) holds RetroArch's window
+            still: while Windows says it is not answering, the wait goes on,
+            up to 15 minutes in all. RetroArch can say PLAYING just before
+            that work starts, and a load it reads after it is refused, so
+            the load waits for PLAYING said without a break for 2 seconds:
+            only frames running answer that steadily.                      #>
         if ($window) {
             $playing = $false
             $until = (Get-Date).AddSeconds(40)
+            $most  = (Get-Date).AddMinutes(15)
+            $still = $null                          # when the window was first and last seen not answering
+            $stillTo = $null
+            $steady = $null                         # since when PLAYING has been said without a break
+            $breaks = 0
             while ((Get-Date) -lt $until -and -not $proc.HasExited) {
                 $status = Send-RetroArch 'GET_STATUS' 700
                 if ($status) { $answered = $true }
-                if ($status -match 'PLAYING') { $playing = $true; $sawPlaying = $true; break }
+                if ($status -match 'PLAYING') {
+                    $sawPlaying = $true
+                    if (-not $steady) {
+                        $steady = Get-Date
+                        $until = @(@($until, (Get-Date).AddSeconds(10)) | Sort-Object -Descending)[0]     # room to see it steady
+                        $until = @($until, $most) | Sort-Object | Select-Object -First 1
+                    }
+                    if (((Get-Date) - $steady).TotalSeconds -ge 2) { $playing = $true; break }
+                    Start-Sleep -Milliseconds 400
+                    continue
+                }
+                if ($steady) { $steady = $null; $breaks++ }
+                if (-not $status) {
+                    try {
+                        $window.Refresh()
+                        if (-not $window.Responding) {
+                            if (-not $still) { $still = Get-Date; Write-Log 'LNCH' "RetroArch's window is not answering (a core at work, such as reading texture packs): the load waits for it" }
+                            $stillTo = Get-Date
+                            $until = @((Get-Date).AddSeconds(40), $most) | Sort-Object | Select-Object -First 1
+                        }
+                    } catch { }
+                }
                 Start-Sleep -Milliseconds 400
             }
+            if ($still) { Write-Log 'LNCH' ("RetroArch's window did not answer for about " + [int] ($stillTo - $still).TotalSeconds + 's; it was waited for') }
+            if ($breaks) { Write-Log 'LNCH' "RetroArch said PLAYING, then stopped answering $breaks time(s) before its frames ran steadily: the load waited" }
             if ($playing) {
                 Start-Sleep -Milliseconds 1500      # a few frames run first: Mupen64Plus-Next refuses a state before them
                 [void] (Send-RetroArch 'LOAD_STATE' 0)

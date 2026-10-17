@@ -627,15 +627,25 @@ function xs_step_read(): ?array
 /**
  * A fault that cost a press its answer, left for the mailbox to keep (includes\news.php, xs_trouble_sweep).
  * Only the last one. Not from the fast lane, which writes no file: the page asks the main server again.
+ * $text: the file would not read (a syntax error), which a half-made edit leaves for a moment.
  */
-function xs_fault_note(string $what, string $file, int $line): void
+function xs_fault_note(string $what, string $file, int $line, bool $text = false): void
 {
     if (xs_fast_lane()) {
         return;
     }
+    // A script from outside Xsegon (a scratch file, php -r) is someone trying something: the log has it, the mailbox does not.
+    if (PHP_SAPI === 'cli') {
+        $script = (string) ($_SERVER['SCRIPT_FILENAME'] ?? '') !== '' ? (string) (get_included_files()[0] ?? '') : '';
+        if ($script === '' || !str_starts_with(strtolower($script), strtolower(XS_ROOT . DIRECTORY_SEPARATOR))) {
+            xs_log('PHPE', 'not for the mailbox: ' . ($script !== '' ? $script : 'a script given on the command line') . ' is not one of Xsegon\'s');
+            return;
+        }
+    }
     $ask  = basename((string) (parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: ($_SERVER['SCRIPT_NAME'] ?? '')));
     $note = json_encode(['at' => date('c'), 'where' => basename($file) . ':' . $line, 'what' => mb_substr($what, 0, 300),
-                         'during' => (PHP_SAPI === 'cli' ? 'running ' : 'answering ') . ($ask !== '' ? $ask : 'the page')],
+                         'during' => (PHP_SAPI === 'cli' ? 'running ' : 'answering ') . ($ask !== '' ? $ask : 'the page')]
+                        + ($text ? ['text' => true, 'file' => $file, 'mtime' => (int) @filemtime($file)] : []),
         JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
     if (is_string($note)) {
         @file_put_contents(xs_data_path('last-fault.json'), $note, LOCK_EX);
@@ -657,7 +667,7 @@ register_shutdown_function(static function (): void {
         if ($path === '' && $err !== null && in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
             xs_log('PHPE', 'fatal in ' . basename((string) ($_SERVER['SCRIPT_NAME'] ?? 'a CLI run')) . ': '
                 . $err['message'] . ' at ' . basename($err['file']) . ':' . $err['line']);
-            xs_fault_note($err['message'], $err['file'], $err['line']);
+            xs_fault_note($err['message'], $err['file'], $err['line'], in_array($err['type'], [E_PARSE, E_COMPILE_ERROR], true));
         }
         return;
     }
@@ -675,7 +685,7 @@ register_shutdown_function(static function (): void {
     if ($err !== null && in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
         xs_log('PHPE', 'fatal: ' . $err['message'] . ' at ' . basename($err['file']) . ':' . $err['line']);
         $code = 500;
-        xs_fault_note($err['message'], $err['file'], $err['line']);
+        xs_fault_note($err['message'], $err['file'], $err['line'], in_array($err['type'], [E_PARSE, E_COMPILE_ERROR], true));
         // Said in words where nothing has gone out yet: an empty answer reads "bad response" on the page.
         // PHP has made it a 500 already.
         if (str_contains($path, '/api/') && !headers_sent() && !ob_get_length()) {
@@ -711,7 +721,7 @@ set_exception_handler(static function (Throwable $e): void {
         xs_log('PHPE', '  #' . $i . ' ' . basename((string) ($f['file'] ?? '?')) . ':' . ($f['line'] ?? '?')
             . ' ' . ($f['function'] ?? ''));
     }
-    xs_fault_note($e->getMessage(), $e->getFile(), $e->getLine());
+    xs_fault_note($e->getMessage(), $e->getFile(), $e->getLine(), $e instanceof CompileError);
     if (PHP_SAPI === 'cli') {
         fwrite(STDERR, 'uncaught ' . get_class($e) . ': ' . $e->getMessage() . "\n");
         exit(1);

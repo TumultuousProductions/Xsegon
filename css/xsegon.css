@@ -1510,16 +1510,6 @@ body.no-novid .pill.novid-pill, body.no-novid .hero-novid { display: none; }
 body.no-novid .novid::before, body.no-novid .novid::after,
 body.no-novid .novid .t::after, body.no-novid .novid .gcard-cap::after { content: none; }
 
-/* Playing with cheats on: the choice sticks, so every view says so. Bottom
-   left on a tile: the star owns the top right and the clapperboard the top left. */
-.tile.cheaton::after {
-  content: "\2728"; position: absolute; bottom: 5px; left: 7px; font-size: 10px; line-height: 1;
-  opacity: .75; text-shadow: 0 0 5px rgba(0,0,0,.9); z-index: 1;
-}
-.row.cheaton .t::before, .witem.cheaton .t::before, .gcard.cheaton .gcard-cap::before {
-  content: "\2728 "; font-size: 10px; opacity: .75;
-}
-
 body.no-anim .tile { transition: none; }
 .tile { transition: box-shadow 120ms ease, border-color 120ms ease; }
 
@@ -3724,7 +3714,14 @@ body.no-anim .hk-listen.catching { animation: none; }
 .tp-kind { display: inline-block; margin-left: 8px; padding: 0 5px; border: 1px solid var(--rule); border-radius: 3px;
   font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--mute); vertical-align: 2px; }
 .tp-kind.hand { color: var(--cyan); border-color: var(--rule-hi); }
-.tp-tip { flex: 0 0 auto; padding: 3px 9px; font-size: 11px; }
+.tp-kind.on { color: var(--good); border-color: var(--good); }
+.tp-btn { flex: 0 0 auto; padding: 4px 11px; font-size: 11.5px; white-space: nowrap; }
+/* The tab's own bar for the work at hand, as the corner's moves (xs-prog-wait while there is nothing to measure). */
+.tp-prog { height: 4px; margin-top: 4px; border-radius: 2px; background: var(--rule); overflow: hidden; }
+.tp-prog i { display: block; height: 100%; width: 0; background: var(--cyan); transition: width 400ms ease; }
+.tp-prog.wait i { width: 30%; opacity: .85; transition: none; animation: xs-prog-wait 1.3s ease-in-out infinite alternate; }
+body.no-anim .tp-prog i { transition: none; }
+body.no-anim .tp-prog.wait i { animation: none; width: 100%; opacity: .45; }
 .tp-paid { margin: 8px 0 0; }
 .tp-paid > .sv-rows { border: 0; background: none; }
 .tp-paid > .sv-rows + .sv-rows { border-top: 1px solid var(--rule); }

@@ -81,6 +81,47 @@ $docsOnly     = ($_GET['docs'] ?? '') === '1';
 $cheatsOnly   = ($_GET['cheats'] ?? '') === '1';
 $hacksOnly    = ($_GET['hacks'] ?? '') === '1';
 $noHacks      = ($_GET['nohacks'] ?? '') === '1';
+// Texture packs (includes\texpacks.php, read only while one is on): Has texture packs is a pack
+// listed for the game, found as its tab finds them, or one installed; Texture pack installed is
+// one Xsegon put in that is still in place.
+$texOnly      = ($_GET['texpacks'] ?? '') === '1';
+$texInstalled = ($_GET['texinstalled'] ?? '') === '1';
+$texListed = [];
+$texPut = [];
+if ($texOnly || $texInstalled) {
+    require_once __DIR__ . '/../includes/texpacks.php';
+    foreach ((array) (xs_tp_list()['consoles'] ?? []) as $c => $packsOf) {
+        foreach ((array) $packsOf as $r) {
+            if (is_array($r)) {
+                $texListed[(string) $c][xs_tp_words((string) ($r['t'] ?? ''))] = true;
+            }
+        }
+    }
+    foreach (xs_tp_records() as $id => $rec) {
+        foreach (is_array($rec) ? (array) (xs_tp_rec_norm($rec)['packs'] ?? []) : [] as $p) {
+            $at = (string) ($p['at'] ?? '');
+            if ($at !== '' && (($p['kind'] ?? '') === 'file' ? is_file($at) : is_dir($at))) {
+                $texPut[(string) $id] = true;
+                break;
+            }
+        }
+    }
+}
+$hasTexPack = static function (array $g) use ($texListed, $texPut): bool {
+    if (isset($texPut[$g['id']])) {
+        return true;
+    }
+    $here = $texListed[strtolower((string) ($g['platform'] ?? ''))] ?? [];
+    if ($here === [] || !xs_tp_has_tab($g)) {
+        return false;
+    }
+    foreach (xs_tp_names($g) as $n) {
+        if (isset($here[$n])) {
+            return true;
+        }
+    }
+    return false;
+};
 // Your own tags, as many as are selected: a game must carry them all, as the
 // other filters stack. Compared without case.
 $tagWant = [];
@@ -100,7 +141,7 @@ $rcFailed = xs_needs_fix();
 $tagMap = xs_tags_effective($tagMap, $rcFailed);
 $fixMarks = xs_fix_marks();
 $anyFilter    = $favOnly || $playersOnly || $readyOnly || $unplayedOnly || $unratedOnly || $missingOnly || $minMine > 0 || $failsOnly || $tagWant !== []
-              || $docsOnly || $cheatsOnly || $hacksOnly || $noHacks;
+              || $docsOnly || $cheatsOnly || $hacksOnly || $noHacks || $texOnly || $texInstalled;
 // The six things a row's has-flags answer, asked the same way, so the filter
 // and the list's Missing art column cannot disagree about a game.
 $missingArt = static function (array $g) use ($s): bool {
@@ -284,6 +325,8 @@ foreach ($games as $g) {
         && (!$cheatsOnly || !empty($cheatPicks[$g['id']]['on']))
         && (!$hacksOnly || ($hackMarks[$g['id']] ?? null) === 'yes')
         && (!$noHacks || ($hackMarks[$g['id']] ?? null) !== 'yes')
+        && (!$texOnly || $hasTexPack($g))
+        && (!$texInstalled || isset($texPut[$g['id']]))
         && ($tagWant === [] || !array_diff($tagWant, array_map('mb_strtolower', $tagMap[$g['id']] ?? [])));
     // How many games carry each tag, counted over the library as it stands,
     // so a tag on a game that has since gone is not offered.
