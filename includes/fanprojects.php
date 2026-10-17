@@ -6,13 +6,15 @@
  *
  * Each project names the releases it is made from. Whether the library holds one is
  * read from what Xsegon already keeps: the file check's release names for cartridges
- * (data\filecheck.json) and a disc's own ID for GameCube, Wii and a PlayStation PBP.
+ * (data\filecheck.json), a disc's own ID for GameCube, Wii, PlayStation 1 and 2 and Xbox,
+ * and an arcade game's MAME set by its file's name.
  * Xsegon never supplies a game and never hosts a team's files.
  */
 declare(strict_types=1);
 
 require_once __DIR__ . '/filecheck.php';
 require_once __DIR__ . '/drives.php';
+require_once __DIR__ . '/xiso.php';
 
 const XS_FAN_KINDS = ['patch' => 'Patch', 'pc' => 'PC version', 'disc' => 'Disc mod'];
 const XS_FAN_FITS  = ['fits' => 2, 'works' => 1];
@@ -20,6 +22,10 @@ const XS_FAN_FITS  = ['fits' => 2, 'works' => 1];
 const XS_FAN_DISC_AT = ['iso' => 0, 'gcm' => 0, 'ciso' => 0x8000, 'rvz' => 0x58, 'wia' => 0x58, 'wbfs' => 0x200];
 /** The files a PlayStation game comes in whose disc IDs can be read; a .chd is compressed and is not. */
 const XS_FAN_PS_ENDS = ['pbp', 'm3u', 'cue', 'bin', 'img', 'iso'];
+/** An Xbox disc image, read for its default.xbe when it is no GameCube or PlayStation disc. */
+const XS_FAN_XBOX_ENDS = ['iso', 'xiso'];
+/** Consoles whose disc ID is one read at a fixed place, so every game is read; on any other only a game carrying the name. */
+const XS_FAN_READ_ALL = ['Nintendo GameCube', 'Nintendo Wii'];
 
 /** The shipped list, each entry checked; a test copy may hand its own in data\fanprojects.json. */
 function xs_fan_list(): array
@@ -45,6 +51,12 @@ function xs_fan_list(): array
         }
         if (isset($p['community']) && !xs_fan_url_ok((string) $p['community'])) {
             unset($p['community']);
+        }
+        // Not out yet: a line saying where it stands, and nothing to make until it is.
+        if (isset($p['soon']) && (!is_string($p['soon']) || trim($p['soon']) === '')) {
+            unset($p['soon']);
+        } elseif (isset($p['soon'])) {
+            unset($p['make']);
         }
         if (isset($p['yours']['build']) && @preg_match('#' . $p['yours']['build'] . '#i', '') === false) {
             unset($p['yours']['build']);
@@ -120,9 +132,9 @@ function xs_fan_makes(array $p): bool
         $game = $m['game'] ?? null;
         return is_string($m['asset'] ?? null) && is_string($m['run'] ?? null) && !str_contains($m['run'], '..')
             && preg_match('/^[A-Za-z0-9][A-Za-z0-9 ._()+-]{0,60}$/', (string) ($m['folder'] ?? '')) === 1
-            && is_array($game) && (isset($game['to']) || isset($game['discs']) || isset($game['ini'], $game['section'], $game['key'])
+            && is_array($game) && (isset($game['to']) || isset($game['discs']) || isset($game['xiso']) || isset($game['ini'], $game['section'], $game['key'])
                                    || (($game['args'] ?? null) === true && str_contains((string) ($m['args'] ?? ''), '{disc}')))
-            && !array_filter(array_merge([$game['to'] ?? '', $game['discs'] ?? '', $game['ini'] ?? ''], (array) ($m['need'] ?? [])),
+            && !array_filter(array_merge([$game['to'] ?? '', $game['discs'] ?? '', $game['xiso'] ?? '', $game['ini'] ?? ''], (array) ($m['need'] ?? [])),
                              static fn($f) => str_contains((string) $f, '..') || str_contains((string) $f, ':'))
             && !array_filter((array) ($m['write'] ?? []), static fn($f) => !preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]{0,60}$/', (string) $f));
     }
@@ -138,24 +150,32 @@ function xs_fan_url_ok(string $url): bool
 
 /**
  * The disc IDs one library file holds: a GameCube or Wii image's six-letter ID with its version
- * byte, or the PlayStation IDs ("SCUS-94491") of every disc a .pbp holds or an .m3u lists, a
- * .cue's data track, a .bin or .iso's own. Null when none can be read.
+ * byte; the PlayStation IDs ("SCUS-94491") of every disc a .pbp holds or an .m3u lists, a
+ * .cue's data track, a .bin or .iso's own; or an Xbox disc's title ID ("5443000D") with the
+ * fingerprint its default.xbe keeps of its code. Null when none can be read.
  */
 function xs_fan_disc_ids(string $file): ?array
 {
     $end = strtolower(pathinfo($file, PATHINFO_EXTENSION));
-    if ($file === '' || (!isset(XS_FAN_DISC_AT[$end]) && !in_array($end, XS_FAN_PS_ENDS, true)) || xs_drive_stuck($file) !== null) {
+    if ($file === '' || (!isset(XS_FAN_DISC_AT[$end]) && !in_array($end, XS_FAN_PS_ENDS, true) && !in_array($end, XS_FAN_XBOX_ENDS, true))
+        || xs_drive_stuck($file) !== null) {
         return null;
     }
     if (isset(XS_FAN_DISC_AT[$end]) && ($h = @fopen($file, 'rb')) !== false) {
-        $b = fseek($h, XS_FAN_DISC_AT[$end]) === 0 ? (string) fread($h, 8) : '';
+        $b = fseek($h, XS_FAN_DISC_AT[$end]) === 0 ? (string) fread($h, 32) : '';
         fclose($h);
-        if (strlen($b) === 8 && preg_match('/^[A-Z0-9]{6}$/', substr($b, 0, 6))) {
+        // Its ID, and the disc's own mark (a Wii's at 0x18, a GameCube's at 0x1C): a PS2 disc can open with "EEEEEE".
+        if (strlen($b) === 32 && preg_match('/^[A-Z0-9]{6}$/', substr($b, 0, 6))
+            && (substr($b, 0x18, 4) === "\x5D\x1C\x9E\xA3" || substr($b, 0x1C, 4) === "\xC2\x33\x9F\x3D")) {
             return ['ids' => [substr($b, 0, 6)], 'version' => ord($b[7])];
         }
     }
     $ids = in_array($end, XS_FAN_PS_ENDS, true) ? xs_fan_ps_ids($file, $end) : [];
-    return $ids ? ['ids' => $ids, 'version' => null] : null;
+    if ($ids) {
+        return ['ids' => $ids, 'version' => null];
+    }
+    $xbe = in_array($end, XS_FAN_XBOX_ENDS, true) ? xs_xbe_id($file) : null;
+    return $xbe === null ? null : ['ids' => [$xbe['title']], 'version' => null, 'code' => $xbe['code']];
 }
 
 /** The PlayStation disc IDs in one file; the discs an .m3u lists are read one level down, never another list. */
@@ -218,7 +238,7 @@ function xs_fan_pbp_ids(string $file): array
     return $ids;
 }
 
-/** A PlayStation disc image's ID, from the BOOT line of its SYSTEM.CNF: raw 2352-byte sectors (.bin, .img) or 2048 (.iso). */
+/** A PlayStation disc image's ID, from the BOOT line of its SYSTEM.CNF (BOOT2 on a PS2 disc): raw 2352-byte sectors (.bin, .img) or 2048 (.iso). */
 function xs_fan_ps_cnf_id(string $file): ?string
 {
     $h = @fopen($file, 'rb');
@@ -249,7 +269,7 @@ function xs_fan_ps_cnf_id(string $file): ?string
             }
             if (str_starts_with(strtoupper(substr($dir, $p + 33, ord($dir[$p + 32]))), 'SYSTEM.CNF')) {
                 $f = unpack('Vat/x4/Vlen', $dir, $p + 2);
-                if (preg_match('/BOOT\s*=\s*cdrom0?:\\\\*([A-Z]{4})[_-]?(\d{3})\.?(\d{2})/i', $read($f['at'], min(2048, $f['len'])), $m)) {
+                if (preg_match('/BOOT2?\s*=\s*cdrom0?:\\\\*([A-Z]{4})[_-]?(\d{3})\.?(\d{2})/i', $read($f['at'], min(2048, $f['len'])), $m)) {
                     $id = strtoupper($m[1]) . '-' . $m[2] . $m[3];
                 }
                 break;
@@ -335,6 +355,12 @@ function xs_fan_states(array $games): array
         $best = null;
         $part = null;                    // a set of discs found only in part: which, and the game holding the first
         $want = xs_fan_words((string) ($p['base']['db']['title'] ?? $p['base']['title']));
+        // A game carrying the name: its Games Database title, or the base's own with what is in brackets left off.
+        $plain = xs_fan_words((string) preg_replace('/\([^)]*\)/', ' ', (string) $p['base']['title']));
+        $named = static function (array $g) use ($want, $plain): bool {
+            $t = ' ' . xs_fan_words((string) $g['title']) . ' ';
+            return str_contains($t, ' ' . $want . ' ') || ($plain !== '' && str_contains($t, ' ' . $plain . ' '));
+        };
         foreach ($p['base']['match'] as $m) {
             $rank = XS_FAN_FITS[$m['fit'] ?? ''] ?? 0;
             $at = $on[(string) ($m['console'] ?? '')] ?? [];
@@ -363,13 +389,19 @@ function xs_fan_states(array $games): array
                 continue;
             }
             foreach ($at as $g) {
+                if (isset($m['disc']) && !in_array((string) $m['console'], XS_FAN_READ_ALL, true) && !$named($g)) {
+                    continue;
+                }
                 $rec = $fc[$g['id']] ?? null;
+                // An arcade game is its MAME set, named by its file ("vf2.zip"); a disc by its ID, and an Xbox disc's code by its fingerprint.
                 $hit = isset($m['name']) ? (($rec['kind'] ?? '') === 'known' && ($rec['name'] ?? '') === $m['name'])
+                     : (isset($m['set']) ? strtolower(pathinfo((string) ($g['romPath'] ?? ''), PATHINFO_FILENAME)) === $m['set']
                      : (isset($m['disc']) && ($d = $disc($g)) !== null && in_array($m['disc'], $d['ids'], true)
-                        && (!isset($m['version']) || $d['version'] === (int) $m['version']));
+                        && (!isset($m['version']) || $d['version'] === (int) $m['version'])
+                        && (!isset($m['code']) || ($d['code'] ?? null) === $m['code'])));
                 if ($hit && $rank > ($best['rank'] ?? 0)) {
                     $best = ['rank' => $rank, 'state' => $m['fit'], 'game' => $g, 'note' => (string) ($m['note'] ?? ''),
-                             'release' => isset($m['name']) ? $m['name'] : $m['disc']];
+                             'release' => $m['name'] ?? $m['set'] ?? $m['disc']];
                 }
             }
         }
@@ -441,9 +473,10 @@ function xs_fan_states(array $games): array
         $out[] = [
             'id' => $p['id'], 'name' => $p['name'], 'kind' => $p['kind'], 'kindLabel' => XS_FAN_KINDS[$p['kind']],
             'console' => $p['console'], 'adds' => (string) ($p['adds'] ?? ''), 'tags' => array_values((array) ($p['tags'] ?? [])),
-            'team' => (string) ($p['team'] ?? ''), 'licence' => (string) ($p['licence'] ?? ''),
+            'team' => (string) ($p['team'] ?? ''), 'basedon' => is_string($p['basedon'] ?? null) && trim($p['basedon']) !== '' ? trim($p['basedon']) : null,
+            'licence' => (string) ($p['licence'] ?? ''),
             'page' => $p['page'] ?? null, 'repo' => $p['repo'] ?? null, 'community' => $p['community'] ?? null, 'base' => $base, 'yours' => $yours,
-            'make' => xs_fan_makes($p),
+            'make' => xs_fan_makes($p), 'soon' => isset($p['soon']) ? trim((string) $p['soon']) : null,
             // The picture: a copy of yours, else the game it is made from.
             'pic' => $yours[0]['id'] ?? ($base['gameId'] ?? null),
         ];

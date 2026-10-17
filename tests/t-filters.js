@@ -25,9 +25,10 @@ const { api, sleep, FILTERS_UP, Guard } = lib;
 const NAMES = ["Favourites only", "Two players or more", "Never played", "Cheats on", "Your rating at least", "Not rated by you", "Texture packs",
                "Ready to play", "Missing art", "Has a manual", "Hacks"];
 const HEADS = ["Play", "Ratings", "Texture packs", "Files and pictures", "Hacks", "Your tags"];
-// A title as the Texture packs tab matches it (includes\texpacks.php, xs_tp_words), for titles in plain letters.
+// A title as the Texture packs tab matches it (includes\texpacks.php, xs_tp_key), for titles in plain letters: words run together, II to XV as numbers.
+const TP_ROMAN = { ii: 2, iii: 3, iv: 4, v: 5, vi: 6, vii: 7, viii: 8, ix: 9, xi: 11, xii: 12, xiii: 13, xiv: 14, xv: 15 };
 const tpWords = (t) => String(t).replace(/\([^)]*\)|\[[^\]]*\]/g, " ").toLowerCase().replace(/&/g, " and ").replace(/[^a-z0-9]+/g, " ")
-  .replace(/\bthe\b/g, " ").replace(/\s+/g, " ").trim();
+  .replace(/\bthe\b/g, " ").replace(/\s+/g, " ").trim().split(" ").map((w) => TP_ROMAN[w] || w).join("");
 
 module.exports = async function (b, check) {
   /* ---- the server: one rule each, and they stack ------------------------ */

@@ -92,8 +92,8 @@ if ($texOnly || $texInstalled) {
     require_once __DIR__ . '/../includes/texpacks.php';
     foreach ((array) (xs_tp_list()['consoles'] ?? []) as $c => $packsOf) {
         foreach ((array) $packsOf as $r) {
-            if (is_array($r)) {
-                $texListed[(string) $c][xs_tp_words((string) ($r['t'] ?? ''))] = true;
+            foreach (is_array($r) ? xs_tp_list_keys((string) ($r['t'] ?? '')) : [] as $key) {
+                $texListed[(string) $c][$key] = true;
             }
         }
     }

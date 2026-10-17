@@ -1,6 +1,7 @@
 {
- "made": "2026-10-15",
+ "made": "2026-10-17",
  "from": "Texture Packs Archive, kept by Sad Origami: https://docs.google.com/spreadsheets/d/1sif8FeRGJRbytK8wFRXgF6Hke9V6GUFs",
+ "also": "a few packs the Archive lacks, marked from: xsegon, kept in tools\\texpacks-more.json",
  "consoles": {
   "sony playstation 2": [
    {
@@ -14106,6 +14107,23 @@
     "get": null
    },
    {
+    "k": "0de4bd38aacc",
+    "t": "Mario Kart: Double Dash!!",
+    "name": "Mario Kart Double Dash Re-Rendered!!",
+    "by": "WIP finding author",
+    "kind": "mixed",
+    "st": "",
+    "r": "",
+    "bytes": 0,
+    "pay": "free",
+    "page": "https://forums.dolphin-emu.org/Thread-mario-kart-double-dash-re-rendered-hd-texture-pack-v1-2",
+    "where": "forums.dolphin-emu.org",
+    "tip": "",
+    "get": null,
+    "from": "xsegon",
+    "says": "for the menus and the race screen only"
+   },
+   {
     "k": "6cf10780f72e",
     "t": "Mario Party 5",
     "name": "",
@@ -14659,6 +14677,23 @@
     "where": "gbatemp.net",
     "tip": "https://ko-fi.com/pandavenom",
     "get": null
+   },
+   {
+    "k": "e1c5ee7c966a",
+    "t": "The Legend of Zelda: The Wind Waker",
+    "name": "A Wind Waker pack on MEGA",
+    "by": "WIP finding author",
+    "kind": "",
+    "st": "",
+    "r": "",
+    "bytes": 1943472701,
+    "pay": "account",
+    "page": "https://mega.nz/file/uZQwVKwI#-5jf9BeU_Z3b1MQ1Hipa15AyObuVHJUn0J6AQqiUSbw",
+    "where": "mega.nz",
+    "tip": "",
+    "get": null,
+    "from": "xsegon",
+    "says": ""
    },
    {
     "k": "dfa5902ad9d8",
@@ -15520,17 +15555,38 @@
    {
     "k": "b706c0e20637",
     "t": "Mario Kart Wii",
-    "name": "",
+    "name": "MKWii Reloaded • Texture Pack",
     "by": "GhostlyDark",
     "kind": "",
     "st": "Not finished",
     "r": "",
-    "bytes": 419430400,
+    "bytes": 1225949358,
     "pay": "free",
     "page": "https://evilgames.eu/texture-packs/mkwii-reloaded.htm",
     "where": "evilgames.eu",
     "tip": "",
-    "get": null
+    "get": {
+     "url": "https://evilgames.eu/files/texture-packs/mkwii-reloaded-v0.2.0-png.zip",
+     "bytes": 1225949358,
+     "name": "MKWii Reloaded • Texture Pack"
+    }
+   },
+   {
+    "k": "fd9630aa1abd",
+    "t": "Mario Kart Wii",
+    "name": "Mario Kart Wii HD Remaster",
+    "by": "Moukrea",
+    "kind": "",
+    "st": "",
+    "r": "",
+    "bytes": 0,
+    "pay": "free",
+    "page": "https://forums.dolphin-emu.org/Thread-mario-kart-wii-hd-remaster",
+    "where": "forums.dolphin-emu.org",
+    "tip": "",
+    "get": null,
+    "from": "xsegon",
+    "says": ""
    },
    {
     "k": "53c72e0a5b36",
@@ -16298,6 +16354,23 @@
     "get": null
    },
    {
+    "k": "8aca8d13f11b",
+    "t": "Wii Sports",
+    "name": "Wii Sports 4K",
+    "by": "Henriko Magnifico",
+    "kind": "hand",
+    "st": "",
+    "r": "",
+    "bytes": 0,
+    "pay": "free",
+    "page": "https://www.henrikomagnifico.com/wii-sports-4k",
+    "where": "henrikomagnifico.com",
+    "tip": "",
+    "get": null,
+    "from": "xsegon",
+    "says": "its download also holds a Dolphin and settings of its own: Install takes the textures only"
+   },
+   {
     "k": "d8db80e1340d",
     "t": "Wii Sports Resort",
     "name": "",
@@ -16572,94 +16645,23 @@
     }
    },
    {
-    "k": "cc39b7f42572",
-    "t": "Resident Evil",
-    "name": "",
-    "by": "SonicBOOM",
-    "kind": "ai",
-    "st": "Complete",
-    "r": "",
-    "bytes": 0,
-    "pay": "free",
-    "page": "https://www.moddb.com/mods/reenhance-re1",
-    "where": "moddb.com",
-    "tip": "",
-    "get": null
-   },
-   {
-    "k": "e8fe8720453d",
-    "t": "Resident Evil",
-    "name": "",
-    "by": "SonicBOOM",
-    "kind": "ai",
-    "st": "Part of the game",
-    "r": "",
-    "bytes": 0,
-    "pay": "free",
-    "page": "https://www.moddb.com/mods/re-enhance-re1r-fmv-pack",
-    "where": "moddb.com",
-    "tip": "",
-    "get": null
-   },
-   {
     "k": "d31b4bd5cf3c",
     "t": "Resident Evil 2",
-    "name": "",
+    "name": "RE2 Reloaded • Texture Pack",
     "by": "GhostlyDark",
     "kind": "",
     "st": "Complete",
     "r": "",
-    "bytes": 0,
+    "bytes": 1314183761,
     "pay": "free",
     "page": "https://evilgames.eu/texture-packs/re2-reloaded.htm",
     "where": "evilgames.eu",
     "tip": "",
-    "get": null
-   },
-   {
-    "k": "376fba59e310",
-    "t": "Resident Evil 2",
-    "name": "",
-    "by": "SonicBOOM",
-    "kind": "ai",
-    "st": "Complete",
-    "r": "",
-    "bytes": 0,
-    "pay": "free",
-    "page": "https://www.moddb.com/mods/reenhance-re2",
-    "where": "moddb.com",
-    "tip": "",
-    "get": null
-   },
-   {
-    "k": "9cf217670e73",
-    "t": "Resident Evil 3",
-    "name": "",
-    "by": "SonicBOOM",
-    "kind": "ai",
-    "st": "Complete",
-    "r": "",
-    "bytes": 0,
-    "pay": "free",
-    "page": "https://www.moddb.com/mods/reenhance-re3",
-    "where": "moddb.com",
-    "tip": "",
-    "get": null
-   },
-   {
-    "k": "279f99dbfe5d",
-    "t": "Resident Evil Zero",
-    "name": "",
-    "by": "SonicBOOM",
-    "kind": "ai",
-    "st": "Part of the game",
-    "r": "",
-    "bytes": 0,
-    "pay": "free",
-    "page": "https://www.moddb.com/mods/reenhance-re0-fmv-pack",
-    "where": "moddb.com",
-    "tip": "",
-    "get": null
+    "get": {
+     "url": "https://evilgames.eu/files/texture-packs/re2-reloaded-v2.0.0-png-hd.zip",
+     "bytes": 1314183761,
+     "name": "RE2 Reloaded • Texture Pack"
+    }
    },
    {
     "k": "279c451c96d5",
@@ -16916,14 +16918,14 @@
     "kind": "",
     "st": "Complete",
     "r": "",
-    "bytes": 160318065,
+    "bytes": 226173280,
     "pay": "free",
     "page": "https://evilgames.eu/texture-packs/ssb-reloaded.htm",
     "where": "evilgames.eu",
     "tip": "",
     "get": {
-     "url": "https://evilgames.eu/files/texture-packs/ssb-reloaded-v2.0.1-gliden64-hts.7z",
-     "bytes": 160318065,
+     "url": "https://evilgames.eu/files/texture-packs/ssb-reloaded-v2.0.1-gliden64-png.zip",
+     "bytes": 226173280,
      "name": "SSB Reloaded • Texture Pack"
     }
    },
@@ -17215,17 +17217,21 @@
    {
     "k": "8c21235cc50d",
     "t": "Turok 3",
-    "name": "",
+    "name": "Turok 3 Reloaded • Texture Pack",
     "by": "GhostlyDark",
     "kind": "",
     "st": "Complete",
     "r": "",
-    "bytes": 0,
+    "bytes": 580063646,
     "pay": "free",
     "page": "https://evilgames.eu/texture-packs/turok3-reloaded.htm",
     "where": "evilgames.eu",
     "tip": "",
-    "get": null
+    "get": {
+     "url": "https://evilgames.eu/files/texture-packs/turok3-reloaded-v1.0.1-png.zip",
+     "bytes": 580063646,
+     "name": "Turok 3 Reloaded • Texture Pack"
+    }
    }
   ]
  }

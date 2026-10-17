@@ -617,11 +617,36 @@ function xs_tp_words(string $title): string
     return trim((string) preg_replace('/\s+/', ' ', (string) preg_replace('/\bthe\b/', ' ', $t)));
 }
 
-/** The names a game is matched by: its title, and its file's name, which keeps the words a title was shortened from ("Mario Kart Wii"). */
+/**
+ * A title as one key, its words run together and II to XV read as numbers, so "Soulcalibur II"
+ * meets "Soul Calibur 2" and "E.O.E" meets "EOE". X and I stay letters: Mega Man X is not Mega Man 10.
+ */
+function xs_tp_key(string $title): string
+{
+    $roman = ['ii' => '2', 'iii' => '3', 'iv' => '4', 'v' => '5', 'vi' => '6', 'vii' => '7', 'viii' => '8', 'ix' => '9',
+              'xi' => '11', 'xii' => '12', 'xiii' => '13', 'xiv' => '14', 'xv' => '15'];
+    return implode('', array_map(static fn (string $w): string => $roman[$w] ?? $w, explode(' ', xs_tp_words($title))));
+}
+
+/** The keys a listed title answers to: "Final Fantasy X + International" is Final Fantasy X and Final Fantasy X International. */
+function xs_tp_list_keys(string $t): array
+{
+    $parts = array_map('trim', explode(' + ', $t));
+    $keys = [xs_tp_key($t)];
+    if (count($parts) > 1) {
+        $keys[] = xs_tp_key($parts[0]);
+        foreach (array_slice($parts, 1) as $p) {
+            $keys[] = xs_tp_key($parts[0] . ' ' . $p);
+        }
+    }
+    return array_values(array_unique(array_filter($keys, 'strlen')));
+}
+
+/** The keys a game is matched by: its title's, and its file name's, which keeps the words a title was shortened from ("Mario Kart Wii"). */
 function xs_tp_names(array $game): array
 {
     $file = pathinfo(str_replace('\\', '/', (string) ($game['launch']['rom'] ?? $game['romPath'] ?? '')), PATHINFO_FILENAME);
-    return array_values(array_unique(array_filter([xs_tp_words((string) ($game['title'] ?? '')), xs_tp_words($file)], 'strlen')));
+    return array_values(array_unique(array_filter([xs_tp_key((string) ($game['title'] ?? '')), xs_tp_key($file)], 'strlen')));
 }
 
 /** The release a game is, NTSC-U, PAL or NTSC-J, from its disc ID or its file's name; '' when not known. */
@@ -658,15 +683,17 @@ function xs_tp_found(array $game, ?string $key): array
     $said = ['NTSC-U' => 'the USA release', 'PAL' => 'the European release (PAL)', 'NTSC-J' => 'the Japanese release'];
     $out = [];
     foreach ($rows as $r) {
-        if (!is_array($r) || !in_array(xs_tp_words((string) ($r['t'] ?? '')), $names, true)) {
+        if (!is_array($r) || !array_intersect(xs_tp_list_keys((string) ($r['t'] ?? '')), $names)) {
             continue;
         }
         $region = (string) ($r['r'] ?? '');
         $note = isset($said[$region]) ? 'made for ' . $said[$region] . ($mine === $region ? ', as yours is' : '') : '';
+        // 'from' is '' for a row of the Texture Packs Archive, 'xsegon' for one of Xsegon's own short list; 'says' is that row's word on it.
         $out[] = ['k' => (string) $r['k'], 'name' => (string) ($r['name'] ?? ''), 'by' => (string) ($r['by'] ?? ''), 'kind' => (string) ($r['kind'] ?? ''),
                   'status' => (string) ($r['st'] ?? ''), 'note' => $note, 'same' => $mine !== '' && $mine === $region, 'size' => (int) ($r['bytes'] ?? 0),
                   'pay' => (string) ($r['pay'] ?? 'free'), 'where' => (string) ($r['where'] ?? ''), 'tip' => ($r['tip'] ?? '') !== '',
-                  'get' => xs_tp_get_ok((string) ($r['get']['url'] ?? '')), 'url' => (string) ($r['get']['url'] ?? '')];
+                  'get' => xs_tp_get_ok((string) ($r['get']['url'] ?? '')), 'url' => (string) ($r['get']['url'] ?? ''),
+                  'from' => (string) ($r['from'] ?? ''), 'says' => (string) ($r['says'] ?? '')];
     }
     $rank = static fn (array $r): array => [$r['kind'] === 'hand' ? 0 : ($r['kind'] === 'ai' ? 2 : 1), $r['same'] ? 0 : 1, $r['status'] === 'Complete' ? 0 : 1];
     usort($out, static fn (array $a, array $b): int => $rank($a) <=> $rank($b));
@@ -677,7 +704,7 @@ function xs_tp_found(array $game, ?string $key): array
 function xs_tp_row(array $game, string $k): ?array
 {
     foreach ((array) ((xs_tp_list()['consoles'] ?? [])[strtolower((string) ($game['platform'] ?? ''))] ?? []) as $r) {
-        if (is_array($r) && ($r['k'] ?? '') === $k && in_array(xs_tp_words((string) ($r['t'] ?? '')), xs_tp_names($game), true)) {
+        if (is_array($r) && ($r['k'] ?? '') === $k && array_intersect(xs_tp_list_keys((string) ($r['t'] ?? '')), xs_tp_names($game))) {
             return $r;
         }
     }
