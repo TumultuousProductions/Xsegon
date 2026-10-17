@@ -194,11 +194,13 @@ module.exports = async function (b, check) {
     check("a file changed since is said to be", ((await api("api/filecheck.php?id=" + id("made"))).check || {}).stale, true);
     check("and checking it again clears that", ((await run([id("made")])).done[id("made")] || {}).stale, false);
 
-    /* ---- in a game's details: the File check tab, before Cheats ---------- */
+    /* ---- in a game's details: File check, a part of More ---------------- */
     const choose = (n) => `(async () => { const S = await import("/js/state.js"), V = await import("/js/views.js");
       const i = S.games.findIndex(g => g.id === ${JSON.stringify(id(n))}); if (i < 0) { return false; } S.setSel(i); V.render(); return true; })()`;
     const TABS = `[...document.querySelectorAll("#details .dtabs .dtab")]`;
-    const tabOn = `(t => (t ? t.textContent : null))(${TABS}.find((x) => x.classList.contains("on")))`;
+    // What is open: a part of More (File check, Notes) when More is, else the tab.
+    const PARTS = `[...document.querySelectorAll("#details .dparts:not([hidden]) .dtab")]`;
+    const tabOn = `(t => (t ? t.textContent : null))(${PARTS}.find((x) => x.classList.contains("on")) || ${TABS}.find((x) => x.classList.contains("on")))`;
     const legend = `[...document.querySelectorAll("#help .hitem .hl")].map((x) => x.textContent)`;
     const line = `(document.querySelector("#details .dtab-pane.is-filecheck .fc-line") || {}).textContent`;
     const goSays = `(document.querySelector("#details .dtab-pane.is-filecheck .fc-go .cr-name") || {}).textContent`;
@@ -215,19 +217,21 @@ module.exports = async function (b, check) {
     await b.openPlatform("Nintendo Entertainment System");
 
     await details("known");
-    check("details has a File check tab, after Saves and before Cheats and Hacks, and nothing of it left under the facts",
+    check("details has More last, after Files, and nothing of the check left under the facts",
       [await b.ev(`${TABS}.map((x) => x.textContent.replace(/ \\(\\d+\\)$/, ""))`), await b.ev(tabOn), await b.ev(`!!document.querySelector("#details .dleft .fcheck, #details .dleft .fc-line, #details .dleft .fc-go")`)],
-      [["About", "Media", "Saves", "File check", "Cheats", "Hacks", "Accompanied files", "Notes"], "About", false]);
+      [["About", "Media", "Saves", "Cheats", "Hacks", "Achievements", "Files", "More"], "About", false]);
     await b.key("f");
     check("F opens it: where the game is from and that it is known, in one line",
       [await b.until(line, "USA, Rev 1  ·  a known release", 8000), await b.ev(tabOn)], ["USA, Rev 1  ·  a known release", "File check"]);
+    check("under More, which is lit, with Notes beside it",
+      [await b.ev(`${TABS}.find((x) => x.classList.contains("on")).textContent`), await b.ev(`${PARTS}.map((x) => x.textContent)`)], ["More", ["File check", "Notes"]]);
     check("under it the official name, the region and the revision", [await b.ev(fact("official name")), await b.ev(fact("region")), await b.ev(fact("revision"))],
       ["Stand-in Quest (USA) (Rev 1)", "USA", "Rev 1"]);
     check("with the file it read and its checksum", [await b.ev(fact("file")), await b.ev(fact("sha-1"))], ["Whatever It Is Called.nes", sum("sha1", nes(1)).toLowerCase()]);
     await b.key("f");
     check("and F again goes back to About", await b.until(tabOn, "About", 3000), "About");
-    await b.clickSel(`#details .dtab[data-tab="filecheck"]`);
-    check("a click on the tab opens it too", [await b.until(tabOn, "File check", 3000), await b.until(line, "USA, Rev 1  ·  a known release", 3000)], ["File check", "USA, Rev 1  ·  a known release"]);
+    await b.clickSel(`#details .dtab[data-tab="more"]`);
+    check("a click on More opens it too", [await b.until(tabOn, "File check", 3000), await b.until(line, "USA, Rev 1  ·  a known release", 3000)], ["File check", "USA, Rev 1  ·  a known release"]);
     await b.shot("filecheck-details");
     await back();
 

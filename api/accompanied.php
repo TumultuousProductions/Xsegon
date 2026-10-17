@@ -3,7 +3,7 @@
  * /api/accompanied.php - files that go with a game and are not played
  * (includes\accompanied.php). Files on the disk are never touched.
  *
- *   GET  ?id=<game id>                    what that game's Accompanied files tab shows
+ *   GET  ?id=<game id>                    what that game's Files tab shows
  *   GET  ?id=<game id>&homes=1            the games it could go with, to pick from
  *   GET  ?id=<game id>&files=1            the files of its console that could go with it
  *   GET  ?settle=1                        every file whose name says it goes with a game,

@@ -137,7 +137,9 @@ module.exports = async function (b, check) {
     put(GAME.rom, "not a game, a stand-in");
     put(OTHER.rom, "not a game, a stand-in");
     for (const g of [BRAWL, SAGA, SAGA_INT, HERO]) { put(g.rom, "not a game, a stand-in"); }
-    put(MELEE.rom, Buffer.concat([Buffer.from("GALE01"), Buffer.from([0, 2]), Buffer.alloc(64)]));
+    // Its ID, version 2, and a GameCube disc's own mark at 0x1C, which the reader asks for.
+    const gc = Buffer.alloc(72); gc.write("GALE01", 0, "latin1"); gc[7] = 2; gc.writeUInt32BE(0xC2339F3D, 0x1C);
+    put(MELEE.rom, gc);
     const n64 = Buffer.alloc(1024); n64.writeUInt32BE(0x80371240, 0); n64.write("STANDIN KART        ", 0x20, "latin1");
     put(KART.rom, n64);
     pcsx2(PCSX2, GAME.rom);
@@ -386,8 +388,8 @@ module.exports = async function (b, check) {
     await b.key("i");
     await b.waitFor(`!document.getElementById("details").hidden && !!document.querySelector("#details .dtabs")`, 8000);
     check("a PS2 game's details have a Texture packs tab after Hacks, counting the packs listed",
-      await b.until(`${TABS}.map((x) => (/^Saves/.test(x.textContent) ? "Saves" : x.textContent))`, ["About", "Media", "Saves", "File check", "Cheats", "Hacks", "Texture packs (3)", "Accompanied files", "Notes"], 8000),
-      ["About", "Media", "Saves", "File check", "Cheats", "Hacks", "Texture packs (3)", "Accompanied files", "Notes"]);
+      await b.until(`${TABS}.map((x) => (/^Saves/.test(x.textContent) ? "Saves" : x.textContent))`, ["About", "Media", "Saves", "Cheats", "Hacks", "Texture packs (3)", "Files", "More"], 8000),
+      ["About", "Media", "Saves", "Cheats", "Hacks", "Texture packs (3)", "Files", "More"]);
     check("and About says how many are found, the line a way to the tab",
       await b.ev(`(dts => { const i = dts.findIndex((d) => d.textContent === "texture pack"); return i < 0 ? null : [dts[i].nextElementSibling.textContent, dts[i].nextElementSibling.classList.contains("fact-go")]; })([...document.querySelectorAll("#details .dleft dt")])`),
       ["none on this PC  ·  3 found", true]);

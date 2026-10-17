@@ -18,6 +18,8 @@ const GAME_A = "aa11aa11-0000-4000-8000-000000000001";       // its zip download
 const GAME_B = "bb22bb22-0000-4000-8000-000000000002";       // no zip (it fetches as it plays); its logo only where Flashpoint fetches pictures
 const GAME_C = "cc33cc33-0000-4000-8000-000000000003";       // a zip not downloaded yet, no pictures anywhere
 const GAME_GONE = "dd44dd44-0000-4000-8000-000000000004";    // on the playlist, gone from the game list
+const GAME_E = "ee55ee55-0000-4000-8000-000000000005";       // tagged with a tag Flashpoint's settings hide
+const GAME_F = "ff66ff66-0000-4000-8000-000000000006";       // marked broken
 
 function php() {
   for (const c of [process.env.XSEGON_PHP, path.join(ROOT, "..", "php-8.5.4-nts-Win32-vs17-x64", "php.exe")]) {
@@ -31,10 +33,10 @@ function makeGameList(file) {
   const code = [
     "$db = new SQLite3($argv[1]);",
     "$db->exec('CREATE TABLE game (id TEXT PRIMARY KEY, title TEXT, developer TEXT, publisher TEXT, releaseDate TEXT, originalDescription TEXT,'",
-    "  . ' platformName TEXT, library TEXT, playMode TEXT, status TEXT, tagsStr TEXT, applicationPath TEXT, launchCommand TEXT)');",
+    "  . ' platformName TEXT, library TEXT, playMode TEXT, status TEXT, tagsStr TEXT, applicationPath TEXT, launchCommand TEXT, broken INTEGER)');",
     "$db->exec('CREATE TABLE game_data (id INTEGER PRIMARY KEY, gameId TEXT, presentOnDisk INTEGER, path TEXT, size INTEGER, sha256 TEXT,'",
     "  . ' applicationPath TEXT, launchCommand TEXT, parameters TEXT, dateAdded TEXT)');",
-    "$g = $db->prepare('INSERT INTO game VALUES (:id, :t, :d, :p, :r, :o, :pl, :l, :m, :s, :tg, :a, :c)');",
+    "$g = $db->prepare('INSERT INTO game VALUES (:id, :t, :d, :p, :r, :o, :pl, :l, :m, :s, :tg, :a, :c, :b)');",
     "foreach (json_decode($argv[2], true) as $row) { foreach ($row as $k => $v) { $g->bindValue(':' . $k, $v); } $g->execute(); $g->reset(); }",
     "$d = $db->prepare('INSERT INTO game_data (gameId, presentOnDisk, path, size, sha256, applicationPath, launchCommand, parameters, dateAdded) VALUES (:g, :p, :f, 10, :h, :a, :c, :x, :w)');",
     "foreach (json_decode($argv[3], true) as $row) { foreach ($row as $k => $v) { $d->bindValue(':' . $k, $v); } $d->execute(); $d->reset(); }",
@@ -43,9 +45,11 @@ function makeGameList(file) {
   const flash = "FPSoftware/Flash/flashplayer_32_sa.exe".split("/").join(String.fromCharCode(92));
   const games = [
     { id: GAME_A, t: "Test Tanks", d: "Test Studio", p: "Test Publisher", r: "2004-09-18", o: "Drive a tank.", pl: "Flash", l: "arcade", m: "Single Player",
-      s: "Playable", tg: "Action", a: "", c: "" },
-    { id: GAME_B, t: "Test Online", d: "", p: "", r: "2009", o: "", pl: "Flash", l: "arcade", m: "", s: "Playable", tg: "", a: flash, c: "http://example.com/b.swf" },
-    { id: GAME_C, t: "Test Later", d: "Later Studio", p: "", r: "not a date", o: "", pl: "Java", l: "arcade", m: "", s: "Playable", tg: "", a: "", c: "" },
+      s: "Playable", tg: "Action", a: "", c: "", b: 0 },
+    { id: GAME_B, t: "Test Online", d: "", p: "", r: "2009", o: "", pl: "Flash", l: "arcade", m: "", s: "Playable", tg: "", a: flash, c: "http://example.com/b.swf", b: 0 },
+    { id: GAME_C, t: "Test Later", d: "Later Studio", p: "", r: "not a date", o: "", pl: "Java", l: "arcade", m: "", s: "Playable", tg: "Gore", a: "", c: "", b: 0 },
+    { id: GAME_E, t: "Test Gory", d: "", p: "", r: "2010", o: "", pl: "Flash", l: "arcade", m: "", s: "Playable", tg: "Action; gore", a: flash, c: "http://example.com/e.swf", b: 0 },
+    { id: GAME_F, t: "Test Broken", d: "", p: "", r: "2011", o: "", pl: "Flash", l: "arcade", m: "", s: "Playable", tg: "Action", a: flash, c: "http://example.com/f.swf", b: 1 },
   ];
   const data = [
     { g: GAME_A, p: 1, f: GAME_A + "-1.zip", h: "AA", a: flash, c: "http://localflash/a.swf", x: "", w: "2023-01-01" },
@@ -89,7 +93,7 @@ function zipOf(files) {
 const sha256 = (x) => crypto.createHash("sha256").update(x).digest("hex");
 
 module.exports = async function (b, check) {
-  const kept = new Guard(["extensions.json", "extensions-list.json", "extensions-job.json", "local-games.json", "art-hidden.json"]);
+  const kept = new Guard(["extensions.json", "extensions-list.json", "extensions-job.json", "local-games.json", "art-hidden.json", "flashpoint-pad.json"]);
   const fix = path.join(DATA, "ext-fixtures");
   const remote = path.join(DATA, "fan-fixtures", "remote");
   const put = (url, bytes) => {
@@ -120,7 +124,8 @@ module.exports = async function (b, check) {
     fs.writeFileSync(path.join(root, "version.txt"), "Flashpoint 12.1 Infinity - Test\n");
     fs.writeFileSync(path.join(root, "Launcher", "Flashpoint.exe"), "");
     fs.writeFileSync(path.join(root, "preferences.json"), JSON.stringify({ playlistFolderPath: "Data/Playlists", imageFolderPath: "Data/Images",
-      onDemandImages: true, onDemandBaseUrl: "https://images.example.com/images/" }));
+      onDemandImages: true, onDemandBaseUrl: "https://images.example.com/images/", browsePageShowExtreme: false,
+      tagFilters: [{ name: "Violence", extreme: true, enabled: false, tags: ["Gore"] }, { name: "Not hidden", extreme: false, enabled: false, tags: ["Action"] }] }));
     fs.writeFileSync(path.join(root, "Data", "Playlists", "Favorites.json"), JSON.stringify({ id: "x", title: "Favorites",
       games: [GAME_A, GAME_B, GAME_C, GAME_GONE].map((gameId) => ({ gameId, notes: "" })) }));
     fs.writeFileSync(path.join(root, "Data", "Playlists", "Other.json"), JSON.stringify({ id: "y", title: "A Other List", games: [{ gameId: GAME_A }] }));
@@ -138,14 +143,14 @@ module.exports = async function (b, check) {
     let fp = ((await api("api/extensions.php")).extensions || []).find((x) => x.id === "flashpoint") || {};
     check("found: its version, its game list counted, its playlists with Favorites first (a file that does not read is left out)",
       [fp.section, fp.version && fp.version.number, fp.version && fp.version.edition, fp.games, (fp.playlists || []).map((p) => p.title + " " + p.count)],
-      ["here", "12.1", "Infinity", 3, ["Favorites 4", "A Other List 1"]]);
+      ["here", "12.1", "Infinity", 5, ["Favorites 4", "A Other List 1"]]);
     check("the helper release for 12.1 is the one to fetch, and it is not beside it yet, so Set up is next",
       [fp.fit && fp.fit.tag, fp.helperHere && fp.helperHere.there, fp.next], ["v0.9.10", false, "setup"]);
 
     /* ---- its favourites brought in, before Set up --------------------------------- */
     const bring = await api("api/extensions.php", { bring: "flashpoint", playlist: "Favorites.json" });
-    check("Favorites brought in: three games, one gone from Flashpoint's list left out, two that download at their first play",
-      [bring.ok, bring.added, bring.kept, bring.unknown, bring.online, (bring.ids || []).length, bring.platform], [true, 3, 0, 1, 2, 3, "Flashpoint"]);
+    check("Favorites brought in: three games, one gone from Flashpoint's list left out, two that download at their first play; none of your own picks is hidden, Gore and all",
+      [bring.ok, bring.added, bring.kept, bring.unknown, bring.online, (bring.ids || []).length, bring.platform, bring.hidden], [true, 3, 0, 1, 2, 3, "Flashpoint", 0]);
     const own = () => JSON.parse(fs.readFileSync(path.join(DATA, "local-games.json"), "utf8")).filter((e) => e.fpId);
     const mine = own();
     const ga = mine.find((e) => e.fpId === GAME_A) || {}, gc = mine.find((e) => e.fpId === GAME_C) || {};
@@ -209,6 +214,50 @@ module.exports = async function (b, check) {
     const dry = await api("api/launch.php", { id: ga.id });
     check("now Play starts the helper with the game's ID (a test copy starts nothing)",
       [dry.ok, dry.dry, dry.via, dry.exe, dry.args], [true, true, "Flashpoint", path.join(root, "CLIFp.exe"), "play -i " + GAME_A]);
+
+    /* ---- the controller as the game's keys (roadmap AU13, bin/padtokeys.ps1) ------- */
+    check("a Flashpoint game with no keys of its own: the d-pad and left stick as the arrows, into its player's window, full screen in Flash Player only, beside the launcher",
+      [dry.padKeys && dry.padKeys.map, dry.padKeys && dry.padKeys.windows, dry.padKeys && dry.padKeys.fullScreen, dry.padKeys && dry.padKeys.fullScreenIn, dry.padKeys && dry.padKeys.own,
+       /padtokeys\.ps1' -Map 'move=arrows' -Windows 'flashplayer\*,saflashplayer,flashpla,ruffle\*,java\*' -FullScreen 'Ctrl\+F' -FullScreenIn 'flashplayer\*,saflashplayer,flashpla' -GameId '/.test(dry.padCall || "")],
+      ["move=arrows", "flashplayer*,saflashplayer,flashpla,ruffle*,java*", "Ctrl+F", "flashplayer*,saflashplayer,flashpla", false, true]);
+    const shippedPad = JSON.parse(fs.readFileSync(path.join(ROOT, "includes", "extensions", "flashpoint-pad.json"), "utf8"));
+    check("Super Mario Bros. Crossover's keys ship as its Options screen gives them",
+      shippedPad.games["b0ce771e-7c02-4317-8528-ba48139e2688"].map, "move=arrows,a=Z,b=X,x=X,y=C,start=Enter,back=A");
+    fs.writeFileSync(path.join(DATA, "flashpoint-pad.json"), JSON.stringify({ games: { [GAME_A]: { map: "move=arrows,a=Space,start=Enter", fullScreen: "Ctrl+F" },
+                                                                                          [GAME_C]: { map: "a=Z; Remove-Item C:/", fullScreen: "Ctrl+F" } } }));
+    const ownPad = (await api("api/launch.php", { id: ga.id })).padKeys || {};
+    check("your own keys for a game come first, with full screen pressed once", [ownPad.map, ownPad.fullScreen, ownPad.own], ["move=arrows,a=Space,start=Enter", "Ctrl+F", true]);
+    const badPad = (await api("api/launch.php", { id: gc.id })).padKeys || {};
+    check("a map that is not one is never handed on", [badPad.map, badPad.fullScreen], ["move=arrows", "Ctrl+F"]);
+    fs.rmSync(path.join(DATA, "flashpoint-pad.json"), { force: true });
+
+    /* ---- no favourites: Flashpoint's own best first, without what its settings hide ---- */
+    const libFile = path.join(DATA, "local-games.json"), favFile = path.join(root, "Data", "Playlists", "Favorites.json");
+    const bestFile = path.join(root, "Data", "Playlists", "FlashpointSuperHallOfFame.json");
+    const libKept = fs.readFileSync(libFile, "utf8"), favKept = fs.readFileSync(favFile);
+    fs.writeFileSync(libFile, JSON.stringify(JSON.parse(libKept).filter((e) => !e.fpId)));
+    fs.writeFileSync(favFile, JSON.stringify({ id: "x", title: "Favorites", games: [] }));
+    fs.writeFileSync(bestFile, JSON.stringify({ id: "z", title: "Flashpoint Super Hall of Fame", games: [GAME_A, GAME_E, GAME_F].map((gameId) => ({ gameId })) }));
+    fp = ((await api("api/extensions.php")).extensions || []).find((x) => x.id === "flashpoint") || {};
+    check("with no favourites to bring in, Flashpoint's own Super Hall of Fame is offered first", [fp.next, fp.starter], ["bring", "FlashpointSuperHallOfFame.json"]);
+    await b.goto(BASE + "/");
+    await b.waitFor(`!document.getElementById("syswall").hidden && document.querySelectorAll("#syswall .sel").length > 0`, 10000);
+    await b.key("End");
+    await b.settled();
+    await b.key("ArrowLeft");
+    await b.settled();
+    await b.key("Enter");
+    check("and its first button says so",
+      await b.until(`((document.querySelector("#extpage .hero .bar button") || {}).textContent || "")`, "Bring in Flashpoint's best (3)", 10000), "Bring in Flashpoint's best (3)");
+    await b.key("Escape");
+    const best = await api("api/extensions.php", { bring: "flashpoint", playlist: "FlashpointSuperHallOfFame.json" });
+    check("brought in without what Flashpoint's settings hide: a tag of an extreme group while extreme is not shown, a game marked broken; a tag of a group switched off comes",
+      [best.ok, best.added, best.hidden, best.hiddenWhy], [true, 1, 2, { gore: 1, broken: 1 }]);
+    fs.writeFileSync(libFile, libKept);
+    fs.writeFileSync(favFile, favKept);
+    fp = ((await api("api/extensions.php")).extensions || []).find((x) => x.id === "flashpoint") || {};
+    check("with favourites in Flashpoint, they stay first: the best-of list is only in Other playlists", [fp.next, fp.starter], ["list", null]);
+    fs.rmSync(bestFile, { force: true });
 
     /* ---- pages, and Flashpoint's own window --------------------------------------- */
     check("its website opens (a test copy opens nothing)", await api("api/extensions.php", { open: "flashpoint", which: "page" }),

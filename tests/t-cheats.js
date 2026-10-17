@@ -27,10 +27,11 @@ async function detailsOf(b, id) {
   return b.waitFor(`!document.getElementById("details").hidden && !!document.querySelector("#details .dtabs")`, 8000);
 }
 const TABS = `[...document.querySelectorAll("#details .dtabs .dtab")]`;
-const tabOn = `(t => (t ? t.textContent : null))(${TABS}.find((x) => x.classList.contains("on")))`;
+// What is open: a part of More (File check, Notes) when More is, else the tab.
+const tabOn = `(t => (t ? t.textContent : null))([...document.querySelectorAll("#details .dparts:not([hidden]) .dtab")].find((x) => x.classList.contains("on")) || ${TABS}.find((x) => x.classList.contains("on")))`;
 const legend = `[...document.querySelectorAll("#help .hitem .hl")].map((x) => x.textContent)`;
-// Media, Saves and File check stand between About and Cheats; Saves and Texture packs carry counts of the game's own, so they are named without them.
-const tabNames = `${TABS}.map((x) => (/^Saves/.test(x.textContent) ? "Saves" : /^Texture packs/.test(x.textContent) ? "Texture packs" : x.textContent))`;
+// Media and Saves stand between About and Cheats; Saves, Texture packs and Files carry counts of the game's own, so they are named without them.
+const tabNames = `${TABS}.map((x) => (/^Saves/.test(x.textContent) ? "Saves" : /^Texture packs/.test(x.textContent) ? "Texture packs" : /^Files/.test(x.textContent) ? "Files" : x.textContent))`;
 const onMedia = `${tabOn} === "Media"`;
 const onSaves = `/^Saves/.test(${tabOn} || "")`;
 const onFile = `${tabOn} === "File check"`;
@@ -45,7 +46,7 @@ async function detailTabsOnAGame(b, check, sf) {
   check("(the game's details open)", await detailsOf(b, sf.id), true);
   check("details has a row of tabs under Back and Play, About first and open",
     await b.ev(`[${tabNames}, ${tabOn}, document.querySelector("#details .dright .bar").nextElementSibling.className, document.querySelector("#details .dtab-pane").className]`),
-    [["About", "Media", "Saves", "File check", "Cheats", "Hacks", "Texture packs", "Accompanied files", "Notes"], "About", "dtabs", "dtab-pane is-about"]);
+    [["About", "Media", "Saves", "Cheats", "Hacks", "Achievements", "Texture packs", "Files", "More"], "About", "dtabs", "dtab-pane is-about"]);
   check("and the legend names the keys for them", await b.until(`${legend}.includes("tabs")`, true), true);
   check("the open tab's words can be read: they are not the colour of the tab",
     await b.ev(`(s => s.color !== s.backgroundColor)(getComputedStyle(${TABS}.find((x) => x.classList.contains("on"))))`), true);
@@ -55,8 +56,6 @@ async function detailTabsOnAGame(b, check, sf) {
   check("Right opens the next tab, Media", await b.until(onMedia, true), true);
   await b.key("ArrowRight");
   check("Right again opens Saves", await b.until(onSaves, true), true);
-  await b.key("ArrowRight");
-  check("Right again opens File check, before Cheats", await b.until(onFile, true), true);
   await b.key("ArrowRight");
   check("and once more opens Cheats, and the picker stands in the tab: no panel, no title, no Cancel",
     [await b.waitFor(`document.querySelectorAll("#details .dtab-pane.is-cheats .ch-list .cr-row").length > 3`, 9000), await b.ev(tabOn),
@@ -116,8 +115,6 @@ async function detailTabsOnAGame(b, check, sf) {
   check("Esc in the list goes back to the tabs, details still up",
     [await b.until(`document.querySelector("#details .dtab-pane").classList.contains("in")`, false), await b.ev(`document.getElementById("details").hidden`)], [false, false]);
   await b.key("ArrowLeft");
-  await b.until(onFile, true);
-  await b.key("ArrowLeft");
   await b.until(onSaves, true);
   await b.key("ArrowLeft");
   await b.until(onMedia, true);
@@ -128,8 +125,6 @@ async function detailTabsOnAGame(b, check, sf) {
   await b.until(onMedia, true);
   await b.key("ArrowRight");
   await b.until(onSaves, true);
-  await b.key("ArrowRight");
-  await b.until(onFile, true);
   await b.key("ArrowRight");
   await b.until(tabOn, "Cheats (1)");
   await b.key("Escape");
@@ -152,8 +147,6 @@ async function detailTabsOnAGame(b, check, sf) {
     await press(5);
     await b.until(onSaves, true);
     await press(5);
-    await b.until(onFile, true);
-    await press(5);
     check("RB opens the next tab, and the ones after", await b.until(tabOn, "Cheats (1)"), "Cheats (1)");
     await b.waitFor(`document.querySelectorAll("#details .dtab-pane.is-cheats .ch-list .cr-row").length > 3`, 9000);
     await press(13);
@@ -162,8 +155,6 @@ async function detailTabsOnAGame(b, check, sf) {
     await press(1);
     check("B comes out of the list, details still up",
       [await b.until(`document.querySelector("#details .dtab-pane").classList.contains("in")`, false), await b.ev(`document.getElementById("details").hidden`)], [false, false]);
-    await press(4);
-    await b.until(onFile, true);
     await press(4);
     await b.until(onSaves, true);
     await press(4);
@@ -251,15 +242,15 @@ async function emulatorsOwnCheats(b, check) {
     await b.setView("list");
     await b.openPlatform(ps2.platform);
     check("(the PCSX2 game's details open)", await detailsOf(b, ps2.id), true);
-    check("its Cheats tab counts what PCSX2 has on", await b.until(tabNames, ["About", "Media", "Saves", "File check", "Cheats (2)", "Hacks", "Texture packs", "Accompanied files", "Notes"], 8000), ["About", "Media", "Saves", "File check", "Cheats (2)", "Hacks", "Texture packs", "Accompanied files", "Notes"]);
+    check("its Cheats tab counts what PCSX2 has on", await b.until(tabNames, ["About", "Media", "Saves", "Cheats (2)", "Hacks", "Texture packs", "Files", "More"], 8000), ["About", "Media", "Saves", "Cheats (2)", "Hacks", "Texture packs", "Files", "More"]);
     await b.key("ArrowRight");
     await b.until(onMedia, true);
     await b.key("ArrowRight");
     await b.until(onSaves, true);
-    await b.key("ArrowRight");
-    check("a disc game's File check tab says in a sentence why there is nothing to check",
+    await b.key("f");
+    check("a disc game's File check, under More, says in a sentence why there is nothing to check",
       [await b.until(onFile, true), await b.until(`/cartridge consoles only for now, and .*Playstation 2 is not one of them/.test((document.querySelector("#details .dtab-pane.is-filecheck .cr-none") || {}).textContent || "")`, true, 6000)], [true, true]);
-    await b.key("ArrowRight");
+    await b.clickSel(`#details .dtab[data-tab="cheats"]`);
     const rowsNow = `[...document.querySelectorAll("#details .dtab-pane.is-cheats .ch-list .cr-row")].map((r) => [r.querySelector(".cr-name").textContent, r.classList.contains("on"), r.classList.contains("ro")])`;
     check("and lists them, the ones that are on marked, none of them a switch",
       await b.until(rowsNow, [["Infinite Health", true, true], ["All Stages", true, true], ["Max Money", false, true]], 9000),

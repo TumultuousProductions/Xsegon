@@ -200,7 +200,7 @@ function xs_acc_unsettled(array $games): array
     return $out;
 }
 
-/** What one game's Accompanied files tab says: the files that go with it, and what it is itself. */
+/** What one game's Files tab says: the files that go with it, and what it is itself. */
 function xs_acc_state(array $game, array $games): array
 {
     $id = (string) $game['id'];
@@ -255,7 +255,7 @@ function xs_acc_tell(string $by): int
         'title' => $one ? 'A file that may go with a game' : count($new) . ' files that may go with a game',
         'body'  => 'Read from ' . ($one ? 'its name' : 'their names') . '. Nothing changes until you say: until then '
                  . ($one ? 'it stays a game' : 'each stays a game') . ' in its list. Said yes, ' . ($one ? 'it moves' : 'each moves')
-                 . ' into the Accompanied files tab of the game it goes with, and Play on it is greyed.',
+                 . ' into the Files tab of the game it goes with, and Play on it is greyed.',
         'items' => $lines,
         'n'     => count($lines),
         'opens' => ['accompanied'],

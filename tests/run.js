@@ -52,6 +52,7 @@ const GROUPS = {
   setup: "./t-setup",
   steamvid: "./t-steamvid",
   screenscraper: "./t-screenscraper",
+  achievements: "./t-achievements",
   videopack: "./t-videopack",
   archivevid: "./t-archivevid",
   arcadevid: "./t-arcadevid",

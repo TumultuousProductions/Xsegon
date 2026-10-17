@@ -819,6 +819,26 @@ module.exports = async function (b, check) {
           [probe.all.came, probe.all.dropped, probe.all.missing, probe.all.stopped], [1, 2, [{ title: "Never Came", kind: "logo" }], false]);
     check("Stop ends the asking where it is", [probe.halted.stopped, probe.halted.came + probe.halted.missing.length], [true, 2]);
     check("a failed fetch is asked for again, a name the source has wrong is not, and nothing that did not fail", probe.wanted, [true, true, false, false, false, false]);
+
+    /* Sure, and the same name, fill by themselves; a name that only starts the same waits;
+       a game named only after its console gets no guess ("gb" found Bonk's Adventure
+       through its Japanese name, GB Genjin). Rows made by hand. */
+    const row = (id, title, platform, confidence, extra, sameName) => Object.assign({ id: id, title: title, platform: platform, dbId: 0, art: { box: false }, was: title,
+      match: Object.assign({ best: confidence === "none" ? null : { id: 9000 + id.length, title: "Some Game", platform: platform }, confidence: confidence, candidates: [] },
+        sameName === undefined ? {} : { sameName: sameName }) }, extra || {});
+    const sortRows = (rows) => JSON.parse(require("child_process").execFileSync(phpExe, [path.join(__dirname, "fill-probe.php"), "sort", JSON.stringify(rows)],
+      { encoding: "utf8", windowsHide: true, env: Object.assign({}, process.env, { XSEGON_DATA: DATA }) })).rows;
+    const sortedBy = sortRows([
+      row("c1", "gb", "Nintendo Game Boy", "maybe"), row("c2", "NES", "Nintendo Entertainment System", "likely"),
+      row("c3", "sega 32x", "Sega 32X", "sure"), row("c4", "Super Nintendo", "Super Nintendo Entertainment System", "sure"),
+      row("c5", "Contra", "Nintendo Entertainment System", "sure"), row("c66", "Star Ocean", "Super Nintendo Entertainment System", "likely", null, false),
+      row("c777", "gb", "Nintendo Game Boy", "linked", { dbId: 18322 }), row("c8888", "Tetris", "Nintendo Entertainment System", "likely", null, true),
+    ]);
+    check("a console's name alone gets no guess, however sure; sure and the same name fill by themselves, a name that only starts the same waits; a choice made stays",
+          sortedBy.map((r) => r.state + (r.why ? ":" + r.why : "") + (r.match.best ? "" : ":nobest")),
+          ["none:console:nobest", "none:console:nobest", "none:console:nobest", "none:console:nobest", "ready", "check:guess", "ready", "ready"]);
+    const consoleLog = fs.readdirSync(path.join(DATA, "log")).map((n) => fs.readFileSync(path.join(DATA, "log", n), "utf8")).join("\n");
+    check("and the log names them", /FILL no guess for 4 games named only after a console: gb, NES, sega 32x, Super Nintendo/.test(consoleLog), true);
     const artDir = path.join(DATA, "art"), standIn = path.join(DATA, "fixtures", "gamesdb-picture.png");
     const pzRow = ((await api("api/fill.php?job=rows")).rows || []).find((g) => g.id === panzer.id) || {};
     const pzPick = { id: panzer.id, dbId: String(pzRow.dbId || ((pzRow.match || {}).best || {}).id || "") };

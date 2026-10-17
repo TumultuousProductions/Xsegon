@@ -11,13 +11,16 @@ require_once __DIR__ . '/../includes/fill.php';
 /* "tell <rows as JSON>": the message for the games left to a person
    (xs_fill_tell), written into the data folder XSEGON_DATA names. Never
    against the real one. */
-if (($argv[1] ?? '') === 'tell') {
+/* "sort <rows as JSON>": whose decision each row is (xs_fill_sort), which logs
+   the games named only after a console into XSEGON_DATA's log. */
+if (in_array($argv[1] ?? '', ['tell', 'sort'], true)) {
     if ((string) getenv('XSEGON_DATA') === '') {
-        fwrite(STDERR, "tell wants XSEGON_DATA, a test's own data folder\n");
+        fwrite(STDERR, $argv[1] . " wants XSEGON_DATA, a test's own data folder\n");
         exit(2);
     }
     $rows = json_decode((string) ($argv[2] ?? '[]'), true);
-    echo json_encode(['wrote' => xs_fill_tell(is_array($rows) ? $rows : [])]);
+    $rows = is_array($rows) ? $rows : [];
+    echo json_encode($argv[1] === 'tell' ? ['wrote' => xs_fill_tell($rows)] : ['rows' => xs_fill_sort($rows)]);
     exit(0);
 }
 
