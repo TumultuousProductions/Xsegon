@@ -77,6 +77,25 @@ function xs_tp_wipe(string $dir, string $base, ?callable $tick = null): bool
     return $walk(xs_norm_path($dir));
 }
 
+/**
+ * A pack's own folder name inside the game's, from the pack's name: one Windows can
+ * keep, short enough for a pack's deep folders, no leading dot (the N64 core skips
+ * those), and not taken already.
+ */
+function xs_tp_sub_name(string $name, string $into): string
+{
+    $n = trim((string) preg_replace('/\s+/', ' ', (string) preg_replace('/[<>:"\/\\\\|?*\x00-\x1f]+/', ' ', $name)), ' .');
+    $n = rtrim(mb_substr($n, 0, 40), ' .');
+    if ($n === '' || preg_match('/^(con|prn|aux|nul|com\d|lpt\d)$/i', $n)) {
+        $n = 'Texture pack';
+    }
+    $try = $n;
+    for ($i = 2; file_exists($into . DIRECTORY_SEPARATOR . $try); $i++) {
+        $try = $n . ' ' . $i;
+    }
+    return $try;
+}
+
 /** Is a program from that exe's folder open? It writes its settings again as it closes. As ra_open_from(). */
 function xs_tp_open(string $exe): bool
 {

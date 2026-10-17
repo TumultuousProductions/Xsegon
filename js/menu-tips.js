@@ -122,6 +122,8 @@ export var TIPS = {
   cheatsOn: "Only the games that start with cheats you selected.",
   hacksOnly: "Only the games marked HACK.",
   noHacks: "Every game but the ones marked HACK.",
+  texPacks: "Only the games with a texture pack: one listed in their Texture packs tab, or one installed.",
+  texInstalled: "Only the games with a texture pack Xsegon installed that is still in place.",
   minRating: "Only the games you gave at least this many stars. Press a star, or press the row to step it up a star; after five it is off again.",
   // a console's right-click menu
   sysEmpty: "No games here yet.",

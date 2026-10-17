@@ -178,6 +178,11 @@ export function launchNow(g, slot, direct, choice, hack) {
     var how = res.slot === null || res.slot === undefined ? ""
             : res.loads === "sent" ? "  ·  loading slot " + res.slot + " for you"
             : "  ·  on slot " + res.slot + ", press " + (res.hotkey || pickHotkey) + " to load it";
+    // The N64 core reads new texture packs whole before the game shows: a still window is said, not left to look like a hang.
+    if (res.texRead) {
+      how += "  ·  reading its texture packs first" + (res.texRead > 314572800 ? " (" + (res.texRead / 1073741824).toFixed(1) + " GB): it can take minutes"
+           : ": it can take a while") + ", and RetroArch's window does not answer until then";
+    }
     showStrip("running: " + res.launched + "  (" + res.via + ")" + how, false);
     $strip.dataset.kind = "running";
     watchGame(res.launched, null, false);

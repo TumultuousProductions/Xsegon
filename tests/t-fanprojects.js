@@ -448,6 +448,8 @@ module.exports = async function (b, check) {
     }
     const emuMake = { how: "release", asset: "-Windows\\.zip$", folder: "Fan Emu", run: "emu.exe", args: "-e \"{folder}\\user\\Launcher\\start.dol\"",
                       need: ["user/Launcher/start.dol"], game: { ini: "user/Config/Emu.ini", section: "Core", key: "DefaultISO" } };
+    // Told its disc when it starts (as Dusklight and Slippi are): the disc's path in its arguments; a recipe that leaves {disc} out is not offered.
+    const argMake = { how: "release", asset: "-Windows\\.zip$", folder: "Fan Arg", run: "emu.exe", args: "--user-dir \"{folder}\\data\" --dvd \"{disc}\"", game: { args: true } };
     // A build: the team's source at its newest commit, a compiler and a library from the releases its build guide names.
     const SHA = "abcdef0123456789abcdef0123456789abcdef01";
     const srcZip = fanZipOf([file("fanbuild-" + SHA + "/src/a.c", "int a;"), file("fanbuild-" + SHA + "/src/b.c", "int b;"), file("fanbuild-" + SHA + "/README.md", "read me")]);
@@ -475,14 +477,15 @@ module.exports = async function (b, check) {
       options: [{ "section-name": "Pack", "option-name": "Pack", choice: 1 }], folder: "Fan Pack" });
     fs.writeFileSync(path.join(DATA, "fanprojects.json"), JSON.stringify({ projects: [
       porter("t-emu", "fanemu", { make: emuMake }), porter("t-emubare", "fanemubare", { make: emuMake }),
+      porter("t-arg", "fanemu", { make: argMake }), porter("t-argnone", "fanemu", { make: Object.assign({}, argMake, { args: "-b" }) }),
       porter("t-build", "fanbuild", { make: buildMake }),
       porter("t-buildaway", "fanbuild", { make: Object.assign({}, buildMake, { tools: [{ url: "https://example.com/cc.zip", size: 1, into: "third_party" }] }) }),
       porter("t-pack", "fanport", { kind: "disc", page: "https://example.com/pack", make: packMake("https://example.com/pack/install.txt") }),
       porter("t-packaway", "fanport", { kind: "disc", page: "https://example.com/pack", make: packMake("https://elsewhere.example.net/install.txt") }),
     ] }));
     const kinds = Object.fromEntries(((await api("api/fanprojects.php")).projects || []).map((p) => [p.id, p.make]));
-    check("its own emulator, a build and a pack are offered; a tool from no GitHub release, or a pack from another's server, is not",
-      kinds, { "t-emu": true, "t-emubare": true, "t-build": true, "t-buildaway": false, "t-pack": true, "t-packaway": false });
+    check("its own emulator, a disc in its arguments, a build and a pack are offered; {disc} left out, a tool from no GitHub release, or a pack from another's server, is not",
+      kinds, { "t-emu": true, "t-emubare": true, "t-arg": true, "t-argnone": false, "t-build": true, "t-buildaway": false, "t-pack": true, "t-packaway": false });
     await api("api/fanprojects.php", { make: "t-emubare" });
     const bare = await ended();
     check("a release without what it is told to open: refused, nothing kept",
@@ -494,6 +497,13 @@ module.exports = async function (b, check) {
     check("its own emulator: pointed at your game where it is, nothing copied, told what to open in its folder",
       [emuJob && emuJob.state, fs.existsSync(emuIni) && fs.readFileSync(emuIni, "utf8"), fs.existsSync(path.join(emuDir, "base.z64")), emuOwn.args],
       ["done", "[Core]\r\nDefaultISO = " + path.join(fix, "base.z64") + "\r\n", false, "-e \"" + emuDir + "\\user\\Launcher\\start.dol\""]);
+    await api("api/fanprojects.php", { make: "t-arg" });
+    const argJob = await ended();
+    const argDir = path.join(portsDir, "Fan Arg");
+    const argOwn = ((await api("api/local.php")).games || []).find((g) => g.id === ((argJob && argJob.made) || {}).id) || {};
+    check("a disc in its arguments: nothing copied, started with your game where it is and its own folder for its data",
+      [argJob && argJob.state, fs.existsSync(path.join(argDir, "emu.exe")), fs.existsSync(path.join(argDir, "base.z64")), argOwn.args],
+      ["done", true, false, "--user-dir \"" + argDir + "\\data\" --dvd \"" + path.join(fix, "base.z64") + "\""]);
     await api("api/fanprojects.php", { make: "t-build" });
     const buildJob = await ended();
     const buildDir = path.join(portsDir, "Fan build");

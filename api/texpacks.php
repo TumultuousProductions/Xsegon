@@ -1,18 +1,21 @@
 <?php
 /**
- * GET  /api/texpacks.php?id=<game id>   where the game's texture pack goes, the one
- *                                       there now, whether its emulator loads it, and
+ * GET  /api/texpacks.php?id=<game id>   where the game's texture packs go, the ones
+ *                                       there now, whether its emulator loads them, and
  *                                       the packs listed for the game
- * POST {"id": "...", "from": "<file or folder>", "replace": false}
+ * POST {"id": "...", "from": "<file or folder>"}
  *                                       put a pack in place, in the background. With
- *                                       one there already the answer is
- *                                       {"needs": "replace", "installed": {...}} and
- *                                       nothing is done until "replace": true
- * POST {"id": "...", "get": "<listed pack>", "replace": false}
+ *                                       packs there already the answer is
+ *                                       {"needs": "choose", "packs": [...], "beside": bool}
+ *                                       and nothing is done until "how": "beside" or
+ *                                       "replace" ("replace": true is "how": "replace")
+ * POST {"id": "...", "get": "<listed pack>", "how": ...}
  *                                       the same, from that pack's own download
  * POST {"id": "...", "open": "<listed pack>", "which": "page" | "tip"}
  *                                       that pack's page, or its maker's tip page, in the browser
- * POST {"id": "...", "remove": true}    take the game's pack away, in the background
+ * POST {"id": "...", "remove": "<pack's id>"}
+ *                                       uninstall that pack, in the background ("remove":
+ *                                       true for a game with one)
  * POST {"stop": true}                   stop the one at work, nothing put in place
  *
  * A file or folder is one the person chose in Windows' own window (api\pick-folder.php);
@@ -65,16 +68,22 @@ if ($isPost) {
         xs_fail('a game is running: texture packs are left alone until it is closed', 409);
     }
     $remove = !empty($body['remove']);
+    $drop   = is_string($body['remove'] ?? null) ? (string) $body['remove'] : '';
+    if ($drop !== '' && !preg_match('/^([a-f0-9]{10}|hand)$/', $drop)) {
+        xs_fail('which pack is not said', 400);
+    }
     $get    = isset($body['get']) ? $key : null;
     $from   = $remove || $get !== null ? null : (string) ($body['from'] ?? '');
     if (!$remove && $get === null && $from === '') {
         xs_fail('which file or folder is not said', 400);
     }
+    $want = $remove ? ['remove' => $drop] : ($get !== null ? ['get' => $get] : ['from' => $from]);
+    $want['how'] = !empty($body['replace']) ? 'replace' : ($body['how'] ?? null);
     $why = null;
     $ask = null;
-    if (!xs_tp_start($game, $from, $get, !empty($body['replace']), $why, $ask)) {
+    if (!xs_tp_start($game, $want, $why, $ask)) {
         if ($why === null && $ask !== null) {
-            xs_json(['ok' => true, 'needs' => 'replace', 'installed' => $ask]);
+            xs_json(['ok' => true, 'needs' => 'choose'] + $ask);
         }
         xs_fail((string) $why, 409);
     }
@@ -83,6 +92,7 @@ if ($isPost) {
 
 $state = xs_tp_state($game);
 xs_log('TPAK', 'looked at for ' . $game['title'] . ': ' . ($state['can'] ? $state['emulator'] . ', ' . $state['key'] . ', '
-    . ($state['installed'] ? $state['installed']['files'] . ' files there' : 'none there') . ', loads ' . ($state['loads'] ? 'on' : 'off')
+    . ($state['packs'] ? count($state['packs']) . ' pack(s) there, ' . array_sum(array_column($state['packs'], 'files')) . ' files' : 'none there')
+    . ($state['readsFirst'] ? ', read whole at the next start' : '') . ', loads ' . ($state['loads'] ? 'on' : 'off')
     : (string) $state['why']) . ', ' . count($state['found']) . ' listed');
 xs_json($state);

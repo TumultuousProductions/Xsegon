@@ -6,8 +6,10 @@
  *   php bin\texpacks.php
  *
  * The plan is in data\texpacks-job.json. A pack is fetched, unpacked or copied into a
- * folder beside the game's own on the same drive, and given the game's place only
- * when all of it is in; the pack it replaces goes only after that.
+ * folder beside the game's own on the same drive, and given a folder of its own in the
+ * game's place only when all of it is in; the packs it replaces go only after that.
+ * The N64 core's .htc, made from the packs there before, goes whenever a pack comes
+ * or goes: the core reads it in place of the packs.
  */
 declare(strict_types=1);
 
@@ -63,33 +65,58 @@ $end = static function (string $state, string $words) use (&$job, $save): void {
 };
 $size = static fn (int $b): string => $b >= 1073741824 ? round($b / 1073741824, 2) . ' GB' : max(0.1, round($b / 1048576, 1)) . ' MB';
 $n = static fn (int $c, string $one, string $many): string => number_format($c) . ' ' . ($c === 1 ? $one : $many);
+// The N64 core reads its folder packs whole at the next start: said, so a still window is not taken for a hang.
+$readSaid = static fn (int $bytes): string => ' Its next start reads ' . ($bytes > 314572800 ? 'all ' . $size($bytes) . ' first, which can take minutes'
+    : 'the packs first, which can take a while') . ': RetroArch\'s window does not answer until then. Later starts are quicker.';
 $t0 = microtime(true);
 if (!is_dir($base) && !@mkdir($base, 0777, true)) {
     $end('failed', $emu . '\'s texture folder ' . $base . ' could not be made (' . xs_file_error_reason() . ')');
 }
+// The core's .htc of the packs before: it would be read in place of the packs now.
+$dropCache = static function () use ($t): void {
+    if (($t['cache'] ?? null) !== null && is_file($t['cache']) && @unlink($t['cache'])) {
+        xs_log('TPAK', 'the N64 core\'s cache of the packs before is deleted (' . basename($t['cache']) . '): it makes a new one at the next start');
+    }
+};
 
-// ---- taking a pack away -----------------------------------------------------------
+// ---- uninstalling one pack ---------------------------------------------------------
 if (($job['action'] ?? '') === 'remove') {
     $job['phase'] = 'removing';
-    $rec   = is_array($job['record'] ?? null) ? $job['record'] : null;
-    $gone  = $base . '\\.xsegon-gone-' . $tag;
+    $rec  = is_array($job['record'] ?? null) ? $job['record'] : null;
+    $drop = (array) ($job['drop'] ?? []);
+    $isLast = !empty($drop['last']);                    // not $last: that is $save's clock
+    $what = (string) ($drop['from'] ?? '') !== '' ? (string) $drop['from'] : 'The texture pack put there by hand';
+    $gone = $base . '\\.xsegon-gone-' . $tag;
     xs_tp_wipe($gone, $base);
-    // Out of the emulator's way at once, by a rename; the files go after.
-    if (!@mkdir($gone, 0777, true)) {
-        $end('failed', 'a folder to take the pack away into could not be made (' . xs_file_error_reason() . '): it is as it was');
+    // Out of the emulator's way at once, by renames; the files go after.
+    if (!@mkdir($gone . '\\pack', 0777, true)) {
+        $end('failed', 'a folder to uninstall the pack into could not be made (' . xs_file_error_reason() . '): it is as it was');
     }
-    if (is_dir($t['into']) && !@rename($t['into'], $gone . '\\pack')) {
-        $end('failed', 'the pack could not be moved out of ' . $emu . '\'s folder (' . xs_file_error_reason() . '): it is as it was');
+    $moved = [];
+    foreach (array_values((array) ($drop['paths'] ?? [])) as $i => $p) {
+        $p = (string) $p;
+        // Only what is in the game's folder, or its N64 .hts or .htc.
+        $ours = stripos($p, $t['into'] . '\\') === 0 || in_array(strtolower($p), array_map('strtolower', array_filter([$t['file'], $t['cache']])), true);
+        if (!$ours || !file_exists($p)) {
+            continue;
+        }
+        $to = $gone . '\\pack\\' . $i . '-' . basename($p);
+        if (!@rename($p, $to)) {
+            $why = xs_file_error_reason();
+            foreach (array_reverse($moved) as [$a, $b]) {
+                @rename($b, $a);
+            }
+            $end('failed', 'the pack could not be moved out of ' . $emu . '\'s folder (' . $why . '): it is as it was');
+        }
+        $moved[] = [$p, $to];
     }
-    if ($t['file'] !== null && is_file($t['file']) && !@rename($t['file'], $gone . '\\' . basename($t['file']))) {
-        $end('failed', 'the pack could not be moved out of ' . $emu . '\'s folder (' . xs_file_error_reason() . ')');
-    }
+    $dropCache();
     $count = xs_tp_count($gone);
     $job['files'] = $count['files'];
     $job['total'] = $count['bytes'];
     $save();
     $note = '';
-    if ($rec !== null && is_array($rec['setting'] ?? null)) {
+    if ($isLast && $rec !== null && is_array($rec['setting'] ?? null)) {
         $why = null;
         if (xs_tp_switch($t['switch'], false, $rec['setting'], $why) === null) {
             $note = ' ' . $t['setWords'] . ' could not be put back as it was for this game (' . $why . ').';
@@ -100,15 +127,35 @@ if (($job['action'] ?? '') === 'remove') {
         $save(false);
         return true;
     });
-    @rmdir($t['dir']);                                   // only when nothing else of the game's is in it
-    xs_tp_record_set((string) $job['id'], null);
-    $end('done', 'The texture pack for ' . $title . ' is taken away: ' . $n($count['files'], 'file', 'files') . ', ' . $size($count['bytes'])
-        . '. ' . $emu . ' shows the game\'s own textures again.' . $note);
+    if ($isLast) {
+        @rmdir($t['into']);                              // each only when nothing else is in it
+        @rmdir($t['dir']);
+        xs_tp_record_set((string) $job['id'], null);
+    } elseif ($rec !== null) {
+        $rec['packs'] = array_values(array_filter((array) $rec['packs'], static fn (array $p): bool => $p['id'] !== ($drop['id'] ?? '')));
+        xs_tp_record_set((string) $job['id'], $rec);
+    }
+    $stay = $isLast ? 0 : max(1, (int) ($job['beside'] ?? 2) - 1);
+    $end('done', $what . ' is uninstalled from ' . $title . ': ' . $n($count['files'], 'file', 'files') . ', ' . $size($count['bytes']) . '. '
+        . ($isLast ? $emu . ' shows the game\'s own textures again.' : ($stay === 1 ? 'The other pack stays.' : 'The other ' . $stay . ' packs stay.')
+            . (($bytes = xs_tp_reads_first($rec)) > 0 ? $readSaid($bytes) : ''))
+        . $note);
 }
 
 $src  = (array) $job['source'];
 $kind = (string) $src['kind'];
 $from = (string) $src['path'];
+$how  = (string) ($job['how'] ?? 'new');                // 'new' (nothing there), 'beside' or 'replace'
+// An N64 .hts or .htc is loaded alone: one found inside a pack asked to go beside another is refused before anything moves.
+$alone = static function (?array $found, ?callable $undo = null) use ($how, $src, $end): void {
+    if ($how === 'beside' && isset($found['file'])) {
+        if ($undo !== null) {
+            $undo();
+        }
+        $end('failed', $src['name'] . ' is one .' . strtolower(pathinfo((string) $found['file'], PATHINFO_EXTENSION)) . ' file, which the N64 core loads alone, '
+            . 'so it cannot go beside the pack there: install it again and choose Replace. Nothing was changed');
+    }
+};
 
 // ---- a listed pack's own download, fetched first --------------------------------------
 if ($kind === 'url') {
@@ -174,6 +221,7 @@ if ($kind === 'folder') {
     if ($found === null) {
         $end('failed', 'there are no textures in ' . $from . ': Xsegon found no .png or .dds picture in it');
     }
+    $alone($found);
     if (isset($found['file'])) {
         [$total, $files] = [(int) filesize($found['file']), 1];
     } else {
@@ -188,6 +236,7 @@ if ($kind === 'folder') {
         $end('failed', 'an .hts or .htc file is a pack for RetroArch\'s N64 core, not for ' . $emu);
     }
     $found = ['file' => $from, 'for' => null];
+    $alone($found);
     [$total, $files] = [(int) @filesize($from), 1];
 } elseif ($kind === 'zip') {
     $entries = xs_zs_list($from);
@@ -403,47 +452,60 @@ if ($kind === 'folder' || $kind === 'hts' || $kind === 'file') {
         $undo();
         $end('failed', $src['name'] . ' is a pack for RetroArch\'s N64 core (an .hts file), not for ' . $emu);
     }
+    $alone($found, $undo);
 }
 $tCopy = microtime(true);
 
 // ---- in the game's place, now that all of it is in ----------------------------------
 $job['phase'] = 'placing';
 $save();
+$isFile = isset($found['file']);
+$isHtc  = $isFile && preg_match('/\.htc$/i', (string) $found['file']) === 1;
 $old = $base . '\\.xsegon-old-' . $tag;
 xs_tp_wipe($old, $base);
-$had = is_dir($t['into']) || ($t['file'] !== null && is_file($t['file']));
-if ($had) {
-    // Moved aside together: a pack replaced is all of what was there, its folder and its .hts.
-    if (!@mkdir($old, 0777, true) || (is_dir($t['into']) && !@rename($t['into'], $old . '\\pack'))
-        || ($t['file'] !== null && is_file($t['file']) && !@rename($t['file'], $old . '\\' . basename($t['file'])))) {
-        $why = xs_file_error_reason();
-        if (is_dir($old . '\\pack')) {
-            @rename($old . '\\pack', $t['into']);
+// Replaced: all of what was there moves aside together, its folder, its .hts and the core's .htc. Beside: nothing moves.
+$aside = $how === 'beside' ? [] : array_values(array_filter([$t['into'], $t['file'], $t['cache']], static fn ($p): bool => $p !== null && file_exists($p)));
+$putBack = static function () use ($aside, $old): void {
+    foreach ($aside as $i => $p) {
+        if (file_exists($old . '\\' . $i)) {
+            if (is_dir($p)) {
+                @rmdir($p);                              // the empty folder made for the new pack
+            }
+            @rename($old . '\\' . $i, $p);
         }
+    }
+};
+if ($aside && !@mkdir($old, 0777, true)) {
+    $undo();
+    $end('failed', 'a folder to move the packs there aside into could not be made (' . xs_file_error_reason() . '): they are as they were');
+}
+foreach ($aside as $i => $p) {
+    if (!@rename($p, $old . '\\' . $i)) {
+        $why = xs_file_error_reason();
+        $putBack();
         $undo();
-        $end('failed', 'the pack there now could not be moved aside (' . $why . '): it is as it was');
+        $end('failed', 'the packs there now could not be moved aside (' . $why . '): they are as they were');
     }
 }
-$isFile = isset($found['file']);
-$dest = $isFile ? (string) $t['file'] : (string) $t['into'];
+// A folder pack gets a folder of its own in the game's, named after it; an N64 .hts or .htc goes where the core looks for one.
+$name = (string) ($src['title'] ?? '') !== '' ? (string) $src['title'] : (string) preg_replace('/\.(zip|7z)$/i', '', (string) $src['name']);
+$dest = $isFile ? (string) ($isHtc ? $t['cache'] : $t['file']) : $t['into'] . '\\' . xs_tp_sub_name($name, $t['into']);
 if (!is_dir(dirname($dest)) && !@mkdir(dirname($dest), 0777, true)) {
+    $why = xs_file_error_reason();
+    $putBack();
     $undo();
-    $end('failed', 'the folder ' . dirname($dest) . ' could not be made (' . xs_file_error_reason() . ')');
+    $end('failed', 'the folder ' . dirname($dest) . ' could not be made (' . $why . ')');
 }
 if (!@rename($isFile ? $found['file'] : $found['dir'], $dest)) {
     $why = xs_file_error_reason();
-    if ($had) {
-        if (is_dir($old . '\\pack')) {
-            @rename($old . '\\pack', $t['into']);
-        }
-        if ($t['file'] !== null && is_file($old . '\\' . basename($t['file']))) {
-            @rename($old . '\\' . basename($t['file']), $t['file']);
-        }
-    }
+    $putBack();
     $undo();
-    $end('failed', 'the pack could not be put in ' . $emu . '\'s folder (' . $why . ')' . ($had ? ': the one there is as it was' : ''));
+    $end('failed', 'the pack could not be put in ' . $emu . '\'s folder (' . $why . ')' . ($how !== 'new' ? ': the packs there are as they were' : ''));
 }
 $undo();                                                 // what the pack held besides its textures
+if ($how === 'beside') {
+    $dropCache();
+}
 $count = $isFile ? ['files' => 1, 'bytes' => (int) filesize($dest)] : xs_tp_count($dest);
 
 // ---- the emulator told to load it, for this game alone ---------------------------------
@@ -457,25 +519,36 @@ $did     = null;
 if ($sw['kind'] === 'opt' && empty($sw['perGame'])) {
     $why = 'RetroArch\'s Settings > Core > Game-specific core options is off';
 } else {
-    $did = xs_tp_switch($sw, true, null, $why, $isFile ? (array) ($sw['hts'] ?? []) : []);
+    // Only an .hts is read by the core's file storage; an .htc is its memory cache, read with that off.
+    $did = xs_tp_switch($sw, true, null, $why, $isFile && !$isHtc ? (array) ($sw['hts'] ?? []) : []);
 }
 // A pack replaced keeps what the line was before the first; a line changed for the first time now is added.
 $setting = $prev !== null ? xs_tp_switch_merge($prev['setting'] ?? null, $did) : $did;
 if ($did === null) {
     $note = ' ' . $t['setWords'] . ' could not be turned on for this game (' . $why . '): turn it on in ' . $emu . ' for the pack to show.';
 }
-if ($had) {
+if ($aside) {
     $job['phase'] = 'tidying';
     $save();
     xs_tp_wipe($old, $base);
 }
 $other = $found['for'] ?? null;
-xs_tp_record_set((string) $job['id'], ['emu' => $t['emu'], 'key' => $t['key'], 'into' => $dest, 'from' => (string) ($src['title'] ?? '') !== '' ? (string) $src['title'] : (string) $src['name'],
-    'path' => (string) $src['path'], 'when' => time(), 'files' => $count['files'], 'bytes' => $count['bytes'], 'setting' => $setting, 'for' => $other]);
+$when  = time();
+$pack  = ['id' => xs_tp_pack_id($dest, $when), 'from' => (string) ($src['title'] ?? '') !== '' ? (string) $src['title'] : (string) $src['name'],
+          'path' => (string) $src['path'], 'k' => (string) ($src['k'] ?? ''), 'at' => $dest, 'kind' => $isFile ? 'file' : 'folder', 'when' => $when,
+          'files' => $count['files'], 'bytes' => $count['bytes'], 'for' => $other];
+$rec = ['emu' => $t['emu'], 'key' => $t['key'], 'setting' => $setting, 'cache' => $t['cache'],
+        'packs' => array_merge($how === 'beside' && $prev !== null ? (array) $prev['packs'] : [], [$pack])];
+xs_tp_record_set((string) $job['id'], $rec);
+$beside = (int) ($job['beside'] ?? 0);
 xs_log('TPAK', 'put ' . $src['name'] . ' in place for ' . $title . ' (' . $emu . ', ' . $t['key'] . '): ' . $count['files'] . ' files, ' . $size($count['bytes'])
-    . ' in ' . round($tCopy - $t0, 1) . 's into ' . $dest . ($left ? ', ' . $left . ' names left out' : '') . ($had ? ', the one there replaced' : '')
+    . ' in ' . round($tCopy - $t0, 1) . 's into ' . $dest . ($left ? ', ' . $left . ' names left out' : '')
+    . ($how === 'beside' ? ', beside the ' . $beside . ' there' : ($how === 'replace' ? ', the ' . $beside . ' there replaced' : ''))
     . ($other ? ', made for ' . $other : '') . ($did === null ? ', the setting not written: ' . $why : ''));
 $end('done', 'The texture pack is in place for ' . $title . ': ' . $n($count['files'], 'file', 'files') . ', ' . $size($count['bytes'])
     . '. ' . $emu . ' loads it the next time the game starts.'
+    . ($how === 'beside' ? ' It sits beside ' . ($beside === 1 ? 'the pack there' : 'the ' . $beside . ' packs there')
+        . ': where two change the same texture, ' . $emu . ' shows one of them.' : '')
     . ($other ? ' It was made for ' . $other . ', another release than yours (' . $t['key'] . '), so some textures may stay as they were.' : '')
-    . ($left ? ' ' . $n($left, 'file was', 'files were') . ' left out: their names cannot be kept on Windows.' : '') . $note);
+    . ($left ? ' ' . $n($left, 'file was', 'files were') . ' left out: their names cannot be kept on Windows.' : '')
+    . (($bytes = xs_tp_reads_first($rec)) > 0 ? $readSaid($bytes) : '') . $note);
