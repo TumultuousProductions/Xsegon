@@ -192,8 +192,12 @@ function paint(pane, g, res) {
   var free = found.filter(function (f) { return f.pay !== "paid"; }), paid = found.filter(function (f) { return f.pay === "paid"; });
   var own = can ? packs.filter(function (p) { return !p.listed; }) : [];
   var gets = can && !res.job && free.some(function (f) { return f.get && !f.pack; });
+  // Each row is the Archive's, or one of the few the Archive lacks that Xsegon lists itself.
+  var ours = found.filter(function (f) { return f.from === "xsegon"; }).length;
+  var whose = ours === found.length ? "Listed by Xsegon from each maker's own page. "
+    : "From the Texture Packs Archive, kept by Sad Origami" + (ours ? ", and a few Xsegon lists itself" : "") + ". ";
   var listed = group("Found for this game", found.length
-    ? "From the Texture Packs Archive, kept by Sad Origami. Handmade first. " + (gets
+    ? whose + "Handmade first. " + (gets
       ? "Install downloads a pack and puts it in place, after a question. Their page opens a pack's own page in your browser: download it there, then Install a pack you downloaded."
       : "Their page opens a pack's own page in your browser: download it there, then Install a pack you downloaded.")
     : "The list that came with this Xsegon has no pack for this game" + (own.length ? ": the one" + (own.length > 1 ? "s" : "") + " below came from your own files." : "."));
@@ -210,8 +214,8 @@ function paint(pane, g, res) {
   function packRow(box, f) {
     var p = f.pack && can ? packs.filter(function (x) { return x.id === f.pack; })[0] : null;
     var direct = f.get && can && !res.job;
-    var sub = [f.status, f.kind ? "" : "kind not said", f.note, f.name ? "by " + f.by : "", f.where + (PAY[f.pay] ? ", " + PAY[f.pay] : ""),
-               p ? "installed: " + packSaid(p) : ""].filter(Boolean).join("  ·  ");
+    var sub = [f.status, f.kind ? "" : "kind not said", f.note, f.says, f.name ? "by " + f.by : "", f.where + (PAY[f.pay] ? ", " + PAY[f.pay] : ""),
+               f.from === "xsegon" ? "not in the Archive" : "", p ? "installed: " + packSaid(p) : ""].filter(Boolean).join("  ·  ");
     var r = { icon: "image", name: f.name || f.by, kind: f.kind, sub: sub, tag: f.size ? sizeSaid(f.size) : "size not said", tip: f.tip ? f.k : "" };
     if (p) { return addRow(box, uninstallRow(r, p)); }
     return addRow(box, Object.assign(r, { button: direct ? "Install..." : "Their page",

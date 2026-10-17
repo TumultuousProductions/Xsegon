@@ -4,8 +4,12 @@ the consoles whose emulator here loads them: PS2 (PCSX2), GameCube and Wii
 
 It is read from the Texture Packs Archive, the community's list kept by Sad
 Origami: https://docs.google.com/spreadsheets/d/1sif8FeRGJRbytK8wFRXgF6Hke9V6GUFs
-Anyone on that list's own Blacklist tab is left out. `node tools\build-texpacks.js`
-makes this file again; it is run before a release, never on a person's PC.
+Anyone on that list's own Blacklist tab is left out, and so is a row filed under
+a console its pack is not for (NOT_FOR in the tool: SonicBOOM's RE:Enhance mods,
+which its pages say are for the PC release). A few packs the list lacks are added
+from tools\texpacks-more.json, each read from its own page by a person.
+`node tools\build-texpacks.js` makes this file again; it is run before a release,
+never on a person's PC.
 
 Xsegon carries this list and none of the packs. Each pack is its maker's own. A
 press opens a pack's own page in the browser; for a pack whose page is on
@@ -26,3 +30,10 @@ Each console is a list of packs:
   page    its page; where its own host
   tip     its maker's tip page, or ''
   get     its own download Xsegon may fetch {url, bytes, name}, or null
+  from    only on a row of tools\texpacks-more.json: xsegon (the tab says "not in the Archive")
+  says    only on such a row: a few words the tab shows on it, or ''
+
+A game finds a row by its title or its file's name as one key: words run
+together, II to XV read as numbers ("Soulcalibur II" is "Soul Calibur 2"), and a
+title of two releases joined by " + " is each of them ("Final Fantasy X +
+International" is Final Fantasy X and Final Fantasy X International).

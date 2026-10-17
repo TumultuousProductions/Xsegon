@@ -1,0 +1,61 @@
+{
+ "about": "Texture packs the Texture Packs Archive does not list, kept by hand. Each is read from its own page by a person, never by a script; a maker not yet known is written WIP finding author. tools\\build-texpacks.js adds them to includes\\texpacks\\list.json, marked from: xsegon, and leaves one out once the sheet lists the same page. Fields as ABOUT.txt there, plus console (the list's lower-case name) and says (a few words the tab shows on the row).",
+ "packs": [
+  {
+   "console": "nintendo gamecube",
+   "t": "Mario Kart: Double Dash!!",
+   "name": "Mario Kart Double Dash Re-Rendered!!",
+   "by": "WIP finding author",
+   "kind": "mixed",
+   "st": "",
+   "r": "",
+   "bytes": 0,
+   "pay": "free",
+   "page": "https://forums.dolphin-emu.org/Thread-mario-kart-double-dash-re-rendered-hd-texture-pack-v1-2",
+   "tip": "",
+   "says": "for the menus and the race screen only"
+  },
+  {
+   "console": "nintendo gamecube",
+   "t": "The Legend of Zelda: The Wind Waker",
+   "name": "A Wind Waker pack on MEGA",
+   "by": "WIP finding author",
+   "kind": "",
+   "st": "",
+   "r": "",
+   "bytes": 1943472701,
+   "pay": "account",
+   "page": "https://mega.nz/file/uZQwVKwI#-5jf9BeU_Z3b1MQ1Hipa15AyObuVHJUn0J6AQqiUSbw",
+   "tip": "",
+   "says": ""
+  },
+  {
+   "console": "nintendo wii",
+   "t": "Mario Kart Wii",
+   "name": "Mario Kart Wii HD Remaster",
+   "by": "Moukrea",
+   "kind": "",
+   "st": "",
+   "r": "",
+   "bytes": 0,
+   "pay": "free",
+   "page": "https://forums.dolphin-emu.org/Thread-mario-kart-wii-hd-remaster",
+   "tip": "",
+   "says": ""
+  },
+  {
+   "console": "nintendo wii",
+   "t": "Wii Sports",
+   "name": "Wii Sports 4K",
+   "by": "Henriko Magnifico",
+   "kind": "hand",
+   "st": "",
+   "r": "",
+   "bytes": 0,
+   "pay": "free",
+   "page": "https://www.henrikomagnifico.com/wii-sports-4k",
+   "tip": "",
+   "says": "its download also holds a Dolphin and settings of its own: Install takes the textures only"
+  }
+ ]
+}
