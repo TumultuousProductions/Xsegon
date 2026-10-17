@@ -7,6 +7,7 @@ import { closeDetails, openDetails } from "./details.js";
 import { detailTabKey, detailTabPad, toggleTab } from "./detailtabs.js";
 import { openDocs } from "./docs.js";
 import { closeEditor, openEditor, openLocalEditor } from "./editors.js";
+import { extKeys, extOpen, extPad } from "./extensions.js";
 import { fanKeys, fanOpen, fanPad } from "./fanprojects.js";
 import { filterKeys } from "./filterwin.js";
 import { setPadMode } from "./help.js";
@@ -274,6 +275,7 @@ function onKey(e) {
   }
 
   if (fanKeys(e)) { return; }            // the Fan projects page, while it is up (js\fanprojects.js)
+  if (extKeys(e)) { return; }            // the Extensions page, while it is up (js\extensions.js)
 
   // The wall of systems has its own, smaller vocabulary.
   if (sysStage === "wall") {
@@ -614,6 +616,7 @@ export function pollPad() {
     }
 
     if (fanOpen()) { padPrev[i] = fanPad({ up: up, down: down, left: left, right: right, a: a, b: b, x: x, y: y }, prev); repeatDir = 0; continue; }
+    if (extOpen()) { padPrev[i] = extPad({ up: up, down: down, left: left, right: right, a: a, b: b, x: x, y: y }, prev); repeatDir = 0; continue; }
 
     // The bar up among the menus and buttons at the top: its own walk until it comes back down.
     var tp = padTopPoll({ up: up, down: down, left: left, right: right, a: a, b: b, x: x, y: y, hit: tbHit }, prev);

@@ -7,6 +7,7 @@
     from the team's release or source, or a disc mod's pack.                 */
 
 import { dropDetails } from "./details.js";
+import { dropExtPage } from "./extensions.js";
 import { paintHelp, paintHelpHere } from "./help.js";
 import { jobsWatch } from "./jobbars.js";
 import { launchNow, showStrip } from "./launch.js";
@@ -79,6 +80,7 @@ export function openFanPage() {
   if (!FP) { fanBuild(); }
   if (FP.open) { return; }
   dropDetails();                         // a game's details never stay over the page
+  dropExtPage();                         // nor the Extensions page
   stopVideo();                           // nor a snap playing behind it
   FP.from = sysStage === "inside" ? "inside" : "wall";
   FP.open = true;

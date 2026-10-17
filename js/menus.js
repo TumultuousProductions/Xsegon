@@ -17,6 +17,7 @@ import { hideGame, openEditor, openLocalEditor, removeLocal } from "./editors.js
 import { openEmuAdd } from "./emuadd.js";
 import { openEmuMove } from "./emumove.js";
 import { openEmuPicker } from "./emuset.js";
+import { openExtPage } from "./extensions.js";
 import { openFanPage } from "./fanprojects.js";
 import { openFileCheck } from "./filecheck.js";
 import { openFillTool } from "./fill.js";
@@ -355,7 +356,9 @@ function mbEntries(which) {
       // in the library, to star and export as a wanted list (js/wanted.js).
       { icon: "star", label: "Games you do not have...", tip: TIPS.wanted, run: openWantedTool },
       // Hacks, mods and PC versions made from games you have (js/fanprojects.js), also a card on the consoles screen.
-      { icon: "wand", label: "Fan projects...", tip: TIPS.fanProjects, run: openFanPage }
+      { icon: "wand", label: "Fan projects...", tip: TIPS.fanProjects, run: openFanPage },
+      // Programs Xsegon works with, Flashpoint first (js/extensions.js), also a card on the consoles screen.
+      { icon: "download", label: "Extensions...", tip: TIPS.extensions, run: openExtPage }
     ];
   }
   if (which === "media") {

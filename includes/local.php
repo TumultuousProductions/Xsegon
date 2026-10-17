@@ -84,13 +84,15 @@ function xs_local_fields(): array
         'steamDir'  => 'path',
         'steamExe'  => 'path',
         'steamArgs' => 'text',
+        // A Flashpoint game: its ID in Flashpoint's list, which its helper starts (includes\flashpoint.php).
+        'fpId'      => 'text',
     ];
 }
 
 /** The fields the Edit Game form does not send, which a save must not lose. */
 function xs_local_kept_fields(): array
 {
-    return ['steamId', 'steamDir', 'steamArgs'];
+    return ['steamId', 'steamDir', 'steamArgs', 'fpId'];
 }
 
 /**
@@ -186,9 +188,12 @@ function xs_local_games(): array
             if (xs_file_seen($run)) {
                 $viaSteam = $steam !== null && strcasecmp(basename($run), 'steam.exe') === 0;
                 $launch = ['local' => 'run', 'exe' => $run, 'args' => (string) ($e['args'] ?? ''), 'rom' => '',
-                           'via' => $viaSteam ? 'Steam' : 'program'];
+                           'via' => $viaSteam ? 'Steam' : (!empty($e['fpId']) ? 'Flashpoint' : 'program')];
             } elseif ($steam !== null && $steam['exe'] !== '') {
                 $launch = ['local' => 'run', 'exe' => $steam['exe'], 'args' => $steam['args'], 'rom' => '', 'via' => 'its own program'];
+            } elseif (!empty($e['fpId'])) {
+                require_once __DIR__ . '/flashpoint.php';
+                $why = xs_fp_launch_why($e) ?? 'not found: ' . $run;
             } else {
                 $why = 'not found: ' . $run;
             }

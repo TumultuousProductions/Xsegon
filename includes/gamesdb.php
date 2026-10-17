@@ -300,7 +300,16 @@ function xs_gamesdb_run(array $args, int $seconds): array
     if (!xs_gamesdb_readable()) {
         return ['ok' => false, 'error' => 'this PHP has not got the files the database reader needs (sqlite3, bz2, intl)'];
     }
-    $cmd = array_merge(xs_gamesdb_php_cmd(), [XS_ROOT . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'gamesdb.php']);
+    return xs_reader_run('gamesdb.php', $args, $seconds, 'GDB', 'the database reader');
+}
+
+/**
+ * One run of a reader in bin\ (gamesdb.php, flashpoint.php), started as xs_gamesdb_php_cmd()
+ * starts it: its JSON answer, or ['ok' => false, 'error'] in $who's name. $tag heads its log lines.
+ */
+function xs_reader_run(string $script, array $args, int $seconds, string $tag, string $who): array
+{
+    $cmd = array_merge(xs_gamesdb_php_cmd(), [XS_ROOT . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . $script]);
     foreach ($args as $a) {
         $cmd[] = str_replace(["\n", "\r"], ' ', (string) $a);
     }
@@ -313,7 +322,7 @@ function xs_gamesdb_run(array $args, int $seconds): array
         if ($out !== false) {
             @unlink($out);
         }
-        return ['ok' => false, 'error' => 'the database reader could not be started'];
+        return ['ok' => false, 'error' => $who . ' could not be started'];
     }
     $deadline = microtime(true) + $seconds;
     /* Only a request has a time limit to push back. A background worker has none, and
@@ -329,8 +338,8 @@ function xs_gamesdb_run(array $args, int $seconds): array
             proc_terminate($proc);
             proc_close($proc);
             @unlink($out);
-            xs_log('GDB', 'the reader did not answer within ' . $seconds . ' s and was stopped (' . (string) ($args[0] ?? '') . ')');
-            return ['ok' => false, 'error' => 'the database reader did not answer within ' . $seconds . ' seconds'];
+            xs_log($tag, 'the reader did not answer within ' . $seconds . ' s and was stopped (' . (string) ($args[0] ?? '') . ')');
+            return ['ok' => false, 'error' => $who . ' did not answer within ' . $seconds . ' seconds'];
         }
         usleep(10000);
     }
@@ -341,8 +350,8 @@ function xs_gamesdb_run(array $args, int $seconds): array
     if (!is_array($j)) {
         // No answer at all: logged with what it printed, as nothing else shows it.
         $said = $raw !== '' ? ': ' . substr(trim($raw), 0, 200) : '';
-        xs_log('GDB', 'the reader gave no answer (' . (string) ($args[0] ?? '') . ')' . $said);
-        return ['ok' => false, 'error' => 'the database reader did not answer' . $said];
+        xs_log($tag, 'the reader gave no answer (' . (string) ($args[0] ?? '') . ')' . $said);
+        return ['ok' => false, 'error' => $who . ' did not answer' . $said];
     }
     return $j;
 }
