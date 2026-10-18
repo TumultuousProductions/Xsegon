@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/filecheck.php';
 require_once __DIR__ . '/drives.php';
+require_once __DIR__ . '/hacks.php';
 require_once __DIR__ . '/xiso.php';
 
 const XS_FAN_KINDS = ['patch' => 'Patch', 'pc' => 'PC version', 'disc' => 'Disc mod'];
@@ -26,6 +27,10 @@ const XS_FAN_PS_ENDS = ['pbp', 'm3u', 'cue', 'bin', 'img', 'iso'];
 const XS_FAN_XBOX_ENDS = ['iso', 'xiso'];
 /** Consoles whose disc ID is one read at a fixed place, so every game is read; on any other only a game carrying the name. */
 const XS_FAN_READ_ALL = ['Nintendo GameCube', 'Nintendo Wii'];
+/** A plain cartridge file read whole for its CRC32 when no game carries a project's name: NES, SNES, Game Boy and Genesis sizes; */
+const XS_FAN_SUM_MAX = 4194304;
+/** and at most this much read for one look at the page. A bigger N64 or GBA file is found by its title or Check game files. */
+const XS_FAN_SUM_BUDGET = 33554432;
 
 /** The shipped list, each entry checked; a test copy may hand its own in data\fanprojects.json. */
 function xs_fan_list(): array
@@ -342,6 +347,7 @@ function xs_fan_states(array $games): array
         $on[(string) ($g['platform'] ?? '')][] = $g;
         $byId[(string) $g['id']] = $g;
     }
+    $seen = [];                          // a game's sizes and CRC32s, read once a request (xs_fan_by_sum)
     $discs = [];                         // a game's discs read once a request, however many projects ask
     $disc = static function (array $g) use (&$discs, $s): ?array {
         $id = (string) $g['id'];
@@ -429,6 +435,12 @@ function xs_fan_states(array $games): array
                     break 2;
                 }
             }
+            // No game carrying the name is that release: one known by the release's size and CRC32, whatever its title.
+            $hit = !isset($base['state']) || $base['state'] === 'other' ? xs_fan_by_sum($p, $on, $fc, $s, $seen) : null;
+            if ($hit !== null) {
+                $base = array_merge($base, ['state' => $hit['fit'], 'gameId' => $hit['game']['id'], 'yourTitle' => $hit['game']['title'],
+                                            'release' => $hit['name'], 'note' => $hit['note'], 'bySum' => true]);
+            }
             $base += ['state' => 'missing'];
         }
         $base['wanted'] = isset($p['base']['db']['id']) && isset($wanted[(string) $p['base']['db']['id']]);
@@ -470,7 +482,7 @@ function xs_fan_states(array $games): array
         // The newest first: what Play starts.
         usort($yours, static fn($a, $b) => version_compare((string) $b['version'], (string) $a['version']));
 
-        $out[] = [
+        $one = [
             'id' => $p['id'], 'name' => $p['name'], 'kind' => $p['kind'], 'kindLabel' => XS_FAN_KINDS[$p['kind']],
             'console' => $p['console'], 'adds' => (string) ($p['adds'] ?? ''), 'tags' => array_values((array) ($p['tags'] ?? [])),
             'team' => (string) ($p['team'] ?? ''), 'basedon' => is_string($p['basedon'] ?? null) && trim($p['basedon']) !== '' ? trim($p['basedon']) : null,
@@ -480,8 +492,115 @@ function xs_fan_states(array $games): array
             // The picture: a copy of yours, else the game it is made from.
             'pic' => $yours[0]['id'] ?? ($base['gameId'] ?? null),
         ];
+        $one['makeWhy'] = xs_fan_why($one);
+        $out[] = $one;
+    }
+    if (($seen['#files'] ?? 0) || ($seen['#over'] ?? 0)) {
+        xs_log('FAN', 'by checksum: ' . (int) ($seen['#files'] ?? 0) . ' files read whole (' . round(($seen['#bytes'] ?? 0) / 1048576, 1) . ' MB)'
+            . (($seen['#over'] ?? 0) ? ', ' . (int) $seen['#over'] . ' more left, past the ' . (XS_FAN_SUM_BUDGET >> 20) . ' MB one look reads' : ''));
     }
     return $out;
+}
+
+/**
+ * The library's copy of a release a project names, by the release's size and CRC32 (the shipped
+ * list's), for when no game carrying the name is that release: a .zip by its own listing, nothing
+ * unpacked; a small plain file read whole, a copier's 512 bytes left off. Games never checked only.
+ */
+function xs_fan_by_sum(array $p, array $on, array $fc, array $s, array &$seen): ?array
+{
+    $best = null;
+    foreach ($p['base']['match'] as $m) {
+        $rank = XS_FAN_FITS[$m['fit'] ?? ''] ?? 0;
+        if (!isset($m['name'], $m['crc'], $m['size']) || $rank <= ($best['rank'] ?? 0) || !xs_fc_can((string) $m['console'])) {
+            continue;
+        }
+        foreach ($on[(string) $m['console']] ?? [] as $g) {
+            if (!isset($fc[(string) $g['id']]) && empty($g['local'])
+                && in_array([strtolower((string) $m['crc']), (int) $m['size']], xs_fan_sums_of($g, (int) $m['size'], $s, $seen), true)) {
+                $best = ['rank' => $rank, 'fit' => $m['fit'], 'game' => $g, 'name' => (string) $m['name'], 'note' => (string) ($m['note'] ?? '')];
+                break;
+            }
+        }
+    }
+    return $best;
+}
+
+/** The CRC32 and size pairs a game's file is known by, cheaply: a plain file is read only at the size asked for, within the budget. */
+function xs_fan_sums_of(array $g, int $size, array $s, array &$seen): array
+{
+    $id = (string) $g['id'];
+    if (!isset($seen[$id])) {
+        $rom = xs_rom_real_path((string) ($g['romPath'] ?? ''), $s);
+        $seen[$id] = ['rom' => $rom, 'size' => null, 'read' => true, 'pairs' => []];
+        if ($rom !== '' && xs_drive_stuck($rom) === null && is_file($rom)) {
+            if (strtolower((string) pathinfo($rom, PATHINFO_EXTENSION)) === 'zip') {
+                foreach (xs_hack_zip_dir($rom) ?? [] as $e) {
+                    $seen[$id]['pairs'][] = [(string) $e['crc'], (int) $e['size']];
+                }
+            } elseif (!in_array(strtolower((string) pathinfo($rom, PATHINFO_EXTENSION)), ['7z', 'rar'], true)) {
+                $seen[$id] = ['size' => (int) filesize($rom), 'read' => false] + $seen[$id];
+            }
+        }
+    }
+    $f = &$seen[$id];
+    $at = (int) $f['size'];
+    if (!$f['read'] && ($at === $size || $at === $size + 512) && $size <= XS_FAN_SUM_MAX) {
+        $f['read'] = true;
+        if (($seen['#bytes'] ?? 0) + $at > XS_FAN_SUM_BUDGET) {
+            $seen['#over'] = ($seen['#over'] ?? 0) + 1;
+        } else {
+            $seen['#bytes'] = ($seen['#bytes'] ?? 0) + $at;
+            $seen['#files'] = ($seen['#files'] ?? 0) + 1;
+            $bytes = (string) @file_get_contents((string) $f['rom']);
+            $f['pairs'][] = [hash('crc32b', $at % 1024 === 512 ? substr($bytes, 512) : $bytes), $at % 1024 === 512 ? $at - 512 : $at];
+        }
+    }
+    return $f['pairs'];
+}
+
+/**
+ * Why Make cannot be pressed for a project as it stands, in a person's words; null when it can.
+ * A game not checked yet can be: Make checks it first (bin\fanmake.php).
+ */
+function xs_fan_why(array $p): ?string
+{
+    $b = $p['base'];
+    if ($p['soon'] !== null) {
+        return 'Not out yet: ' . $p['soon'];
+    }
+    if (!$p['make']) {
+        $kind = preg_match('/^[A-Z][a-z]/', $p['kindLabel']) ? lcfirst($p['kindLabel']) : $p['kindLabel'];
+        return 'Making a ' . $kind . ' is not built yet: ' . ($p['page'] !== null ? 'its website' : 'its GitHub') . ' has it';
+    }
+    switch ($b['state']) {
+        case 'fits':
+        case 'works':
+        case 'unchecked':
+            return null;
+        case 'other':
+            return 'Your ' . $b['yourTitle'] . ' is ' . ((string) $b['release'] !== '' ? $b['release'] : 'not a release the file check knows')
+                 . '; ' . $p['name'] . ' is made from ' . $b['title'];
+        case 'partial':
+            return 'Your ' . $b['yourTitle'] . ' has ' . $b['have'] . ' of its ' . $b['need'] . ' discs; ' . $p['name'] . ' needs all of them';
+        case 'unread':
+            return 'Which discs your ' . $b['yourTitle'] . ' is cannot be read from this kind of file yet, so ' . $p['name'] . ' cannot be made from it';
+    }
+    return $p['name'] . ' is made from ' . $b['title'] . ', which is not in your library';
+}
+
+/** The games Make checks before it makes a project: on its consoles, carrying the name of the game it is made from, never checked. */
+function xs_fan_to_check(string $id, array $games): array
+{
+    $p = xs_fan_list()[$id] ?? null;
+    if ($p === null) {
+        return [];
+    }
+    $want = xs_fan_words((string) ($p['base']['db']['title'] ?? $p['base']['title']));
+    $consoles = array_unique(array_map(static fn($m) => (string) ($m['console'] ?? ''), $p['base']['match']));
+    $fc = xs_fc_all();
+    return array_values(array_filter($games, static fn($g) => in_array((string) ($g['platform'] ?? ''), $consoles, true)
+        && !isset($fc[(string) $g['id']]) && xs_fc_can((string) $g['platform']) && xs_fan_words((string) $g['title']) === $want));
 }
 
 /** The address a project's button opens, from the list alone: nothing a request says is ever opened. */

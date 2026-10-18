@@ -2,6 +2,13 @@
 
 Newest first: what changed for the person at the screen.
 
+## 2026-10-18
+
+- **Fan projects: Make is always there, and checks your game itself.** Every project's panel now has Make. Where it cannot be pressed it is greyed, and the pointer over it says why: your copy is another release, the game is not in your library, the project is not out yet. A game whose file was never checked no longer waits on Games > Check game files: it stands under Ready to make, and Make checks it first, then makes the project from it, or says which release you have and which one the project is made from.
+- **Fan projects find your game by its checksum.** A game whose title is not the one a project names (a file called "zelda.sfc") was taken for a game you do not have. A project now also knows each cartridge release's size and checksum, so a zipped game is found from its zip's own list of contents, and a NES, SNES, Game Boy or Genesis file is read to be sure. Its tile says "known by its checksum".
+- **The dropdowns at the top give the keys back.** After choosing a view, a console or an order from the dropdowns at the top, the keys went to the dropdown as well as to Xsegon: g flashed the next view and jumped back to Grid, and the arrows changed the console while they moved in the list. A choice now hands the keys back to the games, and a key pressed while a dropdown still holds them acts once.
+- **Settings' volume is heard as you move it.** The volume slider in Settings > Sound changed nothing until Settings was closed and the page drawn again. It now changes Xsegon's sounds as it moves, and the speaker in the corner follows. Closing Settings after changing only the volume or the sound set no longer draws the page again.
+
 ## 2026-10-17
 
 - **Cheats you used come first.** A game's cheat list now opens with the cheats on now under Cheats active, then Other cheats: the ones you had on before first (turned off since, they still lead), then the rest as the file has them. A cheat you turn on shows under Cheats active at once and stays lit where you pressed it, with the bar still on it; the next time the list opens, or you type in its find box, it is listed once, at the top. Cheats active holds only what is on: a cheat turned off there leaves it at once for the top of Other cheats, the bar going with it.

@@ -133,7 +133,8 @@ function fanMake(p) {
       return;
     }
     sound("select");
-    showStrip("Making " + p.name + " from your " + (p.base.yourTitle || "game") + ": the bar in the corner shows how far it is", false);
+    showStrip("Making " + p.name + " from your " + (p.base.yourTitle || "game") + (p.base.state === "unchecked" ? ", its file checked first" : "") +
+              ": the bar in the corner shows how far it is", false);
     jobsWatch("fanmake");
     fanFollow(p.id);
     if (fanOpen()) { fanDraw(); }
@@ -206,7 +207,8 @@ function fanSection(p) {
   if (p.yours.length) { return "mine"; }
   if (p.soon) { return "soon"; }
   var s = p.base.state;
-  return s === "fits" || s === "works" ? "ready" : s === "missing" ? "missing" : "other";
+  // A game not checked yet is ready too: Make checks its file first.
+  return s === "fits" || s === "works" || s === "unchecked" ? "ready" : s === "missing" ? "missing" : "other";
 }
 
 // Where a project stands, in one line and its colour.
@@ -216,11 +218,13 @@ function fanStatus(p) {
   if (p.yours.length) {
     return ["", "Yours: " + p.yours.map(function (y) { return y.version || "a copy"; }).join(" and ")];
   }
-  if (b.state === "fits") { return ["ok", "Your " + b.yourTitle + " fits"]; }
-  if (b.state === "works") { return ["warn", "Your " + b.yourTitle + " " + (b.note || "works")]; }
+  // A copy whose title is not the game's, known by its checksum: said so, so the name is not a surprise.
+  var sum = b.bySum ? " (known by its checksum)" : "";
+  if (b.state === "fits") { return ["ok", "Your " + b.yourTitle + " fits" + sum]; }
+  if (b.state === "works") { return ["warn", "Your " + b.yourTitle + " " + (b.note || "works") + sum]; }
   if (b.state === "other") { return ["warn", "Yours is " + (b.release || b.yourTitle) + "; this needs " + b.title]; }
   if (b.state === "partial") { return ["warn", "Yours has " + b.have + " of its " + b.need + " discs; this needs all of them"]; }
-  if (b.state === "unchecked") { return ["", "Your " + b.yourTitle + ": its file is not checked yet (Games > Check game files)"]; }
+  if (b.state === "unchecked") { return ["", "Your " + b.yourTitle + ": Make checks its file first"]; }
   if (b.state === "unread") { return ["", "Your " + b.yourTitle + ": which discs it is cannot be read from this kind of file yet"]; }
   return ["no", "Needs " + b.title];
 }
@@ -354,13 +358,12 @@ function fanPanel(p) {
   var bar = el("div", "bar");
   FP.first = fanFirst(p);
   bar.appendChild(FP.first);
-  // A copy you have already, and Xsegon can make it: another beside it.
-  if (p.make && p.yours.length && (p.base.state === "fits" || p.base.state === "works")) {
-    bar.appendChild(fanButton("Make another copy", function () { fanMake(p); }, false,
-                              FP.making ? "Something is being made: the bar in the corner shows how far it is" : null));
-  }
+  // Make stands on every project; beside Play and the wanted list it is the second button.
+  var s = fanSection(p);
+  if (s === "mine") { bar.appendChild(fanMakeButton(p, "Make another copy", false)); }
+  else if (s === "missing" && p.base.db) { bar.appendChild(fanMakeButton(p, "Make", false)); }
   FAN_LINKS.forEach(function (w) {
-    if (!p[w[0]] || FP.first.dataset.opens === w[0]) { return; }
+    if (!p[w[0]]) { return; }
     var b = fanButton(w[1], function () { fanOpenUrl(p, w[0]); });
     b.title = fanAddress(p[w[0]]);
     bar.appendChild(b);
@@ -378,22 +381,17 @@ function fanFirst(p) {
       launchNow({ id: y.id, title: y.title, platform: y.platform, local: !!y.local }, null);
     }, true);
   }
-  if (s === "ready") {
-    if (!p.make) {
-      return fanButton("Make", function () {}, true, "Making a " + p.kindLabel.toLowerCase() + " is not built yet: " + (p.page ? "its website" : "its GitHub") + " has it");
-    }
-    return fanButton(FP.making === p.id ? "Being made" : "Make", function () { fanMake(p); }, true,
-                     FP.making ? "Something is being made: the bar in the corner shows how far it is" : null);
-  }
   if (s === "missing" && p.base.db) {
     return fanButton(p.base.wanted ? "On your wanted list" : "Add to wanted list", function () { fanWant(p); }, true,
                      p.base.wanted ? p.base.db.title + " is on your wanted list already" : null);
   }
-  // Nothing to do here but read about it: its website first, else its GitHub.
-  var w = p.page ? FAN_LINKS[0] : FAN_LINKS[1];
-  var b = fanButton(w[1], function () { fanOpenUrl(p, w[0]); }, true);
-  b.dataset.opens = w[0];
-  return b;
+  return fanMakeButton(p, "Make", true);
+}
+
+// Make, greyed where it cannot be pressed: the pointer over it, or A and Enter, say why (the server's words).
+function fanMakeButton(p, label, primary) {
+  var another = FP.making ? "Something is being made: the bar in the corner shows how far it is" : null;
+  return fanButton(FP.making === p.id ? "Being made" : label, function () { fanMake(p); }, primary, another || p.makeWhy);
 }
 
 // The game it is made from onto the wanted list, said only from the server's answer.

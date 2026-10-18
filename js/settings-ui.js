@@ -20,7 +20,7 @@ import { SET_ROWS, foldSect, setBarTo, setFind, setGo, setPaint } from "./settin
 import { holdRedraw, noteAllSaved, redrawIfClear, saveWaiting } from "./settings-save.js";
 import { armTips, hideTip } from "./settings-tips.js";
 import { armBrowse, stopVideo } from "./snap.js";
-import { SND, hearHoverRate, sound } from "./sound.js";
+import { SND, hearHoverRate, setVolume, sound } from "./sound.js";
 import { $body, $settings, S, hasLaunchBox, launchBoxOff, setSel } from "./state.js";
 import { openBackupTool, openLogViewer, openReportTool } from "./tools.js";
 import { el } from "./util.js";
@@ -521,6 +521,12 @@ function optionRow(group, key, value, def, meta) {
   // and finding out after the page is drawn again is no way to choose sounds.
   if (group === "sound" && key === "soundSet") {
     input.addEventListener("change", function () { sound("select", input.value); });
+    input.addEventListener("input", function () { SND.soundSet = input.value; });   // in use at once, and put back with a refused save
+  }
+  // Xsegon's volume is heard as it moves, and the corner's bar follows: no page drawn again for it.
+  if (group === "sound" && key === "volume") {
+    input.addEventListener("input", function () { setVolume(Number(input.value), false, false); });
+    input.addEventListener("change", function () { sound("move"); });
   }
   if (group === "sound" && key === "backSound") {
     // Audition exactly what Back will now play.

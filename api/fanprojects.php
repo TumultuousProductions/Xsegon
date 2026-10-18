@@ -52,7 +52,9 @@ $games = array_values(array_filter(xs_library()['games'] ?? [], static fn($g) =>
 $projects = xs_fan_states($games);
 $ms = (int) round((microtime(true) - $t) * 1000);
 $ready = count(array_filter($projects, static fn($p) => in_array($p['base']['state'], ['fits', 'works'], true) && !$p['yours']));
+$unchecked = count(array_filter($projects, static fn($p) => $p['base']['state'] === 'unchecked' && !$p['yours']));
 $mine = count(array_filter($projects, static fn($p) => (bool) $p['yours']));
-xs_log('FAN', count($projects) . ' projects: ' . $mine . ' in the library, ' . $ready . ' ready to make, in ' . $ms . 'ms');
+xs_log('FAN', count($projects) . ' projects: ' . $mine . ' in the library, ' . $ready . ' ready to make'
+    . ($unchecked ? ', ' . $unchecked . ' more whose game Make checks first' : '') . ', in ' . $ms . 'ms');
 $job = xs_fm_job();
 xs_json(['ok' => true, 'projects' => $projects, 'ms' => $ms, 'making' => ($job['state'] ?? '') === 'running' ? (string) ($job['project'] ?? '') : null]);

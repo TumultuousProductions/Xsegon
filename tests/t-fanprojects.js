@@ -168,7 +168,8 @@ function fanRawDisc(sectors, seed) {
 
 module.exports = async function (b, check) {
   const kept = new Guard(["fanprojects.json", "wanted.json", "local-games.json", "scanned-games.json", "filecheck.json", "hack-of.json",
-                          "fan-made.json", "fanmake-job.json"]);
+                          "fan-made.json", "fanmake-job.json",
+                          "fixtures/libretro/meta/no-intro/Nintendo - Nintendo 64.dat", "libretro/Nintendo - Nintendo 64.releases.json"]);
   const fix = path.join(DATA, "fan-fixtures");
   try {
     /* ---- the shipped list -------------------------------------------------- */
@@ -308,12 +309,22 @@ module.exports = async function (b, check) {
     check("a game you lack, already wanted: said on its first button",
       await b.waitFor(`(document.querySelector("#fanpage .hero .bar button") || {}).textContent === "On your wanted list"`, 3000));
     check("its tile says what it needs", await b.ev(`document.querySelector("#fanpage .tile.sel .fan-st").textContent`), "Needs No Such Game (USA)");
+    // Make stands on every project: greyed where it cannot be pressed, the reason under the pointer (its title).
+    const makeBtn = `(() => { const m = [...document.querySelectorAll("#fanpage .hero .bar button")].find((x) => x.textContent === "Make"); return m ? [m.disabled, m.title] : null; })()`;
+    check("and Make beside the wanted list, greyed, saying why under the pointer",
+      [await b.ev(`[...document.querySelectorAll("#fanpage .hero .bar button")].map((x) => x.textContent)`), await b.ev(makeBtn)],
+      [["On your wanted list", "Make", "Website"], [true, by["t-missing"].makeWhy]]);
+    await b.ev(`[...document.querySelectorAll("#fanpage .tile")].find((t) => t.textContent.includes("Test other")).click()`);
+    check("another release: Make first, greyed, saying why",
+      await b.until(`[(document.querySelector("#fanpage .hero .bar button") || {}).textContent, ${makeBtn}]`, ["Make", [true, by["t-other"].makeWhy]], 3000),
+      ["Make", [true, by["t-other"].makeWhy]]);
     await b.ev(`[...document.querySelectorAll("#fanpage .tile")].find((t) => t.textContent.includes("Test soon")).click()`);
-    const soonSaid = ["No Windows release yet", ["Coming soon=No Windows release yet", "Built from=" + krec.name, "Yours=Your " + kgame.title + " fits"], ["Website", "GitHub"]];
-    check("a project not out yet: its tile says where it stands, the panel that and whether your game fits, its first button its website",
+    const soonSaid = ["No Windows release yet", ["Coming soon=No Windows release yet", "Built from=" + krec.name, "Yours=Your " + kgame.title + " fits"], ["Make", "Website", "GitHub"],
+                      [true, "Not out yet: No Windows release yet"]];
+    check("a project not out yet: its tile says where it stands, the panel that and whether your game fits, Make greyed until it is out",
       await b.until(`[document.querySelector("#fanpage .tile.sel .fan-st").textContent,
                       [...document.querySelectorAll("#fanpage .hero-stats .k")].slice(0, 3).map((k) => k.textContent + "=" + k.nextElementSibling.textContent),
-                      [...document.querySelectorAll("#fanpage .hero .bar button")].map((x) => x.textContent)]`, soonSaid, 3000),
+                      [...document.querySelectorAll("#fanpage .hero .bar button")].map((x) => x.textContent), ${makeBtn}]`, soonSaid, 3000),
       soonSaid);
     await b.ev(`(() => { const i = document.querySelector("#fanpage input[type=search]"); i.value = "works"; i.dispatchEvent(new Event("input", { bubbles: true })); })()`);
     check("typing finds a project", await b.waitFor(`document.querySelectorAll("#fanpage .tile").length === 1`, 3000));
@@ -432,6 +443,76 @@ module.exports = async function (b, check) {
     check("and the page has it as yours, with its version", (after.yours || []).map((y) => [y.id, y.version]), [[made.id, "9.9.9"]]);
     const bar = ((await api("api/jobs.php")).jobs || []).find((j) => j.key === "fanmake") || {};
     check("the corner bar says how it ended", [bar.state, /Fan Make 9\.9\.9 is made from your Fan Make Base/.test(bar.said || "")], ["done", true]);
+
+    /* ---- Make on a game never checked: its file checked at the press (a tester's Zelda 3) ---- */
+    // A stand-in No-Intro list naming the tiny game as the USA release, read where the test server reads libretro's.
+    const lrFx = path.join(DATA, "fixtures", "libretro");
+    if (!fs.existsSync(lrFx)) {
+      check("Make on a game never checked runs only on the test server's own copy (never against libretro itself)", true, true);
+    } else {
+      fs.mkdirSync(path.join(lrFx, "meta", "no-intro"), { recursive: true });
+      const sha1 = crypto.createHash("sha1").update(game).digest("hex").toUpperCase();
+      fs.writeFileSync(path.join(lrFx, "meta", "no-intro", "Nintendo - Nintendo 64.dat"), ["clrmamepro (", "\tname \"Nintendo - Nintendo 64\"", ")", "",
+        "game (", "\tname \"Fan Make Base (USA)\"", "\trom ( name \"Fan Make Base (USA).z64\" size " + game.length + " crc 00000000 md5 " + md5(game).toUpperCase() + " sha1 " + sha1 + " )", ")", ""].join("\n"));
+      fs.rmSync(path.join(DATA, "libretro", "Nintendo - Nintendo 64.releases.json"), { force: true });
+      const forget = () => { const f = JSON.parse(fs.readFileSync(path.join(DATA, "filecheck.json"), "utf8")); delete f[BASEID]; fs.writeFileSync(path.join(DATA, "filecheck.json"), JSON.stringify(f)); };
+      const named = { id: 999995, title: "Fan Make Base", platform: N64 };
+      // A second copy under a title of its own, in a .zip: another release's bytes, so only its listing's CRC32 can find it.
+      const zipped = Buffer.alloc(4096, 0x33);
+      zipped.writeUInt32BE(0x80371240, 0);
+      fs.writeFileSync(path.join(fix, "odd.zip"), fanZip("odd.z64", zipped, crc32(zipped)));
+      const ZIPID = "xs-scan-fa000000b002";
+      const scannedNow = JSON.parse(fs.readFileSync(path.join(DATA, "scanned-games.json"), "utf8"));
+      fs.writeFileSync(path.join(DATA, "scanned-games.json"), JSON.stringify(scannedNow.concat([
+        { id: ZIPID, title: "Odd Zip Title", platform: N64, rom: path.join(fix, "odd.zip"), added: new Date().toISOString() }])));
+      const other = { id: 999987, title: "A Title Nobody Has", platform: N64 };
+      fs.writeFileSync(path.join(DATA, "fanprojects.json"), JSON.stringify({ projects: [
+        maker("t-check", "fanmake"),
+        Object.assign(maker("t-wrong", "fanmake"), { base: base("Fan Make Base (Europe)", [{ console: N64, name: "Fan Make Base (Europe)", fit: "fits" }], named) }),
+        Object.assign(maker("t-lack", "fanmake"), { base: base("Fan Lacking (USA)", [{ console: N64, name: "Fan Lacking (USA)", fit: "fits" }], { id: 999988, title: "Fan Lacking", platform: N64 }) }),
+        Object.assign(maker("t-sum", "fanmake"), { base: base("Fan Sum Base (USA)", [{ console: N64, name: "Fan Sum Base (USA)", size: game.length, crc: crc32(game).toString(16).padStart(8, "0"), fit: "fits" }], other) }),
+        Object.assign(maker("t-sumzip", "fanmake"), { base: base("Fan Zip Base (USA)", [{ console: N64, name: "Fan Zip Base (USA)", size: zipped.length, crc: crc32(zipped).toString(16).padStart(8, "0"), fit: "fits" }], other) }),
+      ] }));
+      forget();
+      const uc = Object.fromEntries(((await api("api/fanprojects.php")).projects || []).map((p) => [p.id, p]));
+      check("a game never checked: Make can be pressed, nothing greyed",
+        [uc["t-check"] && uc["t-check"].base.state, uc["t-check"] && uc["t-check"].makeWhy], ["unchecked", null]);
+      check("a game the library lacks: Make greyed, saying so",
+        uc["t-lack"] && uc["t-lack"].makeWhy, "Fan lack is made from Fan Lacking (USA), which is not in your library");
+      const sumOf = (id) => (uc[id] ? [uc[id].base.state, uc[id].base.gameId, uc[id].base.bySum, uc[id].makeWhy] : null);
+      check("no game carrying the name: a plain file known by the release's size and CRC32 fits, whatever its title",
+        sumOf("t-sum"), ["fits", BASEID, true, null]);
+      check("and a .zip by the CRC32 its own listing carries, nothing unpacked", sumOf("t-sumzip"), ["fits", ZIPID, true, null]);
+      await b.goto(BASE + "/");
+      await b.waitFor(`!document.getElementById("syswall").hidden && document.querySelectorAll("#syswall .sel").length > 0`, 10000);
+      await b.key("End");
+      await b.settled();
+      await b.key("Enter");
+      await b.waitFor(`!document.getElementById("fanpage").hidden && document.querySelectorAll("#fanpage .tile").length === 5`, 10000);
+      await b.ev(`[...document.querySelectorAll("#fanpage .tile")].find((t) => t.textContent.includes("Fan sumzip")).click()`);
+      check("on the page: a copy known by its checksum says so on its tile",
+        await b.until(`document.querySelector("#fanpage .tile.sel .fan-st").textContent`, "Your Odd Zip Title fits (known by its checksum)", 3000),
+        "Your Odd Zip Title fits (known by its checksum)");
+      await b.ev(`[...document.querySelectorAll("#fanpage .tile")].find((t) => t.textContent.includes("Fan check")).click()`);
+      check("on the page: under Ready to make, said as checked first, Make not greyed",
+        await b.until(`[document.querySelector("#fanpage .ghead .ghead-name").textContent, document.querySelector("#fanpage .tile.sel .fan-st").textContent,
+                        (b => b ? [b.textContent, b.disabled] : null)(document.querySelector("#fanpage .hero .bar button"))]`,
+                      ["Ready to make", "Your Fan Make Base: Make checks its file first", ["Make", false]], 3000),
+        ["Ready to make", "Your Fan Make Base: Make checks its file first", ["Make", false]]);
+      await b.key("Escape");
+      await api("api/fanprojects.php", { make: "t-wrong" });
+      const wrongJob = await ended();
+      const fcNow = () => JSON.parse(fs.readFileSync(path.join(DATA, "filecheck.json"), "utf8"))[BASEID] || {};
+      check("pressed on a game of another release: its file checked and kept, nothing made, and why said",
+        [wrongJob && wrongJob.state, wrongJob && wrongJob.error, fcNow().name],
+        ["failed", "Your Fan Make Base is Fan Make Base (USA); Fan wrong is made from Fan Make Base (Europe)", "Fan Make Base (USA)"]);
+      forget();
+      await api("api/fanprojects.php", { make: "t-check" });
+      const checkJob = await ended();
+      check("pressed on the right release: checked first, then made from it",
+        [checkJob && checkJob.state, checkJob && checkJob.release, ((checkJob && checkJob.made) || {}).version, fcNow().name],
+        ["done", "Fan Make Base (USA)", "9.9.9", "Fan Make Base (USA)"]);
+    }
 
     /* ---- Make for a PC version: the team's GitHub release, given your game (roadmap AQ3) ---- */
     // A release's Windows zip and GitHub's answer about it, with the sha256 GitHub gives (a wrong one on purpose for the refusal).

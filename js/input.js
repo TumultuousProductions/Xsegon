@@ -276,6 +276,9 @@ function onKey(e) {
 
   if (fanKeys(e)) { return; }            // the Fan projects page, while it is up (js\fanprojects.js)
   if (extKeys(e)) { return; }            // the Extensions page, while it is up (js\extensions.js)
+  // A dropdown at the top left with the keys after a click: Xsegon's key acts, once, never its letter jump or arrow as well
+  // (g went to Shelf and the dropdown's G back to Grid). Space, F4 and Alt still open it; Tab still leaves it.
+  if (e.target && /^(viewsel|platform|added|sort)$/.test(e.target.id) && !/^(Tab| |F4)$/.test(e.key) && !e.altKey) { e.target.blur(); e.preventDefault(); }
 
   // The wall of systems has its own, smaller vocabulary.
   if (sysStage === "wall") {

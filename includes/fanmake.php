@@ -698,8 +698,8 @@ function xs_fm_start(string $id, ?string &$why = null): bool
         }
     }
     $base = $state['base'] ?? [];
-    if (!in_array($base['state'] ?? '', ['fits', 'works'], true)) {
-        $why = 'it is made from ' . (string) ($base['title'] ?? 'a game') . ', which is not in your library';
+    $why = $state === null ? 'Xsegon cannot make that project yet' : xs_fan_why($state);
+    if ($why !== null) {
         return false;
     }
     $game = null;
@@ -715,7 +715,7 @@ function xs_fm_start(string $id, ?string &$why = null): bool
     }
     $job = ['state' => 'running', 'phase' => 'starting', 'started' => time(), 'project' => $id, 'name' => (string) $p['name'],
             'base' => (string) $game['id'], 'baseTitle' => (string) $game['title'], 'platform' => (string) $game['platform'], 'rom' => $rom,
-            'release' => (string) ($base['release'] ?? ''),
+            'release' => (string) ($base['release'] ?? ''), 'check' => ($base['state'] ?? '') === 'unchecked',
             'bytes' => 0, 'total' => 0, 'at' => 0, 'of' => 0, 'said' => ''];
     @unlink(xs_fm_stop_path());
     if (!xs_write_json(xs_fm_job_path(), $job, $why)) {
@@ -730,6 +730,6 @@ function xs_fm_start(string $id, ?string &$why = null): bool
         return false;
     }
     pclose($h);
-    xs_log('FAN', 'make ' . $p['name'] . ' from ' . $game['title'] . ' (' . $rom . ') asked');
+    xs_log('FAN', 'make ' . $p['name'] . ' from ' . $game['title'] . ' (' . $rom . ') asked' . ($job['check'] ? ', its file not checked yet: checked first' : ''));
     return true;
 }

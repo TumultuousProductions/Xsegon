@@ -143,9 +143,12 @@ export function pageJobRuns(on) {
   if (!pageJobs) { redrawIfClear(); }
 }
 
+// Rows the page puts to use as they change (js\settings-ui.js), so drawing it again for them alone only loses presses.
+var LIVE = ["sound.volume", "sound.soundSet"];
+
 // A row changed and changed back leaves the page as it was drawn: nothing to do.
 function due() {
-  return Object.keys(drawn).some(function (id) { return drawn[id] !== holds[id]; });
+  return Object.keys(drawn).some(function (id) { return drawn[id] !== holds[id] && LIVE.indexOf(id) < 0; });
 }
 
 /* The page drawn again only when something was saved, the saves are in, and
