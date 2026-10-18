@@ -92,6 +92,7 @@ export function openLogViewer(after) {
       show();
       $editor.appendChild(inner);
       $editor.hidden = false;
+      pre.scrollTop = pre.scrollHeight;       // only a box on the page scrolls: show() above ran before it was
     });
   }
   paint();

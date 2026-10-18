@@ -58,6 +58,7 @@ module.exports = async function (b, check) {
   await b.key("l");
   check("L opens the viewer", await b.until(`(document.querySelector("#editor .panel-title") || {}).textContent`, "THE LOG", 6000), "THE LOG");
   await b.until(`document.querySelectorAll("#editor .lg-row").length > 20`, true, 6000);
+  check("it opens at its newest line, at the bottom, with a bar", await b.ev(`(p => p.scrollHeight > p.clientHeight && p.scrollTop + p.clientHeight >= p.scrollHeight - 2 && p.offsetWidth - p.clientWidth >= 10)(document.querySelector("#editor .lg-pre"))`), true);
   const rows = await b.ev(`document.querySelectorAll("#editor .lg-row").length`);
   check("viewer shows lines", rows > 20);
   await b.ev(`(() => { const q = document.querySelector("#editor .lg-bar input"); q.value = "ERR"; q.dispatchEvent(new Event("input")); })()`); await sleep(200);

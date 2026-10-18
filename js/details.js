@@ -342,17 +342,51 @@ export function aboutPane(pane, g, full) {
 
 /* If the text is taller than its box it drifts at reading pace, holds, and
    drifts back -- ES's trick. Distance and duration are measured, not
-   guessed, so a two-line note never crawls and a long one never sprints. */
+   guessed, so a two-line note never crawls and a long one never sprints;
+   and measured again when the box changes size (the strip coming up, the
+   window resized), so its last lines are never left out of reach. */
+var notesBox = null;       // the description box followed, one at a time
+var notesSize = null;      // what follows its size
+
 function startNotesScroll() {
   var box = $details.querySelector(".notes-box");
   var inner = $details.querySelector(".notes-inner");
   if (!box || !inner) { return; }
+  measureNotes(box, inner);
+  if (notesBox === box) { return; }
+  if (!notesSize && window.ResizeObserver) {
+    notesSize = new ResizeObserver(function () {
+      if (notesBox && notesBox.isConnected) { measureNotes(notesBox, notesBox.querySelector(".notes-inner")); }
+    });
+  }
+  if (notesSize) { if (notesBox) { notesSize.unobserve(notesBox); } notesSize.observe(box); }
+  notesBox = box;
+  box.addEventListener("wheel", function (e) { notesByHand(box, inner, e); }, { passive: false });
+}
+
+function measureNotes(box, inner) {
+  if (!inner || box.classList.contains("by-hand")) { return; }
   var dist = inner.scrollHeight - box.clientHeight;
-  if (dist > 14 && !$body.classList.contains("no-anim")) {
+  var drift = dist > 14 && !$body.classList.contains("no-anim");
+  if (drift) {
     inner.style.setProperty("--scroll-dist", dist + "px");
     inner.style.setProperty("--scroll-dur", Math.max(10, Math.round(dist / 22) + 6) + "s");
-    box.classList.add("notes-auto");
   }
+  box.classList.toggle("notes-auto", drift);
+}
+
+/* The wheel over the drifting words (paused under the pointer by the stylesheet):
+   they stop where they stand and scroll by hand from there while this game's details are open. */
+function notesByHand(box, inner, e) {
+  if (!box.classList.contains("notes-auto") || !e.deltaY) { return; }
+  var t = getComputedStyle(inner).transform;
+  var at = t && t !== "none" ? Math.max(0, -new DOMMatrixReadOnly(t).m42) : 0;
+  box.classList.remove("notes-auto");
+  box.classList.add("by-hand");
+  box.scrollTop = at;
+  e.preventDefault();                  // this first turn: the box could not scroll when it began
+  box.scrollTop += e.deltaMode === 1 ? e.deltaY * 20 : e.deltaY;
+  L("NAV", "details: the description taken over by the wheel");
 }
 
 /* The saves, at the top of the About tab: RetroArch's own screenshot per slot,

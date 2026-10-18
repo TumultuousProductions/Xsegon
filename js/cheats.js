@@ -168,6 +168,18 @@ function openFile(host, g, res, file) {
   var matching = 0;         // how many the current find matches
   var whole = 0;            // how many are in the file altogether
   var query = "";
+  // Cheats active: what was on as the list loaded (listed there alone), and a copy of each turned on since.
+  var top = [];
+  var alone = {};
+  var lifted = [];          // turned off under Cheats active: they head Other cheats
+
+  /* A cheat turned off under Cheats active cannot stay there: it goes to the top of
+     Other cheats, listed there once. */
+  function lift(c) {
+    delete alone[c.i];
+    lifted = lifted.filter(function (x) { return x.i !== c.i; });
+    lifted.unshift(c);
+  }
 
   var inner = shell(host, "CHEATS", g,
     "Select what you want. Each one is kept as you select it, and applied every time you play until you turn it off.");
@@ -201,7 +213,12 @@ function openFile(host, g, res, file) {
       rows.push({ act: "file" });
     }
     rows.push({ act: "clear" });           // always there, so a press never moves the rows under the bar
-    loaded.forEach(function (c) { rows.push(c); });
+    top.forEach(function (c, k) { rows.push({ i: c.i, desc: c.desc, where: "top", head: k === 0 ? "Cheats active" : "" }); });
+    var up = {};
+    lifted.forEach(function (c) { up[c.i] = true; });
+    lifted.concat(loaded.filter(function (c) { return !alone[c.i] && !up[c.i]; })).forEach(function (c, k) {
+      rows.push({ i: c.i, desc: c.desc, where: "rest", head: k === 0 && top.length ? "Other cheats" : "" });
+    });
     if (loaded.length < matching) { rows.push({ act: "more" }); }
 
     var n = Object.keys(on).length;
@@ -209,6 +226,7 @@ function openFile(host, g, res, file) {
     var other = res.chosen && res.chosen.file !== file ? res.chosen : null;
 
     rows.forEach(function (r) {
+      if (r.head) { list.appendChild(el("div", "ch-head", r.head)); }
       var line = el("div", "cr-row");
       if (r.act === "file") {
         line.classList.add("ch-act");
@@ -269,10 +287,46 @@ function openFile(host, g, res, file) {
     if (r.act === "clear") {
       if (!res.chosen && !Object.keys(on).length) { return; }
       on = {};
-    } else if (on[r.i] !== undefined) { delete on[r.i]; } else { on[r.i] = r.desc; }
+      top.slice().reverse().forEach(lift);
+      top = [];
+    } else if (on[r.i] !== undefined) {
+      delete on[r.i];
+      // Pressed under Cheats active it leaves for the top of Other cheats; pressed below, it stays put.
+      var was = top.filter(function (c) { return c.i === r.i; })[0];
+      top = top.filter(function (c) { return c.i !== r.i; });
+      if (was && r.where === "top") { lift(was); }
+    } else {
+      on[r.i] = r.desc;
+      // A copy goes under Cheats active at once; the row pressed stays where it is, lit.
+      if (!inTop(r.i)) { top.push({ i: r.i, desc: r.desc }); }
+    }
     sound("select");
-    paint();
+    paintHeld();
     keep();
+  }
+
+  function inTop(i) { return top.some(function (c) { return c.i === i; }); }
+  function rowOf(test) {
+    for (var k = 0; k < rows.length; k++) { if (test(rows[k])) { return k; } }
+    return -1;
+  }
+
+  /* Redrawn with the bar on the row it was on, standing where it stood: a copy put
+     under Cheats active would otherwise push the list down under it. */
+  function paintHeld() {
+    var r = rows[at];
+    var y = cells[at] ? cells[at].getBoundingClientRect().top : 0;
+    paint();
+    if (!r) { return; }
+    var k = rowOf(function (x) { return x.act === r.act && x.where === r.where && x.i === r.i; });
+    if (k >= 0) {
+      focusAt(k);
+      list.scrollTop += cells[k].getBoundingClientRect().top - y;
+      return;
+    }
+    // Gone from where it was, turned off under Cheats active: the bar goes with it.
+    k = rowOf(function (x) { return !x.act && x.i === r.i; });
+    if (k >= 0) { focusAt(k); }
   }
 
   /* What is marked goes to the server at every press. Only the newest answer
@@ -290,6 +344,10 @@ function openFile(host, g, res, file) {
           if (mine !== sent || !now.ok) { return; }
           res.chosen = now.chosen || null;
           seed();
+          // Cheats active follows what the server has.
+          top.filter(function (c) { return on[c.i] === undefined; }).reverse().forEach(lift);
+          top = top.filter(function (c) { return on[c.i] !== undefined; });
+          loaded.forEach(function (c) { if (on[c.i] !== undefined && !inTop(c.i)) { top.push(c); } });
           paint();
         });
         return;
@@ -314,7 +372,15 @@ function openFile(host, g, res, file) {
       }
       matching = out.matching;
       whole = out.whole;
-      loaded = from === 0 ? out.cheats : loaded.concat(out.cheats);
+      if (from === 0) { loaded = []; top = []; alone = {}; lifted = []; }
+      // The server puts cheats on now and on before first, so a press can move one into the next page.
+      var have = {};
+      loaded.forEach(function (c) { have[c.i] = true; });
+      var fresh = out.cheats.filter(function (c) { return !have[c.i]; });
+      fresh.forEach(function (c) {
+        if (on[c.i] !== undefined && !inTop(c.i)) { alone[c.i] = true; top.push(c); }
+      });
+      loaded = loaded.concat(fresh);
       if (from === 0) { at = 0; }
       paint();
     });

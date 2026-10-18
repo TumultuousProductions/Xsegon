@@ -46,7 +46,6 @@ Groups:
 | steamvid | Pictures & Videos > Steam trailers, against stand-ins for Steam's store and video server |
 | screenscraper | Pictures & Videos > ScreenScraper videos, against a stand-in the group serves itself, and Xsegon's own developer ID from a stand-in website (its file made by tests/ss-seal.php); the person's logins are never copied in |
 | achievements | RetroAchievements: RetroArch's sign-in as yes or no words (played by a fixture file, never the real one), the site key kept sealed and never shown or logged, against a stand-in site the group serves itself, Settings > Emulators > Achievements, the hardcore question before a dry start from a save or with cheats, and a game's Achievements tab (no set, the set by its file's checksum, a side set, the last answer with none, badge pictures, the page) |
-| skraper | Stage for Skraper on that window (D9): the picked games staged by the helper, Skraper followed open to closed, the check run by itself, restore; against a stand-in helper in the test copy's own fixtures |
 | libretro | names and pictures from libretro, against stand-ins laid out like libretro's servers |
 | filecheck | the file check: what a game's file really is by its checksum, against stand-in lists and stand-in game files; the closed line in details and Games > Check game files |
 | scanpassed | What Scan for Games passed over: a file taken for a game that is here under another file is named and can be added as another version; a cartridge kept as a .bin |

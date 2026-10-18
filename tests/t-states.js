@@ -140,6 +140,14 @@ module.exports = async function (b, check) {
   const cells = await b.ev(`document.querySelectorAll("#editor .st-cell").length`);
   check("a fresh start plus one tile per state", cells, st.states.length + 1);
   check("the newest save is focused first", await b.ev(`[...document.querySelectorAll("#editor .st-cell")].findIndex(c => c.classList.contains("sel"))`), 1);
+  // Made narrow so the saves run past its edge, and put back: the wheel moves them sideways, with a bar under them.
+  // Narrowed, the row snaps to the selected save, which can be its far end: so back to its start, two frames, then the wheel.
+  check("the mouse wheel moves the saves sideways, with a bar under them",
+    await b.ev(`(r => { r.style.maxWidth = "300px"; r.scrollLeft = 0;
+      return new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(() => { const before = r.scrollLeft;
+        r.dispatchEvent(new WheelEvent("wheel", { deltaY: 100, bubbles: true, cancelable: true }));
+        setTimeout(() => { const got = [r.scrollWidth > r.clientWidth, r.scrollLeft > before, r.offsetHeight - r.clientHeight >= 10];
+          r.style.maxWidth = ""; r.scrollLeft = 0; ok(got); }, 600); }))); })(document.querySelector("#editor .st-row"))`), [true, true, true]);
   if (shotOf) {
     await b.waitFor(`[...document.querySelectorAll("#editor .st-cell img")].some(i => i.naturalWidth > 0)`, 6000);
     check("the screenshot is on the tile", await b.ev(`[...document.querySelectorAll("#editor .st-cell img")].some(i => i.naturalWidth > 0)`));

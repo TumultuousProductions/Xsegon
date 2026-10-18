@@ -235,59 +235,7 @@ function fixtures(ssPort, adbPort) {
   /* The Arcade Database's stand-in answers with codes too (404, 500, 509):
      the arcadevid group serves it on this port while it runs. */
   fs.writeFileSync(path.join(fx, "arcadedb-port.txt"), String(adbPort));
-  /* A stand-in for the Skraper staging helper (includes\skraper.php): the
-     same modes and closing words as the real stage.js, against this copy's
-     own folder. While its hold file exists it waits, so a test can look at
-     a step in flight. A skraper-open file plays Skraper's open window. */
-  const skraper = path.join(fx, "skraper-helper");
-  fs.mkdirSync(skraper, { recursive: true });
-  fs.writeFileSync(path.join(skraper, "stage.js"), [
-    '"use strict";',
-    'const fs = require("fs"), path = require("path");',
-    'const W = __dirname, mode = process.argv[2] || "build";',
-    "(async () => {",
-    '  for (let i = 0; i < 300 && fs.existsSync(path.join(W, "hold")); i++) { await new Promise((r) => setTimeout(r, 100)); }',
-    '  if (mode === "build") {',
-    '    const r = await (await fetch(process.env.XSEGON_URL + "/api/screenscraper.php")).json();',
-    '    const pick = path.join(W, "pick.json");',
-    '    const ids = fs.existsSync(pick) ? JSON.parse(fs.readFileSync(pick, "utf8")).ids.map(String) : null;',
-    '    const games = r.games.filter((g) => !g.has && g.system > 0 && (!ids || ids.includes(String(g.id))));',
-    '    if (!games.length) { console.log("none of the picked games is still without a video; nothing staged."); fs.rmSync(pick, { force: true }); return; }',
-    '    const stage = path.join(W, "stage");',
-    "    fs.rmSync(stage, { recursive: true, force: true });",
-    '    for (const g of games) { fs.mkdirSync(path.join(stage, g.platform), { recursive: true }); fs.writeFileSync(path.join(stage, g.platform, g.title.replace(/[\\\\/*?"<>|:]/g, " ") + ".iso"), "a stand-in, not a game"); }',
-    '    console.log(games.length + " stand-ins for " + new Set(games.map((g) => g.platform)).size + " consoles, in " + stage);',
-    '    if (ids) { console.log("staged only the " + games.length + " games picked in Xsegon"); }',
-    "    fs.rmSync(pick, { force: true });",
-    '  } else if (mode === "check") {',
-    '    const stage = path.join(W, "stage");',
-    '    const n = fs.existsSync(stage) ? fs.readdirSync(stage, { recursive: true }).filter((f) => /\\.iso$/.test(String(f))).length : 0;',
-    '    console.log("videos in (this test copy):\\n  " + n + "  in all");',
-    '    console.log("still without a video in Xsegon: plenty");',
-    '    console.log("LaunchBox Data\\\\Platforms: exactly as it was (0 files)");',
-    '  } else if (mode === "retry") {',
-    '    // The second go: with a nothing-left file, the way it ends when only copies were to be made.',
-    '    if (fs.existsSync(path.join(W, "nothing-left"))) {',
-    '      console.log("1 given a copy of the video the game they are made from already has:\\n  A Stand-In Hack");',
-    '      console.log("nothing left to ask Skraper for: every other game on the second-go list has its video.");',
-    '    } else {',
-    '      fs.mkdirSync(path.join(W, "stage", "second"), { recursive: true });',
-    '      fs.writeFileSync(path.join(W, "stage", "second", "A Stand-In Game.iso"), "a stand-in, not a game");',
-    '      console.log("1 stand-ins for the second go, in " + path.join(W, "stage"));',
-    '    }',
-    '  } else if (mode === "tidy") {',
-    '    fs.rmSync(path.join(W, "stage"), { recursive: true, force: true });',
-    '    fs.rmSync(path.join(W, "second-go.json"), { force: true });',
-    '    console.log("1 videos given the name Xsegon looks for");',
-    '    console.log("still without a video in Xsegon: 3");',
-    '  } else if (mode === "restore") {',
-    '    console.log("Skraper\'s settings are back as they were (a stand-in: nothing was changed).");',
-    '  } else { console.log("no such step: " + mode); process.exit(2); }',
-    '})().catch((e) => { console.log("stopped: " + e.message); process.exit(1); });',
-    "",
-  ].join("\n"));
   return {
-    XSEGON_SKRAPER: skraper,
     XSEGON_SS_API: "http://127.0.0.1:" + ssPort + "/",
     XSEGON_SS_SHARED: "http://127.0.0.1:" + ssPort + "/shared.json",   // the website's copy of Xsegon's own developer ID
     XSEGON_RA_SYSTEM: raSys,
@@ -325,7 +273,9 @@ function realEmulatorFolders() {
 
 // A port with the two above it free: the page starts the fast lane on the port above the server's and the
 // phone page two above. Lanes started together (tests\lanes.js, XS_LANE "1/2") each take their own fours, so
-// however their asks interleave, two runs never sit on each other's.
+// however their asks interleave, two runs never sit on each other's. Below 49152: from there up Windows hands
+// ports out by itself to every connection, so one chosen there at the start can be given away before a
+// stand-in opens it minutes later (roadmap AZ16).
 async function freePort() {
   const [lane, of] = ((/^(\d+)\/(\d+)$/.exec(process.env.XS_LANE || "") || []).slice(1).map(Number).concat([0, 1])).slice(0, 2);
   const any = () => new Promise((resolve, reject) => {
@@ -339,9 +289,9 @@ async function freePort() {
     srv.listen(port, "127.0.0.1", () => srv.close(() => resolve(true)));
   });
   for (let tries = 0; tries < 40; tries++) {
-    const p = await any();
-    const port = p - (p % (4 * of)) + 4 * of + 4 * lane;     // this lane's next four above the one the OS handed out
-    if (port + 2 <= 65535 && await open(port) && await open(port + 1) && await open(port + 2)) { return port; }
+    const p = 20000 + Math.floor(Math.random() * 28000);      // anywhere from 20000 to 47999
+    const port = p - (p % (4 * of)) + 4 * of + 4 * lane;     // this lane's next four above it
+    if (port + 2 < 49152 && await open(port) && await open(port + 1) && await open(port + 2)) { return port; }
   }
   return any();                 // none in forty: any free port
 }

@@ -151,11 +151,11 @@ module.exports = async function (b, check) {
        "its playthrough could not be used: the recording has no smaller copy to cut from",
        "its playthrough could not be cut: the recording could not be read"]);
     const told = await noVideoMail();
-    check("one message says how many got none, which console the Archive has nothing for, and the way on with Skraper",
+    check("one message says how many got none, which console the Archive has nothing for, and the way on with ScreenScraper videos",
       [told.length, /^\d+ games got no video$/.test((told[0] || {}).title || ""), /It has none at all for .*Nintendo 64 \(\d+\)/.test((told[0] || {}).body || ""),
-       /Skraper, a free program, can fetch videos for them with a free ScreenScraper account\.$/.test((told[0] || {}).body || ""), (told[0] || {}).opens,
-       ((told[0] || {}).consoles || []).some((c) => c.platform === N64 && /videos.Nintendo 64$/.test(c.folder))],
-      [1, true, true, true, ["skraper", "archivevid"], true]);
+       /Pictures & Videos > ScreenScraper videos fetches them with a free ScreenScraper account, quick to make, with no phone number asked\.$/.test((told[0] || {}).body || ""),
+       (told[0] || {}).opens, /Skraper/.test((told[0] || {}).body || "")],
+      [1, true, true, true, ["screenscraper", "archivevid"], false]);
     check("each video lies where a video is found by name, and is the Archive's own file, byte for byte",
       [fs.readFileSync(place(GAMES[0])).equals(from("test-psx-a", "Alpha Game (USA).mp4")), fs.readFileSync(place(GAMES[1])).equals(from("test-psx-a", "sub folder/betaracerusa.mp4")),
        fs.readFileSync(place(GAMES[2])).equals(from("test-snes-a", "Gamma Quest, The (USA).mp4"))], [true, true, true]);

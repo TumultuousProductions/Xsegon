@@ -4,7 +4,8 @@
  *  (kept on this computer, never shown back). Fetch asks first, then the snaps
  *  come down in the background. A game that has a video is not listed, except
  *  as saved while its fetch runs. One a fetch found no video for is listed
- *  apart, folded away, and can be selected there to ask again.
+ *  apart, folded away, and can be selected there to ask again. One on a
+ *  console ScreenScraper does not have is folded away last and cannot be selected.
  */
 
 import { confirmWindow } from "./confirm.js";
@@ -12,7 +13,6 @@ import { closeEditor, reloadKeeping, setEditorOnClose } from "./editors.js";
 import { jobSayOnce, jobsWatch } from "./jobbars.js";
 import { showStrip } from "./launch.js";
 import { L, api, logWarn, postJson } from "./log.js";
-import { skraperRoute } from "./skraper.js";
 import { stopVideo } from "./snap.js";
 import { sound } from "./sound.js";
 import { $editor, games, sel } from "./state.js";
@@ -26,7 +26,33 @@ var WORDS = {
 var FIELDS = [
   ["user", "Member name", "text"], ["password", "Member password", "password"]
 ];
-var showTried = false;      // the games with no video before are shown, while the page is up
+var unfolded = { tried: false, nosys: false };   // which groups kept apart are shown, while the page is up
+
+/* A group kept apart below the list, with its name, a line on why, and Show or Hide. */
+function apartGroup(key, hint) {
+  var box = el("div", "st-apart");
+  box.hidden = true;
+  var head = el("div", "st-apart-head");
+  var words = el("div", "st-apart-words");
+  var name = el("span", "pj-job");
+  words.appendChild(name);
+  words.appendChild(el("span", "pj-hint", hint));
+  head.appendChild(words);
+  var rows = el("div", "sc-rows sv-rows st-" + key);
+  rows.hidden = !unfolded[key];
+  var fold = el("button", null, unfolded[key] ? "Hide" : "Show");
+  fold.type = "button";
+  fold.addEventListener("click", function () {
+    unfolded[key] = !unfolded[key];
+    rows.hidden = !unfolded[key];
+    fold.textContent = unfolded[key] ? "Hide" : "Show";
+    sound("select");
+  });
+  head.appendChild(fold);
+  box.appendChild(head);
+  box.appendChild(rows);
+  return { box: box, name: name, rows: rows };
+}
 
 export function openScreenScraper() {
   L("ED", "screenscraper videos");
@@ -45,36 +71,16 @@ export function openScreenScraper() {
   inner.appendChild(acct);
   var bar = el("div", "sv-bar ss-bar");
   inner.appendChild(bar);
-  // On a PC with the Skraper helper the selected games can go through Skraper
-  // instead, with no logins (js\skraper.js); elsewhere this adds nothing.
-  var skr = skraperRoute(inner, function () { return ticked().map(function (t) { return t.value; }); },
-    function () { paintBar(); });
   // Both lists in one area that scrolls in what the rest of the window leaves.
   var scroll = el("div", "st-scroll");
   var rows = el("div", "sc-rows sv-rows");
   scroll.appendChild(rows);
-  var apart = el("div", "st-apart");
-  apart.hidden = true;
-  var apartHead = el("div", "st-apart-head");
-  var apartWords = el("div", "st-apart-words");
-  var apartName = el("span", "pj-job");
-  apartWords.appendChild(apartName);
-  apartWords.appendChild(el("span", "pj-hint", "A fetch found no video for these, each says why, so they are kept apart. Select one to ask ScreenScraper again."));
-  apartHead.appendChild(apartWords);
-  var fold = el("button", null, showTried ? "Hide" : "Show");
-  fold.type = "button";
-  fold.addEventListener("click", function () {
-    showTried = !showTried;
-    tried.hidden = !showTried;
-    fold.textContent = showTried ? "Hide" : "Show";
-    sound("select");
-  });
-  apartHead.appendChild(fold);
-  apart.appendChild(apartHead);
-  var tried = el("div", "sc-rows sv-rows st-tried");
-  tried.hidden = !showTried;
-  apart.appendChild(tried);
-  scroll.appendChild(apart);
+  var apart = apartGroup("tried", "A fetch found no video for these, each says why, so they are kept apart. Select one to ask ScreenScraper again.");
+  var tried = apart.rows;
+  scroll.appendChild(apart.box);
+  // Nothing can be fetched for these, so they wait folded at the very bottom.
+  var nosys = apartGroup("nosys", "ScreenScraper does not list these consoles, so there is nothing to fetch for them.");
+  scroll.appendChild(nosys.box);
   inner.appendChild(scroll);
   $editor.textContent = "";
   $editor.appendChild(inner);
@@ -229,6 +235,7 @@ export function openScreenScraper() {
       ticks = [];
       rows.textContent = "";
       tried.textContent = "";
+      nosys.rows.textContent = "";
       // Versions of one game share its name; their file names tell them apart.
       var twins = {};
       shown.forEach(function (g) { var k = g.platform + "|" + g.title; twins[k] = (twins[k] || 0) + 1; });
@@ -249,12 +256,14 @@ export function openScreenScraper() {
         line.appendChild(el("span", "ss-plat", g.platform + (twins[g.platform + "|" + g.title] > 1 && g.rom ? " · " + g.rom : "")));
         var note = el("span", "sc-rom sv-state");
         line.appendChild(note);
-        (g.tried ? tried : rows).appendChild(line);
+        (!g.system ? nosys.rows : g.tried ? tried : rows).appendChild(line);
         lines[g.id] = { note: note, row: line };
       });
       rows.hidden = !rows.children.length;
-      apart.hidden = !tried.children.length;
-      apartName.textContent = "Got no video before (" + tried.children.length + ")";
+      apart.box.hidden = !tried.children.length;
+      apart.name.textContent = "Got no video before (" + tried.children.length + ")";
+      nosys.box.hidden = !nosys.rows.children.length;
+      nosys.name.textContent = "On a console ScreenScraper does not have (" + nosys.rows.children.length + ")";
       paintBar();
     }
     shown.forEach(function (g) {
@@ -277,7 +286,6 @@ export function openScreenScraper() {
     go.textContent = "Fetch " + n + (n === 1 ? " snap..." : " snaps...");
     go.disabled = !n || !ready;
     go.title = ready ? "" : "Fill in the ScreenScraper logins above first";
-    skr.count(n);
   }
 
   function paintBar() {
@@ -310,8 +318,6 @@ export function openScreenScraper() {
     go.addEventListener("click", ask);
     bar.appendChild(go);
     if (main.length) { bar.appendChild(chooser); }
-    var sb = skr.button();
-    if (sb) { bar.appendChild(sb); }
     paintGo();
   }
 
