@@ -7,6 +7,8 @@
  */
 declare(strict_types=1);
 
+$pageAt = ['code' => microtime(true)];      // where a slow page's time went, said at its end
+
 require_once __DIR__ . '/includes/import.php';
 
 $s = xs_settings();
@@ -24,6 +26,7 @@ $viewsLocked = xs_emu_none_here(xs_norm_path((string) ($s['paths']['launchbox'] 
 if ($viewsLocked && in_array($s['view']['default'], ['wheel', 'carousel'], true)) {
     $s['view']['default'] = 'list';
 }
+$pageAt['settings'] = microtime(true);
 
 /* The look (includes\themes.php). A theme's values go on <html>, under the
    stylesheet's own names; the house look is none. What a look does not have
@@ -38,6 +41,7 @@ foreach ((array) ($theme['wears'] ?? []) as $themeDial => $themeWord) {
     if (preg_match('/^[a-z]+$/', (string) $themeDial) && preg_match('/^[a-z0-9-]+$/', (string) $themeWord)) { $themeWears .= ' data-' . $themeDial . '="' . $themeWord . '"'; }
 }
 $themeList = xs_theme_catalogue();
+$pageAt['look'] = microtime(true);
 
 $bodyClass = [];
 if (!$s['feel']['scanlines'] || !$theme['has']['scanlines']) { $bodyClass[] = 'no-scanlines'; }
@@ -102,6 +106,7 @@ foreach (xs_glob(__DIR__ . '/js', '*.js') as $f) {
     $jsPack[basename((string) $f)] = (string) @file_get_contents((string) $f);
 }
 $jsV = $jsV ?: time();
+$pageAt['scripts'] = microtime(true);
 ?>
 <link rel="stylesheet" href="css/xsegon.css?v=<?= $cssV ?>">
 </head>
@@ -328,7 +333,7 @@ $jsV = $jsV ?: time();
 <!-- When the server stops answering, a kiosk window has nothing else to click.
      Built by js\offline.js the first time it is needed; on top of everything. -->
 <div class="offline" id="offline" hidden></div>
-
+<?php $pageAt['body'] = microtime(true); ?>
 <script>
   window.XSEGON = {
     settings: <?= json_encode($s, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) ?>,
@@ -357,6 +362,7 @@ $jsV = $jsV ?: time();
     build: <?= json_encode((function () { require_once __DIR__ . '/includes/version.php'; return xs_version_short(); })(), JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) ?>
   };
 </script>
+<?php $pageAt['facts'] = microtime(true); ?>
 <!-- The start-up watchdog, a plain script that runs whatever becomes of the
      modules (the log is part of them). It logs an error before start-up, and a
      page whose code has not started in 45 seconds is reloaded once, then the app
@@ -508,3 +514,15 @@ $jsV = $jsV ?: time();
 </script>
 </body>
 </html>
+<?php
+// A page slower than 2 s to send says where its time went (a tester's first reload took 4.5 s, the next 0.08 s).
+$pageAt['end'] = microtime(true);
+$pageMs = static fn(float $a, float $b): string => (int) round(($b - $a) * 1000) . 'ms';
+$pageFrom = (float) ($_SERVER['REQUEST_TIME_FLOAT'] ?? $pageAt['code']);
+if ($pageAt['end'] - $pageFrom > 2) {
+    xs_log('PAGE', 'the page took ' . $pageMs($pageFrom, $pageAt['end']) . ' to send: before its own code ' . $pageMs($pageFrom, $pageAt['code'])
+        . ', settings ' . $pageMs($pageAt['code'], $pageAt['settings']) . ', its look ' . $pageMs($pageAt['settings'], $pageAt['look'])
+        . ', reading its ' . $jsN . ' scripts (' . (int) round(array_sum(array_map('strlen', $jsPack)) / 1024) . ' KB) ' . $pageMs($pageAt['look'], $pageAt['scripts'])
+        . ', the page ' . $pageMs($pageAt['scripts'], $pageAt['body']) . ', its start-up facts (fast lane, phone, emulators, Games Database, version) '
+        . $pageMs($pageAt['body'], $pageAt['facts']) . ', the scripts sent and the rest ' . $pageMs($pageAt['facts'], $pageAt['end']));
+}
