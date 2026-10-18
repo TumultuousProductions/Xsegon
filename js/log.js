@@ -220,9 +220,12 @@ export function shapeOf(v) {
 // What a module has to say as the page leaves: run ahead of the last send, so its line goes with it.
 var leaving = [];
 export function beforeLeave(fn) { leaving.push(fn); }
+var pageGone = false;                    // from pagehide on, a request that fails was cut off by the leaving
 
 export function initLog() {
+  window.addEventListener("pageshow", function () { pageGone = false; });
   window.addEventListener("pagehide", function () {
+    pageGone = true;
     leaving.forEach(function (fn) { try { fn(); } catch (e) { /* leaving anyway */ } });
     L("BOOT", "leave");
     flushLog(true);
@@ -381,7 +384,8 @@ function apiCall(path, opts, t0, method) {
       return j;
     });
   }, function (err) {
-    L("ERR", method + " " + path.split("?")[0] + " network: " + (err && err.message));
+    // Cut off by the page leaving (drawn again, or the window closing) is no fault of the server's.
+    L(pageGone ? "API" : "ERR", method + " " + path.split("?")[0] + " network: " + (err && err.message) + (pageGone ? ", cut off as the page left" : ""));
     return { ok: false, error: "network: " + (err && err.message) };
   });
 }

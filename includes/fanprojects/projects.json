@@ -1,5 +1,5 @@
 {
-  "about": "Fan projects made from games a person owns (roadmap AQ, doc/ideas/49-fan-projects.md). Each entry was read from the team's own page on 2026-10-15, 2026-10-16 or 2026-10-17: 'page' is their website, 'repo' their GitHub (a project or its owner's page), each checked against GitHub's own answer; at least one is given. A base names the releases it takes by their No-Intro name (cartridges), disc ID (discs; an Xbox disc by its title ID, with 'code' the SHA-1 its default.xbe keeps of its .text, which tells one release from another of the same ID), an arcade game's MAME set ('set', its file's name), or every disc ID of a set ('discs': all must be in the library, in one .pbp or .m3u or as separate discs); a PS4 dump and a Switch game's extracted files are named by their title ID and cannot be read yet: fit 'fits' is what the team asks for, 'works' is taken with a note. 'make' says how Xsegon makes it (includes/fanmake.php). A patch: the team's own list of releases ('list', newest first, each with 'version' and 'files'), which file of a release to take ('take'), where those files are ('from'), the kind of patch, the base's byte order and MD5, the made file's ending; every address on the team's website or GitHub, the patch checked against the CRC32 the team's GitHub release lists for it. 'how': 'release': the Windows download ('asset', a pattern) of the team's latest GitHub release or of 'tag', unpacked into 'folder' in the console's Ports folder; 'run' (with 'args', '{folder}' for where it went) joins the 'list' (Windows unless named); 'game' says where your game goes: 'to' (a copy, '{release}' for its release name, its 'format' and the 'md5' or 'sha1' the team takes), 'discs' (every disc of the set, a .pbp's written out as .bin and .cue), 'xiso' (an Xbox disc's files written out into this folder), 'ini' (the port's own emulator pointed at your disc where it is), or 'args' (your disc where it is, named to the port as it starts by '{disc}' in its 'args'); 'need' files the download must hold, 'write' empty files a port reads as a switch, 'first' what its first start asks. 'how': 'build': the team's source at the newest commit of 'branch', the 'tools' their build guide names (GitHub release downloads of the size given), and their 'compile' line run in its folder. 'how': 'pack': a Riivolution pack from the team's own server ('hosts'), as their installer takes it: the full pack ('install'), each newer update ('updates') and what each takes away ('deletes'), only the 'take' folders kept, and a Dolphin start file booting your disc with the pack's 'xml' and 'options'. 'yours' finds a copy already in the library: a patched cartridge by its header, or a PC version kept as a game of your own by its title, its build named in a file beside what it runs. 'soon' is a project not out yet: one line saying where it stands, shown under Coming soon, never made. 'team' is who made it, as they name themselves (their name and GitHub account, as their repo and licence give them); 'basedon' credits the work it stands on with its makers (the project it is forked from, the decompilation or recompiler it is built on), shown under the team and written into the made game's notes beside it. Xsegon never supplies a game and never hosts a team's files. The list changes with each Xsegon release.",
+  "about": "Fan projects made from games a person owns (roadmap AQ, doc/ideas/49-fan-projects.md). Each entry was read from the team's own page on 2026-10-15, 2026-10-16 or 2026-10-17: 'page' is their website, 'repo' their GitHub (a project or its owner's page), each checked against GitHub's own answer; at least one is given. A base names the releases it takes by their No-Intro name (cartridges, with the release's 'size' and 'crc' from libretro's No-Intro list, put in by tools/fan-sums.js, so a copy whose title is not the game's is still found), disc ID (discs; an Xbox disc by its title ID, with 'code' the SHA-1 its default.xbe keeps of its .text, which tells one release from another of the same ID), an arcade game's MAME set ('set', its file's name), or every disc ID of a set ('discs': all must be in the library, in one .pbp or .m3u or as separate discs); a PS4 dump and a Switch game's extracted files are named by their title ID and cannot be read yet: fit 'fits' is what the team asks for, 'works' is taken with a note. 'make' says how Xsegon makes it (includes/fanmake.php). A patch: the team's own list of releases ('list', newest first, each with 'version' and 'files'), which file of a release to take ('take'), where those files are ('from'), the kind of patch, the base's byte order and MD5, the made file's ending; every address on the team's website or GitHub, the patch checked against the CRC32 the team's GitHub release lists for it. 'how': 'release': the Windows download ('asset', a pattern) of the team's latest GitHub release or of 'tag', unpacked into 'folder' in the console's Ports folder; 'run' (with 'args', '{folder}' for where it went) joins the 'list' (Windows unless named); 'game' says where your game goes: 'to' (a copy, '{release}' for its release name, its 'format' and the 'md5' or 'sha1' the team takes), 'discs' (every disc of the set, a .pbp's written out as .bin and .cue), 'xiso' (an Xbox disc's files written out into this folder), 'ini' (the port's own emulator pointed at your disc where it is), or 'args' (your disc where it is, named to the port as it starts by '{disc}' in its 'args'); 'need' files the download must hold, 'write' empty files a port reads as a switch, 'first' what its first start asks. 'how': 'build': the team's source at the newest commit of 'branch', the 'tools' their build guide names (GitHub release downloads of the size given), and their 'compile' line run in its folder. 'how': 'pack': a Riivolution pack from the team's own server ('hosts'), as their installer takes it: the full pack ('install'), each newer update ('updates') and what each takes away ('deletes'), only the 'take' folders kept, and a Dolphin start file booting your disc with the pack's 'xml' and 'options'. 'yours' finds a copy already in the library: a patched cartridge by its header, or a PC version kept as a game of your own by its title, its build named in a file beside what it runs. 'soon' is a project not out yet: one line saying where it stands, shown under Coming soon, never made. 'team' is who made it, as they name themselves (their name and GitHub account, as their repo and licence give them); 'basedon' credits the work it stands on with its makers (the project it is forked from, the decompilation or recompiler it is built on), shown under the team and written into the made game's notes beside it. Xsegon never supplies a game and never hosts a team's files. The list changes with each Xsegon release.",
   "projects": [
     {
       "id": "smash-remix",
@@ -16,7 +16,7 @@
       "base": {
         "title": "Super Smash Bros. (USA)",
         "db": { "id": 404, "title": "Super Smash Bros.", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Super Smash Bros. (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Super Smash Bros. (USA)", "size": 16777216, "crc": "dd2df6d9", "fit": "fits" } ]
       },
       "make": {
         "list": "https://smashremix.net/patcher/patches/releases.json",
@@ -47,8 +47,8 @@
         "title": "Perfect Dark (USA) (Rev 1)",
         "db": { "id": 173, "title": "Perfect Dark", "platform": "Nintendo 64" },
         "match": [
-          { "console": "Nintendo 64", "name": "Perfect Dark (USA) (Rev 1)", "fit": "fits" },
-          { "console": "Nintendo 64", "name": "Perfect Dark (USA)", "fit": "works", "note": "works; Rev 1 is the one the team recommends" }
+          { "console": "Nintendo 64", "name": "Perfect Dark (USA) (Rev 1)", "size": 33554432, "crc": "f85a16f1", "fit": "fits" },
+          { "console": "Nintendo 64", "name": "Perfect Dark (USA)", "size": 33554432, "crc": "f0fe18f0", "fit": "works", "note": "works; Rev 1 is the one the team recommends" }
         ]
       },
       "make": {
@@ -78,9 +78,9 @@
         "title": "The Legend of Zelda: Ocarina of Time (USA)",
         "db": { "id": 161, "title": "The Legend of Zelda: Ocarina of Time", "platform": "Nintendo 64" },
         "match": [
-          { "console": "Nintendo 64", "name": "Legend of Zelda, The - Ocarina of Time (USA)", "fit": "fits" },
-          { "console": "Nintendo 64", "name": "Legend of Zelda, The - Ocarina of Time (USA) (Rev 1)", "fit": "fits" },
-          { "console": "Nintendo 64", "name": "Legend of Zelda, The - Ocarina of Time (USA) (Rev 2)", "fit": "fits" }
+          { "console": "Nintendo 64", "name": "Legend of Zelda, The - Ocarina of Time (USA)", "size": 33554432, "crc": "ec95702d", "fit": "fits" },
+          { "console": "Nintendo 64", "name": "Legend of Zelda, The - Ocarina of Time (USA) (Rev 1)", "size": 33554432, "crc": "aa07c8ba", "fit": "fits" },
+          { "console": "Nintendo 64", "name": "Legend of Zelda, The - Ocarina of Time (USA) (Rev 2)", "size": 33554432, "crc": "3c7dbf5b", "fit": "fits" }
         ]
       },
       "make": {
@@ -107,7 +107,7 @@
       "base": {
         "title": "The Legend of Zelda: Majora's Mask (USA)",
         "db": { "id": 175, "title": "The Legend of Zelda: Majora's Mask", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Legend of Zelda, The - Majora's Mask (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Legend of Zelda, The - Majora's Mask (USA)", "size": 33554432, "crc": "3ee3f2d1", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -132,7 +132,7 @@
       "base": {
         "title": "The Legend of Zelda: Majora's Mask (USA)",
         "db": { "id": 175, "title": "The Legend of Zelda: Majora's Mask", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Legend of Zelda, The - Majora's Mask (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Legend of Zelda, The - Majora's Mask (USA)", "size": 33554432, "crc": "3ee3f2d1", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -159,7 +159,7 @@
       "base": {
         "title": "Banjo-Kazooie (USA)",
         "db": { "id": 162, "title": "Banjo-Kazooie", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Banjo-Kazooie (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Banjo-Kazooie (USA)", "size": 16777216, "crc": "4fd43199", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -186,7 +186,7 @@
       "base": {
         "title": "Star Fox 64 (USA) (Rev 1)",
         "db": { "id": 4, "title": "Star Fox 64", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Star Fox 64 (USA) (Rev 1)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Star Fox 64 (USA) (Rev 1)", "size": 12582912, "crc": "d71902b0", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -212,7 +212,7 @@
       "base": {
         "title": "Mario Kart 64 (USA)",
         "db": { "id": 266, "title": "Mario Kart 64", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Mario Kart 64 (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Mario Kart 64 (USA)", "size": 12582912, "crc": "2bcee11c", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -239,7 +239,7 @@
       "base": {
         "title": "Super Mario 64 (USA)",
         "db": { "id": 216, "title": "Super Mario 64", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Super Mario 64 (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Super Mario 64 (USA)", "size": 8388608, "crc": "42c43204", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -266,7 +266,7 @@
       "base": {
         "title": "Donkey Kong 64 (USA)",
         "db": { "id": 250, "title": "Donkey Kong 64", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Donkey Kong 64 (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Donkey Kong 64 (USA)", "size": 33554432, "crc": "96972d67", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -293,7 +293,7 @@
       "base": {
         "title": "Harvest Moon 64 (USA)",
         "db": { "id": 1114, "title": "Harvest Moon 64", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Harvest Moon 64 (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Harvest Moon 64 (USA)", "size": 16777216, "crc": "d2ee315f", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -319,7 +319,7 @@
       "base": {
         "title": "Bomberman Hero (USA)",
         "db": { "id": 245, "title": "Bomberman Hero", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Bomberman Hero (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Bomberman Hero (USA)", "size": 12582912, "crc": "3e73af1a", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -346,7 +346,7 @@
       "base": {
         "title": "Quest 64 (USA)",
         "db": { "id": 1185, "title": "Quest 64", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Quest 64 (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Quest 64 (USA)", "size": 16777216, "crc": "e90856e8", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -371,7 +371,7 @@
       "base": {
         "title": "Super Mario Bros. (World)",
         "db": { "id": 140, "title": "Super Mario Bros.", "platform": "Nintendo Entertainment System" },
-        "match": [ { "console": "Nintendo Entertainment System", "name": "Super Mario Bros. (World)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo Entertainment System", "name": "Super Mario Bros. (World)", "size": 40960, "crc": "d445f698", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -400,7 +400,7 @@
       "base": {
         "title": "The Legend of Zelda: A Link to the Past (USA)",
         "db": { "id": 1318, "title": "The Legend of Zelda: A Link to the Past", "platform": "Super Nintendo Entertainment System" },
-        "match": [ { "console": "Super Nintendo Entertainment System", "name": "Legend of Zelda, The - A Link to the Past (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Super Nintendo Entertainment System", "name": "Legend of Zelda, The - A Link to the Past (USA)", "size": 1048576, "crc": "777aac2f", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -426,7 +426,7 @@
       "base": {
         "title": "Super Metroid (Japan, USA)",
         "db": { "id": 299, "title": "Super Metroid", "platform": "Super Nintendo Entertainment System" },
-        "match": [ { "console": "Super Nintendo Entertainment System", "name": "Super Metroid (Japan, USA) (En,Ja)", "fit": "fits" } ]
+        "match": [ { "console": "Super Nintendo Entertainment System", "name": "Super Metroid (Japan, USA) (En,Ja)", "size": 3145728, "crc": "d63ed5f8", "fit": "fits" } ]
       },
       "make": {
         "how": "build",
@@ -462,7 +462,7 @@
       "base": {
         "title": "Super Mario World (USA)",
         "db": { "id": 136, "title": "Super Mario World", "platform": "Super Nintendo Entertainment System" },
-        "match": [ { "console": "Super Nintendo Entertainment System", "name": "Super Mario World (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Super Nintendo Entertainment System", "name": "Super Mario World (USA)", "size": 524288, "crc": "b19ed489", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -488,7 +488,7 @@
       "base": {
         "title": "Sonic & Knuckles + Sonic The Hedgehog 3 (USA)",
         "db": { "id": 14066, "title": "Sonic & Knuckles / Sonic the Hedgehog 3", "platform": "Sega Genesis" },
-        "match": [ { "console": "Sega Genesis", "name": "Sonic & Knuckles + Sonic The Hedgehog 3 (USA) (Lock-On)", "fit": "fits" } ]
+        "match": [ { "console": "Sega Genesis", "name": "Sonic & Knuckles + Sonic The Hedgehog 3 (USA) (Lock-On)", "size": 4194304, "crc": "63522553", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -980,7 +980,7 @@
       "base": {
         "title": "Donkey Kong Country (USA)",
         "db": { "id": 131, "title": "Donkey Kong Country", "platform": "Super Nintendo Entertainment System" },
-        "match": [ { "console": "Super Nintendo Entertainment System", "name": "Donkey Kong Country (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Super Nintendo Entertainment System", "name": "Donkey Kong Country (USA)", "size": 4194304, "crc": "c946dca0", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -1005,7 +1005,7 @@
       "base": {
         "title": "Donkey Kong Country 3 - Dixie Kong's Double Trouble! (USA) (En,Fr)",
         "db": { "id": 1526, "title": "Donkey Kong Country 3: Dixie Kong's Double Trouble!", "platform": "Super Nintendo Entertainment System" },
-        "match": [ { "console": "Super Nintendo Entertainment System", "name": "Donkey Kong Country 3 - Dixie Kong's Double Trouble! (USA) (En,Fr)", "fit": "fits" } ]
+        "match": [ { "console": "Super Nintendo Entertainment System", "name": "Donkey Kong Country 3 - Dixie Kong's Double Trouble! (USA) (En,Fr)", "size": 4194304, "crc": "448eec19", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -1029,7 +1029,7 @@
       "base": {
         "title": "F-Zero (USA)",
         "db": { "id": 10779, "title": "F-Zero", "platform": "Super Nintendo Entertainment System" },
-        "match": [ { "console": "Super Nintendo Entertainment System", "name": "F-Zero (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Super Nintendo Entertainment System", "name": "F-Zero (USA)", "size": 524288, "crc": "aa0e31de", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -1054,7 +1054,7 @@
       "base": {
         "title": "Final Fantasy Tactics Advance (USA)",
         "db": { "id": 2497, "title": "Final Fantasy Tactics Advance", "platform": "Nintendo Game Boy Advance" },
-        "match": [ { "console": "Nintendo Game Boy Advance", "name": "Final Fantasy Tactics Advance (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo Game Boy Advance", "name": "Final Fantasy Tactics Advance (USA)", "size": 16777216, "crc": "5645e56c", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -1079,7 +1079,7 @@
       "base": {
         "title": "Zelda II - The Adventure of Link (USA)",
         "db": { "id": 2758, "title": "Zelda II: The Adventure of Link", "platform": "Nintendo Entertainment System" },
-        "match": [ { "console": "Nintendo Entertainment System", "name": "Zelda II - The Adventure of Link (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo Entertainment System", "name": "Zelda II - The Adventure of Link (USA)", "size": 262144, "crc": "ba322865", "fit": "fits" } ]
       },
       "yours": { "console": "Windows", "title": "z2rs" },
       "make": {
@@ -1106,8 +1106,8 @@
         "title": "Legend of Zelda, The - Oracle of Ages (USA, Australia)",
         "db": { "id": 6122, "title": "The Legend of Zelda: Oracle of Ages", "platform": "Nintendo Game Boy Color" },
         "match": [
-          { "console": "Nintendo Game Boy Color", "name": "Legend of Zelda, The - Oracle of Ages (USA, Australia)", "fit": "fits" },
-          { "console": "Nintendo Game Boy Color", "name": "Legend of Zelda, The - Oracle of Seasons (USA, Australia)", "fit": "fits" }
+          { "console": "Nintendo Game Boy Color", "name": "Legend of Zelda, The - Oracle of Ages (USA, Australia)", "size": 1048576, "crc": "3800a387", "fit": "fits" },
+          { "console": "Nintendo Game Boy Color", "name": "Legend of Zelda, The - Oracle of Seasons (USA, Australia)", "size": 1048576, "crc": "d7e9f5d7", "fit": "fits" }
         ]
       },
       "make": {
@@ -1134,8 +1134,8 @@
         "title": "Legend of Zelda, The - Oracle of Ages (USA, Australia)",
         "db": { "id": 6122, "title": "The Legend of Zelda: Oracle of Ages", "platform": "Nintendo Game Boy Color" },
         "match": [
-          { "console": "Nintendo Game Boy Color", "name": "Legend of Zelda, The - Oracle of Ages (USA, Australia)", "fit": "fits" },
-          { "console": "Nintendo Game Boy Color", "name": "Legend of Zelda, The - Oracle of Seasons (USA, Australia)", "fit": "fits" }
+          { "console": "Nintendo Game Boy Color", "name": "Legend of Zelda, The - Oracle of Ages (USA, Australia)", "size": 1048576, "crc": "3800a387", "fit": "fits" },
+          { "console": "Nintendo Game Boy Color", "name": "Legend of Zelda, The - Oracle of Seasons (USA, Australia)", "size": 1048576, "crc": "d7e9f5d7", "fit": "fits" }
         ]
       },
       "make": {
@@ -1162,12 +1162,12 @@
         "title": "Pokemon - Red Version (USA, Europe) (SGB Enhanced)",
         "db": { "id": 2356, "title": "Pokemon Red Version", "platform": "Nintendo Game Boy" },
         "match": [
-          { "console": "Nintendo Game Boy", "name": "Pokemon - Red Version (USA, Europe) (SGB Enhanced)", "fit": "fits" },
-          { "console": "Nintendo Game Boy", "name": "Pokemon - Blue Version (USA, Europe) (SGB Enhanced)", "fit": "fits" },
-          { "console": "Nintendo Game Boy", "name": "Pokemon - Yellow Version - Special Pikachu Edition (USA, Europe) (CGB+SGB Enhanced)", "fit": "fits" },
-          { "console": "Nintendo Game Boy Color", "name": "Pokemon - Gold Version (USA, Europe) (SGB Enhanced) (GB Compatible)", "fit": "fits" },
-          { "console": "Nintendo Game Boy Color", "name": "Pokemon - Silver Version (USA, Europe) (SGB Enhanced) (GB Compatible)", "fit": "fits" },
-          { "console": "Nintendo Game Boy Color", "name": "Pokemon - Crystal Version (USA, Europe) (Rev 1)", "fit": "fits" }
+          { "console": "Nintendo Game Boy", "name": "Pokemon - Red Version (USA, Europe) (SGB Enhanced)", "size": 1048576, "crc": "9f7fdd53", "fit": "fits" },
+          { "console": "Nintendo Game Boy", "name": "Pokemon - Blue Version (USA, Europe) (SGB Enhanced)", "size": 1048576, "crc": "d6da8a1a", "fit": "fits" },
+          { "console": "Nintendo Game Boy", "name": "Pokemon - Yellow Version - Special Pikachu Edition (USA, Europe) (CGB+SGB Enhanced)", "size": 1048576, "crc": "7d527d62", "fit": "fits" },
+          { "console": "Nintendo Game Boy Color", "name": "Pokemon - Gold Version (USA, Europe) (SGB Enhanced) (GB Compatible)", "size": 2097152, "crc": "6bde3c3e", "fit": "fits" },
+          { "console": "Nintendo Game Boy Color", "name": "Pokemon - Silver Version (USA, Europe) (SGB Enhanced) (GB Compatible)", "size": 2097152, "crc": "8ad48636", "fit": "fits" },
+          { "console": "Nintendo Game Boy Color", "name": "Pokemon - Crystal Version (USA, Europe) (Rev 1)", "size": 2097152, "crc": "3358e30a", "fit": "fits" }
         ]
       },
       "make": {
@@ -1194,7 +1194,7 @@
       "base": {
         "title": "Mega Man 64 (USA)",
         "db": { "id": 1138, "title": "Mega Man 64", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Mega Man 64 (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Mega Man 64 (USA)", "size": 33554432, "crc": "b57dd0e4", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -1220,7 +1220,7 @@
       "base": {
         "title": "Pokemon Snap (USA)",
         "db": { "id": 390, "title": "Pokemon Snap", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Pokemon Snap (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Pokemon Snap (USA)", "size": 16777216, "crc": "df387848", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -1245,7 +1245,7 @@
       "base": {
         "title": "Conker's Bad Fur Day (USA)",
         "db": { "id": 249, "title": "Conker's Bad Fur Day", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Conker's Bad Fur Day (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Conker's Bad Fur Day (USA)", "size": 67108864, "crc": "6acdb3fc", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -1271,7 +1271,7 @@
       "base": {
         "title": "Conker's Bad Fur Day (USA)",
         "db": { "id": 249, "title": "Conker's Bad Fur Day", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Conker's Bad Fur Day (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Conker's Bad Fur Day (USA)", "size": 67108864, "crc": "6acdb3fc", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -1298,7 +1298,7 @@
       "base": {
         "title": "Diddy Kong Racing (USA) (En,Fr) (Rev 1)",
         "db": { "id": 178, "title": "Diddy Kong Racing", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Diddy Kong Racing (USA) (En,Fr) (Rev 1)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Diddy Kong Racing (USA) (En,Fr) (Rev 1)", "size": 12582912, "crc": "96c32bb6", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -1324,7 +1324,7 @@
       "base": {
         "title": "Diddy Kong Racing (USA) (En,Fr) (Rev 1)",
         "db": { "id": 178, "title": "Diddy Kong Racing", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Diddy Kong Racing (USA) (En,Fr) (Rev 1)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Diddy Kong Racing (USA) (En,Fr) (Rev 1)", "size": 12582912, "crc": "96c32bb6", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -1351,7 +1351,7 @@
       "base": {
         "title": "GoldenEye 007 (USA)",
         "db": { "id": 160, "title": "GoldenEye 007", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "GoldenEye 007 (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "GoldenEye 007 (USA)", "size": 12582912, "crc": "8b70cb5b", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -1376,7 +1376,7 @@
       "base": {
         "title": "Pilotwings 64 (USA)",
         "db": { "id": 961, "title": "Pilotwings 64", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Pilotwings 64 (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Pilotwings 64 (USA)", "size": 8388608, "crc": "c445f7e3", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -1401,7 +1401,7 @@
       "base": {
         "title": "Castlevania - Legacy of Darkness (USA)",
         "db": { "id": 246, "title": "Castlevania: Legacy of Darkness", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Castlevania - Legacy of Darkness (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Castlevania - Legacy of Darkness (USA)", "size": 16777216, "crc": "1f147376", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -1426,7 +1426,7 @@
       "base": {
         "title": "Body Harvest (USA)",
         "db": { "id": 244, "title": "Body Harvest", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Body Harvest (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Body Harvest (USA)", "size": 12582912, "crc": "7b878c56", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -1452,7 +1452,7 @@
       "base": {
         "title": "Glover (USA)",
         "db": { "id": 1110, "title": "Glover", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Glover (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Glover (USA)", "size": 8388608, "crc": "d024893a", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -1477,7 +1477,7 @@
       "base": {
         "title": "StarCraft 64 (USA)",
         "db": { "id": 1207, "title": "StarCraft 64", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "StarCraft 64 (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "StarCraft 64 (USA)", "size": 33554432, "crc": "14c77369", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -1502,7 +1502,7 @@
       "base": {
         "title": "BattleTanx - Global Assault (USA)",
         "db": { "id": 242, "title": "BattleTanx: Global Assault", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "BattleTanx - Global Assault (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "BattleTanx - Global Assault (USA)", "size": 8388608, "crc": "5819d423", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -1528,7 +1528,7 @@
       "base": {
         "title": "BattleTanx - Global Assault (USA)",
         "db": { "id": 242, "title": "BattleTanx: Global Assault", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "BattleTanx - Global Assault (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "BattleTanx - Global Assault (USA)", "size": 8388608, "crc": "5819d423", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -1554,7 +1554,7 @@
       "base": {
         "title": "BattleTanx (USA)",
         "db": { "id": 241, "title": "BattleTanx", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "BattleTanx (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "BattleTanx (USA)", "size": 8388608, "crc": "66123c8b", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -1580,7 +1580,7 @@
       "base": {
         "title": "Yoshi's Story (USA) (En,Ja)",
         "db": { "id": 419, "title": "Yoshi's Story", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Yoshi's Story (USA) (En,Ja)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Yoshi's Story (USA) (En,Ja)", "size": 16777216, "crc": "01a4b1e9", "fit": "fits" } ]
       },
       "make": {
         "how": "release",
@@ -1607,7 +1607,7 @@
       "base": {
         "title": "Pokemon Stadium (USA)",
         "db": { "id": 391, "title": "Pokemon Stadium", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Pokemon Stadium (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Pokemon Stadium (USA)", "size": 33554432, "crc": "3003e90c", "fit": "fits" } ]
       }
     },
     {
@@ -1626,7 +1626,7 @@
       "base": {
         "title": "Paper Mario (USA)",
         "db": { "id": 141, "title": "Paper Mario", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Paper Mario (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Paper Mario (USA)", "size": 41943040, "crc": "d56d1c89", "fit": "fits" } ]
       }
     },
     {
@@ -1643,7 +1643,7 @@
       "base": {
         "title": "Bomberman 64 (USA)",
         "db": { "id": 1072, "title": "Bomberman 64", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Bomberman 64 (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Bomberman 64 (USA)", "size": 8388608, "crc": "50a98bdf", "fit": "fits" } ]
       }
     },
     {
@@ -1662,7 +1662,7 @@
       "base": {
         "title": "Extreme-G (USA)",
         "db": { "id": 957, "title": "Extreme-G", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Extreme-G (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Extreme-G (USA)", "size": 8388608, "crc": "a43a0b17", "fit": "fits" } ]
       }
     },
     {
@@ -1680,7 +1680,7 @@
       "base": {
         "title": "Snowboard Kids 2 (USA)",
         "db": { "id": 1203, "title": "Snowboard Kids 2", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Snowboard Kids 2 (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Snowboard Kids 2 (USA)", "size": 16777216, "crc": "ca84aace", "fit": "fits" } ]
       }
     },
     {
@@ -1698,7 +1698,7 @@
       "base": {
         "title": "Snowboard Kids (USA)",
         "db": { "id": 1202, "title": "Snowboard Kids", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Snowboard Kids (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Snowboard Kids (USA)", "size": 8388608, "crc": "540c190b", "fit": "fits" } ]
       }
     },
     {
@@ -1715,7 +1715,7 @@
       "base": {
         "title": "Dr. Mario 64 (USA)",
         "db": { "id": 1090, "title": "Dr. Mario 64", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Dr. Mario 64 (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Dr. Mario 64 (USA)", "size": 4194304, "crc": "f7c44b5b", "fit": "fits" } ]
       }
     },
     {
@@ -1733,9 +1733,9 @@
         "title": "Legend of Zelda, The - The Minish Cap (USA)",
         "db": { "id": 5954, "title": "The Legend of Zelda: The Minish Cap", "platform": "Nintendo Game Boy Advance" },
         "match": [
-          { "console": "Nintendo Game Boy Advance", "name": "Legend of Zelda, The - The Minish Cap (USA)", "fit": "fits" },
-          { "console": "Nintendo Game Boy Advance", "name": "Legend of Zelda, The - The Minish Cap (Europe) (En,Fr,De,Es,It)", "fit": "fits" },
-          { "console": "Nintendo Game Boy Advance", "name": "Zelda no Densetsu - Fushigi no Boushi (Japan)", "fit": "fits" }
+          { "console": "Nintendo Game Boy Advance", "name": "Legend of Zelda, The - The Minish Cap (USA)", "size": 16777216, "crc": "abcebbb1", "fit": "fits" },
+          { "console": "Nintendo Game Boy Advance", "name": "Legend of Zelda, The - The Minish Cap (Europe) (En,Fr,De,Es,It)", "size": 16777216, "crc": "e8637292", "fit": "fits" },
+          { "console": "Nintendo Game Boy Advance", "name": "Zelda no Densetsu - Fushigi no Boushi (Japan)", "size": 16777216, "crc": "6ce771a5", "fit": "fits" }
         ]
       }
     },
@@ -1789,7 +1789,7 @@
       "base": {
         "title": "Knuckles' Chaotix (Japan, USA) (En)",
         "db": { "id": 2290, "title": "Knuckles' Chaotix", "platform": "Sega 32X" },
-        "match": [ { "console": "Sega 32X", "name": "Knuckles' Chaotix (Japan, USA) (En)", "fit": "fits" } ]
+        "match": [ { "console": "Sega 32X", "name": "Knuckles' Chaotix (Japan, USA) (En)", "size": 3145728, "crc": "d0b0b842", "fit": "fits" } ]
       }
     },
     {
@@ -1905,9 +1905,9 @@
         "title": "Kingdom Hearts - Chain of Memories (USA)",
         "db": { "id": 2335, "title": "Kingdom Hearts: Chain of Memories", "platform": "Nintendo Game Boy Advance" },
         "match": [
-          { "console": "Nintendo Game Boy Advance", "name": "Kingdom Hearts - Chain of Memories (USA)", "fit": "fits" },
-          { "console": "Nintendo Game Boy Advance", "name": "Kingdom Hearts - Chain of Memories (Europe) (En,Fr,De,Es,It)", "fit": "fits" },
-          { "console": "Nintendo Game Boy Advance", "name": "Kingdom Hearts - Chain of Memories (Japan)", "fit": "fits" }
+          { "console": "Nintendo Game Boy Advance", "name": "Kingdom Hearts - Chain of Memories (USA)", "size": 33554432, "crc": "d031ce67", "fit": "fits" },
+          { "console": "Nintendo Game Boy Advance", "name": "Kingdom Hearts - Chain of Memories (Europe) (En,Fr,De,Es,It)", "size": 33554432, "crc": "772d97fb", "fit": "fits" },
+          { "console": "Nintendo Game Boy Advance", "name": "Kingdom Hearts - Chain of Memories (Japan)", "size": 33554432, "crc": "8d5a0d84", "fit": "fits" }
         ]
       }
     },
@@ -1924,7 +1924,7 @@
       "base": {
         "title": "Solomon's Key 2 (Europe)",
         "db": { "id": 20097, "title": "Fire 'n Ice", "platform": "Nintendo Entertainment System" },
-        "match": [ { "console": "Nintendo Entertainment System", "name": "Solomon's Key 2 (Europe)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo Entertainment System", "name": "Solomon's Key 2 (Europe)", "size": 262144, "crc": "f184eb2d", "fit": "fits" } ]
       }
     },
     {
@@ -1941,7 +1941,7 @@
       "base": {
         "title": "Madoola no Tsubasa (Japan)",
         "db": { "id": 26252, "title": "Madoola no Tsubasa", "platform": "Nintendo Entertainment System" },
-        "match": [ { "console": "Nintendo Entertainment System", "name": "Madoola no Tsubasa (Japan)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo Entertainment System", "name": "Madoola no Tsubasa (Japan)", "size": 65536, "crc": "3a8f81b0", "fit": "fits" } ]
       }
     },
     {
@@ -1957,7 +1957,7 @@
       "base": {
         "title": "Mutant League Hockey (USA, Europe)",
         "db": { "id": 1970, "title": "Mutant League Hockey", "platform": "Sega Genesis" },
-        "match": [ { "console": "Sega Genesis", "name": "Mutant League Hockey (USA, Europe)", "fit": "fits" } ]
+        "match": [ { "console": "Sega Genesis", "name": "Mutant League Hockey (USA, Europe)", "size": 2097152, "crc": "3529180f", "fit": "fits" } ]
       }
     },
     {
@@ -1973,7 +1973,7 @@
       "base": {
         "title": "Super Mario 64 DS (Europe) (En,Fr,De,Es,It)",
         "db": { "id": 6886, "title": "Super Mario 64 DS", "platform": "Nintendo DS" },
-        "match": [ { "console": "Nintendo DS", "name": "Super Mario 64 DS (Europe) (En,Fr,De,Es,It)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo DS", "name": "Super Mario 64 DS (Europe) (En,Fr,De,Es,It)", "size": 16777216, "crc": "29715dec", "fit": "fits" } ]
       }
     },
     {
@@ -2602,7 +2602,7 @@
       "base": {
         "title": "Super Smash Bros. (USA)",
         "db": { "id": 404, "title": "Super Smash Bros.", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Super Smash Bros. (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Super Smash Bros. (USA)", "size": 16777216, "crc": "dd2df6d9", "fit": "fits" } ]
       },
       "soon": "Trailer out 2026-10-12, coming soon with no date; its main code is not public yet"
     },
@@ -2620,7 +2620,7 @@
       "base": {
         "title": "Kirby 64 - The Crystal Shards (USA)",
         "db": { "id": 262, "title": "Kirby 64: The Crystal Shards", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Kirby 64 - The Crystal Shards (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Kirby 64 - The Crystal Shards (USA)", "size": 33554432, "crc": "8eb3565b", "fit": "fits" } ]
       },
       "soon": "No downloads yet, the team says; last worked on 2026-09-18"
     },
@@ -2638,7 +2638,7 @@
       "base": {
         "title": "GoldenEye 007 (USA)",
         "db": { "id": 160, "title": "GoldenEye 007", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "GoldenEye 007 (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "GoldenEye 007 (USA)", "size": 12582912, "crc": "8b70cb5b", "fit": "fits" } ]
       },
       "soon": "The game works, the team says; multiplayer screens and skies still to do"
     },
@@ -2655,7 +2655,7 @@
       "base": {
         "title": "Bomberman 64 - The Second Attack! (USA)",
         "db": { "id": 1071, "title": "Bomberman 64: The Second Attack!", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Bomberman 64 - The Second Attack! (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Bomberman 64 - The Second Attack! (USA)", "size": 16777216, "crc": "302b3135", "fit": "fits" } ]
       },
       "soon": "Does not build yet, the team says; last worked on 2026-06-13"
     },
@@ -2672,7 +2672,7 @@
       "base": {
         "title": "Beetle Adventure Racing! (USA) (En,Fr,De)",
         "db": { "id": 1067, "title": "Beetle Adventure Racing!", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Beetle Adventure Racing! (USA) (En,Fr,De)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Beetle Adventure Racing! (USA) (En,Fr,De)", "size": 16777216, "crc": "e3517fd8", "fit": "fits" } ]
       },
       "soon": "No release yet; last worked on 2026-08-31"
     },
@@ -2690,7 +2690,7 @@
       "base": {
         "title": "Mario Party 3 (USA)",
         "db": { "id": 960, "title": "Mario Party 3", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Mario Party 3 (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Mario Party 3 (USA)", "size": 33554432, "crc": "a1bee3f8", "fit": "fits" } ]
       },
       "soon": "No release yet; the team last worked on it 2026-02-06"
     },
@@ -2708,7 +2708,7 @@
       "base": {
         "title": "Rockman Dash - Hagane no Boukenshin (Japan)",
         "db": { "id": 1138, "title": "Mega Man 64", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Rockman Dash - Hagane no Boukenshin (Japan)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Rockman Dash - Hagane no Boukenshin (Japan)", "size": 33554432, "crc": "e1919c66", "fit": "fits" } ]
       },
       "soon": "No release; the team last worked on it 2025-05-24"
     },
@@ -2726,7 +2726,7 @@
       "base": {
         "title": "Diddy Kong Racing (USA) (En,Fr) (Rev 1)",
         "db": { "id": 178, "title": "Diddy Kong Racing", "platform": "Nintendo 64" },
-        "match": [ { "console": "Nintendo 64", "name": "Diddy Kong Racing (USA) (En,Fr) (Rev 1)", "fit": "works", "note": "which release the team takes is not said yet" } ]
+        "match": [ { "console": "Nintendo 64", "name": "Diddy Kong Racing (USA) (En,Fr) (Rev 1)", "size": 12582912, "crc": "96c32bb6", "fit": "works", "note": "which release the team takes is not said yet" } ]
       },
       "soon": "No release; the team stopped working on it in December 2024"
     },
@@ -2744,7 +2744,7 @@
       "base": {
         "title": "Legend of Zelda, The - Phantom Hourglass (USA) (En,Fr,Es)",
         "db": { "id": 2245, "title": "The Legend of Zelda: Phantom Hourglass", "platform": "Nintendo DS" },
-        "match": [ { "console": "Nintendo DS", "name": "Legend of Zelda, The - Phantom Hourglass (USA) (En,Fr,Es)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo DS", "name": "Legend of Zelda, The - Phantom Hourglass (USA) (En,Fr,Es)", "size": 67108864, "crc": "8b431c41", "fit": "fits" } ]
       },
       "soon": "Source only for now: you build it yourself, with about 10 GB of tools"
     },
@@ -2847,7 +2847,7 @@
       "base": {
         "title": "Pokemon - Gold Version (USA, Europe) (SGB Enhanced) (GB Compatible)",
         "db": { "id": 2360, "title": "Pokemon Gold Version", "platform": "Nintendo Game Boy Color" },
-        "match": [ { "console": "Nintendo Game Boy Color", "name": "Pokemon - Gold Version (USA, Europe) (SGB Enhanced) (GB Compatible)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo Game Boy Color", "name": "Pokemon - Gold Version (USA, Europe) (SGB Enhanced) (GB Compatible)", "size": 2097152, "crc": "6bde3c3e", "fit": "fits" } ]
       },
       "soon": "No release yet: you build it yourself"
     },
@@ -2865,7 +2865,7 @@
       "base": {
         "title": "Pokemon - Silver Version (USA, Europe) (SGB Enhanced) (GB Compatible)",
         "db": { "id": 2361, "title": "Pokemon Silver Version", "platform": "Nintendo Game Boy Color" },
-        "match": [ { "console": "Nintendo Game Boy Color", "name": "Pokemon - Silver Version (USA, Europe) (SGB Enhanced) (GB Compatible)", "fit": "fits" } ]
+        "match": [ { "console": "Nintendo Game Boy Color", "name": "Pokemon - Silver Version (USA, Europe) (SGB Enhanced) (GB Compatible)", "size": 2097152, "crc": "8ad48636", "fit": "fits" } ]
       },
       "soon": "No release yet: you build it yourself"
     },
@@ -2883,7 +2883,7 @@
       "base": {
         "title": "Pokemon - Crystal Version (USA, Europe) (Rev 1)",
         "db": { "id": 2362, "title": "Pokemon Crystal Version", "platform": "Nintendo Game Boy Color" },
-        "match": [ { "console": "Nintendo Game Boy Color", "name": "Pokemon - Crystal Version (USA, Europe) (Rev 1)", "fit": "works", "note": "which release the team takes is not said yet" } ]
+        "match": [ { "console": "Nintendo Game Boy Color", "name": "Pokemon - Crystal Version (USA, Europe) (Rev 1)", "size": 2097152, "crc": "3358e30a", "fit": "works", "note": "which release the team takes is not said yet" } ]
       },
       "soon": "No release yet: you build it yourself"
     },
@@ -2900,7 +2900,7 @@
       "base": {
         "title": "Legend of Zelda, The - Link's Awakening DX (USA, Europe) (Rev 2) (SGB Enhanced) (GB Compatible)",
         "db": { "id": 425347, "title": "The Legend of Zelda: Link's Awakening DX", "platform": "Nintendo Game Boy Color" },
-        "match": [ { "console": "Nintendo Game Boy Color", "name": "Legend of Zelda, The - Link's Awakening DX (USA, Europe) (Rev 2) (SGB Enhanced) (GB Compatible)", "fit": "works", "note": "which release the team takes is not said yet" } ]
+        "match": [ { "console": "Nintendo Game Boy Color", "name": "Legend of Zelda, The - Link's Awakening DX (USA, Europe) (Rev 2) (SGB Enhanced) (GB Compatible)", "size": 1048576, "crc": "06887a34", "fit": "works", "note": "which release the team takes is not said yet" } ]
       },
       "soon": "No release yet: you build it yourself"
     },
@@ -2918,8 +2918,8 @@
         "title": "Legend of Zelda, The - Oracle of Ages (USA, Australia)",
         "db": { "id": 6122, "title": "The Legend of Zelda: Oracle of Ages", "platform": "Nintendo Game Boy Color" },
         "match": [
-          { "console": "Nintendo Game Boy Color", "name": "Legend of Zelda, The - Oracle of Ages (USA, Australia)", "fit": "fits" },
-          { "console": "Nintendo Game Boy Color", "name": "Legend of Zelda, The - Oracle of Seasons (USA, Australia)", "fit": "fits" }
+          { "console": "Nintendo Game Boy Color", "name": "Legend of Zelda, The - Oracle of Ages (USA, Australia)", "size": 1048576, "crc": "3800a387", "fit": "fits" },
+          { "console": "Nintendo Game Boy Color", "name": "Legend of Zelda, The - Oracle of Seasons (USA, Australia)", "size": 1048576, "crc": "d7e9f5d7", "fit": "fits" }
         ]
       },
       "soon": "No release yet: you build it yourself"
@@ -2937,7 +2937,7 @@
       "base": {
         "title": "Super Mario Kart (USA)",
         "db": { "id": 41, "title": "Super Mario Kart", "platform": "Super Nintendo Entertainment System" },
-        "match": [ { "console": "Super Nintendo Entertainment System", "name": "Super Mario Kart (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Super Nintendo Entertainment System", "name": "Super Mario Kart (USA)", "size": 524288, "crc": "cd80db86", "fit": "fits" } ]
       },
       "soon": "No release yet: you build it yourself"
     },
@@ -2971,7 +2971,7 @@
       "base": {
         "title": "Demon's Crest (USA)",
         "db": { "id": 1577, "title": "Demon's Crest", "platform": "Super Nintendo Entertainment System" },
-        "match": [ { "console": "Super Nintendo Entertainment System", "name": "Demon's Crest (USA)", "fit": "fits" } ]
+        "match": [ { "console": "Super Nintendo Entertainment System", "name": "Demon's Crest (USA)", "size": 2097152, "crc": "e8236ad2", "fit": "fits" } ]
       },
       "soon": "No release yet; the team last worked on it 2026-10-10"
     },

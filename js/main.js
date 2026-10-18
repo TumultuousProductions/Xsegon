@@ -218,6 +218,15 @@ $q.addEventListener("blur", paintHelpHere);
 $platform.addEventListener("change", load);
 $sort.addEventListener("change", load);
 $added.addEventListener("change", function () { setPeriod($platform.value, $added.value); });
+/* A dropdown chosen by hand gives the keys back to the games: kept, its own letters and arrows
+   changed it again under Xsegon's keys (g on View flashed the next view and bounced back to Grid). */
+[$viewsel, $platform, $added, $sort].forEach(function (s) {
+  s.addEventListener("change", function (e) {
+    if (!e.isTrusted) { return; }             // the pad's menu and the menu bar set it without the keys (js\padtop.js)
+    L("CLK", (s.getAttribute("aria-label") || s.id) + " dropdown: " + ((s.selectedOptions[0] || {}).textContent || s.value).trim());
+    s.blur();
+  });
+});
 closeOnBackdrop($settings, closeSettings);
 
 paintHelp("browse");

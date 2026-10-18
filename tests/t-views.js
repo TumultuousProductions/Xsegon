@@ -1785,6 +1785,21 @@ module.exports = async function (b, check) {
   await b.key("g");
   await b.waitFor(`document.getElementById("view").classList.contains("list")`, 5000);
   check("G goes on from Rows to List", await b.ev(`document.getElementById("viewsel").value`), "list");
+  /* The View dropdown left with the keys after a click (a tester's log): g is Xsegon's, once,
+     never the dropdown's own jump to Grid as well; an arrow walks the games, not the dropdown. */
+  await b.setView("grid");
+  await b.ev(`document.getElementById("viewsel").focus()`);
+  await b.key("g");
+  await b.waitFor(`document.getElementById("view").classList.contains("shelf")`, 5000);
+  await b.settled(400);
+  check("with the View dropdown holding the keys, g goes on from Grid to Shelf and stays there, the keys back with the games",
+        await b.ev(`[document.getElementById("viewsel").value, document.getElementById("view").classList.contains("shelf"), document.activeElement === document.getElementById("viewsel")]`),
+        ["shelf", true, false]);
+  await b.ev(`document.getElementById("viewsel").focus()`);
+  await b.key("ArrowDown");
+  await b.settled(400);
+  check("and an arrow there moves in the games, never the dropdown to another view",
+        await b.ev(`[document.getElementById("viewsel").value, document.getElementById("view").classList.contains("shelf")]`), ["shelf", true]);
   await b.setView("rows");
   check("and coming back starts at the top left again", (await b.ev(at)).r + ":" + (await b.ev(at)).c, "0:0");
   /* The gear in the band's top right corner: one slider, the grid's and the
