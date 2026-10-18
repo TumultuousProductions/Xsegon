@@ -19,7 +19,7 @@ import { load } from "./library.js";
 import { L, api, postJson } from "./log.js";
 import { getRetroArch, raLabel } from "./raoffer.js";
 import { openScanTool } from "./scan.js";
-import { openSkraperHow } from "./skraperhow.js";
+import { openScreenScraper } from "./screenscraper.js";
 import { sound } from "./sound.js";
 import { setViewMode } from "./state.js";
 import { chooseSystem } from "./systems.js";
@@ -150,7 +150,9 @@ var MAIL_GOES = {
   raget: [raLabel("get"), function () { getRetroArch("a message"); }],
   rause: [raLabel("use"), function () { getRetroArch("a message"); }],
   scan: ["Scan for Games...", function () { openScanTool(); }],
-  skraper: ["How to get them with Skraper", function (m) { openSkraperHow(m); }]
+  screenscraper: ["ScreenScraper videos...", function () { openScreenScraper(); }],
+  // A message kept from before 2026-10-17 still names the Skraper steps, which are gone: it gets the same press.
+  skraper: ["ScreenScraper videos...", function () { openScreenScraper(); }]
 };
 
 function mailPost(body) {

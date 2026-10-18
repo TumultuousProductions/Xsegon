@@ -13,7 +13,7 @@ import { stopVideo } from "./snap.js";
 import { sound } from "./sound.js";
 import { $body, $editor, $hero, $strip, S, busy, games, sel, setBusy, view } from "./state.js";
 import { stopGame } from "./status.js";
-import { el, hhmm, versionLabel } from "./util.js";
+import { el, hhmm, versionLabel, wheelSideways } from "./util.js";
 import { carNodes, flatNodes, row } from "./views.js";
 
 // ---------- launching ----------
@@ -264,6 +264,7 @@ function openStatePicker(g, res) {
      : ".  Pick one, then press " + pickHotkey + " once the game is up to load it.")));
 
   var row = el("div", "st-row");
+  wheelSideways(row);
   var cells = [];
   function cell(label, cap, slot, shotUrl) {
     var c = el("div", "st-cell");

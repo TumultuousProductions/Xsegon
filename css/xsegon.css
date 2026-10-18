@@ -180,13 +180,12 @@ header.top {
 }
 .status, .bar { position: relative; z-index: 100; }
 
-/* No scrollbars: lists still scroll, they just draw no bar. The list, the grid
-   and the sidebar draw their own ("the scrollbar" below). The wheels'
-   off-screen banners must not widen the page. */
+/* No scrollbars: a box still scrolls, it just draws no bar, unless it is on
+   the list under "the scrollbar" below. The wheels' off-screen banners must
+   not widen the page. */
 /* On html ONLY: on body as well, body becomes a scroll container of its own
    and the sticky hero panel sticks to something that never moves. */
 html { overflow-x: hidden; scrollbar-width: none; }
-*::-webkit-scrollbar { width: 0; height: 0; display: none; }
 * { scrollbar-width: none; }
 
 /* ---------- group headers (Arrange By > Group under headers) ---------- */
@@ -528,7 +527,8 @@ body.no-anim .ctx { animation: none; }
 .ach-top span { color: var(--faint); font-size: 12.5px; white-space: nowrap; }
 .ach-prog { flex: 1 1 auto; height: 6px; background: rgba(var(--well-rgb), .9); border: 1px solid var(--rule); }
 .ach-prog i { display: block; height: 100%; background: var(--cyan); }
-.ach-list { max-height: calc(100vh - 385px - var(--strip-h)); overflow-y: auto; margin-top: 10px; }
+/* The lists in details: --fit-max is where each begins, measured (js\detailfit.js); the guess stands until then. */
+.ach-list { max-height: var(--fit-max, calc(100vh - 385px - var(--strip-h))); overflow-y: auto; margin-top: 10px; }
 .ach-list .cr-row { padding: 7px 14px; gap: 14px; }
 .ach-list .ach-item { cursor: default; }
 .ach-badge { flex: 0 0 auto; width: 40px; height: 40px; border: 1px solid var(--rule); background: var(--panel-2); }
@@ -549,12 +549,6 @@ body.no-anim .ctx { animation: none; }
 /* Sign in or out is one row: its box keeps the Cheats list's look, not its stretch over the pane. */
 .ch-list.ach-who { flex: 0 0 auto; min-height: 0; overflow: visible; }
 .ss-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-
-/* The Skraper route under that bar (js\skraper.js) */
-.sk-area { margin: 10px 0 4px; }
-.sk-area .mt-note { margin: 0 0 8px; }
-.sk-said { margin: 8px 0 0; max-height: 240px; overflow: auto; white-space: pre-wrap;
-  font: 12px/1.5 var(--mono); color: var(--mute); background: var(--panel-2); padding: 8px 12px; border-radius: 8px; }
 .ss-plat { color: var(--mute); font-size: 11.5px; white-space: nowrap; }
 .ss-plat { overflow: hidden; text-overflow: ellipsis; }
 /* Never taller than the screen: what is above the lists keeps its height, and both lists
@@ -1035,7 +1029,7 @@ body.no-anim .toast.toast-saved { animation: none; }
 .toast-x:hover { color: var(--white); }
 .toast-line {
   margin: 4px 0 0; font-size: 12px; color: var(--faint); letter-spacing: .03em;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 /* A toast's own button, with what else does the same beside it (js\padfound.js). */
 .toast-go { display: flex; align-items: center; gap: 10px; margin-top: 10px; overflow: visible; }
@@ -1637,8 +1631,9 @@ body.no-anim .up-bar.wait .mt-fill { animation: none; width: 100%; opacity: .45;
 
 /* ---------- the notes, and how they scroll themselves ----------
    A description longer than its box drifts down at reading pace, holds, and
-   drifts back: the one allowed loop besides the screensaver. no-anim and
-   reduced-motion stop it below (a scrollbar remains).                       */
+   drifts back: the one allowed loop besides the screensaver. It waits under
+   the pointer, and the wheel takes it over. no-anim and reduced-motion stop
+   it below, leaving the box to scroll with its bar.                         */
 
 .wikilink {
   display: inline-block;
@@ -1655,7 +1650,7 @@ body.no-anim .up-bar.wait .mt-fill { animation: none; width: 100%; opacity: .45;
 .notes-box {
   position: relative;
   overflow: hidden;
-  max-height: calc(100vh - 430px - var(--strip-h));
+  max-height: var(--fit-max, calc(100vh - 430px - var(--strip-h)));
   min-height: 220px;
   margin-top: 16px;
   -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
@@ -1674,6 +1669,9 @@ body.no-anim .up-bar.wait .mt-fill { animation: none; width: 100%; opacity: .45;
 .notes-auto .notes-inner {
   animation: xs-notes-scroll var(--scroll-dur, 24s) linear 1.4s infinite alternate;
 }
+/* Under the pointer the drift waits; the wheel takes it over by hand from where it stands (js\details.js notesByHand). */
+.notes-auto:hover .notes-inner { animation-play-state: paused; }
+.notes-box.by-hand { overflow-y: auto; }
 
 @keyframes xs-notes-scroll {
   0%, 10%   { transform: translateY(0); }
@@ -2413,40 +2411,43 @@ body.on-fill .wrap { padding-bottom: var(--foot-h, var(--help-h, 42px)); }
   padding: 6px 4px 12px 10px;
 }
 
-/* ---------- the scrollbar: the list, the grid and the sidebar ----------
-   The only scrollbars on screen, in the HUD's colours. Chrome draws
-   ::-webkit-scrollbar only when both standard properties are auto, so they are
-   put back to auto here; an engine without it takes the two colours instead. */
-.main .list, .main .grid, .sidebar { scrollbar-width: auto; scrollbar-color: auto; }
-.main .list::-webkit-scrollbar, .main .grid::-webkit-scrollbar, .sidebar::-webkit-scrollbar {
-  display: block; width: 10px; height: 10px;
-}
-.main .list::-webkit-scrollbar-track, .main .grid::-webkit-scrollbar-track, .sidebar::-webkit-scrollbar-track {
-  background: rgba(var(--well-rgb), .55);
-  border-left: 1px solid var(--rule);
-}
-.main .list::-webkit-scrollbar-track:horizontal { border-left: 0; border-top: 1px solid var(--rule); }
-.main .list::-webkit-scrollbar-thumb, .main .grid::-webkit-scrollbar-thumb, .sidebar::-webkit-scrollbar-thumb {
+/* ---------- the scrollbar ----------
+   One look for every bar on screen, in the HUD's colours, and one list of the
+   boxes that draw it. Every other box keeps scrollbar-width: none (above),
+   which Chrome lets win over ::-webkit-scrollbar; on the list both standard
+   properties are auto, so the look below applies. An engine without
+   ::-webkit-scrollbar takes the two colours instead. */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: rgba(var(--well-rgb), .55); border-left: 1px solid var(--rule); }
+::-webkit-scrollbar-track:horizontal { border-left: 0; border-top: 1px solid var(--rule); }
+::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, rgba(var(--cyan-rgb), .8), rgba(var(--cyan-rgb), .5));
   background-clip: padding-box;
   border: 2px solid transparent;
   min-height: 48px;                      /* a long list makes it a sliver */
 }
-.main .list::-webkit-scrollbar-thumb:horizontal {
+::-webkit-scrollbar-thumb:horizontal {
   background: linear-gradient(90deg, rgba(var(--cyan-rgb), .8), rgba(var(--cyan-rgb), .5));
   background-clip: padding-box;
 }
-.main .list::-webkit-scrollbar-thumb:hover, .main .grid::-webkit-scrollbar-thumb:hover, .sidebar::-webkit-scrollbar-thumb:hover,
-.main .list::-webkit-scrollbar-thumb:active, .main .grid::-webkit-scrollbar-thumb:active, .sidebar::-webkit-scrollbar-thumb:active {
-  background: var(--cyan);
-  background-clip: padding-box;
-}
-body.high-contrast .main .list::-webkit-scrollbar-thumb, body.high-contrast .main .grid::-webkit-scrollbar-thumb,
-body.high-contrast .sidebar::-webkit-scrollbar-thumb { background: var(--cyan); background-clip: padding-box; }
-.main .list::-webkit-scrollbar-corner, .main .grid::-webkit-scrollbar-corner, .sidebar::-webkit-scrollbar-corner { background: transparent; }
+::-webkit-scrollbar-thumb:hover, ::-webkit-scrollbar-thumb:active,
+body.high-contrast ::-webkit-scrollbar-thumb { background: var(--cyan); background-clip: padding-box; }
+::-webkit-scrollbar-corner { background: transparent; }
 @supports not selector(::-webkit-scrollbar) {
-  .main .list, .main .grid, .sidebar { scrollbar-width: thin; scrollbar-color: rgba(var(--cyan-rgb), .7) rgba(var(--well-rgb), .55); }
+  :root { --bar-width: thin; --bar-colour: rgba(var(--cyan-rgb), .7) rgba(var(--well-rgb), .55); }
 }
+/* The boxes that draw it: the main view's, and every window's list, page or
+   text box that scrolls, the save picker and Documents' tabs sideways (their
+   wheel: wheelSideways in js\util.js). Rows view rows (.rrow-track) fade instead. */
+.main .list, .main .grid, .main .shelf, .sidebar, .rows-list,
+.panel, .confirm, .mail-panel, .offline, .ctx, .lcols, .set-nav, .set-body,
+.panel-inner.ss > .st-scroll, .panel-inner.st > .st-scroll, .ach-list, .ch-list, .sv-list, .sv-rows,
+.ed-form, .ed-row textarea, .nt-box, .notes-box, .lg-pre, .pk-grid, .pk-results, .hl-list,
+.ea-consoles, .hs-bases, .fc-facts, .vp-inner .pj-sect .cr-list, .doc-stage.is-pic.zoomed, .st-row, .doc-tabs {
+  scrollbar-width: var(--bar-width, auto); scrollbar-color: var(--bar-colour, auto);
+}
+/* No overscroll-behavior here: Chrome lets a contained box with nothing to scroll
+   swallow the wheel, so the list around it stops under the pointer (the Saves tab). */
 
 @media (max-width: 980px) {
   .main.with-hero { grid-template-columns: 1fr; }
@@ -2730,6 +2731,13 @@ body.no-anim .details, body.no-anim .hero-art { animation: none; }
   border-bottom: 1px solid var(--rule);
 }
 .set-head .panel-title { margin: 0; flex: 1; }
+/* Every other window keeps its title and Done in sight while the rest scrolls under
+   them, as Settings does (there the window itself, here .panel or Messages, scrolls). */
+.panel-inner:not(.set-inner) > .set-head, .mail-head { position: sticky; top: 0; z-index: 2; background: var(--panel); }
+/* Sticky stops inside the scroller's padding: taken back, so nothing scrolls past above the title. */
+.panel-inner:not(.set-inner) > .set-head { top: -30px; }               /* .panel's padding-top */
+.mail-head { top: -18px; margin-top: -18px; padding-top: 18px; }      /* .mail-panel's, the head drawn over it */
+.panel, .mail-panel { scroll-padding-top: 84px; }   /* a row the keys or a pad move to is not left under the title */
 
 .set-shell {
   flex: 1; min-height: 0;
@@ -3626,8 +3634,8 @@ body.offline-now .saver { display: none; }
 .cr-row:hover { background: rgba(var(--cyan-rgb), .06); }
 .cr-row.sel { background: linear-gradient(90deg, rgba(var(--cyan-rgb), .3), rgba(var(--cyan-rgb), 0)); }
 .cr-row.on .cr-name { color: var(--cyan); }
-.cr-name { font-size: 15px; letter-spacing: .03em; flex: 1 1 auto; min-width: 0;
-           overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* A long name takes a second line rather than losing its end. */
+.cr-name { font-size: 15px; letter-spacing: .03em; flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
 .cr-tag { font-size: 11.5px; color: var(--mute); flex: 0 0 auto; }
 .cr-ico { flex: 0 0 auto; color: var(--mute); }
 .cr-row.sel .cr-ico, .cr-row.on .cr-ico { color: var(--cyan); }
@@ -3709,6 +3717,9 @@ body.no-anim .hk-listen.catching { animation: none; }
 .ch-list .cr-row.ch-act { background: rgba(var(--cyan-rgb), .05); }
 .ch-list .cr-row.ch-act .cr-name { letter-spacing: .06em; text-transform: uppercase; font-size: 13px; }
 .ch-list .cr-row.ch-act.sel { background: linear-gradient(90deg, rgba(var(--cyan-rgb), .3), rgba(var(--cyan-rgb), 0)); }
+/* The headings inside the list, Cheats active and Other cheats: words only, never a row the bar stops on. */
+.ch-head { padding: 10px 14px 6px; font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--mute);
+           font-weight: 600; border-bottom: 1px solid rgba(var(--cyan-rgb), .08); }
 
 /* Details' tabs (js\detailtabs.js): a row under Back and Play, one pane
    below it. The pane takes the column's height, as the words did. */
@@ -3730,14 +3741,14 @@ body.no-anim .hk-listen.catching { animation: none; }
    than the screen leaves it. */
 .ch-tab { max-height: none; flex: 1 1 auto; min-height: 0; }
 .ch-tab .group-help { margin: 14px 0 0; }
-.ch-tab .ch-list { flex: 0 1 auto; max-height: calc(100vh - 560px - var(--strip-h)); min-height: 46px; }
+.ch-tab .ch-list { flex: 0 1 auto; max-height: var(--fit-max, calc(100vh - 560px - var(--strip-h))); min-height: 46px; }
 /* The bar on a row is the keys' place in the list, so it shows once they are in it. */
 .dtab-pane:not(.in) .cr-row.sel:not(:hover) { background: none; }
 .dtab-pane:not(.in) .cr-row.sel:not(:hover):not(.on) .cr-ico { color: var(--mute); }
 .dtab-pane:not(.in) .ch-list .cr-row.ch-act.sel:not(:hover) { background: rgba(var(--cyan-rgb), .05); }
 .cr-row.ro { cursor: default; }
 /* The Saves tab of details (js\savestab.js): groups of rows, a save state with its picture. */
-.sv-list { flex: 0 1 auto; min-height: 46px; max-height: calc(100vh - 310px - var(--strip-h)); overflow-y: auto; margin-top: 4px; padding-right: 4px; }
+.sv-list { flex: 0 1 auto; min-height: 46px; max-height: var(--fit-max, calc(100vh - 310px - var(--strip-h))); overflow-y: auto; margin-top: 4px; padding-right: 4px; }
 .sv-head { text-transform: uppercase; margin: 14px 0 2px; }
 .sv-group:first-child .sv-head { margin-top: 10px; }
 .sv-help { font-size: 12.5px; line-height: 1.5; color: var(--mute); margin: 0 0 6px; }
@@ -3748,7 +3759,7 @@ body.no-anim .hk-listen.catching { animation: none; }
 .sv-row:not(.sv-play) .sv-shot { height: 38px; background: none; }
 .sv-words { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .sv-words .cr-name { flex: 0 0 auto; }
-.sv-sub { font-size: 11.5px; color: var(--mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sv-sub { font-size: 11.5px; color: var(--mute); line-height: 1.45; overflow-wrap: anywhere; }
 /* The Texture packs tab (js/texpacktab.js): a pack's kind beside its name, its maker's Tip, the paid ones folded. */
 .tp-kind { display: inline-block; margin-left: 8px; padding: 0 5px; border: 1px solid var(--rule); border-radius: 3px;
   font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--mute); vertical-align: 2px; }
@@ -3765,7 +3776,7 @@ body.no-anim .tp-prog.wait i { animation: none; width: 100%; opacity: .45; }
 .tp-paid > .sv-rows { border: 0; background: none; }
 .tp-paid > .sv-rows + .sv-rows { border-top: 1px solid var(--rule); }
 /* The Notes tab of details (js/notestab.js): one box to write in, as tall as the pane leaves it. */
-.nt-box { flex: 1 1 auto; min-height: 160px; max-height: calc(100vh - 470px - var(--strip-h)); margin: 12px 0 4px; padding: 12px 14px; resize: none;
+.nt-box { flex: 1 1 auto; min-height: 160px; max-height: var(--fit-max, calc(100vh - 470px - var(--strip-h))); margin: 12px 0 4px; padding: 12px 14px; resize: none;
   background: var(--panel-2); border: 1px solid var(--rule); color: var(--ink); font: inherit; font-size: 14px; line-height: 1.55; letter-spacing: .02em; text-transform: none; }
 .nt-box:focus { outline: none; border-color: var(--cyan); }
 .nt-says { min-height: 1.4em; }
@@ -3794,7 +3805,7 @@ body.no-anim .tp-prog.wait i { animation: none; width: 100%; opacity: .45; }
 .hs-bases .mt-note { margin: 8px 10px; }
 
 /* The Hacks tab of details (js/hackstab.js): a name and a line under it that may wrap. */
-.ch-tab .hck-list { max-height: calc(100vh - 430px - var(--strip-h)); }
+.ch-tab .hck-list { max-height: var(--fit-max, calc(100vh - 430px - var(--strip-h))); }
 .hck-sub { white-space: normal; line-height: 1.45; }
 .hck-row.hck-other .cr-name { color: var(--mute); }
 /* The Accompanied files tab (js/acctab.js): a file's Play, greyed, since it is not played. */
@@ -3802,7 +3813,7 @@ body.no-anim .tp-prog.wait i { animation: none; width: 100%; opacity: .45; }
 .sv-where { font-size: 11px; color: var(--faint); margin: 4px 0 0; overflow-wrap: anywhere; }
 .sv-row .sv-go { color: var(--cyan); }
 /* The Media tab (js/mediatab.js): the other game's picture, an arrow, this game's. */
-.ch-tab .md-list { max-height: calc(100vh - 430px - var(--strip-h)); }
+.ch-tab .md-list { max-height: var(--fit-max, calc(100vh - 430px - var(--strip-h))); }
 .sv-row.md-kind .md-shot { flex: 0 0 72px; height: 54px; background: rgba(var(--well-rgb), .7); }
 .md-shot video { width: 100%; height: 100%; object-fit: contain; }
 .md-none { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
@@ -3817,7 +3828,7 @@ body.no-anim .tp-prog.wait i { animation: none; width: 100%; opacity: .45; }
 .md-tab .sv-sub.bad { color: var(--bad); }
 .md-video .sv-words { flex: 1 1 auto; min-width: 0; }
 .md-video .md-path { white-space: normal; overflow-wrap: anywhere; font-family: var(--mono); }
-.md-tab .pk-grid { max-height: calc(100vh - 520px - var(--strip-h)); min-height: 140px; }
+.md-tab .pk-grid { max-height: var(--fit-max, calc(100vh - 520px - var(--strip-h))); min-height: 140px; }
 
 /* ---- settings, dressed as a console menu ----------------------------------
    A dark sheet, white words big enough to read from a sofa, an icon at the
@@ -4644,16 +4655,17 @@ body {
 body.high-contrast { --ink: var(--white); }
 
 /* A fault in Xsegon's own code (main.js, xs:bug): one quiet line across the
-   very top, white on dark, over everything and out of the way. */
+   very top, white on dark, over everything and out of the way. On a narrow
+   window it takes a second line, so the email address at its end is not lost. */
 #bugbar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 300;
   display: flex; align-items: center; gap: 10px;
-  height: 26px; padding: 0 10px 0 14px; box-sizing: border-box;
+  min-height: 26px; padding: 4px 10px 3px 14px; box-sizing: border-box;
   background: rgba(var(--ground-rgb), .94); border-bottom: 1px solid rgba(255, 255, 255, .18);
-  color: var(--white); font-size: 12px; letter-spacing: .02em; line-height: 26px;
+  color: var(--white); font-size: 12px; letter-spacing: .02em; line-height: 18px;
 }
 #bugbar[hidden] { display: none; }
-#bugbar .bb-text { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#bugbar .bb-text { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
 #bugbar a { color: var(--white); text-decoration: underline; }
 #bugbar .bb-x {
   flex: 0 0 auto; width: 20px; height: 20px; padding: 0; line-height: 18px;
@@ -4795,19 +4807,6 @@ body:not(.badge-favourite) .rcard.fav .rcard-cap::before { content: none; }
 }
 body.no-glow .rcard.sel { box-shadow: none; }
 .rcard.sel .rcard-cap { color: var(--ink); }
-
-/* The bar: the list's, on the rows (up and down), the ScreenScraper and Steam trailers windows' games, and the Achievements tab's list. */
-.rows-list, .panel-inner.ss > .st-scroll, .panel-inner.st > .st-scroll, .ach-list { scrollbar-width: auto; scrollbar-color: auto; }
-.rows-list::-webkit-scrollbar, .panel-inner.ss > .st-scroll::-webkit-scrollbar, .panel-inner.st > .st-scroll::-webkit-scrollbar, .ach-list::-webkit-scrollbar { display: block; width: 10px; }
-.rows-list::-webkit-scrollbar-track, .panel-inner.ss > .st-scroll::-webkit-scrollbar-track, .panel-inner.st > .st-scroll::-webkit-scrollbar-track, .ach-list::-webkit-scrollbar-track { background: rgba(var(--well-rgb), .55); border-left: 1px solid var(--rule); }
-.rows-list::-webkit-scrollbar-thumb, .panel-inner.ss > .st-scroll::-webkit-scrollbar-thumb, .panel-inner.st > .st-scroll::-webkit-scrollbar-thumb, .ach-list::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(var(--cyan-rgb), .8), rgba(var(--cyan-rgb), .5));
-  background-clip: padding-box; border: 2px solid transparent; min-height: 48px;
-}
-.rows-list::-webkit-scrollbar-thumb:hover, .panel-inner.ss > .st-scroll::-webkit-scrollbar-thumb:hover, .panel-inner.st > .st-scroll::-webkit-scrollbar-thumb:hover, .ach-list::-webkit-scrollbar-thumb:hover { background: var(--cyan); background-clip: padding-box; }
-@supports not selector(::-webkit-scrollbar) {
-  .rows-list, .panel-inner.ss > .st-scroll, .panel-inner.st > .st-scroll, .ach-list { scrollbar-width: thin; scrollbar-color: rgba(var(--cyan-rgb), .7) rgba(var(--well-rgb), .55); }
-}
 
 /* No bar under each row: a row with more past an edge FADES at that edge
    (js\rows.js keeps can-l and can-r true), with a chevron in the fade under a mouse. */
@@ -5100,17 +5099,6 @@ body.no-anim .hero, body.no-anim .main .list, body.no-anim .main .grid, body.no-
   display: flex; flex-wrap: wrap; align-content: flex-start; align-items: flex-end;
   column-gap: 3px;
   padding: 0 0 14px 6px;                 /* the left: room for the first spine's glow */
-  scrollbar-width: auto; scrollbar-color: auto;
-}
-.main .shelf::-webkit-scrollbar { display: block; width: 10px; }
-.main .shelf::-webkit-scrollbar-track { background: rgba(var(--well-rgb), .55); border-left: 1px solid var(--rule); }
-.main .shelf::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(var(--cyan-rgb), .8), rgba(var(--cyan-rgb), .5));
-  background-clip: padding-box; border: 2px solid transparent; min-height: 48px;
-}
-.main .shelf::-webkit-scrollbar-thumb:hover { background: var(--cyan); background-clip: padding-box; }
-@supports not selector(::-webkit-scrollbar) {
-  .main .shelf { scrollbar-width: thin; scrollbar-color: rgba(var(--cyan-rgb), .7) rgba(var(--well-rgb), .55); }
 }
 /* The strip over it and a group's header each take a whole line, so the
    games under a header start a shelf of their own. */
@@ -5242,9 +5230,6 @@ body.no-anim .dmedium.is-disc:hover { animation: none; }
    drag, the scroll wheel or the bars. */
 .doc-stage.is-pic.zoomed { display: block; overflow: auto; cursor: grab; }
 .doc-stage.zoomed .doc-pic { max-width: none; max-height: none; cursor: zoom-out; }
-.doc-stage.is-pic.zoomed { scrollbar-width: auto; scrollbar-color: rgba(var(--cyan-rgb), .7) rgba(var(--well-rgb), .55); }
-.doc-stage.is-pic.zoomed::-webkit-scrollbar { display: block; width: 10px; height: 10px; }
-.doc-stage.is-pic.zoomed::-webkit-scrollbar-thumb { background: rgba(var(--cyan-rgb), .7); }
 .doc-note { flex: none; margin: 8px 0 0; }
 .details .bar .docbtn { margin-left: 6px; }
 

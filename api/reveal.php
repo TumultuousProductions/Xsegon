@@ -3,7 +3,6 @@
  * POST /api/reveal.php  {"id": "<game id>", "what": "rom" | "images" | "video" | "save", "key"}
  * POST /api/reveal.php  {"what": "data"}            Xsegon's own data folder
  * POST /api/reveal.php  {"what": "games"}           the Games folder it made
- * POST /api/reveal.php  {"what": "videos", "consoles": [...]}   its videos folder
  *
  * Show one of a game's files in Explorer, selected (a browser cannot).
  *
@@ -55,23 +54,6 @@ if ($what === 'games') {
     $dir = xs_scan_first_folder_made();
     if ($dir === '' || !is_dir($dir)) {
         xs_fail('the Games folder Xsegon made is not there any more', 404);
-    }
-    xs_reveal_folder($dir, !empty($body['dry']));
-}
-// Xsegon's own videos folder, with a folder for each console named (the Skraper
-// steps, js\skraperhow.js). A console's name is made safe as a folder's, so
-// nothing outside the videos folder can be made from here.
-if ($what === 'videos') {
-    require_once __DIR__ . '/../includes/videopack.php';
-    $dir = xs_data_path('videos');
-    foreach (array_slice((array) ($body['consoles'] ?? []), 0, 12) as $name) {
-        $safe = is_string($name) ? xs_vp_safe($name) : '';
-        if ($safe !== '' && $safe !== '.' && $safe !== '..' && !is_dir($dir . DIRECTORY_SEPARATOR . $safe)) {
-            @mkdir($dir . DIRECTORY_SEPARATOR . $safe, 0777, true);
-        }
-    }
-    if (!is_dir($dir) && !@mkdir($dir, 0777, true)) {
-        xs_fail('the videos folder could not be made: ' . $dir, 500);
     }
     xs_reveal_folder($dir, !empty($body['dry']));
 }

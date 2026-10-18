@@ -65,12 +65,112 @@ function xs_cheats_for(string $id): ?array
 function xs_cheats_set(string $id, ?array $pick, ?string &$why = null): bool
 {
     $all = xs_cheats_read();
+    // What was on and what is on now both count as once on, so they lead the list later.
+    $once = [];
+    foreach ([$all[$id] ?? null, $pick] as $p) {
+        if (!empty($p['on'])) {
+            $once[] = $p;
+        }
+    }
     if ($pick === null || empty($pick['on'])) {
         unset($all[$id]);
     } else {
         $all[$id] = $pick;
     }
-    return xs_write_json(xs_cheats_path(), $all, $why);
+    if (!xs_write_json(xs_cheats_path(), $all, $why)) {
+        return false;
+    }
+    if (!xs_cheats_remember($id, $once, $lost)) {
+        xs_log('CHEAT', 'could not keep which cheats were once on: ' . $lost);
+    }
+    return true;
+}
+
+/** Where the cheats ever switched on are kept: [game id => [file => [['i'=>int,'desc'=>string], ...]]]. */
+function xs_cheats_used_path(): string
+{
+    return xs_data_path('cheats-used.json');
+}
+
+/** The cheats once on for one game in one file; $raw is the file already read. */
+function xs_cheats_used(string $id, string $file, $raw = null): array
+{
+    $raw = $raw ?? xs_read_json(xs_cheats_used_path(), []);
+    $out = [];
+    foreach (is_array($raw[$id][$file] ?? null) ? $raw[$id][$file] : [] as $c) {
+        if (is_array($c) && isset($c['i'])) {
+            $out[] = ['i' => (int) $c['i'], 'desc' => (string) ($c['desc'] ?? '')];
+        }
+    }
+    return $out;
+}
+
+/** Add the cheats of each pick to those once on for the game, file by file. */
+function xs_cheats_remember(string $id, array $picks, ?string &$why = null): bool
+{
+    $raw = xs_read_json(xs_cheats_used_path(), []);
+    $raw = is_array($raw) ? $raw : [];
+    if (!is_array($raw[$id] ?? null)) {
+        $raw[$id] = [];
+    }
+    $added = false;
+    foreach ($picks as $pick) {
+        $file = (string) ($pick['file'] ?? '');
+        if ($file === '') {
+            continue;
+        }
+        $have = xs_cheats_used($id, $file, $raw);
+        $seen = [];
+        foreach ($have as $c) {
+            $seen[$c['i'] . '|' . $c['desc']] = true;
+        }
+        foreach ((array) $pick['on'] as $c) {
+            $one = ['i' => (int) $c['i'], 'desc' => (string) ($c['desc'] ?? '')];
+            if (!isset($seen[$one['i'] . '|' . $one['desc']])) {
+                $seen[$one['i'] . '|' . $one['desc']] = true;
+                $have[] = $one;
+                $added = true;
+            }
+        }
+        $raw[$id][$file] = $have;
+    }
+    return !$added || xs_write_json(xs_cheats_used_path(), $raw, $why);
+}
+
+/**
+ * A file's cheats as the picker lists them: on now, then once on, then the rest, each
+ * part in the file's own order. A cheat once on whose index has moved is found by its
+ * description, as at launch.
+ */
+function xs_cheats_ordered(array $all, ?array $chosen, array $used, string $file): array
+{
+    $now = [];
+    if ($chosen !== null && $chosen['file'] === $file) {
+        foreach ($chosen['on'] as $c) {
+            $now[$c['i']] = true;
+        }
+    }
+    $descAt = [];
+    $byDesc = [];
+    foreach ($all as $c) {
+        $descAt[$c['i']] = $c['desc'];
+        $byDesc[$c['desc']][] = $c['i'];
+    }
+    $before = [];
+    foreach ($used as $c) {
+        if ($c['desc'] === '' || ($descAt[$c['i']] ?? null) === $c['desc']) {
+            $before[$c['i']] = true;
+            continue;
+        }
+        foreach ($byDesc[$c['desc']] ?? [] as $moved) {
+            $before[$moved] = true;
+        }
+    }
+    $parts = [[], [], []];
+    foreach ($all as $c) {
+        $parts[isset($now[$c['i']]) ? 0 : (isset($before[$c['i']]) ? 1 : 2)][] = $c;
+    }
+    return array_merge($parts[0], $parts[1], $parts[2]);
 }
 
 /**

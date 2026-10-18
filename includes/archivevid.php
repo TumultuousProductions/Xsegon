@@ -370,7 +370,7 @@ function xs_av_file_url(string $id, string $path): string
 }
 
 /**
- * One message for the games a fetch left with no video, pointing to Skraper. It
+ * One message for the games a fetch left with no video, pointing to ScreenScraper videos. It
  * replaces the last fetch's message; with no game left there is none.
  */
 function xs_av_tell(array $none): void
@@ -386,10 +386,8 @@ function xs_av_tell(array $none): void
     }
     $noSet = [];
     $some  = [];
-    $all   = [];
     foreach ($none as $g) {
         $p = (string) ($g['platform'] ?? '?');
-        $all[$p] = ($all[$p] ?? 0) + 1;
         if (str_starts_with((string) ($g['why'] ?? ''), 'no videos for this console')) {
             $noSet[$p] = ($noSet[$p] ?? 0) + 1;
         } else {
@@ -398,7 +396,6 @@ function xs_av_tell(array $none): void
     }
     arsort($noSet);
     arsort($some);
-    arsort($all);
     $names = static function (array $by): string {
         $said = array_map(static fn ($p, $n) => $p . ' (' . $n . ')', array_keys($by), $by);
         $more = count($said) - 6;
@@ -409,11 +406,6 @@ function xs_av_tell(array $none): void
         $last = array_pop($said);
         return $said ? implode(', ', $said) . ' and ' . $last : (string) $last;
     };
-    $consoles = [];
-    foreach (array_slice($all, 0, 12, true) as $p => $n) {
-        $consoles[] = ['platform' => (string) $p, 'games' => $n,
-                       'folder' => xs_data_path('videos') . DIRECTORY_SEPARATOR . xs_vp_safe((string) $p)];
-    }
     $n = count($none);
     array_unshift($kept, [
         'id'       => 'msg-' . bin2hex(random_bytes(6)),
@@ -424,10 +416,9 @@ function xs_av_tell(array $none): void
         'body'     => 'These videos come from the Internet Archive (archive.org): sets of game videos, and the first 30 seconds of a World of Longplays recording where a set leaves a gap. It does not have one for every game.'
                     . ($noSet ? ' It has none at all for ' . $names($noSet) . '.' : '')
                     . ($some ? ' It has none Xsegon is sure of for some games on ' . $names($some) . '.' : '')
-                    . ' Skraper, a free program, can fetch videos for them with a free ScreenScraper account.',
+                    . ' ScreenScraper has short videos of many more: Pictures & Videos > ScreenScraper videos fetches them with a free ScreenScraper account, quick to make, with no phone number asked.',
         'n'        => $n,
-        'consoles' => $consoles,
-        'opens'    => ['skraper', 'archivevid'],     // the page turns each into a button (js/news.js)
+        'opens'    => ['screenscraper', 'archivevid'],     // the page turns each into a button (js/news.js)
         'read'     => false,
     ]);
     xs_write_json(xs_messages_path(), array_slice($kept, 0, XS_MESSAGES_KEPT));
