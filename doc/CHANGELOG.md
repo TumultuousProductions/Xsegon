@@ -8,6 +8,7 @@ Newest first: what changed for the person at the screen.
 - **Fan projects find your game by its checksum.** A game whose title is not the one a project names (a file called "zelda.sfc") was taken for a game you do not have. A project now also knows each cartridge release's size and checksum, so a zipped game is found from its zip's own list of contents, and a NES, SNES, Game Boy or Genesis file is read to be sure. Its tile says "known by its checksum".
 - **The dropdowns at the top give the keys back.** After choosing a view, a console or an order from the dropdowns at the top, the keys went to the dropdown as well as to Xsegon: g flashed the next view and jumped back to Grid, and the arrows changed the console while they moved in the list. A choice now hands the keys back to the games, and a key pressed while a dropdown still holds them acts once.
 - **Settings' volume is heard as you move it.** The volume slider in Settings > Sound changed nothing until Settings was closed and the page drawn again. It now changes Xsegon's sounds as it moves, and the speaker in the corner follows. Closing Settings after changing only the volume or the sound set no longer draws the page again.
+- **A report says which copy each game is.** Report a problem now lists every game with its file's name (never its folder), so a report shows which release a game is, such as "(USA)". The window says so before you make one.
 
 ## 2026-10-17
 

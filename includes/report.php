@@ -294,6 +294,19 @@ function xs_report_library_summary(): string
         $out .= '  ' . (is_array($b) ? (string) ($b['title'] ?? '?') . ' [' . (string) ($b['platform'] ?? '?') . ']'
                                      : (string) $b) . "\n";
     }
+
+    // Each game's file by name, never its folder: which release a game is shows here ("... (USA).sfc").
+    $out .= "\nEvery game and its file, by console:\n";
+    $by = [];
+    foreach ($lib['games'] ?? [] as $g) {
+        $file = basename(str_replace('\\', '/', (string) ($g['romPath'] ?? $g['run'] ?? '')));
+        $by[(string) ($g['platform'] ?? '?')][] = '  ' . (string) ($g['title'] ?? '?') . '  =  ' . ($file !== '' ? $file : '(no file)');
+    }
+    ksort($by);
+    foreach ($by as $p => $lines) {
+        natcasesort($lines);
+        $out .= "\n" . $p . "\n" . implode("\n", $lines) . "\n";
+    }
     return $out;
 }
 
@@ -394,7 +407,8 @@ function xs_report_text(array $checks, array $contents): string
     $out .= "Your ROMs, your pictures and your videos. None of them help and all\n";
     $out .= "of them are enormous. The full library.json is left out too, and\n";
     $out .= "library-summary.txt is in its place.\n";
-    $out .= "\nWhat IS here: the folders you chose and the names of your games. A\n";
+    $out .= "\nWhat IS here: the folders you chose, the names of your games and of\n";
+    $out .= "their files (library-summary.txt; it says which copy a game is). A\n";
     $out .= "report with the paths taken out cannot answer a path question. Where\n";
     $out .= "Xsegon was slow, the log also names the three programs that were using\n";
     $out .= "this PC the most at that moment (its BUSY lines).\n";
@@ -415,7 +429,7 @@ function xs_report_make(): array
     // name => what it is, which is also the contents list inside report.txt
     $why = [
         'report.txt'          => 'this file: the checks, worst first',
-        'library-summary.txt' => 'games per console, and any that cannot launch',
+        'library-summary.txt' => 'games per console, any that cannot launch, each game\'s file',
         'data-summary.txt'    => "what is in Xsegon's data folder",
         'php.txt'             => 'the PHP running it, and its settings',
     ];

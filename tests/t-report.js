@@ -113,6 +113,11 @@ module.exports = async function (b, check) {
   const summary = got["library-summary.txt"].toString("utf8");
   check("the summary counts games per console", /Console\s+Games\s+No cover\s+No launch/.test(summary));
   check("and names the ones that cannot launch", /Games with no launch command/.test(summary));
+  // Each game's file by name (which copy it is), never its folder.
+  const file0 = (((await api("api/library.php?grouped=0")).games || []).find((g) => g.file) || {}).file;
+  const each = summary.split("Every game and its file, by console:")[1] || "";
+  check("and every game with its file's name, never its folder",
+    [each !== "", !file0 || each.includes("  =  " + file0), /[A-Za-z]:\\/.test(each)], [true, true, false]);
 
   /* ---- what it refuses -------------------------------------------------- */
   const badName = await api("api/report.php", { action: "remove", name: "../../boot.php" });
