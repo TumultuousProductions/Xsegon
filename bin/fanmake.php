@@ -79,6 +79,48 @@ if ($p === null || !xs_fan_makes($p)) {
 }
 $m = $p['make'];
 $t0 = microtime(true);
+
+// ---- a game never checked: its file checked now and kept, as Check game files keeps it --
+// Every unchecked copy carrying the name is read, so a second copy in the right release is found too.
+if (!empty($job['check'])) {
+    $job['phase'] = 'filecheck';
+    $save();
+    $games = array_values(array_filter(xs_library()['games'] ?? [], static fn($g) => empty($g['hidden'])));
+    $whyNot = null;
+    foreach (xs_fan_to_check((string) $p['id'], $games) as $g) {
+        if (xs_fc_check($g, $w) === null) {
+            $whyNot = $whyNot ?? $w;
+        }
+    }
+    $st = null;
+    foreach (xs_fan_states($games) as $s) {
+        if ($s['id'] === $p['id']) {
+            $st = $s;
+        }
+    }
+    $base = $st['base'] ?? [];
+    if (($base['state'] ?? '') === 'unchecked') {
+        $end('failed', 'your ' . $job['baseTitle'] . ' could not be checked, so nothing was made' . ($whyNot !== null ? ': ' . $whyNot : ''));
+    }
+    $why = $st === null ? 'Xsegon no longer knows how to make ' . $name : xs_fan_why($st);
+    if ($why !== null) {
+        $end('failed', $why);
+    }
+    // The copy that fits, which may be another than the one asked for.
+    foreach ($games as $g) {
+        if ((string) $g['id'] === (string) $base['gameId']) {
+            $job['base'] = (string) $g['id'];
+            $job['baseTitle'] = (string) $g['title'];
+            $job['platform'] = (string) $g['platform'];
+            $job['rom'] = xs_rom_real_path((string) ($g['romPath'] ?? ''), xs_settings());
+        }
+    }
+    $job['release'] = (string) ($base['release'] ?? '');
+    unset($job['check']);
+    $save();
+    xs_log('FAN', 'make ' . $name . ': checked at the press, your ' . $job['baseTitle'] . ' is ' . $job['release']);
+}
+
 if (in_array($m['how'] ?? 'patch', ['release', 'build'], true)) {
     require __DIR__ . '/fanmake-pc.php';
     exit(0);

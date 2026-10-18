@@ -272,6 +272,7 @@ function xs_jobs(): array
             $total = (int) ($j['total'] ?? 0);
             $line  = $phase === 'fetching' ? 'downloading ' . (isset($j['file']) ? (string) $j['file'] : 'the patch') . ': '
                                              . xs_jobs_size((int) ($j['bytes'] ?? 0)) . ($total ? ' of ' . xs_jobs_size($total) : '')
+                   : ($phase === 'filecheck' ? 'checking your ' . (string) ($j['baseTitle'] ?? 'game') . ' is the release it is made from'
                    : ($phase === 'asking' ? 'asking ' . $j['name'] . '\'s team for its latest release'
                    : ($phase === 'reading' ? 'reading your ' . (string) ($j['baseTitle'] ?? 'game')
                    : ($phase === 'making' ? 'making ' . trim($j['name'] . ' ' . (string) ($j['version'] ?? ''))
@@ -280,7 +281,7 @@ function xs_jobs(): array
                    : ($phase === 'updating' ? 'putting on update ' . (string) ($j['version'] ?? '')
                    : ($phase === 'unpacking' ? 'unpacking it beside your ' . (string) ($j['platform'] ?? '') . ' games'
                    : ($phase === 'placing' ? 'putting your ' . (string) ($j['baseTitle'] ?? 'game') . ' in its folder' . ($total ? ': ' . xs_jobs_size((int) ($j['bytes'] ?? 0)) . ' of ' . xs_jobs_size($total) : '')
-                   : ($phase === 'writing' ? 'writing it to your games' : ($phase === 'adding' ? 'adding it to your library' : 'starting'))))))))));
+                   : ($phase === 'writing' ? 'writing it to your games' : ($phase === 'adding' ? 'adding it to your library' : 'starting')))))))))));
             $frac  = ($phase === 'fetching' || $phase === 'placing') && $total > 0 ? (int) ($j['bytes'] ?? 0) / $total
                    : ($phase === 'making' && (int) ($j['of'] ?? 0) > 0 ? (int) ($j['at'] ?? 0) / (int) $j['of'] : null);
             $out[] = xs_jobs_row('fanmake', 'Make ' . (string) ($j['name'] ?? 'a fan project'), $state === 'running' ? 'running' : ($state === 'done' ? 'done' : 'failed'),
