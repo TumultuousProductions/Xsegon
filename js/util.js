@@ -239,5 +239,19 @@ export function namesAnd(a) { return a.length < 2 ? a.join("") : a.slice(0, -1).
 // A size in whole megabytes: "70 MB".
 export function megabytes(bytes) { return Math.round((bytes || 0) / 1048576) + " MB"; }
 
+/* The mouse wheel moves a row that scrolls sideways (the save picker, Documents' tabs), one
+   item a notch, as the Rows view's rows do. At either end it lets go: the window scrolls. */
+export function wheelSideways(box) {
+  box.addEventListener("wheel", function (e) {
+    if (!e.deltaY || e.deltaX || e.shiftKey) { return; }       // a sideways gesture, or Shift, already goes sideways
+    var can = e.deltaY > 0 ? box.scrollLeft + box.clientWidth < box.scrollWidth - 2 : box.scrollLeft > 2;
+    if (!can) { return; }
+    e.preventDefault();
+    var first = box.firstElementChild;
+    var step = first ? first.getBoundingClientRect().width + (parseFloat(getComputedStyle(box).columnGap) || 0) : 130;
+    box.scrollBy({ left: (e.deltaY > 0 ? 1 : -1) * step, behavior: "smooth" });
+  }, { passive: false });
+}
+
 // Where a person writes in, and sends the file Help > Report a problem makes.
 export var HELP_MAIL = "help@tumultuousproductions.site";

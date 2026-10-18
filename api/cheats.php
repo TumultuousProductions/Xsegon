@@ -56,9 +56,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET') {
         if ($ok === null) {
             xs_fail('that cheat file is not one of this game\'s', 409);
         }
-        $root = xs_cheat_root($game);
-        $all  = xs_cheat_list($root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $want));
-        $q    = trim((string) ($_GET['q'] ?? ''));
+        $root   = xs_cheat_root($game);
+        $chosen = xs_cheats_for($id);
+        // On now first, then the ones on before, then the rest.
+        $all    = xs_cheats_ordered(xs_cheat_list($root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $want)),
+                                    $chosen, xs_cheats_used($id, $want), $want);
+        $q      = trim((string) ($_GET['q'] ?? ''));
         if ($q !== '') {
             $all = array_values(array_filter($all, function (array $c) use ($q): bool {
                 return stripos($c['desc'], $q) !== false;
@@ -73,7 +76,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET') {
         unset($c);
         xs_json(['ok' => true, 'id' => $id, 'file' => $want, 'cheats' => $page,
                  'from' => $from, 'shown' => count($page), 'matching' => count($all),
-                 'whole' => $ok['cheats'], 'chosen' => xs_cheats_for($id)]);
+                 'whole' => $ok['cheats'], 'chosen' => $chosen]);
     }
 
     // ---- which files this game could use --------------------------------

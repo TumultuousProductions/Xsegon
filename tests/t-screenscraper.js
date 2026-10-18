@@ -305,6 +305,16 @@ module.exports = async function (b, check) {
       ["ScreenScraper has no video of it, asked " + await dayOf(D), "not found on ScreenScraper, asked " + await dayOf(F)]);
     await b.ev(`document.querySelector("#editor .st-apart-head button").click()`);
     check("Show unfolds them", await b.ev(where(D.id)), "apart");
+    // A game on a console ScreenScraper has no number for: its own group, last, folded at first.
+    const off = listNow.games.find((g) => !g.has && !g.system);
+    if (off) {
+      const offAt = `(r => !r ? "gone" : (t => !t ? "main" : t.hidden ? "folded" : "shown")(r.closest(".st-nosys")))(${rowOf(off.id)})`;
+      check("one on a console ScreenScraper does not have is in a group of its own, last, folded away and not selectable",
+        await b.ev(`[${offAt}, !!${rowOf(off.id)}.closest(".st-apart:last-child"), ${rowOf(off.id)}.querySelector("input").disabled]`), ["folded", true, true]);
+      check("its own Show unfolds it", await b.ev(`(() => { [...document.querySelectorAll("#editor .st-apart")].pop().querySelector(".st-apart-head button").click(); return ${offAt}; })()`), "shown");
+    } else {
+      check("(no game on a console ScreenScraper does not have here: that group is not looked at)", true);
+    }
     check("the stored login is named, its password never shown, and no developer ID", await b.ev(`(() => { const t = document.querySelector("#editor .ss-acct").textContent; return [t.includes(${JSON.stringify(LOGIN.user)}), t.includes(${JSON.stringify(LOGIN.devid)}), t.includes(${JSON.stringify(LOGIN.password)}), !!document.querySelector("#editor .ss-form")]; })()`), [true, false, false, false]);
     check("a run that stopped says why", await b.ev(`/stopped: ScreenScraper refused the developer ID/.test(document.querySelector("#editor .group-help").textContent)`), true);
     check("selecting one console selects only its games, and none kept apart", await b.ev(`(() => {

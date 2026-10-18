@@ -15,7 +15,7 @@ import { L, api } from "./log.js";
 import { stopVideo } from "./snap.js";
 import { sound } from "./sound.js";
 import { $editor } from "./state.js";
-import { el, titleText } from "./util.js";
+import { el, titleText, wheelSideways } from "./util.js";
 
 function sizeWords(bytes) {
   return bytes >= 1048576 ? (bytes / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(bytes / 1024)) + " KB";
@@ -42,6 +42,7 @@ function show(g, docs, at) {
   inner.appendChild(el("p", "group-help", titleText(g) + "  ·  " + docs.length + (docs.length === 1 ? " document" : " documents")));
 
   var tabs = el("div", "doc-tabs");
+  wheelSideways(tabs);
   tabs.setAttribute("role", "tablist");
   var buttons = docs.map(function (d, i) {
     var b = el("button", "doc-tab", d.label);

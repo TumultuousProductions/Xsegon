@@ -293,9 +293,9 @@ module.exports = async function (b, check) {
   for (const key of ["xsegon", "games", "media", "emulators", "view", "arrange", "images", "badges", "help"]) { bar[key] = await barMenu(key); }
   check("the X opens on Settings, then the controller and the backup", bar.xsegon.labels.slice(0, 3), ["Settings...", "Controller...", "Back up what you made..."]);
   // Hacks to settle carries how many wait, which is this library's own number.
-  check("Games: adding them, a random one, the two lists of what is not there, the hacks that wait for a word, and Fan projects",
+  check("Games: adding them, a random one, the two lists of what is not there, the hacks that wait for a word, Fan projects and Extensions",
         bar.games.labels.map((l) => l.replace(/^Hacks to settle \(\d+\)\.\.\.$/, "Hacks to settle...")),
-        ["Add Games...", "Scan for Games...", "Add Steam games...", "Surprise me", "Missing Games...", "Check game files...", "Hacks to settle...", "Games you do not have...", "Fan projects..."]);
+        ["Add Games...", "Scan for Games...", "Add Steam games...", "Surprise me", "Missing Games...", "Check game files...", "Hacks to settle...", "Games you do not have...", "Fan projects...", "Extensions..."]);
   // Find videos from Package is there only where private\ is, which adds it after Export.
   const ownFind = fs.existsSync(path.join(ROOT, "private", "web", "main.js"));
   check("Pictures & Videos: the pictures, the three kinds of video, and a video package's list out and package in", bar.media.labels,
@@ -313,6 +313,19 @@ module.exports = async function (b, check) {
         await b.until(`(t => !!t && !document.getElementById("settings").hidden && t.textContent.trim())(document.querySelector("#settings .set-tab.on .tab-label"))`, "Emulators", 8000), "Emulators");
   await b.key("Escape");
   await b.until(`document.getElementById("settings").hidden`);
+  await b.settled();
+  // A long window keeps its title and Close in sight while the rest scrolls under them (css\xsegon.css, .set-head sticky).
+  await b.openBar("help");
+  await b.menuItem(/What's new/);
+  await b.until(`(document.querySelector("#editor .panel-title") || {}).textContent`, "WHAT'S NEW", 6000);
+  await b.waitFor(`document.querySelectorAll("#editor .wn-day").length > 0`, 6000);   // the changes come from the server a moment later
+  check("What's new scrolled down keeps its title and Close at the top, with the window's bar",
+    await b.ev(`(p => { p.scrollTop = 900; return new Promise((ok) => requestAnimationFrame(() => {
+      const head = p.querySelector(".set-head"), h = head.getBoundingClientRect(), t = p.getBoundingClientRect();
+      ok([p.scrollTop > 0, Math.abs(h.top - t.top) <= 1, getComputedStyle(head).position, p.offsetWidth - p.clientWidth >= 10]); })); })(document.getElementById("editor"))`),
+    [true, true, "sticky", true]);
+  await b.key("Escape");
+  await b.until(`document.getElementById("editor").hidden`);
   await b.settled();
 
   /* ---- the menu tooltips ----

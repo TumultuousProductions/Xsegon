@@ -54,22 +54,34 @@ function xs_fp_is(string $dir): bool
         || (is_file($dir . $DS . 'version.txt') && is_file($dir . $DS . 'Launcher' . $DS . 'Flashpoint.exe')));
 }
 
+/** The folder chosen on the Extensions page, or ''. */
+function xs_fp_chosen(): string
+{
+    return xs_norm_path((string) (xs_ext_state()['flashpoint']['folder'] ?? ''));
+}
+
 /**
  * Where Flashpoint may be, in the order looked: the folder chosen on the Extensions page,
- * then a Flashpoint folder at the top of a drive or in your own folders. A test copy looks
- * only where it was told, so it never finds this PC's own.
+ * then a Flashpoint folder at the top of a drive or in your own folders. A network drive is
+ * never looked at: one that does not answer holds a look for a minute (roadmap AZ15), and a
+ * Flashpoint on a share can still be chosen. A test copy looks only where it was told, so it
+ * never finds this PC's own.
  */
 function xs_fp_places(): array
 {
-    $chosen = xs_norm_path((string) (xs_ext_state()['flashpoint']['folder'] ?? ''));
+    $chosen = xs_fp_chosen();
     $out = $chosen !== '' ? [$chosen] : [];
     if (xs_test_copy()) {
         return $out;
     }
+    $shares = xs_net_letters();
     foreach (range('C', 'Z') as $d) {
-        if (xs_drive_stuck($d . ':\\') === null && @is_dir($d . ':\\')) {
+        if (!in_array($d, $shares, true) && xs_drive_stuck($d . ':\\') === null && @is_dir($d . ':\\')) {
             array_push($out, $d . ':\\Flashpoint', $d . ':\\Games\\Flashpoint');
         }
+    }
+    if ($shares) {
+        xs_log('EXTN', 'looked for Flashpoint at the top of the drives, network drives left out: ' . implode(', ', array_map(static fn ($d) => $d . ':', $shares)));
     }
     $home = (string) getenv('USERPROFILE');
     if ($home !== '') {
@@ -80,9 +92,13 @@ function xs_fp_places(): array
     return array_values(array_unique($out));
 }
 
-/** Flashpoint's folder on this PC, or '' when none is found. */
+/** Flashpoint's folder on this PC, or '' when none is found. The chosen folder first: the drives are walked only when it is not one. */
 function xs_fp_root(): string
 {
+    $chosen = xs_fp_chosen();
+    if ($chosen !== '' && xs_fp_is($chosen)) {
+        return $chosen;
+    }
     foreach (xs_fp_places() as $p) {
         if (xs_fp_is($p)) {
             return $p;

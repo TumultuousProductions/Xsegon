@@ -93,7 +93,7 @@ function zipOf(files) {
 const sha256 = (x) => crypto.createHash("sha256").update(x).digest("hex");
 
 module.exports = async function (b, check) {
-  const kept = new Guard(["extensions.json", "extensions-list.json", "extensions-job.json", "local-games.json", "art-hidden.json", "flashpoint-pad.json"]);
+  const kept = new Guard(["extensions.json", "extensions-list.json", "extensions-job.json", "local-games.json", "art-hidden.json", "flashpoint-pad.json", "settings.json"]);
   const fix = path.join(DATA, "ext-fixtures");
   const remote = path.join(DATA, "fan-fixtures", "remote");
   const put = (url, bytes) => {
@@ -116,6 +116,11 @@ module.exports = async function (b, check) {
       [fp0.section, fp0.folder, fp0.next], ["ready", "", "get"]);
 
     /* ---- a made-up Flashpoint, chosen as its folder ---------------------------- */
+    // The copy holds this PC's own games: Flashpoint ones brought in here are set aside, so the counts below are this test's (kept puts them back).
+    const ownGames = path.join(DATA, "local-games.json");
+    if (fs.existsSync(ownGames)) {
+      fs.writeFileSync(ownGames, JSON.stringify(JSON.parse(fs.readFileSync(ownGames, "utf8")).filter((e) => !e.fpId && e.platform !== "Flashpoint")));
+    }
     fs.rmSync(fix, { recursive: true, force: true });
     const root = path.join(fix, "Flashpoint");
     for (const d of ["Data/Playlists", "Data/Images/Logos/aa/11", "Data/Images/Screenshots/aa/11", "Launcher", "FPSoftware"]) {
@@ -293,12 +298,17 @@ module.exports = async function (b, check) {
       await b.until(`[document.getElementById("extpage").hidden, document.getElementById("platform").value, !document.getElementById("main").hidden]`,
         [true, "Flashpoint", true], 8000), [true, "Flashpoint", true]);
 
+    await b.setView("grid");               // the menu bar is in list and grid; the copy keeps this PC's own view
     await b.openBar("games");
     await b.menuItem(/Extensions/);
     check("Games > Extensions opens it from the games", await b.waitFor(`!document.getElementById("extpage").hidden && document.querySelectorAll("#extpage .tile").length === 1`, 10000));
     await b.key("Escape");
     check("and Escape goes back to them", await b.waitFor(`document.getElementById("extpage").hidden && !document.getElementById("main").hidden`, 5000));
-    await b.openBar("games");
+    // Where the bar is not, the wordmark is the round X and carries its menus (js\views.js paintSeg).
+    await b.setView("wheel");
+    await b.clickSel("#brand-logo");
+    await b.waitFor(`!!document.querySelector(".ctx")`, 3000);
+    await b.menuItem(/^Games$/);
     await b.menuItem(/Extensions/);
     await b.waitFor(`!document.getElementById("extpage").hidden`, 10000);
     await b.clickSel("#brand-logo");

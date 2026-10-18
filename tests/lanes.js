@@ -19,10 +19,10 @@ const ALONE = ["views", "log", "runcheck"];
 const NOT_HERE = ["e2e", "big"];        // big makes 40,000 files and times a server: by itself, node tests\run.js big
 // What a quick run leaves out: the groups that take long for the checks they hold, and the stopwatch ones.
 // It is for while a change is being made; the whole run is still the proof before a commit.
-const QUICK_OUT = ["api", "setup", "runcheck", "steam", "skraper", "jobs", "offline", "backup", "views", "log"];
+const QUICK_OUT = ["api", "setup", "runcheck", "steam", "jobs", "offline", "backup", "views", "log"];
 // Seconds the slow groups take; any other counts as five. Written here and not measured each run, so the
 // same command always puts the same groups after each other: a group's result never moves with the split.
-const SECS = { api: 114, setup: 66, steam: 43, skraper: 41, settings: 38, jobs: 38, scan: 33, backup: 24, offline: 23,
+const SECS = { api: 114, setup: 66, steam: 43, settings: 38, jobs: 38, scan: 33, backup: 24, offline: 23,
                menus: 22, unpack: 16, boot: 15, more: 15, states: 14, writes: 14, cheats: 13, editing: 12, bios: 10 };
 
 /** The groups in run.js's own order: its list is the one list. */

@@ -20,6 +20,7 @@
     the page's entry: the entry is loaded with a ?v= on it, an import of it
     would not have one, and the browser would hold two of the same module.  */
 
+import { fitDetails } from "./detailfit.js";
 import { $body, $main, $syswall, $view } from "./state.js";
 
 var lastStrip = 0;                       // the strip last measured, to see it come
@@ -76,6 +77,7 @@ export function measureChrome() {
   if ($main && !$main.hidden && $main.offsetHeight) {
     root.setProperty("--main-top", Math.round($main.getBoundingClientRect().top + window.scrollY) + "px");
   }
+  fitDetails();                          // the lists in details, when it is up (js\detailfit.js)
   var stage = stageEl();
   if (!stage) { return; }
   // Its own height does not move its own top, so this cannot chase itself.

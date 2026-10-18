@@ -57,7 +57,6 @@ const GROUPS = {
   archivevid: "./t-archivevid",
   arcadevid: "./t-arcadevid",
   cheatlists: "./t-cheatlists",
-  skraper: "./t-skraper",
   runcheck: "./t-runcheck",
   wanted: "./t-wanted",
   paths: "./t-paths",
@@ -97,7 +96,7 @@ const GROUPS = {
   Object.assign(GROUPS, last);
 }
 // data files a run may write; all put back afterwards
-const PROTECTED = ["favourites.json", "my-ratings.json", "tags.json", "fix-marks.json", "overrides.json", "hidden.json", "art-hidden.json", "accompanied.json", "accompanied-told.json", "local-games.json", "scanned-games.json", "sessions.jsonl", "settings.json", "ra-append.cfg", "cores.json", "emulators.json", "cheats.json", "pad-remaps.json", "player-remaps.json", "game-remaps.json", "ra-hotkeys.json", "game-hotkeys.json", "library-seen.json", "messages.json", "deleted.json", "setup-job.json", "setup.json", "pick-folder.json", "steamvid-job.json", "steamvid-none.json", "screenscraper-job.json", "screenscraper-none.json", "damaged.json", "launch-results.json", "launch-log.jsonl", "running.json", "last-error.json", "wanted.json", "filecheck.json", "unpacked.json", "unpack-job.json", "skraper-job.json", "emumove.json", "emumove-job.json", "media-copy.json", "videopack.json", "videopack-job.json", "thumbs-job-box.json", "thumbs-job-logo.json", "texpacks-job.json", "texpacks.json", "extensions.json", "extensions-job.json"];
+const PROTECTED = ["favourites.json", "my-ratings.json", "tags.json", "fix-marks.json", "overrides.json", "hidden.json", "art-hidden.json", "accompanied.json", "accompanied-told.json", "local-games.json", "scanned-games.json", "sessions.jsonl", "settings.json", "ra-append.cfg", "cores.json", "emulators.json", "cheats.json", "cheats-used.json", "pad-remaps.json", "player-remaps.json", "game-remaps.json", "ra-hotkeys.json", "game-hotkeys.json", "library-seen.json", "messages.json", "deleted.json", "setup-job.json", "setup.json", "pick-folder.json", "steamvid-job.json", "steamvid-none.json", "screenscraper-job.json", "screenscraper-none.json", "damaged.json", "launch-results.json", "launch-log.jsonl", "running.json", "last-error.json", "wanted.json", "filecheck.json", "unpacked.json", "unpack-job.json", "emumove.json", "emumove-job.json", "media-copy.json", "videopack.json", "videopack-job.json", "thumbs-job-box.json", "thumbs-job-logo.json", "texpacks-job.json", "texpacks.json", "extensions.json", "extensions-job.json"];
 
 (async () => {
   const LIVE = process.argv.includes("--live");
@@ -205,7 +204,8 @@ const PROTECTED = ["favourites.json", "my-ratings.json", "tags.json", "fix-marks
       const secs = ((Date.now() - started) / 1000).toFixed(1);
       // How much of that was fixed waiting: the part a faster suite can take back.
       const slept = ((sleepBill.total - sleptBefore) / 1000).toFixed(1);
-      console.log((bad.length || crashed ? "FAIL " : "ok   ") + name.padEnd(9) + (report.length - bad.length) + "/" + report.length + "  " + secs + "s  (slept " + slept + "s)");
+      // At least one space after the name: tests\lanes.js reads the name and the count apart.
+      console.log((bad.length || crashed ? "FAIL " : "ok   ") + name.padEnd(8) + " " + (report.length - bad.length) + "/" + report.length + "  " + secs + "s  (slept " + slept + "s)");
       for (const r of bad) {
         console.log("       x " + r.name + (r.want !== undefined ? "   got " + JSON.stringify(r.got) + ", wanted " + JSON.stringify(r.want) : ""));
       }
