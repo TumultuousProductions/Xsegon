@@ -118,6 +118,20 @@ function xs_file_seen(string $file): bool
     return xs_drive_stuck($file) !== null || is_file($file);
 }
 
+/**
+ * The drive letters Windows has mapped to network shares ("T"), from net use, which asks
+ * no share anything. None when Windows will not say: then every drive is looked at as before.
+ */
+function xs_net_letters(): array
+{
+    static $got = null;
+    if ($got === null) {
+        $said = @shell_exec('net use 2>NUL');
+        $got = is_string($said) && preg_match_all('/\b([A-Z]):\s+\\\\\\\\/i', $said, $m) ? array_values(array_unique(array_map('strtoupper', $m[1]))) : [];
+    }
+    return $got;
+}
+
 /** Start the process that waits for a drive to answer again. One a drive: whoever makes its mark starts it. */
 function xs_drive_wait(string $drive): void
 {

@@ -578,7 +578,8 @@ export function initMenus() {
   });
   // The wordmark, while it is the round X (views.js paintSeg): the same press. Not the image's own drag.
   $logo.addEventListener("mousedown", function (e) {
-    if (!$logo.classList.contains("as-orb")) { return; }
+    // Said, since a press that opens nothing leaves no other line (roadmap AZ14).
+    if (!$logo.classList.contains("as-orb")) { L("CLK", "brand-logo: not the round X in this view, nothing opens"); return; }
     e.stopPropagation();
     e.preventDefault();
     if (mbOpen === "xsegon") { closeGameMenu(); } else { openBarMenu("xsegon"); }

@@ -222,7 +222,19 @@ module.exports = async function (b, check) {
     check("(the game's details open again)", await detailsOf(b, ID), true);
     await b.clickSel(`#details .dtab[data-tab="saves"]`);
     await b.waitFor(`${ROWS}.length > 5`, 9000);
-    const rowOf = `${ROWS}.find((r) => r.dataset.key === ${JSON.stringify(srmKey)})`;
+    // A real wheel turn with the pointer on a save scrolls the list: a group of saves is a box of its own and must not keep the wheel.
+    const spot = await b.ev(`(l => { l.style.maxHeight = "140px"; l.scrollTop = 0; const box = l.getBoundingClientRect();
+      const r = ${ROWS}.map((x) => x.getBoundingClientRect()).find((x) => x.top >= box.top && x.top + 24 <= box.bottom);
+      return r ? { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + 12) } : null; })(document.querySelector("#details .sv-list"))`);
+    if (spot) {
+      await b.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: spot.x, y: spot.y });
+      await b.send("Input.dispatchMouseEvent", { type: "mouseWheel", x: spot.x, y: spot.y, deltaX: 0, deltaY: 120 });
+    }
+    check("the wheel with the pointer on a save scrolls the list",
+      [!!spot, await b.until(`document.querySelector("#details .sv-list").scrollTop > 0`, true, 3000)], [true, true]);
+    await b.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: 0, y: 0 });
+    await b.ev(`(l => { l.style.maxHeight = ""; l.scrollTop = 0; })(document.querySelector("#details .sv-list"))`);
+    const rowOf =`${ROWS}.find((r) => r.dataset.key === ${JSON.stringify(srmKey)})`;
     await b.ev(`(r => { r.closest(".dtab-pane").dispatchEvent(new MouseEvent("mousedown", { bubbles: true })); r.dispatchEvent(new MouseEvent("mouseenter")); })(${rowOf})`);
     check("on a save beside the game the legend offers using it", await b.until(`${legend}.includes("use this save")`, true), true);
     await b.ev(`${rowOf}.click()`);

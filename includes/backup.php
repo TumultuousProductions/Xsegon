@@ -41,7 +41,7 @@ function xs_backup_parts(): array
             'dirs'  => [],
             /* data\cheats\ and data\ra-remaps\ are left out: each launch writes
                them again from cheats.json and pad-remaps.json. */
-            'files' => ['overrides.json', 'cores.json', 'emu-choice.json', 'hack-choice.json', 'cheats.json', 'pad-remaps.json', 'player-remaps.json', 'game-remaps.json', 'pad-keys.json', 'ra-hotkeys.json', 'game-hotkeys.json'],
+            'files' => ['overrides.json', 'cores.json', 'emu-choice.json', 'hack-choice.json', 'cheats.json', 'cheats-used.json', 'pad-remaps.json', 'player-remaps.json', 'game-remaps.json', 'pad-keys.json', 'ra-hotkeys.json', 'game-hotkeys.json'],
         ],
         'marks' => [
             'label' => 'Favourites, your ratings, tags, hidden and deleted games',

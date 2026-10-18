@@ -51,6 +51,26 @@ async function detailTabsOnAGame(b, check, sf) {
   check("the open tab's words can be read: they are not the colour of the tab",
     await b.ev(`(s => s.color !== s.backgroundColor)(getComputedStyle(${TABS}.find((x) => x.classList.contains("on"))))`), true);
   await b.shot("details-tab-about");
+  // The description (js\details.js): made longer than its box, the window made the user's own size, so its
+  // size is followed and it drifts; it ends above the legend and the strip (js\detailfit.js); the wheel takes it over.
+  if (await b.ev(`!!document.querySelector("#details .notes-inner") && !document.body.classList.contains("no-anim") && !matchMedia("(prefers-reduced-motion: reduce)").matches`)) {
+    await b.ev(`document.querySelector("#details .notes-inner").textContent += " " + "A line of words to read, again and again. ".repeat(300)`);
+    await b.send("Emulation.setDeviceMetricsOverride", { width: 1536, height: 960, deviceScaleFactor: 1.25, mobile: false });
+    try {
+      check("a description longer than its box drifts, measured as its box changes size",
+        await b.until(`document.querySelector("#details .notes-box").classList.contains("notes-auto")`, true, 4000), true);
+      check("and it ends above the legend and the strip, wherever it begins",
+        await b.until(`(x => Math.round(x.getBoundingClientRect().bottom) <= innerHeight - parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--foot-h")))(document.querySelector("#details .notes-box"))`, true, 4000), true);
+      check("the wheel takes it over by hand from where it stands, with its bar",
+        await b.ev(`(x => { x.dispatchEvent(new WheelEvent("wheel", { deltaY: 120, bubbles: true, cancelable: true }));
+          return [x.classList.contains("by-hand"), x.classList.contains("notes-auto"), x.scrollTop > 0, x.offsetWidth - x.clientWidth >= 10]; })(document.querySelector("#details .notes-box"))`),
+        [true, false, true, true]);
+    } finally {
+      await b.send("Emulation.clearDeviceMetricsOverride");
+    }
+  } else {
+    check("(no description here, or animations are off: the drift is not looked at)", true);
+  }
 
   await b.key("ArrowRight");
   check("Right opens the next tab, Media", await b.until(onMedia, true), true);
@@ -311,6 +331,9 @@ module.exports = async function (b, check) {
   check("the others are still offered, not dropped", offer.files.length >= 4);
 
   // ---- reading one file, in pages ---------------------------------------
+  // Nothing on and nothing once on (data\cheats-used.json), so the file's own order comes back.
+  await api("api/cheats.php", { id: sf.id, clear: true });
+  fs.rmSync(path.join(DATA, "cheats-used.json"), { force: true });
   const file = offer.files[0].file;
   const page = await api("api/cheats.php?id=" + encodeURIComponent(sf.id)
     + "&file=" + encodeURIComponent(file));
@@ -422,6 +445,28 @@ module.exports = async function (b, check) {
   const none = await api("api/cheats.php", { id: sf.id, file: file, on: [] });
   check("selecting nothing turns cheats off", none.ok && none.chosen === null);
 
+  // ---- the order: on now, then on before, then the rest -----------------
+  const order = async (f) => (await api("api/cheats.php?id=" + encodeURIComponent(sf.id) + "&file=" + encodeURIComponent(f || file))).cheats.map((c) => c.i);
+  const one = (c) => ({ i: c.i, desc: c.desc });
+  const [c0, c40, c150] = [page.cheats[0], page.cheats[40], page.cheats[150]];
+  await api("api/cheats.php", { id: sf.id, clear: true });
+  fs.rmSync(path.join(DATA, "cheats-used.json"), { force: true });
+  await api("api/cheats.php", { id: sf.id, file: file, on: [one(c150)] });
+  await api("api/cheats.php", { id: sf.id, file: file, on: [one(c40)] });
+  check("the cheat on now comes first, then the one on before, then the rest as the file has them",
+    (await order()).slice(0, 3), [c40.i, c150.i, c0.i]);
+  await api("api/cheats.php", { id: sf.id, clear: true });
+  check("with all of them off, the ones on before still lead, in the file's order", (await order()).slice(0, 3), [c40.i, c150.i, c0.i]);
+  await api("api/cheats.php", { id: sf.id, file: file, on: [one(c150)] });
+  check("on now goes above on before, even one earlier in the file", (await order()).slice(0, 3), [c150.i, c40.i, c0.i]);
+  const rest = await api("api/cheats.php?id=" + encodeURIComponent(sf.id) + "&file=" + encodeURIComponent(file) + "&from=200");
+  const both = (await order()).concat(rest.cheats.map((c) => c.i));
+  check("the two pages still hold every cheat once", [both.length, new Set(both).size], [page.matching, page.matching]);
+  const theirs = await order(offer.files[1].file);
+  check("another cheat file of the game keeps its own order", theirs.every((i, k) => k === 0 || i > theirs[k - 1]), true);
+  await api("api/cheats.php", { id: sf.id, clear: true });
+  fs.rmSync(path.join(DATA, "cheats-used.json"), { force: true });
+
   // ---- the games with nothing to offer ----------------------------------
   const gc = (await gamesOn("Nintendo GameCube"))[0];
   const notRa = await api("api/cheats.php?id=" + encodeURIComponent(gc.id));
@@ -469,10 +514,18 @@ module.exports = async function (b, check) {
   // selecting with the keyboard, which is the only way on a sofa
   await b.key("ArrowDown"); await b.key("ArrowDown"); await b.settled();
   const onRow = await b.ev(`(document.querySelector("#editor .ch-list .cr-row.sel")||{}).textContent`);
+  const barAt = `Math.round(document.querySelector("#editor .ch-list .cr-row.sel").getBoundingClientRect().top)`;
+  const barWas = await b.ev(barAt);
   await b.key("Enter");
   await b.until(`!!document.querySelector("#editor .ch-list .cr-row.on")`);
   check("Enter selects the row the bar is on",
     await b.ev(`[...document.querySelectorAll("#editor .ch-list .cr-row.on")].map(n => n.textContent)[0]`), onRow);
+  // A copy goes under Cheats active at once; the row pressed stays lit, the bar on it, standing where it stood.
+  check("the press puts a copy under Cheats active at once, the row pressed staying lit with the bar on it where it stood",
+    await b.ev(`[[...document.querySelectorAll("#editor .ch-list .ch-head")].map((h) => h.textContent),
+      [...document.querySelectorAll("#editor .ch-list .cr-row.on")].filter((n) => n.textContent === ${JSON.stringify(onRow)}).length,
+      document.querySelector("#editor .ch-list .cr-row.sel").textContent, Math.abs(${barAt} - ${barWas}) <= 1]`),
+    [["Cheats active", "Other cheats"], 2, onRow, true]);
   /* Selecting is the saving: with a Save row to press as well, cheats were
      selected and the game played with none. */
   check("and that press keeps it, with no Save row to press: the row above counts it and the server has it",
@@ -497,6 +550,35 @@ module.exports = async function (b, check) {
 
   await b.key("Escape");
   await sleep(300);
+
+  // The window lists them in that order: the one on now, the one on before, then the file's first.
+  await api("api/cheats.php", { id: sf.id, clear: true });
+  fs.rmSync(path.join(DATA, "cheats-used.json"), { force: true });
+  await api("api/cheats.php", { id: sf.id, file: file, on: [one(c40)] });
+  await api("api/cheats.php", { id: sf.id, file: file, on: [one(c150)] });
+  await b.goto();
+  await b.setView("list");
+  await b.openPlatform("Nintendo 64");
+  await b.ev(openMenu);
+  await b.waitFor(`!!document.querySelector(".ctx")`, 3000); await b.settled();
+  await b.menuDeep(/^Cheats/, /Emulation/);
+  await b.waitFor(`document.querySelectorAll("#editor .ch-list .cr-row").length > 3`, 9000);
+  check("the window opens with the cheat on now under Cheats active, then the one on before heading the other cheats, each listed once",
+    await b.ev(`[[...document.querySelectorAll("#editor .ch-list .cr-row")].slice(2, 5).map((r) => [r.querySelector(".cr-name").textContent, r.classList.contains("on")]),
+      [...document.querySelectorAll("#editor .ch-list > *")].filter((n) => n.classList.contains("ch-head") || n.textContent === ${JSON.stringify(c150.desc)}).map((n) => n.textContent)]`),
+    [[[c150.desc, true], [c40.desc, false], [c0.desc, false]], ["Cheats active", c150.desc, "Other cheats"]]);
+  // Off is not active: turned off there, it leaves for the top of the other cheats, above c40 though later in the file.
+  await b.key("ArrowDown"); await b.key("ArrowDown"); await b.settled();
+  await b.key("Enter");
+  check("turned off under Cheats active, a cheat leaves it at once for the top of the other cheats, listed once, the bar on it",
+    [await b.until(`document.querySelectorAll("#editor .ch-list .ch-head").length`, 0, 6000),
+     await b.ev(`[...document.querySelectorAll("#editor .ch-list .cr-row")].slice(2, 4).map((r) => [r.textContent, r.classList.contains("on"), r.classList.contains("sel")])`),
+     await b.ev(`[...document.querySelectorAll("#editor .ch-list .cr-row")].filter((r) => r.textContent === ${JSON.stringify(c150.desc)}).length`)],
+    [0, [[c150.desc, false, true], [c40.desc, false, false]], 1]);
+  await b.key("Escape");
+  await sleep(300);
+  await api("api/cheats.php", { id: sf.id, clear: true });
+  fs.rmSync(path.join(DATA, "cheats-used.json"), { force: true });
 
   // and a game with nothing says so rather than opening an empty list
   await b.goto();
