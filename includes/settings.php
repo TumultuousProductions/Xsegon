@@ -282,6 +282,7 @@ function xs_settings_defaults(): array
         'debug' => [
             'logging'          => true,    // data\log\<day>.log: every action, page and server
             'logMoves'         => true,    // also every settled selection (SEL), the noisiest line
+            'asked'            => ['logging' => false],   // the "Keep a log?" card was answered (js\logask.js)
         ],
         /* Built from data\emulators.json, not from keys here; the entry is
            there because the settings screen draws one page per category. */
@@ -603,6 +604,7 @@ function xs_settings_schema(): array
                            'help' => 'Every action and request, page and server, to data\log\<day>.log. The L key shows the log.'],
             'logMoves' => ['label' => 'Log every selection', 'section' => 'Logging',
                            'help' => 'A SEL line each time you rest on a game. The noisiest line; off keeps the rest.'],
+            'asked'    => ['type' => 'set'],
         ],
         'emulators' => [
             '_label' => 'Emulators',
