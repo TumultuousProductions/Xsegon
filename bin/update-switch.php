@@ -13,7 +13,8 @@
  *
  * data\, private\ and custom\ are never touched. A file of Xsegon's the person
  * changed, or one of theirs where a new one arrives, is kept in previous\ and
- * named. Prints one JSON answer; exit 0 when it did the job.
+ * named. A switch that fails says why in the mailbox and in failed.json, which
+ * Settings reads. Prints one JSON answer; exit 0 when it did the job.
  */
 declare(strict_types=1);
 
@@ -28,6 +29,8 @@ set_time_limit(0);
 const US_LIST  = 'RELEASE.json';
 const US_SIG   = 'RELEASE.sig';
 const US_NEVER = ['data', 'private', 'custom', 'runtime', '.git'];
+const US_HELP  = 'help@tumultuousproductions.site';   // js\util.js HELP_MAIL: this file loads nothing of Xsegon's
+const US_FAILED_MSG = 'msg-update-failed';
 
 $cmd  = $argv[1] ?? '';
 $opts = [];
@@ -58,26 +61,31 @@ switch ($cmd) {
     case 'switch':
         $t0    = microtime(true);
         $ready = us_json($up . DIRECTORY_SEPARATOR . 'ready.json');
+        $have  = us_json($root . DIRECTORY_SEPARATOR . US_LIST);
+        $go    = us_json($up . DIRECTORY_SEPARATOR . 'go.json') ?? [];
+        // Who the failure words name: the version pressed for, and this one.
+        $to    = (string) ($ready['version'] ?? ($go['to'] ?? 'the new version'));
+        $from  = (string) ($have['version'] ?? ($ready['from'] ?? ($go['from'] ?? 'this version')));
         if ($ready === null || !is_dir($next)) {
-            us_fail('nothing is ready to put in place');
+            us_switch_failed('nothing is ready to put in place', 'nothing was waiting to be put in place', $to, $from);
         }
         if ((us_json($jour)['state'] ?? '') === 'moving') {
-            us_fail('a switch was cut off halfway: recover first');
+            us_switch_failed('a switch was cut off halfway: recover first', 'an earlier update was cut off halfway and is put back at the next start first', $to, $from);
         }
         $listText = (string) @file_get_contents($next . DIRECTORY_SEPARATOR . US_LIST);
         $list     = json_decode($listText, true);
         if (!is_array($list['files'] ?? null) || ($list['version'] ?? null) !== ($ready['version'] ?? '')) {
-            us_fail('the waiting copy has no list of its files for ' . ($ready['version'] ?? '?'));
+            us_switch_failed('the waiting copy has no list of its files for ' . $to, 'the downloaded copy has lost its list of files', $to, $from, true);
         }
         // Checked again by checksum, as it has sat on the disk since it was checked and tried.
         foreach ($list['files'] as $p => $f) {
             $at = us_at($next, (string) $p);
             if (!us_safe((string) $p) || !is_file($at) || hash_file('sha256', $at) !== ($f['sha256'] ?? '')) {
-                us_fail("the waiting copy changed since it was checked ($p): it is not put in place");
+                us_switch_failed("the waiting copy changed since it was checked ($p): it is not put in place",
+                    "the downloaded copy changed on the disk after it was checked ($p)", $to, $from, true);
             }
         }
 
-        $have  = us_json($root . DIRECTORY_SEPARATOR . US_LIST);
         $old   = is_array($have['files'] ?? null) ? $have['files'] : [];
         $new   = $list['files'];
         $paths = array_keys($old + $new);
@@ -109,7 +117,7 @@ switch ($cmd) {
             if (file_exists($cur)) {
                 if (!us_move($cur, us_at($prev, $p))) {
                     $left = us_undo($j);
-                    us_fail("could not move $p aside (in use?): put back as it was" . ($left ? ', but not ' . implode(', ', $left) : ''));
+                    us_switch_held("could not move $p aside (in use?): put back as it was" . ($left ? ', but not ' . implode(', ', $left) : ''), $p, $left, $j);
                 }
                 if ($stop > 0 && ++$moves >= $stop) {
                     exit(3);
@@ -118,7 +126,7 @@ switch ($cmd) {
             if (isset($isNew[$p])) {
                 if (!us_move(us_at($next, $p), $cur)) {
                     $left = us_undo($j);
-                    us_fail("could not put the new $p in place (in use?): put back as it was" . ($left ? ', but not ' . implode(', ', $left) : ''));
+                    us_switch_held("could not put the new $p in place (in use?): put back as it was" . ($left ? ', but not ' . implode(', ', $left) : ''), $p, $left, $j);
                 }
                 if ($stop > 0 && ++$moves >= $stop) {
                     exit(3);
@@ -132,6 +140,9 @@ switch ($cmd) {
         us_rmtree($next);
         @unlink($up . DIRECTORY_SEPARATOR . 'ready.json');
         @unlink($up . DIRECTORY_SEPARATOR . 'go.json');
+        // An earlier try that failed is over: its record and its message go.
+        @unlink($up . DIRECTORY_SEPARATOR . 'failed.json');
+        us_message_drop(US_FAILED_MSG);
         $j['state'] = 'done';
         $j['done']  = date('c');
         $j['ms']    = us_ms($t0);
@@ -199,6 +210,56 @@ function us_fail(string $why): never
     us_answer(['ok' => false, 'why' => $why]);
 }
 
+/** A switch that did not start moving files. A waiting copy that cannot be used is thrown away, so Update now downloads it again. */
+function us_switch_failed(string $why, string $plain, string $to, string $from, bool $throwAway = false): never
+{
+    global $up, $next;
+    if ($throwAway) {
+        us_rmtree($next);
+        @unlink($up . DIRECTORY_SEPARATOR . 'ready.json');
+        us_message_drop('msg-newversion');   // it said "is ready"; the message below has Update now
+    }
+    us_said_failed($why, $to, $from, $plain . ($throwAway ? ': Update now downloads it again' : ''),
+        ucfirst($plain) . ($throwAway ? ', so it was not used and has been removed. Nothing of ' . $from . ' changed. Update now downloads it again.'
+                                      : '. Nothing of ' . $from . ' changed.') . ' ' . us_where_to_write($throwAway),
+        $throwAway ? ['updatenow', 'report'] : ['report'], $throwAway);
+}
+
+/** A file Windows would not let go of mid-switch, after the undo; $left is what the undo could not put back. */
+function us_switch_held(string $why, string $p, array $left, array $j): never
+{
+    global $jour;
+    if (!$left) {
+        @unlink($jour);   // all put back: the next start has nothing to recover
+    }
+    $n = count($left);
+    $body = 'Windows would not let Xsegon move ' . $p . ', so ' . $j['from']
+        . ($left ? ' was put back except for ' . $n . ' file' . ($n === 1 ? '' : 's') . ' (' . implode(', ', array_slice($left, 0, 3)) . ($n > 3 ? '...' : '')
+                   . '), which Xsegon puts back the next time it starts. Your games, settings and pictures were never touched. If Xsegon does not work as it should after that, its page has '
+                   . $j['from'] . ' to download by hand.'
+                 : ' was put back as it was. Nothing was lost: your games, settings and pictures were never touched. Another program may have had the file open, such as an antivirus scan: Update now tries again.')
+        . ' ' . us_where_to_write(!$left);
+    us_said_failed($why, (string) $j['to'], (string) $j['from'],
+        'Windows would not let Xsegon move ' . $p . ($left ? ', and ' . $n . ' file' . ($n === 1 ? ' is' : 's are') . ' put back at the next start' : ''),
+        $body, $left ? ['report'] : ['updatenow', 'report'], false);
+}
+
+/** Where the details go, as Xsegon's other fault windows say it; after a try that may work next time, only if it keeps failing. */
+function us_where_to_write(bool $retry): string
+{
+    return ($retry ? 'If it keeps failing, Help' : 'Help') . ' > Report a problem makes one file with the details. Please email it to ' . US_HELP . '.';
+}
+
+/** The failure written where the person looks: failed.json for Settings, a message in the mailbox, a line in the log. */
+function us_said_failed(string $why, string $to, string $from, string $plain, string $body, array $opens, bool $thrownAway): never
+{
+    global $up;
+    us_write($up . DIRECTORY_SEPARATOR . 'failed.json', ['to' => $to, 'from' => $from, 'why' => $plain, 'thrownAway' => $thrownAway, 'at' => date('c')]);
+    us_message(US_FAILED_MSG, (preg_match('/^\d/', $to) ? 'Xsegon ' . $to : 'The new version of Xsegon') . ' was not put in place', $body, $opens);
+    us_log('update not done: ' . $why . '; said in the mailbox');
+    us_answer(['ok' => false, 'why' => $why]);
+}
+
 function us_ms(float $t0): int
 {
     return (int) round((microtime(true) - $t0) * 1000);
@@ -235,13 +296,14 @@ function us_log(string $msg): void
         date('H:i:s', (int) $t) . sprintf('.%03d', (int) (($t - floor($t)) * 1000)) . ' S UPD  ' . $msg . "\n", FILE_APPEND);
 }
 
-/** A message in the mailbox, the way includes\news.php keeps them: newest first, one per id. */
-function us_message(string $id, string $title, string $body): void
+/** A message in the mailbox, the way includes\news.php keeps them: newest first, one per id. $opens names its buttons (js\news.js MAIL_GOES). */
+function us_message(string $id, string $title, string $body, array $opens = []): void
 {
     global $data;
     $file = $data . DIRECTORY_SEPARATOR . 'messages.json';
     $all = array_values(array_filter(us_json($file) ?? [], static fn ($m) => is_array($m) && ($m['id'] ?? null) !== $id));
-    array_unshift($all, ['id' => $id, 'at' => date('c'), 'kind' => 'info', 'level' => 'error', 'title' => $title, 'body' => $body, 'read' => false]);
+    array_unshift($all, ['id' => $id, 'at' => date('c'), 'kind' => 'info', 'level' => 'error', 'title' => $title, 'body' => $body, 'read' => false]
+                        + ($opens ? ['opens' => $opens] : []));
     us_write($file, array_slice($all, 0, 60));
 }
 
