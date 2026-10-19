@@ -159,7 +159,9 @@ const PROTECTED = ["favourites.json", "my-ratings.json", "tags.json", "fix-marks
                                   feel: { theme: "xsegon" },
                                   // The X asks before it closes, as a new copy's does: the settings group
                                   // presses it and reads the question
-                                  window: { confirmClose: true } });
+                                  window: { confirmClose: true },
+                                  // Keep a log? answered, or every group's page opens under it (the setup group asks it itself)
+                                  debug: { asked: { logging: true } } });
   /* And RetroArch told nothing of this machine's own. A console's buttons, a
      game's own buttons, and the menu, quit and turbo choices each add lines
      to what a launch appends, and the cheats and states groups count those
