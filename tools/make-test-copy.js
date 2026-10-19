@@ -84,7 +84,7 @@ const BUILTIN_SOUNDS = {
   },
 };
 const SOUND_DIRS = Object.keys(BUILTIN_SOUNDS).map((n) => path.join("sounds", n));
-const TAKE = ["api", "bin", "css", path.join("doc", "CHANGELOG.md"), "gamesdb", "img", "includes", "js", "phone", ...SOUND_DIRS, "themes", "index.php", "play.php", "router.php", "router-fast.php", "router-phone.php", "start.ps1", "LICENSE", "THIRD-PARTY.txt"];
+const TAKE = ["api", "bin", "css", path.join("doc", "CHANGELOG.md"), "gamesdb", "img", "includes", "js", "phone", ...SOUND_DIRS, "themes", "index.php", "play.php", "router.php", "router-fast.php", "router-phone.php", "start.ps1", "LICENSE", "THIRD-PARTY.txt", "CONTRIBUTING.md"];
 // The display guard lives in private\, which no package takes; by its name it is refused anywhere.
 const LEAVE = [path.join("bin", "display-guard.ps1")];
 // Of gamesdb\, these three and nothing else that may be lying there (a
