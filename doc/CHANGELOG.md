@@ -4,6 +4,8 @@ Newest first: what changed for the person at the screen.
 
 ## 2026-10-19
 
+- **Change Xsegon yourself.** A new page in Xsegon's folder, CONTRIBUTING.md, says which file draws which screen and how to try a change: edit the file in Notepad, save it, press F5. Nothing to build and nothing to install. It also says how to keep a change through updates, and how to offer one back. The README now opens with what you can make your own.
+- **A report says more about a game that would not start or could not be read.** Report a problem now carries how each game's last start went, and why one failed. When Scan for Games finds files no console could be read from, the log names each folder they are in, with the kinds of files there, as the screen does.
 - **ScreenScraper videos pause on a day with too many fetches.** Everyone with no developer ID of their own shares Xsegon's, so Xsegon's website now counts each Fetch. Past the day's limit, Fetch says "ScreenScraper videos are paused for today; the other video sources still work" until midnight, New York time; Check the login still answers. A developer ID of your own is never paused, and when the website cannot be reached the copy kept on this PC is used as before.
 
 ## 2026-10-18

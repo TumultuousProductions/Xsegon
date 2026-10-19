@@ -522,6 +522,9 @@ module.exports = async function (b, check) {
             [(w2.unsure || []).map((u) => u.folder.slice(EXTRA.length + 1).split(path.sep).join("/") + ": " + u.kinds).sort(),
              placed("Xsfix Sealed"), placed("Xsfix Bundle")],
             [["systems/Old downloads: 1 .zip", "systems: 1 .chd"], null, null]);
+      const unsureLine = ((await api("api/log.php?tail=80")).lines || []).filter((l) => /SCAN +no console read from the files in: /.test(l)).pop() || "";
+      check("and the log names each such folder with its kinds, so a report says what they are",
+            [/Old downloads \(1 \.zip\)/.test(unsureLine), /systems \(1 \.chd\)/.test(unsureLine)], [true, true]);
       check("and what is not a game is neither offered nor mentioned: a patch in a zip, a note called .md",
             [placed("Xsfix Patch"), placed("notes"), (w2.unknown || []).some((u) => /Old downloads/.test(u.folder))], [null, null, false]);
       check("a program's own folder under a games folder is not looked through: nothing of RetroArch's or of a copy of Xsegon is offered",

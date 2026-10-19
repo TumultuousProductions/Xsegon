@@ -5,8 +5,8 @@ made for a TV and a controller, and it is just as happy with a keyboard and
 mouse. It runs on your own Windows PC, needs no account, and is free.
 
 **[Download Xsegon](https://github.com/TumultuousProductions/Xsegon/releases/latest)**
-· [Install](#2-install) · [Set it up](#3-set-it-up) · [Themes](#5-themes)
-· [What else it does](#6-what-else-it-does)
+· [Yours to change](#yours-to-change) · [Install](#2-install) · [Set it up](#3-set-it-up)
+· [Themes](#5-themes) · [What else it does](#6-what-else-it-does)
 
 ![The consoles screen](doc/screens/consoles.jpg)
 
@@ -17,6 +17,23 @@ mouse. It runs on your own Windows PC, needs no account, and is free.
 > does not run without the parts the zip adds.
 
 Xsegon does not come with any games, BIOS files or keys. You bring your own.
+
+## Yours to change
+
+Xsegon is yours to change, with nothing to learn first:
+
+- **Its look.** Themes, some of them moving, and your own:
+  Settings > Feel > Your own look > Open my folder gives you a stylesheet
+  that Xsegon reads after its own. Change a colour or a size, save, and press
+  F5.
+- **Its sounds and pictures.** Your own sound for each press, and your own
+  picture for any console.
+- **Its code.** Every screen is a plain file you can open in Notepad: change
+  it, save it, refresh. Nothing to build and nothing to install.
+  [Change Xsegon yourself](CONTRIBUTING.md) says which file draws what.
+- **Kept through every update.** Update now never touches your games,
+  settings, pictures or your own folder, and a file of Xsegon's you changed
+  is kept aside and named, never lost.
 
 ## 1. What you need
 
@@ -270,6 +287,7 @@ Xsegon's own is left as it is.
 
 This part is for people who work on Xsegon. To play, use the
 [release download](https://github.com/TumultuousProductions/Xsegon/releases/latest).
+To change your own copy, [Change Xsegon yourself](CONTRIBUTING.md) is enough.
 
 - **PHP 8** (tested on 8.5), with the `curl`, `mbstring` and `openssl`
   extensions switched on in `php.ini`, either on your PATH or unzipped beside
