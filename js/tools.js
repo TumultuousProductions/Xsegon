@@ -373,7 +373,7 @@ export function openReportTool(after) {
       }
       inner.appendChild(el("p", "mt-note",
         "In the report: the last " + res.days + " days of log, your settings and the folders in them, the emulator " +
-        "table, the cores and cheats you chose, and the names of your games. Where Xsegon was slow, the log also " +
+        "table, the cores and cheats you chose, and the names of your games and of their files. Where Xsegon was slow, the log also " +
         "names the three programs that were using this PC the most at that moment. Not in it: your ROMs, your pictures " +
         "and your videos. It lists its own contents, so you can read it before you send it."));
 

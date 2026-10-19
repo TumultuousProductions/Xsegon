@@ -102,4 +102,6 @@ $job['hacks'] = (int) $hacks['ask'];
 $job['fill'] = !empty($auto['fill']);
 $end('done', 'looked for new games (' . $job['why'] . '): ' . $added . ' added, ' . count($left) . ' left for Scan for Games, '
     . count($fresh) . ' still arriving' . ($many ? ', ' . $many . ' at once left for Scan for Games' : '')
-    . ($told ? ', ' . count($unsure) . ' named in the mailbox' : '') . ', in ' . (int) round((microtime(true) - $t0) * 1000) . 'ms');
+    . ($told ? ', ' . count($unsure) . ' named in the mailbox (' . implode('; ', array_slice(array_values($unsure), 0, 5))
+               . (count($unsure) > 5 ? '; ' . (count($unsure) - 5) . ' more' : '') . ')' : '')
+    . ', in ' . (int) round((microtime(true) - $t0) * 1000) . 'ms');
