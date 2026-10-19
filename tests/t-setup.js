@@ -130,7 +130,17 @@ module.exports = async function (b, check) {
     /* ---- the first-run guide opens by itself, once ---- */
     const guideTitle = `(document.querySelector("#editor .panel-title") || {}).textContent || ""`;
     const stepsNow = `[...document.querySelectorAll("#editor .gd-step")].map(s => s.querySelector(".gd-mark").textContent + " " + s.querySelector(".gd-title").textContent + " " + (s.classList.contains("done") ? "done" : "todo"))`;
+    /* ---- Keep a log? before anything else (js\logask.js); the runner answers it for every other group ---- */
+    const logAsk = `(c => !!c && [c.querySelector("h2").textContent, [...c.querySelectorAll(".confirm-bar button")].map(x => x.textContent).join("|")])(document.querySelector(".log-ask"))`;
+    const logCard = ["Keep a log?", "Keep a log|No log"];
+    const debugUntil = async (fits) => { let d = {}; for (let i = 0; i < 40; i++) { d = (await api("api/settings.php")).settings.debug; if (fits(d)) { break; } await sleep(100); } return d; };
+    await api("api/settings.php", { debug: { logging: true, asked: { logging: false } } });
     await b.goto();
+    check("a first start asks Keep a log? before anything else, the setup window still closed",
+          [await b.until(logAsk, logCard, 10000), await b.ev(`document.getElementById("editor").hidden`)], [logCard, true]);
+    await b.ev(`[...document.querySelectorAll(".log-ask .confirm-bar button")].find(x => x.textContent === "Keep a log").click()`);
+    const kept = await debugUntil((d) => d.asked.logging === true);
+    check("Keep a log leaves logging on and is not asked again", [kept.logging, kept.asked.logging], [true, true]);
     /* The first start opens the setup window while Set it all up is on offer
        (js\setupwin.js): the folder, a switch a part, one press. The copy has new
        games by themselves off (tests\sandbox.js), and its switch starts as the setting stands. */
@@ -170,6 +180,24 @@ module.exports = async function (b, check) {
     await b.key("Escape");
     check("Esc again closes the guide", await b.until(`document.getElementById("editor").hidden`), true);
     check("it is remembered as shown", (await api("api/setup.php")).guide.shown, true);
+
+    /* No log, here by Esc: logging off, and nothing this start wrote is left. */
+    await api("api/settings.php", { debug: { logging: true, asked: { logging: false } } });
+    await b.goto();
+    check("it is asked at the next start while it has no answer", await b.until(logAsk, logCard, 10000), logCard);
+    const began = (await b.ev(`(d => [d.getFullYear(), d.getMonth() + 1, d.getDate()].map(n => String(n).padStart(2, "0")).join("-") + " " +
+      [d.getHours(), d.getMinutes(), d.getSeconds()].map(n => String(n).padStart(2, "0")).join(":") + "." + String(d.getMilliseconds()).padStart(3, "0"))(new Date(performance.timeOrigin))`)).split(" ");
+    const logLines = () => { const f = path.join(DATA, "log", began[0] + ".log"); return fs.existsSync(f) ? fs.readFileSync(f, "utf8").split("\n").filter(Boolean) : []; };
+    const thisStart = () => logLines().filter((l) => l.slice(0, 12) >= began[1]).length;
+    for (let i = 0; i < 50 && !thisStart(); i++) { await sleep(100); }
+    check("this start writes lines while the question waits", thisStart() > 0, true);
+    await b.key("Escape");
+    const off = await debugUntil((d) => d.logging === false && d.asked.logging === true);
+    check("Esc is No log: logging goes off and is not asked again", [off.logging, off.asked.logging], [false, true]);
+    for (let i = 0; i < 40 && thisStart(); i++) { await sleep(100); }
+    check("and no line of this start is left, the lines before it kept", [thisStart(), logLines().filter((l) => l.slice(0, 12) < began[1]).length > 0], [0, true]);
+    await api("api/settings.php", { debug: { logging: true, asked: { logging: true } } });
+    await b.goto();
     /* While RetroArch downloads, the guide says not to wait for it. Faked
        with this runner's own process id, so nothing is fetched. */
     const setupJobFile = path.join(DATA, "setup-job.json");
