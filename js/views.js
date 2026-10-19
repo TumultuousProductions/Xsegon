@@ -15,7 +15,7 @@ import { paintHelp, paintHelpHere } from "./help.js";
 import { heroOn, paintHero, paintHeroArt } from "./hero.js";
 import { artHint } from "./hint.js";
 import { launch } from "./launch.js";
-import { anyFilter, capStrip, clearFilters, filterWords, libraryTotal, load } from "./library.js";
+import { addedEmptyWords, anyFilter, capStrip, clearFilters, filterWords, libraryTotal, load } from "./library.js";
 import { closePicker, listCells, listHead, listMinWidth, listPads, listTemplate, rowClass } from "./list.js";
 import { L, LOG_MOVES } from "./log.js";
 import { logoTip } from "./logotip.js";
@@ -160,7 +160,8 @@ export function render() {
       box.appendChild(clear);
       $view.appendChild(box);
     } else {
-      $view.appendChild(el("div", "empty", "nothing matches"));
+      // An empty Recently added says why, not "nothing matches".
+      $view.appendChild(el("div", "empty", addedEmptyWords() || "nothing matches"));
     }
     return;
   }

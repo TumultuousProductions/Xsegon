@@ -4,7 +4,7 @@
     the dropdown's value and loads the same way, so the two never disagree.
     Icons come from api\image.php?kind=icon, with a glyph for one that has none. */
 
-import { collectionCount, collectionsAll, consoleCounts, load, platformArtRev, platformArtUrl } from "./library.js";
+import { collectionCount, collectionsAll, consoleCounts, load, opensEmpty, platformArtRev, platformArtUrl } from "./library.js";
 import { L } from "./log.js";
 import { sound } from "./sound.js";
 import { $main, $platform, $view, S, view } from "./state.js";
@@ -57,7 +57,7 @@ function build() {
     $sidebar.appendChild(el("div", "sb-rule"));
     collectionsAll.forEach(function (c) {
       var size = collectionCount(c);
-      if (!size) { return; }             // an empty one has nothing to open
+      if (!size && !opensEmpty(c.key)) { return; }   // an empty one has nothing to open, bar Recently added
       $sidebar.appendChild(entry(c.key, c.label, size, "★"));
     });
   }
