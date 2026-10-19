@@ -50,7 +50,8 @@ $jour = $up . DIRECTORY_SEPARATOR . 'switch.json';
 $zone = (string) ((us_json($jour)['zone'] ?? null) ?? (us_json($up . DIRECTORY_SEPARATOR . 'ready.json')['zone'] ?? 'UTC'));
 @date_default_timezone_set(in_array($zone, timezone_identifiers_list(), true) ? $zone : 'UTC');
 
-if (is_dir($root . DIRECTORY_SEPARATOR . '.git')) {
+// .git is a folder in a checkout and a file in a git worktree: either is git's to update.
+if (file_exists($root . DIRECTORY_SEPARATOR . '.git')) {
     us_answer(['ok' => false, 'why' => 'this copy is a git checkout: it updates with git, never by this'], 2);
 }
 if (!is_file($root . DIRECTORY_SEPARATOR . 'index.php')) {

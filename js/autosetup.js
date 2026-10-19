@@ -46,7 +46,8 @@ export function beginAuto(st, have, answers, noScan) {
     if (!r.ok) { noGamesAsking(false); runAsking(false); showStrip("that could not be set up: " + (r.error || ""), true); return; }
     runBegun(!have.scanned && !noScan);
     if (r.error) { showStrip(r.error, true); }
-    else if (r.started === "retroarch") { showStrip("downloading RetroArch in the background...", false); }
+    // The copy the package carries is unpacked, not downloaded (st.get.carried, as the setup window says).
+    else if (r.started === "retroarch") { showStrip(st && st.get && st.get.carried ? "setting up the RetroArch that came with Xsegon in the background..." : "downloading RetroArch in the background...", false); }
     else if (r.started === "cores") { showStrip("fetching the cores for your consoles in the background...", false); }
     else if (r.used) { showStrip("RetroArch at " + r.used + " now plays your consoles", false); }
     if (r.started && !watchUp()) { watchSetup(quietDone); }

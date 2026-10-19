@@ -79,8 +79,9 @@ xs_json([
     'thumbsBy' => array_map(static fn($k) => is_file(xs_data_path('thumbs-' . $k . '.json')),
                             array_combine(array_keys(xs_own_art_kinds()), array_keys(xs_own_art_kinds()))),
     // What RetroArch's own config currently permits, so the UI can explain a
-    // missing button instead of offering one that does nothing.
-    'retroarch' => $lib !== null ? ra_capabilities($lib) : null,
+    // missing button instead of offering one that does nothing. Read from the
+    // library as shown: library.json is usually not there, and scanned games are only in it.
+    'retroarch' => ra_capabilities($shown),
     'running' => xs_game_running(),
     'error'   => xs_read_json(xs_data_path('last-error.json'), null),
     // Files of yours that will not read, and are not being saved over (boot.php)

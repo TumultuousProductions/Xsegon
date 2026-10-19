@@ -37,9 +37,9 @@ $before  = $mine;
 
 $reset = $body['reset'] ?? null;
 if ($reset === 'all') {
-    // "Reset all" is about the metadata; a Games Database match chosen by
-    // hand (api\gamesdb.php) is not metadata and stays.
-    $mine = isset($mine['dbId']) ? ['dbId' => $mine['dbId']] : [];
+    // "Reset all" is about the metadata; a match chosen by hand is not metadata and
+    // stays: the Games Database's (api\gamesdb.php) and libretro's (includes\libretro.php).
+    $mine = array_intersect_key($mine, ['dbId' => true, 'lrName' => true]);
 } elseif (is_array($reset)) {
     foreach ($reset as $field) {
         unset($mine[(string) $field]);
@@ -83,5 +83,6 @@ if ($mine != $before) {
     xs_changed_note([$id], 'details');
 }
 
-xs_log('EDIT', $id . ' set=' . implode(',', array_keys((array) ($body['set'] ?? []))) . ' reset=' . (is_array($reset) ? implode(',', $reset) : (string) $reset));
+xs_log('EDIT', $id . ' set=' . implode(',', array_keys((array) ($body['set'] ?? []))) . ' reset=' . (is_array($reset) ? implode(',', $reset) : (string) $reset)
+    . ($reset === 'all' && $mine ? ' kept=' . implode(',', array_keys($mine)) : ''));
 xs_json(['ok' => true, 'id' => $id, 'origin' => $origin, 'edited' => array_keys($mine)]);

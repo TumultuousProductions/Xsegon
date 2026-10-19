@@ -26,8 +26,8 @@ if ($origin !== '') {
 }
 xs_post_only();
 
-/** Explorer opened on a folder, and the answer; a test server opens no window. */
-function xs_reveal_folder(string $dir, bool $dry): never
+/** Explorer opened on a folder, and the answer; a test server opens no window. $said names it in the log. */
+function xs_reveal_folder(string $dir, bool $dry, string $said): never
 {
     if ($dry || xs_test_copy()) {
         xs_json(['ok' => true, 'folder' => $dir, 'dry' => true]);
@@ -37,6 +37,7 @@ function xs_reveal_folder(string $dir, bool $dry): never
         xs_fail('could not open Explorer', 500);
     }
     pclose($handle);
+    xs_log('SHOW', $said . ': Explorer opened on ' . $dir);
     xs_json(['ok' => true, 'folder' => $dir]);
 }
 
@@ -46,7 +47,7 @@ $what = (string) ($body['what'] ?? '');
 
 // The data folder (Help > Open the data folder): no path from the request.
 if ($what === 'data') {
-    xs_reveal_folder(xs_data_dir(), !empty($body['dry']));
+    xs_reveal_folder(xs_data_dir(), !empty($body['dry']), 'the data folder');
 }
 // The Games folder a new copy starts with (includes\scan.php), only while it
 // is still there. Again no path from the request.
@@ -56,7 +57,7 @@ if ($what === 'games') {
     if ($dir === '' || !is_dir($dir)) {
         xs_fail('the Games folder Xsegon made is not there any more', 404);
     }
-    xs_reveal_folder($dir, !empty($body['dry']));
+    xs_reveal_folder($dir, !empty($body['dry']), 'the Games folder Xsegon made');
 }
 // The person's own folder (Settings > Feel > Your own look), made with a stylesheet that says
 // what to do the first time; not on a test copy, which never writes beside index.php.
@@ -69,7 +70,7 @@ if ($what === 'custom') {
         }
         xs_log('LOOK', 'your own folder opened (' . ((xs_custom_state()['starter'] ?? true) ? 'its stylesheet as it came' : 'with a stylesheet of yours') . ')');
     }
-    xs_reveal_folder(xs_custom_dir(), !empty($body['dry']));
+    xs_reveal_folder(xs_custom_dir(), !empty($body['dry']), 'your own folder');
 }
 if (!xs_game_id_ok($id) || !in_array($what, ['rom', 'images', 'video', 'save', 'texpack'], true)) {
     xs_fail('id and what (rom, images, video, save or texpack) are required', 400);
@@ -84,14 +85,14 @@ if ($what === 'texpack') {
     if ($t !== null && !is_dir($t['into'])) {
         foreach (xs_tp_packs($t, xs_tp_record_for($game, $t)) as $p) {
             if (!empty($p['file'])) {
-                xs_reveal_folder(dirname($p['paths'][0]), !empty($body['dry']));   // an N64 core's .hts or .htc, in its cache folder
+                xs_reveal_folder(dirname($p['paths'][0]), !empty($body['dry']), $game['title'] . ' (' . $id . '), its texture pack');   // an N64 core's .hts or .htc, in its cache folder
             }
         }
     }
     if ($t === null || !is_dir($t['into'])) {
         xs_fail('this game has no texture pack now', 404);
     }
-    xs_reveal_folder($t['into'], !empty($body['dry']));
+    xs_reveal_folder($t['into'], !empty($body['dry']), $game['title'] . ' (' . $id . '), its texture pack');
 }
 
 $s = xs_settings();
@@ -136,4 +137,5 @@ if ($handle === false) {
 }
 pclose($handle);
 
+xs_log('SHOW', $game['title'] . ' (' . $id . '), its ' . ($what === 'rom' ? 'file' : $what) . ': Explorer opened with ' . $path . ' selected');
 xs_json(['ok' => true, 'revealed' => $path]);

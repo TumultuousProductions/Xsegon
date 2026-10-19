@@ -45,7 +45,8 @@ function xs_update_file(string $name): string
 /** Why this copy cannot update itself, or null. A checkout updates with git; a folder Windows will not let it write, by hand. */
 function xs_update_cannot(): ?string
 {
-    if (is_dir(XS_ROOT . DIRECTORY_SEPARATOR . '.git')) {
+    // .git is a folder in a checkout and a file in a git worktree (Xsegon-2): either is git's to update.
+    if (file_exists(XS_ROOT . DIRECTORY_SEPARATOR . '.git')) {
         return 'a git checkout';
     }
     if (!is_file(XS_ROOT . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'update-switch.php') || !is_file(XS_ROOT . DIRECTORY_SEPARATOR . 'includes' . DIRECTORY_SEPARATOR . 'update-key.pem')) {

@@ -99,7 +99,11 @@ if (!xs_unpack_allowed($archive, $why)) {
 }
 $moveTo = null;
 if (!empty($body['move'])) {
-    // Where it belongs is worked out here, never taken from the page.
+    // Where it belongs is worked out here, never taken from the page; the same
+    // look as the plan's, so the same time a big Xbox disc needs to say whose it is.
+    if ((int) ini_get('max_execution_time') > 0) {
+        set_time_limit(180);
+    }
     $look = xs_unpack_look($archive, $why);
     $plan = $look === null ? null : xs_unpack_plan($archive, $look);
     if ($plan === null || $plan['verdict'] !== 'wrong' || $plan['move'] === null) {

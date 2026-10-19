@@ -296,6 +296,13 @@ module.exports = async function (b, check) {
     /* ---- what may not press -------------------------------------------- */
     const refused = await api("api/update.php", { action: "update" });
     check("a git checkout never updates itself this way", [refused.ok, /git checkout/.test(refused.error || "")], [false, true]);
+    // A git worktree's .git is a file, not a folder: a checkout all the same (roadmap BH6).
+    const tree = path.join(home, "worktree");
+    fs.mkdirSync(tree, { recursive: true });
+    fs.writeFileSync(path.join(tree, ".git"), "gitdir: C:/nowhere/.git/worktrees/xs\n");
+    fs.writeFileSync(path.join(tree, "index.php"), "<?php\n");
+    const treeSays = await run(phpExe, [path.join(ROOT, "bin", "update-switch.php"), "recover", "--root=" + tree], {}, tree);
+    check("nor does a git worktree, whose .git is a file", [treeSays.code, /git checkout/.test(treeSays.out)], [2, true]);
     const st = await api("api/update.php");
     check("and says what it is", [st.ok, st.release, st.cannot, st.ready, st.out], [true, false, "a git checkout", null, null]);
     const notGot = await api("api/update.php", { action: "get" });
