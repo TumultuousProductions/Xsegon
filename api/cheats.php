@@ -16,11 +16,12 @@
  * Paged, and searched on the server, because one cheat file can hold tens of
  * thousands of cheats (Turok - Dinosaur Hunter's is 3 MB).
  *
- * An overlay in data\cheats.json.
+ * An overlay in data\cheats.json. A game's versions are one game
+ * (includes\versions.php): one choice, kept on every version.
  */
 declare(strict_types=1);
 
-require_once __DIR__ . '/../includes/import.php';
+require_once __DIR__ . '/../includes/versions.php';
 require_once __DIR__ . '/../includes/cheats.php';
 require_once __DIR__ . '/../includes/cheatlists.php';
 require_once __DIR__ . '/../includes/emucheats.php';
@@ -39,7 +40,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET') {
     if ($id === '') {
         xs_fail('no game id');
     }
-    $game = xs_game_or_404($id);
+    [$game, $ids] = xs_game_versions($id);
+    if ($game === null) {
+        xs_fail('unknown game', 404);
+    }
     $want = trim((string) ($_GET['file'] ?? ''));
 
     // ---- the cheats inside one file ------------------------------------
@@ -57,7 +61,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET') {
             xs_fail('that cheat file is not one of this game\'s', 409);
         }
         $root   = xs_cheat_root($game);
-        $chosen = xs_cheats_for($id);
+        $chosen = xs_cheats_for_game($ids);
         // On now first, then the ones on before, then the rest.
         $all    = xs_cheats_ordered(xs_cheat_list($root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $want)),
                                     $chosen, xs_cheats_used($id, $want), $want);
@@ -86,7 +90,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET') {
     }
 
     $files  = xs_cheat_files($game);
-    $chosen = xs_cheats_for($id);
+    $chosen = xs_cheats_for_game($ids, $from);
+    if ($chosen !== null && $from !== $id) {
+        xs_log('CHEAT', xs_versions_said($game, $ids, $id) . ': its cheats are the ones chosen on version ' . $from);
+    }
     // A standalone emulator's own cheats, to show and not to change (includes\emucheats.php).
     $emu = $files ? null : xs_emucheats($game);
 
@@ -145,13 +152,28 @@ if (isset($body['lists'])) {
 }
 
 $id   = xs_id_or_fail($body['id'] ?? '');
-$game = xs_game_or_404($id);
+[$game, $ids] = xs_game_versions($id);
+if ($game === null) {
+    xs_fail('unknown game', 404);
+}
+// What each version had before, for the log; then the same choice on every one.
+$had = xs_cheats_read();
+$before = [];
+foreach ($ids as $vid) {
+    $before[] = $vid . ' ' . count($had[$vid]['on'] ?? []) . ' on';
+}
+$beforeSaid = count($ids) > 1 ? ' on every version; before: ' . implode(', ', $before) : '';
+$setAll = static function (?array $pick) use ($ids): void {
+    foreach ($ids as $vid) {
+        if (!xs_cheats_set((string) $vid, $pick, $why)) {
+            xs_fail((string) $why, 500);
+        }
+    }
+};
 
 if (!empty($body['clear'])) {
-    if (!xs_cheats_set($id, null, $why)) {
-        xs_fail((string) $why, 500);
-    }
-    xs_log('CHEAT', 'cleared for ' . $game['title']);
+    $setAll(null);
+    xs_log('CHEAT', 'cleared for ' . xs_versions_said($game, $ids, $id) . $beforeSaid);
     xs_json(['ok' => true, 'id' => $id, 'chosen' => null]);
 }
 
@@ -180,18 +202,14 @@ foreach ($on as $c) {
 }
 if (!$clean) {
     // Selecting nothing turns cheats off: the same as Clear, no empty entry left.
-    if (!xs_cheats_set($id, null, $why)) {
-        xs_fail((string) $why, 500);
-    }
-    xs_log('CHEAT', 'none left on for ' . $game['title'] . ', cleared');
+    $setAll(null);
+    xs_log('CHEAT', 'none left on for ' . xs_versions_said($game, $ids, $id) . ', cleared' . $beforeSaid);
     xs_json(['ok' => true, 'id' => $id, 'chosen' => null]);
 }
 if (count($clean) > 5000) {
     xs_fail('that is more cheats at once than any game can survive', 409);
 }
 
-if (!xs_cheats_set($id, ['file' => $file, 'on' => $clean], $why)) {
-    xs_fail((string) $why, 500);
-}
-xs_log('CHEAT', $game['title'] . ' -> ' . count($clean) . ' from ' . $file);
+$setAll(['file' => $file, 'on' => $clean]);
+xs_log('CHEAT', xs_versions_said($game, $ids, $id) . ' -> ' . count($clean) . ' from ' . $file . $beforeSaid);
 xs_json(['ok' => true, 'id' => $id, 'chosen' => xs_cheats_for($id), 'count' => count($clean)]);

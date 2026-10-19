@@ -272,7 +272,9 @@ $roll = !isset($s['view']['rollVersions']) || $s['view']['rollVersions'] !== fal
 if (isset($_GET['versions'])) {
     $roll = $_GET['versions'] !== 'all';
 }
-$cardKey = static fn(array $g): string => mb_strtolower((string) $g['platform']) . '|' . mb_strtolower(trim((string) $g['title']));
+// The same key the marks are kept by on every version (includes\versions.php).
+require_once __DIR__ . '/../includes/versions.php';
+$cardKey = static fn(array $g): string => xs_version_key($g);
 $counted = static function (array &$seen, string $bucket, array $g) use ($roll, $cardKey): bool {
     $k = $roll ? $cardKey($g) : (string) $g['id'];
     if (isset($seen[$bucket][$k])) {
@@ -536,6 +538,25 @@ if ($roll) {
             }
         }
         $rows[$lead]['docs'] = in_array(true, array_column($versions, 'docs'), true);
+        // The versions are one game (includes\versions.php): the star, rating, tags and cheats a
+        // person set on any of them are the card's, also those set before marks went on every
+        // version. The NEEDS FIX mark is one file's, so only the leading one's shows.
+        $rows[$lead]['favourite'] = in_array(true, array_column($versions, 'favourite'), true);
+        foreach ($versions as $v) {
+            if (!$rows[$lead]['myRating'] && $v['myRating']) {
+                $rows[$lead]['myRating'] = $v['myRating'];
+            }
+            if (!$rows[$lead]['cheats'] && $v['cheats']) {
+                $rows[$lead]['cheats'] = $v['cheats'];
+            }
+            foreach ($v['tags'] as $t) {
+                $low = mb_strtolower((string) $t);
+                if ($low !== XS_TAG_NEEDS_FIX && !in_array($low, array_map('mb_strtolower', $rows[$lead]['tags']), true)) {
+                    $rows[$lead]['tags'][] = $t;
+                }
+            }
+        }
+        usort($rows[$lead]['tags'], 'strnatcasecmp');
         foreach (array_slice($idx, 1) as $i) {
             $drop[$i] = true;
         }

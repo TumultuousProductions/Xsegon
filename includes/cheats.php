@@ -61,6 +61,23 @@ function xs_cheats_for(string $id): ?array
     return xs_cheats_read()[$id] ?? null;
 }
 
+/**
+ * The game's cheats, its versions being one game (includes\versions.php): the
+ * first version in $ids with a choice, its own first. $from says whose it was.
+ */
+function xs_cheats_for_game(array $ids, ?string &$from = null): ?array
+{
+    $all  = xs_cheats_read();
+    $from = null;
+    foreach ($ids as $vid) {
+        if (isset($all[(string) $vid])) {
+            $from = (string) $vid;
+            return $all[$from];
+        }
+    }
+    return null;
+}
+
 /** Remember a choice, or forget it when $pick is null. */
 function xs_cheats_set(string $id, ?array $pick, ?string &$why = null): bool
 {

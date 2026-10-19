@@ -327,9 +327,12 @@ if (trim((string) ($body['hack'] ?? '')) !== '') {
  */
 require_once __DIR__ . '/../includes/cheats.php';
 require_once __DIR__ . '/../includes/achievements.php';
+require_once __DIR__ . '/../includes/versions.php';
+// The game's cheats are its own whichever version starts: its versions are one game (includes\versions.php).
+$versionIds = xs_versions_of($game, $lib['games'] ?? []);
 $hc = in_array($body['hardcore'] ?? null, ['soft', 'nocheats'], true) ? $body['hardcore'] : null;
 if (($launch['kind'] ?? '') === 'retroarch' && $hack === null && xs_ach_ra_state(ra_config_path((string) $launch['exe']))['hardcoreOn']) {
-    $cheatPick = $hc === 'nocheats' ? null : xs_cheats_for($id);
+    $cheatPick = $hc === 'nocheats' ? null : xs_cheats_for_game($versionIds);
     $askWhy = $slot >= 0 ? 'state' : ($cheatPick !== null && count($cheatPick['on'] ?? []) > 0 ? 'cheats' : null);
     if ($askWhy !== null && $hc === null) {
         xs_log('ACH', 'asked before starting ' . $game['title'] . ': hardcore and ' . ($askWhy === 'state' ? 'a save state' : 'cheats'));
@@ -351,7 +354,12 @@ if (($launch['kind'] ?? '') === 'retroarch' && $hack === null && xs_ach_ra_state
 $cheats = null;
 if (($launch['kind'] ?? '') === 'retroarch') {
     // Cheats found for the game would land on a changed one; "nocheats" is the hardcore answer above.
-    $pick = $hack !== null || $hc === 'nocheats' ? null : xs_cheats_for($id);
+    // The game's own (see $versionIds above): another version's choice counts.
+    $pick = $hack !== null || $hc === 'nocheats' ? null : xs_cheats_for_game($versionIds, $cheatFrom);
+    if ($pick !== null && $cheatFrom !== $id) {
+        xs_log('CHEAT', xs_versions_said($game, $versionIds, $id) . ': this version has no choice of its own, so the game\'s cheats from version '
+            . $cheatFrom . ' go with it');
+    }
     if ($pick !== null) {
         $why   = null;
         $staged = xs_cheat_stage($game, $pick, $why);

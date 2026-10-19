@@ -29,10 +29,10 @@ module.exports = async function (b, check) {
   check("consoles screen: page cannot scroll", await b.ev(`document.body.classList.contains("on-wall") && document.documentElement.scrollHeight <= innerHeight + 1`));
   // However many the server sent: the full four when something is recently
   // added (or that one greyed), three only if a fresh library had an empty
-  // Favourites too. Count against the API, not against a number, and Fan
-  // projects, the page's own entry, after them.
+  // Favourites too. Count against the API, not against a number, and the
+  // page's own two entries after them: Extensions and Fan projects.
   check("collections ride the rim", await b.ev(`document.querySelectorAll("#syswall .coll").length`),
-        ((await api("api/library.php")).collections || []).length + 1);
+        ((await api("api/library.php")).collections || []).length + 2);
   check("header at the top", await b.ev(`Math.round(document.querySelector("header.top").getBoundingClientRect().top)`), 0);
   // and edge to edge, like the legend at the foot, while the games below it
   // stay in the centred column
@@ -1214,6 +1214,9 @@ module.exports = async function (b, check) {
      which; Esc starts nothing. Found on whatever this copy holds. */
   const multiCard = ((await api("api/library.php")).games || []).find((g) => (g.versions || []).length > 1);
   if (multiCard) {
+    // The file tabs' checks below want no version selected: deselected here, put back at the end.
+    const hadPick = multiCard.chosen || null;
+    if (hadPick) { await api("api/select-version.php", { id: hadPick, selected: false }); }
     await b.setView("grid");
     await b.waitFor(`document.querySelectorAll("#view .tile").length > 0`, 8000);
     await redraw(b, `(() => { const q = document.getElementById("q"); q.value = ${JSON.stringify(multiCard.title)}; q.dispatchEvent(new Event("input", { bubbles: true })); })()`);
@@ -1236,7 +1239,32 @@ module.exports = async function (b, check) {
       check("offering each of them", await b.ev(`document.querySelectorAll(".ctx .ctx-item").length`), multiCard.versions.length);
       await b.key("Escape");
       check("and Esc starts nothing", await b.until(`!document.querySelector(".ctx") && !/starting/.test(document.getElementById("strip").textContent)`, true, 2000), true);
+
+      /* The tabs about a file follow the selected version (includes\versions.php):
+         with none selected the Saves tab asks for one, with the way there. */
+      await b.key(" ");
+      check("details open on the stacked card", await b.until(`!document.getElementById("details").hidden && !!document.querySelector('#details .dtab[data-tab="saves"]')`, true, 8000), true);
+      const SAVES = `((document.querySelector("#details .dtab-pane.is-saves") || {}).textContent || "").trim()`;
+      await b.ev(`document.querySelector('#details .dtab[data-tab="saves"]').click()`);
+      check("with no version selected, the Saves tab asks for one",
+            await b.until(`/Select a version in Versions to see its saves and save slots/.test(${SAVES})`, true, 5000), true);
+      check("with the way there as a row", await b.ev(`!!document.querySelector("#details .dtab-pane.is-saves .ch-act")`), true);
+      await b.ev(`document.querySelector("#details .dtab-pane.is-saves .ch-act").click()`);
+      check("which opens Versions", await b.until(`!!document.querySelector("#details .dtab-pane.is-versions")`, true, 3000), true);
+      const firstPlayable = multiCard.versions.findIndex((v) => v.playable);
+      if (firstPlayable >= 0) {
+        await b.ev(`document.querySelectorAll("#details .dtab-pane.is-versions .sv-row")[${firstPlayable}].click()`);
+        // The test server answers one at a time: the selection may wait behind the game's record, which draws details again.
+        check("a version selected there", await b.until(`!!document.querySelector("#details .dtab-pane.is-versions .sv-row.on")`, true, 8000), true);
+        await b.ev(`document.querySelector('#details .dtab[data-tab="saves"]').click()`);
+        check("then the Saves tab is that version's and asks no more",
+              await b.until(`(t => !!document.querySelector("#details .dtab-pane.is-saves") && t !== "" && t !== "…" && !/Select a version/.test(t))(${SAVES})`, true, 8000), true);
+        await api("api/select-version.php", { id: multiCard.versions[firstPlayable].id, selected: false });
+      }
+      await b.key("Escape");
+      await b.until(`document.getElementById("details").hidden`, true, 3000);
     }
+    if (hadPick) { await api("api/select-version.php", { id: hadPick, selected: true }); }
     await redraw(b, `(() => { const q = document.getElementById("q"); q.value = ""; q.dispatchEvent(new Event("input", { bubbles: true })); })()`);
     await b.key("Escape");
     await b.waitFor(`!document.getElementById("syswall").hidden`, 5000);
