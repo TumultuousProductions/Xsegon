@@ -6,7 +6,7 @@ import { iconEl } from "./icons.js";
 import { jobsWatch } from "./jobbars.js";
 import { showStrip } from "./launch.js";
 import { runImport } from "./lbimport.js";
-import { L, api, bug, logWarn, shapeOf } from "./log.js";
+import { L, api, bug, logWarn, postJson, shapeOf } from "./log.js";
 import { ownSoundsPage } from "./ownsounds.js";
 import { openPadButtons, openPadCheck } from "./padcheck.js";
 import { openPadGameHelp } from "./padhelp.js";
@@ -23,6 +23,7 @@ import { armBrowse, stopVideo } from "./snap.js";
 import { SND, hearHoverRate, setVolume, sound } from "./sound.js";
 import { $body, $settings, S, hasLaunchBox, launchBoxOff, setSel } from "./state.js";
 import { openBackupTool, openLogViewer, openReportTool } from "./tools.js";
+import { updateRow } from "./updaterow.js";
 import { el } from "./util.js";
 import { row } from "./views.js";
 import { gridImage, smallCopies, thumbsBy } from "./viewset.js";
@@ -297,6 +298,18 @@ function paintSettings(res) {
       part("Getting help").appendChild(actionRow("Something is wrong",
         "Runs every check Xsegon knows how to run, worst first, and gathers the log and your settings into one zip small enough to send.",
         "Report a problem...", function () { awayFor(openReportTool); }));
+    }
+    // Which version this is, what is waiting, and Go back (js\updaterow.js).
+    if (group === "window") { updateRow(part("New versions")); }
+    // A stylesheet of your own, in a folder updates never touch (includes\custom.php).
+    if (group === "feel") {
+      part("Your own look").appendChild(actionRow("Your own stylesheet",
+        "custom\\style.css in Xsegon's folder, read after Xsegon's own, so what you write there wins. Updates never touch that folder and no download carries it. The first press makes it, with a few lines saying what to do; save it and press F5 to see a change. High contrast leaves it out.",
+        "Open my folder", function () {
+          postJson("api/reveal.php", { what: "custom" }).then(function (r) {
+            if (!r || !r.ok) { showStrip("Your own folder could not be opened: " + ((r && r.error) || "no answer"), true); }
+          });
+        }));
     }
     // Which sound packs are on this PC, beside the setting that chooses one.
     if (group === "sound") { soundsRow(part("In the app")); ownSoundsPage(part("Your own sounds"), actionRow); }   // js\ownsounds.js

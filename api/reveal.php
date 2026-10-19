@@ -3,6 +3,7 @@
  * POST /api/reveal.php  {"id": "<game id>", "what": "rom" | "images" | "video" | "save", "key"}
  * POST /api/reveal.php  {"what": "data"}            Xsegon's own data folder
  * POST /api/reveal.php  {"what": "games"}           the Games folder it made
+ * POST /api/reveal.php  {"what": "custom"}          the person's own folder (custom\), made the first time
  *
  * Show one of a game's files in Explorer, selected (a browser cannot).
  *
@@ -56,6 +57,19 @@ if ($what === 'games') {
         xs_fail('the Games folder Xsegon made is not there any more', 404);
     }
     xs_reveal_folder($dir, !empty($body['dry']));
+}
+// The person's own folder (Settings > Feel > Your own look), made with a stylesheet that says
+// what to do the first time; not on a test copy, which never writes beside index.php.
+if ($what === 'custom') {
+    require_once __DIR__ . '/../includes/custom.php';
+    if (empty($body['dry']) && !xs_test_copy()) {
+        $why = xs_custom_make();
+        if ($why !== null) {
+            xs_fail($why, 500);
+        }
+        xs_log('LOOK', 'your own folder opened (' . ((xs_custom_state()['starter'] ?? true) ? 'its stylesheet as it came' : 'with a stylesheet of yours') . ')');
+    }
+    xs_reveal_folder(xs_custom_dir(), !empty($body['dry']));
 }
 if (!xs_game_id_ok($id) || !in_array($what, ['rom', 'images', 'video', 'save', 'texpack'], true)) {
     xs_fail('id and what (rom, images, video, save or texpack) are required', 400);

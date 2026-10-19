@@ -359,11 +359,11 @@ module.exports = async function (b, check) {
 
   /* ---- the version stamp, where a report would find it -------------------- */
   const st = await api("api/status.php");
-  check("the status says which build answered", /^\d+\.\d+\.\d+$/.test((st.build || {}).version || ""));
+  check("the status says which build answered", /^\d+(\.\d+){1,3}$/.test((st.build || {}).version || ""));
   check("with the commit it was built from", /^[0-9a-f]{7}$/.test((st.build || {}).commit || ""));
 
   const log = await api("api/log.php?tail=20");
-  check("the log carries the build line too", /^Xsegon \d+\.\d+\.\d+ .*PHP /.test(log.build || ""));
+  check("the log carries the build line too", /^Xsegon \d+(\.\d+){1,3} .*PHP /.test(log.build || ""));
 
   await b.goto(BASE + "/");
   // The wall of consoles has a smaller vocabulary and L is not in it, so go

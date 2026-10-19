@@ -83,6 +83,8 @@ const GROUPS = {
   more: "./t-more",
   fanprojects: "./t-fanprojects",
   extensions: "./t-extensions",
+  newversion: "./t-newversion",
+  update: "./t-update",
   big: "./t-big",    // a library of 40,000 made-up games: asked for by name, never part of a full run (t-big.js)
   e2e: "./t-e2e",    // last: the one group that starts a real game (t-e2e.js says why)
 };

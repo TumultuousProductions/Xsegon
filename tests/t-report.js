@@ -54,7 +54,8 @@ module.exports = async function (b, check) {
   check("the checks run on the way in", Array.isArray(res.checks) && res.checks.length >= 6);
   check("every one says what it is and how bad it is",
     res.checks.every((c) => c.key && c.label && c.says && /^(bad|warn|ok|info)$/.test(c.state)));
-  check("it names the build", /^Xsegon \d+\.\d+\.\d+ /.test(saysOf(res.checks, "build")));
+  check("it names the build", /^Xsegon \d+(\.\d+){1,3} /.test(saysOf(res.checks, "build")));
+  check("and what was changed from the release, which a checkout has no list for", /^not a release/.test(saysOf(res.checks, "changed")));
   check("it proves it can write, rather than assuming", stateOf(res.checks, "write"), "ok");
   check("and leaves no probe file behind", fs.existsSync(path.join(DATA, "write-check.json")), false);
   check("the library is found", stateOf(res.checks, "library"), "ok");
