@@ -4,7 +4,8 @@
  * manual reader (js\reader.js), so a manual opens on the page it was closed on.
  *
  *   GET  ?id=<game id>&doc=<file>          {page, marks, one}: page 1 and no marks when never opened
- *   POST {"id", "doc", "page", "marks", "one"}   keep them
+ *   POST {"id", "doc", "page", "marks", "one"}   keep them; marks or one left out stay as kept
+ *                                                (the phone's booklet sends the page alone, router-phone.php)
  *
  * One file of Xsegon's own, data\manual-places.json: game id => document file
  * => {page, marks (the pages bookmarked, at most XS_MARKS_MAX), one (one page
@@ -45,7 +46,7 @@ $page = $body['page'] ?? null;
 if (!is_int($page) || $page < 1 || $page > 100000) {
     xs_fail('say the page: a whole number from 1', 400);
 }
-$marks = $body['marks'] ?? [];
+$marks = array_key_exists('marks', $body) ? $body['marks'] : array_map('intval', (array) ($have['marks'] ?? []));
 if (!is_array($marks) || count($marks) > XS_MARKS_MAX) {
     xs_fail('a manual keeps up to ' . XS_MARKS_MAX . ' bookmarks', 409);
 }
@@ -56,7 +57,7 @@ foreach ($marks as $m) {
 }
 $marks = array_values(array_unique($marks));
 sort($marks);
-$one = !empty($body['one']);
+$one = array_key_exists('one', $body) ? !empty($body['one']) : !empty($have['one']);
 
 $was = $all[$id][$doc] ?? null;
 $all[$id][$doc] = ['page' => $page, 'marks' => $marks, 'one' => $one, 'at' => time()];

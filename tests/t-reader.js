@@ -67,6 +67,9 @@ module.exports = async function (b, check) {
     put("documents/" + g1.id + "/Manual.pdf", makePdf(32, 400, 560, [["Controls", 4], ["Secrets", 19]]));
     put("documents/" + g1.id + "/Guide.pdf", makePdf(3, 400, 560));
     put("documents/" + g2.id + "/Manual.pdf", "this is not a PDF");
+    // Never opened, as the first place check assumes: a place another group left for this game is taken off.
+    const left = places();
+    if (left[g1.id]) { delete left[g1.id]; fs.writeFileSync(placesFile, JSON.stringify(left)); }
 
     // ---- the reader's libraries, through their own door ---------------------
     const got = await fetch(BASE + "/js/vendor/pdf-6.4.299/pdf.min.js");
@@ -202,6 +205,9 @@ module.exports = async function (b, check) {
     check("One shows a single page", await b.until(`[document.querySelector(".rd-book").classList.contains("is-one"), ${SHOWN}[3], ${SIDE}[2]]`, [true, "Page 6 of 32", ["6"]], 6000), [true, "Page 6 of 32", ["6"]]);
     await b.key("ArrowRight");
     check("and turns one page at a time", await b.until(`${SHOWN}[3]`, "Page 7 of 32", 4000), "Page 7 of 32");
+    await sleep(800);
+    await b.key("ArrowLeft");
+    check("and back, one page at a time", await b.until(`${SHOWN}[3]`, "Page 6 of 32", 4000), "Page 6 of 32");
     check("the choice is kept for this manual", await lib.apiUntil(async () => ((places()[g1.id] || {})["Manual.pdf"] || {}).one === true), true);
     await b.clickSel(`.rd-pages button[data-v="two"]`);
     check("Two side by side puts it back", await b.until(`document.querySelector(".rd-book").classList.contains("is-one")`, false, 6000), false);
@@ -275,3 +281,4 @@ module.exports = async function (b, check) {
     fs.rmSync(docsDir, { recursive: true, force: true });
   }
 };
+module.exports.makePdf = makePdf;          // the phone group's manual too

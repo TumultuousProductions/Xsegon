@@ -7,7 +7,7 @@
  *      let in. square=1 also makes a new code and gives the link the square
  *      holds (the old square stops working). windows=1 also asks what
  *      Windows' firewall allows, which takes a few seconds.
- * POST {"op":"on"} | {"op":"off"}              the switch
+ * POST {"op":"on"} | {"op":"off"}              the switch; "by" names the phone that pressed Disconnect
  * POST {"op":"forget","id":"<phone>"}          one phone out; with no id, every one
  * POST {"op":"allow"}                          Windows is asked, behind its shield question
  * POST {"op":"join","code":"..","ua":".."}     the phone server's alone: the square's code for a key
@@ -90,7 +90,9 @@ if ($op === 'on' || $op === 'off') {
         if (!xs_phone_write($p)) {
             xs_fail('the switch could not be saved', 500);
         }
-        xs_log('PHONE', 'switched ' . $op . ' in the Connect a phone window');
+        // "by": the phone that pressed Disconnect (router-phone.php), named by what it is.
+        $by = substr((string) ($body['by'] ?? ''), 0, 80);
+        xs_log('PHONE', 'switched ' . $op . ($by !== '' ? ' from the phone (' . $by . ')' : ' in the Connect a phone window'));
     }
     $p = xs_phone_ensure($up);                     // off: it looks once, says so in the log, and leaves the stop mark
     if ($op === 'off') {

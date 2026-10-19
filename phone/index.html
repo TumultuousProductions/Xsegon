@@ -1,7 +1,8 @@
 <!doctype html>
-<!-- The phone page: the library on a phone, Play on the TV. Served by
-     router-phone.php only, as one file, so the phone server hands out one
-     thing that is not an answer. -->
+<!-- The phone page: the library on a phone, Play on the TV, and while a game
+     plays its own page: the manual as a booklet (reader.js), maps, buttons and
+     cheats (roadmap BA6, AB2). Served by router-phone.php only, with reader.js
+     and the booklet's libraries beside it. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -31,23 +32,69 @@
   .t { display: block; }
   .p { display: block; color: var(--mute); font-size: 13px; }
   #more { padding: 18px; text-align: center; color: var(--mute); }
-  #sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 9; display: none; background: var(--sheet); border-top: 1px solid var(--cyan);
+  #sheet, #dsheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 9; display: none; background: var(--sheet); border-top: 1px solid var(--cyan);
            padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); }
-  #sheet.on { display: block; }
+  #sheet.on, #dsheet.on { display: block; }
+  #disc { margin-left: auto; flex: none; padding: 6px 10px; font-size: 14px; }
+  #again { margin: 0 16px; }
+  #d-title { font-size: 18px; margin: 0 0 6px; }
+  #d-sub { color: var(--mute); margin: 0 0 12px; font-size: 14px; }
+  #d-said { min-height: 1.4em; margin: 10px 0 0; font-size: 14px; color: var(--bad); }
   #s-title { font-size: 18px; margin: 0 0 2px; }
   #s-sub { color: var(--mute); margin: 0 0 12px; font-size: 14px; }
   #s-said { min-height: 1.4em; margin: 10px 0 0; font-size: 14px; color: var(--mute); }
   #s-said.bad { color: var(--bad); }
   #s-said.good { color: var(--good); }
   .row { display: flex; gap: 10px; }
-  #s-play { flex: 1 1 auto; background: var(--cyan); color: var(--ground); border-color: var(--cyan); font-weight: 700; padding: 14px; }
-  #s-play:disabled { opacity: .45; }
-  #s-shut { flex: none; padding: 14px 18px; }
+  #s-play, #d-yes { flex: 1 1 auto; background: var(--cyan); color: var(--ground); border-color: var(--cyan); font-weight: 700; padding: 14px; }
+  #s-play:disabled, #d-yes:disabled { opacity: .45; }
+  #s-shut, #d-no { flex: none; padding: 14px 18px; }
+
+  /* the playing game's page: the list steps aside while it is open */
+  #game { display: none; padding: 10px 12px 18px; }
+  body.in-game #game { display: block; }
+  body.in-game #find, body.in-game #list, body.in-game #more, body.in-game #said { display: none !important; }
+  #now.go { cursor: pointer; }
+  #now.go::after { content: " \203A"; }
+  .g-top { display: flex; align-items: center; gap: 10px; }
+  #g-back { flex: none; padding: 8px 12px; }
+  #g-title { margin: 0; font-size: 18px; }
+  #g-sub { margin: 0; color: var(--mute); font-size: 13px; }
+  #g-tabs { display: flex; gap: 6px; margin: 12px 0 10px; }
+  #g-tabs button { flex: 1 1 0; min-width: 0; padding: 9px 4px; font-size: 14px; }
+  #g-tabs button.on { background: var(--cyan); color: var(--ground); border-color: var(--cyan); font-weight: 700; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .chips button { padding: 6px 10px; font-size: 14px; }
+  .chips button.on { border-color: var(--cyan); color: var(--cyan); }
+  .bk-stage { display: flex; align-items: center; justify-content: center; }
+  .bk-book { position: relative; flex: none; }
+  .bk-book .stf__wrapper { height: 100%; }
+  .bk-page { background: #f2eee4; overflow: hidden; }
+  .bk-page canvas { display: block; width: 100%; height: 100%; }
+  .bk-num { display: grid; place-items: center; height: 100%; color: #8e8677; font-size: 28px; }
+  .bk-hot { position: absolute; top: 0; bottom: 0; z-index: 1000; }
+  .bk-hot.prev { left: 0; width: 35%; }
+  .bk-hot.next { right: 0; width: 65%; }
+  .bk-foot { display: flex; align-items: center; gap: 12px; padding-top: 10px; }
+  .bk-folio { flex: none; min-width: 7.5em; color: var(--mute); font-size: 14px; font-variant-numeric: tabular-nums; }
+  .bk-scrub { flex: 1 1 auto; min-width: 0; padding: 0; border: 0; background: none; accent-color: var(--cyan); }
+  .bk-wait, .bk-fail { padding: 24px 4px; color: var(--mute); }
+  .bk-fail { color: var(--bad); }
+  .bk-fail a { color: var(--cyan); }
+  .maps figure { margin: 0 0 14px; }
+  .maps img { display: block; width: 100%; height: auto; background: #000; border-radius: 4px; }
+  .maps figcaption { padding-top: 4px; color: var(--mute); font-size: 13px; }
+  .g-sec h3 { margin: 14px 0 6px; color: var(--cyan); font-size: 14px; letter-spacing: .04em; }
+  .pair { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--rule); font-size: 14px; }
+  .pair span:last-child { color: var(--mute); text-align: right; }
+  .g-list { margin: 0; padding-left: 18px; }
+  .g-list li { padding: 4px 0; }
+  .hint { margin: 12px 0 0; color: var(--mute); font-size: 13px; }
 </style>
 </head>
 <body>
 <header>
-  <div class="top"><h1>XSEGON</h1><span id="who"></span></div>
+  <div class="top"><h1>XSEGON</h1><span id="who"></span><button id="disc" type="button" hidden>Disconnect</button></div>
   <div class="find" id="find" hidden>
     <input id="q" type="search" placeholder="Search your games" autocomplete="off" spellcheck="false">
     <select id="console" aria-label="Console"><option value="">All consoles</option></select>
@@ -55,13 +102,25 @@
   <div id="now"></div>
 </header>
 <p id="said">Asking the PC...</p>
+<button id="again" type="button" hidden>Open it again</button>
 <ul id="list"></ul>
 <div id="more" hidden></div>
+<section id="game" aria-labelledby="g-title">
+  <div class="g-top"><button id="g-back" type="button">&#8249; Library</button><div><p id="g-title"></p><p id="g-sub"></p></div></div>
+  <div id="g-tabs" role="tablist"></div>
+  <div id="g-body"></div>
+</section>
 <div id="sheet">
   <p id="s-title"></p>
   <p id="s-sub"></p>
   <div class="row"><button id="s-play" type="button">Play on the TV</button><button id="s-shut" type="button">Close</button></div>
   <p id="s-said"></p>
+</div>
+<div id="dsheet" role="dialog" aria-labelledby="d-title">
+  <p id="d-title" class="t">Switch the phone page off?</p>
+  <p id="d-sub">The PC stops answering phones until it is switched on again in Xsegon's Connect a phone... window. This phone stays let in: no square to scan next time.</p>
+  <div class="row"><button id="d-yes" type="button">Switch off</button><button id="d-no" type="button">Cancel</button></div>
+  <p id="d-said"></p>
 </div>
 <script>
 (function () {
@@ -147,24 +206,170 @@
     });
   }
 
-  // What plays on the TV, asked while this page is in sight.
+  /* What plays on the TV, asked while this page is in sight. A game that has
+     just started opens its page by itself, once: put away, it stays away until
+     another starts. Its page goes when the game ends. */
+  var nowId = "", lastRun = "";
   function now() {
     if (document.hidden) { return; }
     ask("/p/now").then(function (a) {
-      var r = a.ok && a.running;
-      $("now").className = r ? "on" : "";
+      var r = a.ok && a.running, rid = r ? r.id : "";
+      nowId = rid;
+      $("now").className = r ? "on" + (rid ? " go" : "") : "";
       $("now").textContent = r ? "Playing on the TV: " + r.title : "";
+      if (rid && rid !== lastRun && (!game || game.id !== rid)) { openGame(rid); }
+      if (!rid && lastRun && game && game.id === lastRun) { closeGame(); }
+      lastRun = rid;
+    });
+  }
+
+  /* ---- the playing game's page: its manual, maps, buttons and cheats ---------- */
+
+  var game = null, book = null, gameAsked = 0, tabAsked = 0, listAt = 0;
+  function openGame(id) {
+    var mine = ++gameAsked;
+    shut();
+    ask("/p/game?id=" + encodeURIComponent(id)).then(function (a) {
+      if (mine !== gameAsked) { return; }
+      if (a.status === 401) { notIn(a.error); return; }
+      if (!a.ok) { return; }                    // the list stays; the line above still says what plays
+      if (!game) { listAt = window.scrollY; }
+      game = a;
+      $("g-title").textContent = a.title;
+      $("g-sub").textContent = a.platform;
+      var pdfs = a.docs.filter(function (d) { return d.kind === "pdf"; }), pics = a.docs.filter(function (d) { return d.kind === "image"; });
+      var tabs = [];
+      if (pdfs.length) { tabs.push(["manual", pdfs.length > 1 ? "Manuals" : "Manual"]); }
+      if (pics.length) { tabs.push(["maps", "Maps"]); }
+      tabs.push(["buttons", "Buttons"], ["cheats", "Cheats"]);
+      $("g-tabs").textContent = "";
+      tabs.forEach(function (t) {
+        var b = document.createElement("button");
+        b.type = "button"; b.dataset.tab = t[0]; b.textContent = t[1]; b.setAttribute("role", "tab");
+        b.addEventListener("click", function () { tab(t[0]); });
+        $("g-tabs").appendChild(b);
+      });
+      document.body.classList.add("in-game");
+      window.scrollTo(0, 0);
+      tab(tabs[0][0]);
+    });
+  }
+  function closeGame() {
+    gameAsked++; tabAsked++;
+    if (book) { book.close(); book = null; }
+    game = null;
+    $("g-body").textContent = "";
+    document.body.classList.remove("in-game");
+    window.scrollTo(0, listAt);
+  }
+  function tab(name) {
+    var mine = ++tabAsked, body = $("g-body");
+    [].forEach.call($("g-tabs").children, function (b) { var on = b.dataset.tab === name; b.className = on ? "on" : ""; b.setAttribute("aria-selected", on ? "true" : "false"); });
+    if (book) { book.close(); book = null; }
+    body.textContent = "";
+    body.dataset.tab = name;
+    if (name === "manual") { manual(body, game.docs.filter(function (d) { return d.kind === "pdf"; }), 0, mine); }
+    else if (name === "maps") { maps(body); }
+    else { ask("/p/" + name + "?id=" + encodeURIComponent(game.id)).then(function (a) { if (mine === tabAsked) { (name === "buttons" ? buttons : cheats)(body, a); } }); }
+  }
+  function line(parent, tag, cls, words) { var n = document.createElement(tag); if (cls) { n.className = cls; } n.textContent = words; parent.appendChild(n); return n; }
+  function pair(parent, a, b) { var r = line(parent, "div", "pair", ""); line(r, "span", null, a); line(r, "span", null, b); }
+
+  function manual(body, pdfs, which, mine) {
+    body.textContent = "";
+    if (pdfs.length > 1) {
+      var chips = line(body, "div", "chips", "");
+      pdfs.forEach(function (d, k) {
+        var c = line(chips, "button", k === which ? "on" : "", d.label);
+        c.type = "button";
+        c.addEventListener("click", function () { if (book) { book.close(); book = null; } manual(body, pdfs, k, mine); });
+      });
+    }
+    var box = line(body, "div", "bk", ""), d = pdfs[which];
+    import("/reader.js").then(function (m) {
+      if (mine !== tabAsked || !box.isConnected) { return; }
+      // The booklet takes the room left under the tabs, with its page number and slider under it.
+      book = m.openBook(box, d, function (page) { d.page = page; ask("/p/place", { id: game.id, doc: d.file, page: page }); });
+      var stage = box.querySelector(".bk-stage");
+      if (stage) { stage.style.height = Math.max(260, window.innerHeight - stage.getBoundingClientRect().top - 110) + "px"; }
+    }, function () { line(body, "p", "bk-fail", "The booklet could not be loaded on this phone."); });
+  }
+  function maps(body) {
+    var box = line(body, "div", "maps", "");
+    game.docs.filter(function (d) { return d.kind === "image"; }).forEach(function (d) {
+      var f = line(box, "figure", null, ""), img = document.createElement("img");
+      img.src = d.url; img.alt = d.label; img.loading = "lazy"; img.decoding = "async";
+      f.appendChild(img);
+      line(f, "figcaption", null, d.label);
+    });
+    line(body, "p", "hint", "Pinch to make a map larger.");
+  }
+  function buttons(body, a) {
+    if (!a.ok) { line(body, "p", "bk-fail", a.error || "The buttons could not be read."); return; }
+    var sec = line(body, "div", "g-sec", ""), said = false;
+    if (a.swaps.length) {
+      line(sec, "h3", null, "This game's own buttons");
+      a.swaps.forEach(function (s) { pair(sec, s.from, "acts as " + s.to); });
+      said = true;
+    } else if (a.standard) {
+      line(sec, "p", "hint", "This game's buttons are as they come.");
+    }
+    if (a.hotkeys.length) {
+      line(sec, "h3", null, "Leaving, pausing and saving");
+      a.hotkeys.forEach(function (h) { pair(sec, h.name, h.press); });
+      said = true;
+    }
+    if (a.rows.length) {
+      line(sec, "h3", null, a.via ? a.via + "'s own buttons" : "The emulator's own buttons");
+      a.rows.forEach(function (r) { pair(sec, r.name, r.value); });
+      said = true;
+    }
+    if (!said) { line(sec, "p", null, a.note || "Xsegon has nothing to say about this game's buttons."); }
+    line(body, "p", "hint", "What each button does in the game is in its manual.");
+  }
+  function cheats(body, a) {
+    if (!a.ok) { line(body, "p", "bk-fail", a.error || "The cheats could not be read."); return; }
+    if (a.on.length) {
+      var sec = line(body, "div", "g-sec", "");
+      line(sec, "h3", null, "On for this game");
+      var ul = line(sec, "ul", "g-list", "");
+      a.on.forEach(function (w) { line(ul, "li", null, w); });
+    } else {
+      line(body, "p", null, a.why || "No cheats are on for this game.");
+    }
+    line(body, "p", "hint", "Cheats are chosen in the game's Cheats tab on the TV, and put on as the game starts.");
+  }
+
+  /* Disconnect: the phone page switched off from here, at any moment, a game playing or not. Asked
+     once, since coming back takes a press on the TV; this phone stays let in. */
+  function askOff() { shut(); $("d-said").textContent = ""; $("d-yes").disabled = false; $("dsheet").className = "on"; }
+  function off() {
+    $("d-yes").disabled = true;
+    $("d-said").textContent = "";
+    ask("/p/off", {}).then(function (a) {
+      $("d-yes").disabled = false;
+      if (a.status === 401) { $("dsheet").className = ""; notIn(a.error); return; }
+      if (!a.ok) { $("d-said").textContent = a.error || "The PC did not switch it off."; return; }
+      $("dsheet").className = "";
+      clearInterval(timer);
+      if (game) { closeGame(); }
+      $("find").hidden = true; $("list").textContent = ""; $("more").hidden = true; $("disc").hidden = true; $("now").className = "";
+      say("Disconnected: the phone page is switched off on the PC. To come back, choose Switch on in Xsegon's Connect a phone... window on the TV, then Open it again here.", false);
+      $("again").hidden = false;
     });
   }
 
   function notIn(why) {
     clearInterval(timer);
+    if (game) { closeGame(); }
+    $("disc").hidden = true;
     $("find").hidden = true; $("list").textContent = ""; $("more").hidden = true; $("who").textContent = "";
     say(why || "This phone has not been let in. On the TV, open the round X's menu, then Connect a phone..., and point this phone's camera at the square.", true);
   }
   function start(name) {
     $("who").textContent = name;
     $("find").hidden = false;
+    $("disc").hidden = false;
     load(true);
     now();
     timer = setInterval(now, 5000);
@@ -175,6 +380,12 @@
   $("console").addEventListener("change", function () { busy = false; load(true); });
   $("s-play").addEventListener("click", play);
   $("s-shut").addEventListener("click", shut);
+  $("g-back").addEventListener("click", closeGame);
+  $("disc").addEventListener("click", askOff);
+  $("d-yes").addEventListener("click", off);
+  $("d-no").addEventListener("click", function () { $("dsheet").className = ""; });
+  $("again").addEventListener("click", function () { location.reload(); });
+  $("now").addEventListener("click", function () { if (nowId && (!game || game.id !== nowId)) { openGame(nowId); } });
   window.addEventListener("scroll", function () {
     if (!$("more").hidden && window.innerHeight + window.scrollY > document.body.offsetHeight - 900) { load(false); }
   }, { passive: true });

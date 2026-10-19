@@ -7,7 +7,8 @@
  * any request that names no sender, and one of its jobs runs any program.
  *
  * What keeps this one safe, all of it here:
- *   - a fixed list of paths, so none of the main server's jobs can be asked for
+ *   - a fixed list of paths, so none of the main server's jobs can be asked for,
+ *     and the booklet's libraries by the one pattern the main server's door uses
  *   - it only reads (XS_FAST_LANE: a save is refused). Letting a phone in and
  *     starting a game go to the main server over loopback, with only the
  *     fields named here
@@ -29,17 +30,28 @@ $method = (string) ($_SERVER['REQUEST_METHOD'] ?? 'GET');
 $me     = ($_SERVER['SERVER_NAME'] ?? '') . ':' . ($_SERVER['SERVER_PORT'] ?? '');
 
 const XS_PHONE_PATHS = [
-    '/'        => 'GET',
-    '/p/hello' => 'GET',
-    '/p/join'  => 'POST',
-    '/p/me'    => 'GET',
-    '/p/list'  => 'GET',
-    '/p/art'   => 'GET',
-    '/p/now'   => 'GET',
-    '/p/play'  => 'POST',
+    '/'          => 'GET',
+    '/reader.js' => 'GET',
+    '/p/hello'   => 'GET',
+    '/p/join'    => 'POST',
+    '/p/me'      => 'GET',
+    '/p/list'    => 'GET',
+    '/p/art'     => 'GET',
+    '/p/now'     => 'GET',
+    '/p/play'    => 'POST',
+    '/p/off'     => 'POST',         // Disconnect: the phone page switched off from the phone, as Switch off on the TV does
+    // the playing game's page (roadmap BA6, AB2): its documents, its place in a manual, its buttons, its cheats
+    '/p/game'    => 'GET',
+    '/p/doc'     => 'GET',
+    '/p/place'   => 'POST',
+    '/p/buttons' => 'GET',
+    '/p/cheats'  => 'GET',
 ];
+// The booklet's libraries, as the main server's door names them (router.php): a folder per version, scripts and decoders.
+const XS_PHONE_VENDOR = '#^/js/vendor/([a-z][a-z0-9\-]*-\d+(?:\.\d+)*)/([a-z0-9_\-]+(?:\.[a-z0-9]+)*\.(js|wasm))$#i';
 // What a phone is told of a game: enough to find it and start it. No file name, no path, no play history, no notes.
 const XS_PHONE_ROW = ['id', 'title', 'platform', 'hasArt', 'playable'];
+const XS_PHONE_ID = '/^[A-Za-z0-9._:-]{1,120}$/';
 
 function xs_phone_say(int $code, array $answer): void
 {
@@ -83,11 +95,58 @@ function xs_phone_slim(string $out): string
                                  'consoles' => $consoles, 'games' => $rows], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 }
 
+/** Words for a phone with no folder of this PC's in them. */
+function xs_phone_plain(string $s): string
+{
+    return (string) preg_replace('/[A-Za-z]:\\\\[^\s"\']*|\\\\\\\\[^\s"\']+/', 'a folder on the PC', $s);
+}
+
+/** api\controls.php's answer as a player needs it: the game's own swaps, the presses that leave and save, another emulator's own pairs. */
+function xs_phone_buttons(string $out): string
+{
+    $a = json_decode($out, true);
+    if (!is_array($a) || empty($a['ok'])) {
+        return (string) json_encode(['ok' => false, 'error' => 'the buttons could not be read']);
+    }
+    $pairs = static fn ($list): array => array_map(static fn ($c): array => ['from' => xs_phone_plain((string) ($c['from'] ?? '')),
+                                                                            'to' => xs_phone_plain((string) ($c['to'] ?? ''))], (array) $list);
+    $hot = [];
+    $ra = is_array($a['hotkeys'] ?? null);
+    foreach ($ra ? ['leave', 'other'] : [] as $k) {
+        foreach ((array) ($a['hotkeys'][$k] ?? []) as $h) {
+            if ($k === 'leave' || !empty($h['set'])) {       // leaving and pausing are said even when unset
+                $hot[] = ['name' => xs_phone_plain((string) ($h['name'] ?? '')), 'press' => xs_phone_plain((string) ($h['value'] ?? ''))];
+            }
+        }
+    }
+    $map = is_array($a['gameMap'] ?? null) ? $a['gameMap'] : null;
+    // RetroArch's rows are keyboard keys, which a player on a pad never needs; another emulator's rows are its pad's own pairs.
+    $rows = $ra ? [] : array_map(static fn ($r): array => ['name' => xs_phone_plain((string) ($r['name'] ?? '')),
+                                                            'value' => xs_phone_plain((string) ($r['value'] ?? ''))], (array) ($a['rows'] ?? []));
+    return (string) json_encode(['ok' => true, 'via' => (string) ($a['via'] ?? ''),
+        'swaps' => $map !== null ? $pairs($map['changes'] ?? []) : $pairs($a['remap']['changes'] ?? []),
+        'standard' => $map !== null && !empty($map['standard']), 'hotkeys' => $hot, 'rows' => $rows,
+        'note' => $ra || $rows ? '' : xs_phone_plain((string) ($a['source']['note'] ?? ''))], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+}
+
+/** api\cheats.php's answer cut to what is on, by its words, or why there are none. */
+function xs_phone_cheats(string $out): string
+{
+    $a = json_decode($out, true);
+    if (!is_array($a) || empty($a['ok'])) {
+        return (string) json_encode(['ok' => false, 'error' => 'the cheats could not be read']);
+    }
+    $on = array_map(static fn ($c): string => (string) ($c['desc'] ?? ''), (array) ($a['chosen']['on'] ?? []));
+    return (string) json_encode(['ok' => true, 'on' => $on, 'why' => $on || !empty($a['files']) ? null : xs_phone_plain((string) ($a['why'] ?? ''))],
+                                JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+}
+
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: no-referrer');
 header('X-Frame-Options: DENY');
 
-$want = XS_PHONE_PATHS[$path] ?? null;
+$vendor = preg_match(XS_PHONE_VENDOR, $path, $vm) === 1 ? $vm : null;
+$want = XS_PHONE_PATHS[$path] ?? ($vendor !== null ? 'GET' : null);
 $mine = strcasecmp((string) ($_SERVER['HTTP_HOST'] ?? ''), $me) === 0;
 // Anything that changes something: from this server's own page only, with the header only it sends.
 $sure = $method !== 'POST'
@@ -111,7 +170,8 @@ if (!$mine || $want === null || $want !== $method || !$sure) {
 if ($path === '/') {
     header('Content-Type: text/html; charset=utf-8');
     header('Cache-Control: no-store');
-    header("Content-Security-Policy: default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'none'");
+    // Scripts and the booklet's worker from this server alone (reader.js, js\vendor), and the fonts a PDF carries inside it.
+    header("Content-Security-Policy: default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline'; worker-src 'self'; font-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'");
     readfile($root . '/phone/index.html');
     exit;
 }
@@ -140,8 +200,84 @@ if ($path === '/p/me') {
 }
 if ($path === '/p/now') {
     $run = xs_game_running();
+    // api\launch.php keeps the game as gameId: the page that opens by itself needs it.
     xs_phone_say(200, ['ok' => true, 'running' => $run === null ? null
-        : ['id' => (string) ($run['id'] ?? ''), 'title' => (string) ($run['title'] ?? ''), 'platform' => (string) ($run['platform'] ?? '')]]);
+        : ['id' => (string) ($run['gameId'] ?? $run['id'] ?? ''), 'title' => (string) ($run['title'] ?? ''), 'platform' => (string) ($run['platform'] ?? '')]]);
+}
+if ($path === '/p/off') {
+    // The main server sets the switch off and leaves the stop mark; this server's minder ends it within two seconds,
+    // after this answer has gone. The phone stays let in.
+    [$a, $status] = xs_phone_ask_main('phone.php', ['op' => 'off', 'by' => (string) ($phone['name'] ?? '?')]);
+    xs_phone_say($status === 200 ? 200 : $status, ['ok' => $status === 200, 'error' => $status === 200 ? null : xs_phone_plain((string) ($a['error'] ?? 'the PC did not switch it off'))]);
+}
+if ($path === '/reader.js' || $vendor !== null) {
+    require_once $root . '/includes/stream.php';
+    if ($vendor === null) {
+        xs_stream_file($root . DIRECTORY_SEPARATOR . 'phone' . DIRECTORY_SEPARATOR . 'reader.js', 'text/javascript', 'no-store');
+        exit;
+    }
+    $vend = $root . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . $vendor[1] . DIRECTORY_SEPARATOR . $vendor[2];
+    if (!is_file($vend)) {
+        xs_phone_say(404, ['ok' => false, 'error' => 'nothing here']);
+    }
+    xs_stream_file($vend, strtolower($vendor[3]) === 'wasm' ? 'application/wasm' : 'text/javascript', 'private, max-age=31536000, immutable');
+    exit;
+}
+if ($path === '/p/place') {
+    // The page reached in a manual, kept by the main server as the TV's reader keeps it: the bookmarks stay as they are.
+    $body = xs_body();
+    $id = (string) ($body['id'] ?? '');
+    $doc = (string) ($body['doc'] ?? '');
+    $page = $body['page'] ?? null;
+    if (!preg_match(XS_PHONE_ID, $id) || $doc === '' || strlen($doc) > 200 || !is_int($page) || $page < 1) {
+        xs_phone_say(400, ['ok' => false, 'error' => 'say the game, the manual and the page']);
+    }
+    [$a, $status] = xs_phone_ask_main('manual-place.php', ['id' => $id, 'doc' => $doc, 'page' => $page]);
+    xs_phone_say($status, ['ok' => !empty($a['ok']), 'page' => (int) ($a['page'] ?? 0), 'error' => isset($a['error']) ? xs_phone_plain((string) $a['error']) : null]);
+}
+
+// The main server's reads, run here with only these fields handed on, each a plain word or left out.
+$asked = array_filter($_GET, 'is_string');
+if (in_array($path, ['/p/game', '/p/doc', '/p/buttons', '/p/cheats'], true)) {
+    $id = (string) ($asked['id'] ?? '');
+    if (!preg_match(XS_PHONE_ID, $id)) {
+        xs_phone_say(404, ['ok' => false, 'error' => 'no such game']);
+    }
+}
+if ($path === '/p/game' || $path === '/p/doc') {
+    require_once $root . '/includes/import.php';
+    require_once $root . '/includes/extras.php';
+    $docs = xs_docs_for($id);
+}
+if ($path === '/p/game') {
+    $game = xs_game($id);
+    if ($game === null) {
+        xs_phone_say(404, ['ok' => false, 'error' => 'no such game']);
+    }
+    $places = xs_read_json(xs_data_path('manual-places.json'), []);
+    $out = [];
+    foreach ($docs as $d) {
+        $v = preg_match('/[?&]v=(\d+)/', (string) $d['url'], $vm2) ? $vm2[1] : '0';
+        $out[] = ['file' => $d['file'], 'label' => $d['label'], 'kind' => $d['kind'],
+                  'url' => '/p/doc?id=' . rawurlencode($id) . '&file=' . rawurlencode($d['file']) . '&v=' . $v,
+                  'page' => $d['kind'] === 'pdf' ? max(1, (int) ($places[$id][$d['file']]['page'] ?? 1)) : null];
+    }
+    xs_log('PHONE', ($phone['name'] ?? '?') . ' opened the page of ' . $game['title'] . ': '
+        . (count($out) === 1 ? 'one document' : count($out) . ' documents'));
+    xs_phone_say(200, ['ok' => true, 'id' => $id, 'title' => (string) $game['title'], 'platform' => (string) ($game['platform'] ?? ''), 'docs' => $out]);
+}
+if ($path === '/p/doc') {
+    // Only a file the game's own documents list names: a name with a way out of its folder is never one of them.
+    $file = (string) ($asked['file'] ?? '');
+    if (!in_array($file, array_column($docs, 'file'), true)) {
+        xs_log('PHONE', 'refused a document that is not ' . $id . '\'s: ' . substr($file, 0, 80));
+        xs_phone_say(404, ['ok' => false, 'error' => 'no such document for this game']);
+    }
+    $types = ['pdf' => 'application/pdf', 'png' => 'image/png', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'webp' => 'image/webp', 'gif' => 'image/gif'];
+    require_once $root . '/includes/stream.php';
+    xs_stream_file(xs_docs_dir() . DIRECTORY_SEPARATOR . $id . DIRECTORY_SEPARATOR . $file, $types[strtolower(pathinfo($file, PATHINFO_EXTENSION))],
+                   isset($asked['v']) ? 'private, max-age=31536000, immutable' : 'private, max-age=3600');
+    exit;
 }
 if ($path === '/p/play') {
     $id = (string) (xs_body()['id'] ?? '');
@@ -155,9 +291,11 @@ if ($path === '/p/play') {
     xs_phone_say($status, ['ok' => !empty($a['ok']), 'error' => $error]);
 }
 
-// The two that are the main server's own reads, run here with only these fields handed on, each a plain word or left out.
-$asked = array_filter($_GET, 'is_string');
-if ($path === '/p/list') {
+if ($path === '/p/buttons' || $path === '/p/cheats') {
+    $_GET = ['id' => $id];
+    ob_start($path === '/p/buttons' ? 'xs_phone_buttons' : 'xs_phone_cheats');
+    $file = $root . '/api/' . ($path === '/p/buttons' ? 'controls.php' : 'cheats.php');
+} elseif ($path === '/p/list') {
     // A console by its name only: the lists that begin with @ (recently played, favourites) say what you play.
     $console = substr((string) ($asked['platform'] ?? ''), 0, 120);
     $_GET = ['q' => substr((string) ($asked['q'] ?? ''), 0, 80), 'platform' => str_starts_with($console, '@') ? '' : $console,

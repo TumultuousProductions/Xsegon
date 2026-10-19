@@ -1,12 +1,15 @@
 // The phone page: its own small server, the square's code, what a phone may
-// and may not ask, and the Connect a phone window. On a test copy the phone
-// page opens on 127.0.0.1 and Windows is asked nothing.
+// and may not ask, the playing game's page (BA6, AB2), and the Connect a phone
+// window. On a test copy the phone page opens on 127.0.0.1 and Windows is
+// asked nothing.
 "use strict";
 const fs = require("fs");
 const http = require("http");
 const path = require("path");
 const lib = require("./lib");
-const { api, apiUntil } = lib;
+const { makePdf } = require("./t-reader");
+const { api, apiUntil, sleep } = lib;
+const MAP_PNG = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
 
 // One request to the phone page's port, with the headers said outright: a browser's own rules are what is being tried.
 function ask(port, where, opts) {
@@ -39,6 +42,8 @@ module.exports = async function (b, check) {
   }
   const staysWas = (await api("api/settings.php")).settings.window.phoneStays;
   const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
+  const docsDir = path.join(lib.DATA, "documents"), placesFile = path.join(lib.DATA, "manual-places.json");
+  let docsMade = null, ranStandIn = false, phoneSized = false, placesWas;
   try {
     // The copy starts from the real data: whatever stood there, the checks start from closed and nobody let in.
     await api("api/settings.php", { window: { phoneStays: "on" } });
@@ -62,7 +67,8 @@ module.exports = async function (b, check) {
       console.log("    the log: " + ((await api("api/log.php?tail=400")).lines || []).filter((l) => /PHONE|SPWN/.test(l)).slice(-8).join(" || "));
       return;
     }
-    const port = st.port, own = { Origin: "http://127.0.0.1:" + port, "X-Xsegon-Phone": "1" };
+    let port = st.port;                         // a new one after Disconnect and Switch on, below
+    const own = { Origin: "http://127.0.0.1:" + port, "X-Xsegon-Phone": "1" };
 
     const hello = await ask(port, "/p/hello");
     check("it says it is Xsegon's phone page", [hello.status, hello.json.lane], [200, "phone"]);
@@ -148,6 +154,125 @@ module.exports = async function (b, check) {
             return ["let in: iPhone, Safari 18", "play no-such-game asked by iPhone, Safari 18", "refused GET /api/settings.php"].every((w) => lines.some((l) => l.includes(w)));
           }, 6000), true);
 
+    /* ---- the playing game's page (BA6, AB2) ---------------------------------------- */
+    // A game stands in as playing (running.json, as api\launch.php writes it at a press) with a manual and a map of the test's own.
+    const g0 = games[0], g1 = games[1];
+    const runFile = path.join(lib.DATA, "running.json");
+    const standIn = () => fs.writeFileSync(runFile, JSON.stringify({ gameId: g0.id, title: g0.title, platform: g0.platform, pending: true, startedAt: new Date().toISOString() }));
+    if (g0 && !fs.existsSync(docsDir)) {
+      docsMade = docsDir;
+      placesWas = fs.existsSync(placesFile) ? fs.readFileSync(placesFile) : null;
+      fs.mkdirSync(path.join(docsDir, g0.id), { recursive: true });
+      fs.writeFileSync(path.join(docsDir, g0.id, "Manual.pdf"), makePdf(12, 400, 560));
+      fs.writeFileSync(path.join(docsDir, g0.id, "Map.png"), Buffer.from(MAP_PNG, "base64"));
+      await api("api/manual-place.php", { id: g0.id, doc: "Manual.pdf", page: 1, marks: [], one: false });
+      standIn();
+      ranStandIn = true;
+      const playing = (await ask(port, "/p/now", { cookie })).json.running || {};
+      check("a game playing on the TV is named by its id, so its page can open", [playing.id, playing.title], [g0.id, g0.title]);
+      const pg = await ask(port, "/p/game?id=" + encodeURIComponent(g0.id), { cookie });
+      check("its page: the manual first, then the map, each fetched through the phone page, the manual on page 1",
+            [pg.status, (pg.json.docs || []).map((d) => [d.label, d.kind, /^\/p\/doc\?id=/.test(d.url), d.page])], [200, [["Manual", "pdf", true, 1], ["Map", "image", true, null]]]);
+      const man = (pg.json.docs || [])[0] || { url: "/p/doc" };
+      const piece = await ask(port, man.url, { cookie, headers: { Range: "bytes=0-99" } });
+      check("the manual comes as a PDF, in pieces", [piece.status, piece.headers["content-type"], piece.raw.length, piece.raw.slice(0, 5).toString()], [206, "application/pdf", 100, "%PDF-"]);
+      const refused = [];
+      for (const f of ["..\\..\\settings.json", "../../settings.json", "Manual.pdf.txt", ""]) {
+        refused.push((await ask(port, "/p/doc?id=" + encodeURIComponent(g0.id) + "&file=" + encodeURIComponent(f), { cookie })).status);
+      }
+      check("a file the game's documents do not name is refused, a way out of the folder too", refused, [404, 404, 404, 404]);
+      check("and so is another game's manual", (await ask(port, "/p/doc?id=" + encodeURIComponent((g1 || {}).id || "x") + "&file=Manual.pdf", { cookie })).status, 404);
+      check("with no key, neither the page nor its manual is told",
+            [(await ask(port, "/p/game?id=" + encodeURIComponent(g0.id))).status, (await ask(port, man.url)).status], [401, 401]);
+      const pdfJs = await ask(port, "/js/vendor/pdf-6.4.299/pdf.min.js", { cookie });
+      check("the booklet's libraries and the phone's reader come from the phone page itself, to a phone let in",
+            [pdfJs.status, (pdfJs.headers["content-type"] || "").split(";")[0], (await ask(port, "/js/vendor/pdf-6.4.299/pdf.min.js")).status,
+             (await ask(port, "/reader.js", { cookie })).status, (await ask(port, "/js/vendor/pdf-6.4.299/LICENSE", { cookie })).status],
+            [200, "text/javascript", 401, 200, 404]);
+      const csp = page.headers["content-security-policy"] || "";
+      check("the page may run scripts and the booklet's worker from itself, and still load nothing from anywhere else",
+            [/script-src 'self' 'unsafe-inline';/.test(csp), /worker-src 'self';/.test(csp), /connect-src 'self';/.test(csp), /https?:/.test(csp)], [true, true, true, false]);
+      const btn = await ask(port, "/p/buttons?id=" + encodeURIComponent(g0.id), { cookie });
+      check("its buttons: what a player needs, with no folder of this PC's in them",
+            [btn.status, btn.json.ok, Array.isArray(btn.json.hotkeys), Array.isArray(btn.json.swaps), /[A-Za-z]:\\\\/.test(btn.raw.toString("utf8"))], [200, true, true, true, false]);
+      const ch = await ask(port, "/p/cheats?id=" + encodeURIComponent(g0.id), { cookie });
+      check("its cheats: the ones on, by their words", [ch.status, ch.json.ok, Array.isArray(ch.json.on)], [200, true, true]);
+      await api("api/manual-place.php", { id: g0.id, doc: "Manual.pdf", page: 2, marks: [5], one: false });
+      const kept = await ask(port, "/p/place", { body: { id: g0.id, doc: "Manual.pdf", page: 7 }, headers: own, cookie });
+      const there = await api("api/manual-place.php?id=" + encodeURIComponent(g0.id) + "&doc=Manual.pdf");
+      check("the page reached on the phone is kept by the PC, the bookmarks left as they were", [kept.status, kept.json.ok, there.page, there.marks], [200, true, 7, [5]]);
+      check("not sent by the page itself, it is refused", (await ask(port, "/p/place", { body: { id: g0.id, doc: "Manual.pdf", page: 3 }, headers: { Origin: own.Origin }, cookie })).status, 403);
+      check("and the phone is told that page next time", ((await ask(port, "/p/game?id=" + encodeURIComponent(g0.id), { cookie })).json.docs || [{}])[0].page, 7);
+      await api("api/manual-place.php", { id: g0.id, doc: "Manual.pdf", page: 1, marks: [], one: false });
+      check("Disconnect not sent by the page itself is refused", (await ask(port, "/p/off", { body: {}, headers: { Origin: own.Origin }, cookie })).status, 403);
+
+      if (b) {
+        // The phone page itself, at a phone's size, with the key the test phone was given: no second phone is let in.
+        await b.send("Network.setCookie", { name: "xsp", value: cookie.slice(4), domain: "127.0.0.1", path: "/", httpOnly: true, sameSite: "Strict" });
+        await b.send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+        phoneSized = true;
+        standIn();
+        await b.send("Page.navigate", { url: "http://127.0.0.1:" + port + "/" });
+        const GAME = `[document.body.classList.contains("in-game"), (document.getElementById("g-title") || {}).textContent, [...document.querySelectorAll("#g-tabs button")].map((t) => t.textContent)]`;
+        check("with a game playing, the phone page opens its page by itself: Manual, Maps, Buttons, Cheats",
+              await b.until(GAME, [true, g0.title, ["Manual", "Maps", "Buttons", "Cheats"]], 15000), [true, g0.title, ["Manual", "Maps", "Buttons", "Cheats"]]);
+        const BK = `(x => x && x.dataset.pages ? [+x.dataset.page, +x.dataset.pages, (document.querySelector(".bk-folio") || {}).textContent] : null)(document.querySelector("#g-body .bk"))`;
+        const RED = `(c => c && c.width ? Math.round(c.getContext("2d").getImageData(c.width >> 1, c.height >> 2, 1, 1).data[0] / 7) - 1 : -1)((document.querySelectorAll(".bk-page")[0] || {}).querySelector && document.querySelectorAll(".bk-page")[0].querySelector("canvas"))`;
+        check("the manual opens as a booklet on its page, drawn", await b.until(`[${BK}, ${RED}]`, [[1, 12, "Page 1 of 12"], 0], 15000), [[1, 12, "Page 1 of 12"], 0]);
+        await b.clickSel(".bk-hot.next");
+        check("a tap on the right side turns the page", await b.until(BK, [2, 12, "Page 2 of 12"], 5000), [2, 12, "Page 2 of 12"]);
+        check("and the PC keeps it, so the TV's reader opens there too",
+              await apiUntil(async () => (await api("api/manual-place.php?id=" + encodeURIComponent(g0.id) + "&doc=Manual.pdf")).page === 2, 6000), true);
+        await sleep(800);
+        await b.clickSel(".bk-hot.prev");
+        check("a tap on the left side turns back", await b.until(BK, [1, 12, "Page 1 of 12"], 5000), [1, 12, "Page 1 of 12"]);
+        await b.clickSel('#g-tabs button[data-tab="maps"]');
+        check("Maps shows the game's map", await b.until(`(i => !!i && i.complete && i.naturalWidth > 0)(document.querySelector(".maps img"))`, true, 6000), true);
+        await b.clickSel('#g-tabs button[data-tab="buttons"]');
+        check("Buttons says what Xsegon knows, and that the manual has the rest", await b.until(`/in its manual/.test(document.getElementById("g-body").textContent)`, true, 8000), true);
+        await b.clickSel('#g-tabs button[data-tab="cheats"]');
+        check("Cheats says which are on, chosen on the TV", await b.until(`/Cheats tab on the TV/.test(document.getElementById("g-body").textContent)`, true, 8000), true);
+        standIn();
+        await b.clickSel("#g-back");
+        const away = await b.until(`document.body.classList.contains("in-game")`, false, 3000);
+        await sleep(5600);                     // a look at what plays has come and gone
+        check("Library puts the page away, and it stays away while the same game plays", [away, await b.ev(`document.body.classList.contains("in-game")`)], [false, false]);
+        standIn();
+        await b.clickSel("#now");
+        check("the line saying what plays opens it again", await b.until(`document.body.classList.contains("in-game")`, true, 6000), true);
+        fs.rmSync(runFile, { force: true });
+        check("when the game ends, its page goes and the list is back",
+              await b.until(`[document.body.classList.contains("in-game"), document.querySelectorAll("#list li").length > 0]`, [false, true], 9000), [false, true]);
+        // Disconnect, at the top of every screen: asked once, since coming back takes the TV.
+        await b.clickSel("#disc");
+        check("Disconnect at the top asks first, saying the phone stays let in",
+              await b.until(`(s => s.classList.contains("on") && /stays let in/.test(s.textContent))(document.getElementById("dsheet"))`, true, 3000), true);
+        await b.clickSel("#d-no");
+        check("Cancel leaves it as it was", [await b.until(`document.getElementById("dsheet").className`, "", 2000), (await api("api/phone.php")).on], ["", true]);
+        await b.clickSel("#disc");
+        await b.clickSel("#d-yes");
+        check("Switch off there: the phone says it is disconnected and how to come back",
+              await b.until(`/^Disconnected/.test(document.getElementById("said").textContent) && !document.getElementById("again").hidden && document.getElementById("disc").hidden`, true, 6000), true);
+        await b.send("Emulation.clearDeviceMetricsOverride");
+        await b.send("Network.deleteCookies", { name: "xsp", domain: "127.0.0.1" });
+        phoneSized = false;
+      } else {
+        check("Disconnect from the phone is answered", (await ask(port, "/p/off", { body: {}, headers: own, cookie })).json.ok, true);
+      }
+      check("the PC's switch is then off and the phone page closes, the log naming the phone",
+            await apiUntil(async () => {
+              const s = await api("api/phone.php");
+              const lines = ((await api("api/log.php?tail=400")).lines || []).filter((l) => /PHONE/.test(l));
+              return !s.on && !s.up && lines.some((l) => l.includes("switched off from the phone (iPhone, Safari 18)"));
+            }, 10000), true);
+      await api("api/phone.php", { op: "on" });
+      const back = await apiUntil(async () => { const s = await api("api/phone.php"); return s.up ? s : null; }, 20000);
+      port = back ? back.port : port;
+      own.Origin = "http://127.0.0.1:" + port;
+      check("switched on again on the TV, the same phone is in with no square", (await ask(port, "/p/me", { cookie })).json.name, "iPhone, Safari 18");
+      fs.rmSync(runFile, { force: true });
+    } else { console.log("    (this data folder already holds documents: the playing game's page steps aside)"); }
+
     /* ---- the Connect a phone window --------------------------------------------------- */
     if (b) {
       await b.goto();
@@ -204,6 +329,16 @@ module.exports = async function (b, check) {
     check("switched off, nothing answers on its port any more, also after an on and an off pressed close together",
           await apiUntil(async () => (await ask(port, "/p/hello")).status === 0 && (await ask(port + 1, "/p/hello")).json.lane !== "phone" && !(await api("api/phone.php")).up, 12000), true);
   } finally {
+    if (phoneSized && b) {
+      await b.send("Emulation.clearDeviceMetricsOverride");
+      await b.send("Network.deleteCookies", { name: "xsp", domain: "127.0.0.1" });
+    }
+    if (ranStandIn) { fs.rmSync(path.join(lib.DATA, "running.json"), { force: true }); }
+    if (docsMade) {
+      fs.rmSync(docsMade, { recursive: true, force: true });
+      // The places the phone's booklet kept are put back as they were, for the groups after this one.
+      if (placesWas) { fs.writeFileSync(placesFile, placesWas); } else { fs.rmSync(placesFile, { force: true }); }
+    }
     await api("api/phone.php", { op: "off" });
     await api("api/settings.php", { window: { phoneStays: staysWas || "on" } });
   }

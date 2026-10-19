@@ -167,10 +167,11 @@ export function openReader(stage, note, g, d, opts) {
       }
       libs.then(function (lib) {
         if (closed || !book) { return; }
-        // No corner lifts under the pointer and nothing follows a drag: a click is only ever a whole turn.
+        // No corner lifts under the pointer and nothing follows a drag: a click is only ever a whole turn. With its own
+        // mouse handling off, disableFlipByClick guards nothing, and on one page it stopped flipPrev (its aim is no corner there).
         pf = new lib.PageFlip(book, { width: pageW, height: pageH, size: "fixed", autoSize: false, usePortrait: true, showCover: true,
                                       startPage: cur, flippingTime: TURN_MS, drawShadow: true, maxShadowOpacity: 0.5, showPageCorners: false,
-                                      disableFlipByClick: true, mobileScrollSupport: false, swipeDistance: 30, useMouseEvents: false });
+                                      disableFlipByClick: false, mobileScrollSupport: false, swipeDistance: 30, useMouseEvents: false });
         pf.loadFromHTML(pages);
         for (var k = 0; k < n; k++) { pf.getPage(k).setDensity("soft"); }    // soft covers, the user's choice
         pf.on("flip", function (e) { cur = e.data; turned(); });
