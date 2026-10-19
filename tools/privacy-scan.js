@@ -29,6 +29,8 @@ const USER_OK = new Set(["public", "default", "all users", "you", "your name", "
                          "someone", "me", "%username%", "<you>", "<name>", "<user>", "...", "josé"]);
 // Third-party licences keep their authors' addresses word for word.
 const LICENCE_FILE = /(^|\/)(LICEN[CS]E|COPYING)[^/]*$/i;
+// Libraries in js\vendor are their releases byte for byte: an @ in minified code is theirs, never an address of ours.
+const VENDOR_FILE = /^js\/vendor\//i;
 const SOUND_EXT = /\.(wav|ogg|mp3|flac|m4a|aac|opus|wma)$/i;
 const IMG_EXT = /\.(png|jpe?g|gif|webp|bmp|ico|svg|tiff?)$/i;
 const sha = (b) => crypto.createHash("sha256").update(b).digest("hex");
@@ -143,7 +145,8 @@ function scan(files, notes) {
   const wordRe = ws.map((w) => [w, new RegExp("(?<![a-z0-9])" + w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?![a-z0-9])", "i")]);
   const look = (name, text) => {
     const lines = text.split(/\r?\n/);
-    const mailOk = LICENCE_FILE.test(name.split(" (")[0]);
+    const file = name.split(" (")[0].replace(/\\/g, "/");
+    const mailOk = LICENCE_FILE.test(file) || VENDOR_FILE.test(file);
     for (let i = 0; i < lines.length; i++) {
       for (const [w, re] of wordRe) { if (re.test(lines[i])) { found.push(name + ":" + (i + 1) + ": a word of this PC's (" + w + ")"); } }
       for (const m of lines[i].matchAll(/[A-Za-z]:[\\/]+Users[\\/]+([^\\/\s"'`<>|*?(),;:]+)/gi)) {
