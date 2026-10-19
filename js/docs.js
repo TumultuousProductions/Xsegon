@@ -3,15 +3,15 @@
     Manual), so there is no second list to keep in step (includes\extras.php).
     api\game.php sends the list; a library row only says whether there is any.
 
-    A tab per document. A PDF opens in the browser's reader in a frame, under
-    Xsegon's own Back; a picture opens fitted, and full size on a press, to be
-    dragged. It is a picker to the keys and the pad (launch.js, pick); a pad
-    cannot turn a PDF's pages, and the panel says so while a pad is in use.  */
+    A tab per document. A PDF opens as a booklet (js\reader.js), which takes
+    the keys and the pad while it is up, with the browser's own reader one
+    press away; a picture opens fitted, and full size on a press, to be
+    dragged. It is a picker to the keys and the pad (launch.js, pick).  */
 
 import { setEditorOnClose, toolFrame } from "./editors.js";
-import { padMode } from "./help.js";
 import { setPick, showStrip } from "./launch.js";
 import { L, api } from "./log.js";
+import { openReader } from "./reader.js";
 import { stopVideo } from "./snap.js";
 import { sound } from "./sound.js";
 import { $editor } from "./state.js";
@@ -30,14 +30,16 @@ export function openDocs(g, at) {
   api("api/game.php?id=" + encodeURIComponent(holder.id)).then(function (res) {
     var docs = (res.ok && res.game && res.game.documents) || [];
     if (!docs.length) { showStrip("no documents for " + g.title + " yet", false); return; }
-    show(g, docs, Math.max(0, Math.min(docs.length - 1, at || 0)));
+    show(g, docs, Math.max(0, Math.min(docs.length - 1, at || 0)), holder.id);
   });
 }
 
-function show(g, docs, at) {
+function show(g, docs, at, gid) {
   L("DOC", "open " + g.title + " (" + docs.length + ")");
   stopVideo();
-  setEditorOnClose(null);
+  var reader = null, inFrame = false;
+  function shut() { if (reader) { reader.close(); reader = null; } P.key = P.pad = null; }
+  setEditorOnClose(shut);
   var inner = toolFrame("DOCUMENTS", { base: "doc-inner", close: "Back (esc)" });
   inner.appendChild(el("p", "group-help", titleText(g) + "  ·  " + docs.length + (docs.length === 1 ? " document" : " documents")));
 
@@ -72,15 +74,14 @@ function show(g, docs, at) {
       b.setAttribute("aria-selected", k === i ? "true" : "false");
     });
     buttons[i].scrollIntoView({ block: "nearest", inline: "nearest" });
+    shut();
+    inFrame = false;
     stage.textContent = "";
     stage.className = "doc-stage " + (d.kind === "pdf" ? "is-pdf" : "is-pic");
     if (d.kind === "pdf") {
-      var fr = el("iframe", "doc-frame");
-      fr.title = d.label;
-      fr.src = d.url + "#view=FitH";
-      stage.appendChild(fr);
-      note.textContent = padMode ? "A PDF opens in the browser's own reader, which wants the mouse or the keyboard: a pad cannot turn its pages yet."
-                                 : "This is the browser's own reader: its arrows and the scroll wheel turn the pages. Back, above, always leaves it.";
+      reader = openReader(stage, note, g, d, { gid: gid, many: docs.length > 1, move: function (k) { P.move(k); }, browser: function () { frame(d); } });
+      P.key = reader.key;
+      P.pad = reader.pad;
     } else {
       var img = el("img", "doc-pic");
       img.alt = d.label;
@@ -91,6 +92,20 @@ function show(g, docs, at) {
       note.textContent = "Enter or a click shows it at its full size, and again fits it back. At full size, drag it to move about.";
     }
     L("DOC", "show " + d.file);
+  }
+
+  // The browser's own reader, for searching and copying a PDF's text; Enter or its tab is the booklet again.
+  function frame(d) {
+    shut();
+    inFrame = true;
+    stage.textContent = "";
+    stage.className = "doc-stage is-pdf";
+    var fr = el("iframe", "doc-frame");
+    fr.title = d.label;
+    fr.src = d.url + "#view=FitH";
+    stage.appendChild(fr);
+    note.textContent = "This is the browser's own reader: its arrows and the scroll wheel turn the pages, Ctrl+F finds a word. Enter, or the tab above, opens the booklet again.";
+    L("DOC", "the browser's reader for " + d.file);
   }
 
   /* Full size and back. The place pressed stays under the pointer, so a
@@ -128,7 +143,7 @@ function show(g, docs, at) {
   });
 
   var P = { at: at, move: function (d) { if (P.at + d >= 0 && P.at + d < docs.length) { sound("move"); } go(P.at + d); },
-            choose: function () { zoom(null); } };
+            choose: function () { if (inFrame) { go(P.at); } else { zoom(null); } }, key: null, pad: null };
   setPick(P);
   go(at);
 }

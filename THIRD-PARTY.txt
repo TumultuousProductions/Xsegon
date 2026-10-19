@@ -25,6 +25,16 @@ ffmpeg.exe (bin\ffmpeg.exe)
     GNU GPL v3, with where its source is: bin\ffmpeg-LICENSE.txt. Keeps the
     first 30 seconds of a game's recording as its video.
 
+pdf.js 6.4.299 (js\vendor\pdf-6.4.299)
+    Mozilla and the pdf.js contributors, mozilla.github.io/pdf.js. Apache
+    License 2.0: js\vendor\pdf-6.4.299\LICENSE. With its picture decoders,
+    OpenJPEG (BSD 2-clause), PDFium's JBIG2 (BSD 3-clause) and QCMS (MIT),
+    each licence beside it in the same folder. Draws a manual's pages.
+
+StPageFlip 2.0.7 (js\vendor\page-flip-2.0.7)
+    Nodlik, nodlik.github.io/StPageFlip. MIT licence:
+    js\vendor\page-flip-2.0.7\LICENSE. Bends and turns a manual's pages.
+
 Data and pictures carried in the download
 -----------------------------------------
 The LaunchBox Games Database (gamesdb\)

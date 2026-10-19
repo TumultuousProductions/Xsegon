@@ -5234,6 +5234,74 @@ body.no-anim .dmedium.is-disc:hover { animation: none; }
 .doc-note { flex: none; margin: 8px 0 0; }
 .details .bar .docbtn { margin-left: 6px; }
 
+/* ---------- the manual reader (js\reader.js) ---------- */
+/* The book is sized by the reader to fit the stage; StPageFlip's own sizing
+   (a padding trick on its wrapper) is off, so its wrapper takes the book's height. */
+.doc-stage.is-book { display: flex; overflow: hidden; }
+.doc-stage.is-book + .doc-note { min-height: 2.7em; }   /* two lines held, so a longer hint never moves the book */
+.rd-area { flex: 1 1 0; min-width: 0; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
+.rd-book { position: relative; flex: none; }
+.rd-book .stf__wrapper { height: 100%; }
+.rd-page, .rd-slot { background: #f2eee4; overflow: hidden; }
+.rd-page canvas, .rd-slot canvas, .rd-zpage canvas { display: block; width: 100%; height: 100%; }
+.rd-num { position: absolute; inset: 0; display: grid; place-items: center; font-size: 32px; color: rgba(0, 0, 0, .22); }
+.rd-book.is-flat { display: flex; }
+.rd-slot { position: relative; flex: 1 1 0; }
+.rd-slot.empty { background: transparent; }
+.rd-book.is-flat:not(.is-one) .rd-slot + .rd-slot { box-shadow: inset 6px 0 10px -6px rgba(0, 0, 0, .35); }   /* the fold */
+.rd-wait, .rd-fail { color: var(--mute); text-align: center; max-width: 60ch; margin: 0 16px; }
+.rd-fail + button { position: absolute; bottom: 20%; }
+.rd-zoom { position: absolute; inset: 0; overflow: auto; background: var(--art-bed); cursor: grab; z-index: 2; padding: 12px 0; }
+.rd-zpage { position: relative; margin: 0 auto 12px; background: #f2eee4; cursor: zoom-out; }
+/* Each page's number, under it; the cover's left side is blank. */
+.rd-folios { display: flex; flex: none; padding-top: 6px; }
+.rd-folio { flex: 1 1 0; text-align: center; font-size: 13px; letter-spacing: .08em; color: var(--mute); font-variant-numeric: tabular-nums; }
+/* Click to turn: each half of the book is a button, an arrow at its outer edge on hover. */
+.rd-hot { position: absolute; top: 0; bottom: 0; width: 50%; z-index: 1000; cursor: pointer; }
+.rd-hot.prev { left: 0; } .rd-hot.next { right: 0; }
+.rd-book.is-one .rd-hot.prev { width: 30%; } .rd-book.is-one .rd-hot.next { width: 70%; }
+.rd-hot.off { cursor: default; }
+.rd-hot::after {
+  content: ""; position: absolute; top: 50%; width: 46px; height: 46px; margin-top: -23px; border-radius: 50%;
+  background: rgba(6, 13, 28, .55) no-repeat center / 22px; opacity: 0; transition: opacity .15s;
+}
+.rd-hot.prev::after { left: 10px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 5l-7 7 7 7'/%3E%3C/svg%3E"); }
+.rd-hot.next::after { right: 10px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 5l7 7-7 7'/%3E%3C/svg%3E"); }
+.rd-hot:not(.off):hover::after { opacity: 1; }
+body.no-anim .rd-hot::after { transition: none; }
+
+/* The side panel, left of the book (js\readerside.js). */
+.rd-side {
+  flex: none; width: 236px; box-sizing: border-box; overflow-y: auto; padding: 14px 14px 12px;
+  display: flex; flex-direction: column; gap: 16px; border-right: 1px solid var(--rule); background: var(--panel-2);
+}
+.rd-sect { display: flex; flex-direction: column; gap: 6px; }
+.rd-head { margin: 0; font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--mute); }
+.rd-tip { margin: 0; font-size: 12px; line-height: 1.35; color: var(--mute); }
+.rd-where { gap: 8px; }
+.rd-big { font-size: 34px; line-height: 1.05; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+.rd-of { font-size: 13px; color: var(--mute); margin-top: -4px; }
+.rd-scrub { width: 100%; accent-color: var(--cyan); margin: 4px 0 0; }
+.rd-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.rd-step { padding: 5px 0; display: grid; place-items: center; }
+.rd-step svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.rd-seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
+.rd-seg button { padding: 6px 4px; font-size: 12px; line-height: 1.2; }
+.rd-seg button + button { border-left: 0; }
+.rd-seg button.on { color: var(--ground); background: var(--cyan); border-color: var(--cyan); font-weight: 700; }
+.rd-act { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 7px 10px; font-size: 13px; text-align: left; }
+.rd-act kbd { font-size: 11px; padding: 1px 6px; border: 1px solid var(--rule); border-radius: 3px; color: var(--mute); }
+.rd-act.on { border-color: var(--cyan); color: var(--cyan); }
+.rd-marks, .rd-toc { display: flex; flex-direction: column; gap: 4px; }
+.rd-mark { display: flex; gap: 4px; }
+.rd-markgo { flex: 1; text-align: left; padding: 5px 10px; font-size: 13px; font-variant-numeric: tabular-nums; }
+.rd-markoff { flex: none; width: 30px; padding: 0; font-size: 16px; line-height: 1; }
+.rd-mark.here .rd-markgo, .rd-tocrow.here { border-color: var(--cyan); color: var(--cyan); }
+.rd-tocrow { display: flex; justify-content: space-between; gap: 8px; padding: 5px 10px; font-size: 12px; text-align: left; }
+.rd-toct { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rd-tocp { flex: none; color: var(--mute); font-variant-numeric: tabular-nums; }
+.rd-plainsect { margin-top: auto; }
+
 /* ---------- a snap shown large (js\snapview.js) ---------- */
 video.snap-big { cursor: zoom-in; }
 .panel-inner.vv-inner { width: min(1400px, 94vw); max-width: none; margin: 0; box-sizing: border-box; }

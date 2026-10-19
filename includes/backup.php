@@ -45,10 +45,11 @@ function xs_backup_parts(): array
         ],
         'marks' => [
             'label' => 'Favourites, your ratings, tags, hidden and deleted games',
-            'help'  => 'Which games are favourites, the stars you gave games yourself, the tags you put on games, which ones you took off every view, which ones you took out of the library altogether, and the games you starred as wanted.',
+            'help'  => 'Which games are favourites, the stars you gave games yourself, the tags you put on games, which ones you took off every view, which ones you took out of the library altogether, the games you starred as wanted, and the page each manual was left on, with its bookmarks.',
             'dirs'  => [],
             // fix-marks.json: the "needs fix" tag you put on or took off (includes\needsfix.php).
-            'files' => ['favourites.json', 'my-ratings.json', 'notes.json', 'hack-of.json', 'accompanied.json', 'tags.json', 'fix-marks.json', 'hidden.json', 'deleted.json', 'wanted.json'],
+            // manual-places.json: the page each manual was left on, and its bookmarks (api\manual-place.php).
+            'files' => ['favourites.json', 'my-ratings.json', 'notes.json', 'hack-of.json', 'accompanied.json', 'tags.json', 'fix-marks.json', 'hidden.json', 'deleted.json', 'wanted.json', 'manual-places.json'],
         ],
         'own' => [
             'label' => 'Games of your own',

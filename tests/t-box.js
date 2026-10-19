@@ -145,9 +145,10 @@ module.exports = async function (b, check) {
     await b.key("d");
     check("D opens the documents", await b.until(`!document.getElementById("editor").hidden && document.querySelectorAll(".doc-tab").length`, 3, 6000), 3);
     check("a tab for each, the manual first and chosen", await b.ev(`[[...document.querySelectorAll(".doc-tab")].map(t => t.textContent).join("|"), (document.querySelector(".doc-tab.on") || {}).textContent]`), ["Manual|Map 2|Map 10", "Manual"]);
-    check("the manual is handed to the browser's reader, in a frame", await b.ev(`(f => !!f && f.tagName === "IFRAME" && f.src.indexOf("/files/documents/${g1.id}/Manual.pdf") > 0)(document.querySelector(".doc-stage > *"))`));
-    await b.key("ArrowRight");
-    check("right goes to the next document, a picture", await b.until(`[(document.querySelector(".doc-tab.on") || {}).textContent, (i => !!i && i.complete && i.naturalWidth)(document.querySelector(".doc-pic"))]`, ["Map 2", 1600], 6000), ["Map 2", 1600]);
+    // The booklet itself is the reader group's (tests\t-reader.js); here, that a manual opens in it.
+    check("the manual opens as a booklet, a page of one", await b.until(`(s => s.dataset.mode + " " + s.dataset.pages)(document.querySelector(".doc-stage"))`, "book 1", 15000), "book 1");
+    await b.key("ArrowDown");
+    check("down goes to the next document, a picture", await b.until(`[(document.querySelector(".doc-tab.on") || {}).textContent, (i => !!i && i.complete && i.naturalWidth)(document.querySelector(".doc-pic"))]`, ["Map 2", 1600], 6000), ["Map 2", 1600]);
     check("fitted to the panel", await b.ev(`(() => { const s = document.querySelector(".doc-stage"), i = s.querySelector("img"); return i.offsetWidth <= s.clientWidth && i.offsetHeight <= s.clientHeight && !s.classList.contains("zoomed"); })()`));
     const roomy = await b.ev(`document.querySelector(".doc-stage").clientWidth < 1600`);
     await b.key("Enter");

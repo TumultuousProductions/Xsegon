@@ -171,6 +171,7 @@ function onKey(e) {
   // box has the words the letters are its and the arrows are still the list's,
   // exactly as the settings find box behaves.
   if (pick) {
+    if (pick.key && pick.key(e)) { e.preventDefault(); return; }   // a picker with keys of its own (the manual reader, js\reader.js)
     var inFind = pick.find && e.target === pick.find;
     if (inFind && !/^(ArrowUp|ArrowDown|ArrowLeft|ArrowRight|Home|End|Enter|Escape)$/.test(e.key)) {
       return;                                   // typing, including Backspace
@@ -558,6 +559,9 @@ export function pollPad() {
     // The state picker takes the pad while it is up: one step per nudge,
     // A picks, B backs out. Nothing else on the page hears it.
     if (pick) {
+      // A picker that reads the pad itself: the manual reader's shoulders, X and right stick (js\reader.js).
+      var rs = p.mapping === "standard" && !p.listed, rx = rs && Math.abs(p.axes[2] || 0) > dz ? p.axes[2] : 0, ry = rs && Math.abs(p.axes[3] || 0) > dz ? p.axes[3] : 0;
+      if (pick.pad) { padPrev[i] = pick.pad({ up: up, down: down, left: left, right: right, a: a, b: b, x: x, y: y, lb: lb, rb: rb, rx: rx, ry: ry }, prev); continue; }
       var pd = (right || down) ? 1 : (left || up) ? -1 : 0;
       if (pd !== 0 && pd !== prev.pd) { L("PAD", (pd > 0 ? "right" : "left") + " states"); pick.move(pd); }
       if (a && !prev.a) { pick.choose(); }

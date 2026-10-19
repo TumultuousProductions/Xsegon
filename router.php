@@ -51,6 +51,19 @@ if (preg_match('#^/data(/|$)#i', $path)) {
     exit;
 }
 
+// The manual reader's libraries (js\vendor\<name>-<version>\, js\reader.js): their scripts
+// and the picture decoders pdf.js asks for. A folder is named for its version, so a year is safe.
+if (preg_match('#^/js/vendor/([a-z][a-z0-9\-]*-\d+(?:\.\d+)*)/([a-z0-9_\-]+(?:\.[a-z0-9]+)*\.(js|wasm))$#i', $path, $m)) {
+    $vend = __DIR__ . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . $m[1] . DIRECTORY_SEPARATOR . $m[2];
+    if (!is_file($vend)) {
+        http_response_code(404);
+        exit;
+    }
+    require_once __DIR__ . '/includes/stream.php';
+    xs_stream_file($vend, strtolower($m[3]) === 'wasm' ? 'application/wasm' : 'text/javascript', 'private, max-age=31536000, immutable');
+    exit;
+}
+
 $file = __DIR__ . str_replace('/', DIRECTORY_SEPARATOR, $path);
 
 if ($path !== '/' && is_file($file)) {
