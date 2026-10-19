@@ -114,6 +114,11 @@ function xs_romid(string $file, int $depth = 0, bool $guess = true): string|fals
         $inner = $ext === 'cue' ? xs_romid_cue_file($file) : xs_romid_m3u_first($file);
         return $inner === null ? null : xs_romid($inner, $depth + 1, $guess);
     }
+    // A CloneCD sheet is text: its disc is the .img of its name, or it cannot be told.
+    if ($ext === 'ccd') {
+        $img = substr($file, 0, -4) . '.img';
+        return $depth > 2 || !is_file($img) ? null : xs_romid($img, $depth + 1, $guess);
+    }
     if (in_array($ext, ['iso', 'bin', 'img'], true)) {
         $disc = xs_romid_disc($file, $guess);
         // An .iso with no ordinary disc label is a console's own format this

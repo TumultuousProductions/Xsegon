@@ -534,6 +534,48 @@ export function paintHiddenList(page) {
   });
 }
 
+/* Games deleted from Xsegon (api\deleted.php), under the hidden ones: Put back brings
+   one in again with its stars, edits and pictures, which were kept. Newest first. */
+export function paintDeletedList(page) {
+  var box = el("div", "opt hidden-list");
+  box.appendChild(iconEl("opt-ico", ROW_ICONS.list));
+  var l = el("label");
+  l.appendChild(document.createTextNode("Deleted from Xsegon"));
+  l.appendChild(el("span", "hint", "Right-click a game > Delete from Xsegon, and Games > Missing Games, put games here."
+    + " Put back brings one in again with its stars, edits and pictures. No file on the disk was deleted."));
+  box.appendChild(l);
+  box.dataset.find = "deleted from xsegon put back library";
+  box.dataset.land = "deleted";            // where Scan for Games' press lands (openSettingAt)
+  var list = el("div", "hl-list", "reading...");
+  box.appendChild(list);
+  page.appendChild(box);
+  api("api/deleted.php").then(function (r) {
+    list.textContent = "";
+    if (!r.ok) { list.textContent = "the list could not be read: " + (r.error || "no answer"); return; }
+    L("ED", "Settings > Library lists " + r.deleted.length + " deleted from Xsegon");
+    if (!r.deleted.length) { list.textContent = "nothing is deleted"; return; }
+    r.deleted.slice().reverse().forEach(function (d) {
+      var line = el("div", "hl-row");
+      line.appendChild(el("span", "t", d.title + (d.platform ? "  (" + d.platform + ")" : "")));
+      line.title = (d.rom || "") + (d.at ? "  ·  deleted " + String(d.at).slice(0, 10) : "");
+      var back = el("button", null, "Put back");
+      back.addEventListener("click", function () {
+        back.disabled = true;
+        postJson("api/deleted.php", { action: "restore", id: d.id }).then(function (r2) {
+          if (!r2.ok) { back.disabled = false; showStrip("could not put it back: " + (r2.error || ""), true); return; }
+          L("ED", "put back " + d.title + " (" + d.platform + ", " + d.id + ")");
+          sound("select");
+          line.remove();
+          if (!list.children.length) { list.textContent = "nothing is deleted"; }
+          refillPlatforms().then(load);
+        });
+      });
+      line.appendChild(back);
+      list.appendChild(line);
+    });
+  });
+}
+
 export function removeLocal(g) {
   if (!window.confirm("Remove \"" + g.title + "\" from Xsegon? Its pictures and play history stay on disk.")) { return; }
   postJson("api/local.php", { id: g.id, remove: true }).then(function (r) {

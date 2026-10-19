@@ -10,7 +10,8 @@ import { fillWatch } from "./fillbar.js";
 import { clearStrip, followSetupJob, showStrip } from "./launch.js";
 import { L, api, logWarn, postJson } from "./log.js";
 import { raButton, raLabel } from "./raoffer.js";
-import { passedTail } from "./scanpassed.js";
+import { leftOutTail, passedTail } from "./scanpassed.js";
+import { openSettingAt } from "./settings-ui.js";
 import { stopVideo } from "./snap.js";
 import { sound } from "./sound.js";
 import { $editor, games, sel } from "./state.js";
@@ -244,6 +245,21 @@ export function openScanTool(onBack) {
       (res.folders || []).forEach(function (f) {
         if (!f.ok) { inner.appendChild(el("p", "mt-note bad", f.path + " was not read: " + f.why)); }
       });
+      // Files of games deleted from Xsegon are not offered again: said, with the press to where they come back.
+      if (res.deletedLeft > 0) {
+        var gone = el("p", "mt-note", plural(res.deletedLeft, "file was", "files were") +
+          " left out because " + (res.deletedLeft === 1 ? "its game was" : "their games were") +
+          " deleted from Xsegon. Settings > Library > Deleted from Xsegon puts " + (res.deletedLeft === 1 ? "it" : "them") + " back. ");
+        var toLib = el("button", null, "Open Settings > Library");
+        toLib.type = "button";
+        toLib.addEventListener("click", function () {
+          L("SCAN", "to Settings > Library for the " + res.deletedLeft + " left out as deleted");
+          closeEditor();
+          openSettingAt("library", "deleted");
+        });
+        gone.appendChild(toLib);
+        inner.appendChild(gone);
+      }
 
       var boxes = [];
       if (!res.new.length) {
@@ -251,9 +267,12 @@ export function openScanTool(onBack) {
         // reads as "you have everything". Otherwise the line says what happened.
         // Folders with nothing in them are not listed, so they are no reason to point below.
         var skippedAny = (res.archives || []).length || (res.unfinished || []).length || (res.orphans || []).length
-                       || (res.gaps || []).length || (res.skippedFolders || []).length || (res.unsure || []).length;
+                       || (res.gaps || []).length || (res.skippedFolders || []).length || (res.unsure || []).length
+                       || (res.junkFiles || []).length;
         if (res.alreadyHave > 0) {
-          inner.appendChild(el("p", "mt-note good", "Nothing new. Every game found is already in the library."));
+          inner.appendChild(el("p", "mt-note good", res.deletedLeft > 0
+            ? "Nothing new. Every game found is already in the library, or was deleted from it."
+            : "Nothing new. Every game found is already in the library."));
         } else if (skippedAny) {
           inner.appendChild(el("p", "mt-note bad", "No games were offered. Everything seen was skipped, and why is listed below."));
         } else {
@@ -430,6 +449,8 @@ export function openScanTool(onBack) {
           names.join(", ") + ". A console's full name works too (Sega Saturn, Game Boy Advance). " +
           "Make console folders, beside each games folder below, makes them for you."));
       }
+      // What was taken for no game at all, by ending (js/scanpassed.js).
+      leftOutTail(inner, res.junkFiles);
       tail("Folders skipped on purpose", res.skippedFolders, function (s) {
         return s.folder + "  ·  " + s.why;
       });

@@ -402,7 +402,8 @@ function xs_unpack_look(string $archive, ?string &$why = null, bool $probe = tru
         }
     }
     // Else a disc image: the biggest .iso, or the biggest of the other kinds.
-    $kinds = array_flip(xs_scan_extensions(true) + [99 => 'img']);
+    // The endings unpacked before .ccd and .wia joined the scan: a .ccd taken without its .sub would not start.
+    $kinds = array_flip(array_diff(xs_scan_extensions(true), ['ccd', 'wia']));
     $best = null;
     $take = [];
     $left = [];

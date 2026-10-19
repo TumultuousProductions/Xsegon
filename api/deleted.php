@@ -100,11 +100,23 @@ if ($action === 'delete') {
 
 if ($action === 'restore') {
     $id = (string) ($body['id'] ?? '');
+    // What it was, for the log: the entry goes with the restore.
+    $was = array_values(array_filter(xs_deleted(), static fn($d) => (string) ($d['id'] ?? '') === $id))[0] ?? [];
     if (!xs_undelete($id, $why)) {
         // Not there is a 404; there but not written back is the disk's fault.
         xs_fail((string) $why, $why === 'nothing deleted with that id' ? 404 : 500);
     }
-    xs_log('DEL', 'restored ' . $id);
+    // Its file as the missing list reads it: there, on a drive that is away right now, or gone.
+    $rom   = (string) ($was['rom'] ?? '');
+    $where = '';
+    if ($rom !== '') {
+        $s     = xs_settings();
+        $full  = xs_rom_real_path($rom, $s);
+        $away  = is_file($full) ? null : xs_rom_away($full, $s);
+        $where = ', ' . $rom . (is_file($full) ? '' : ($away !== null ? ' (' . $away . ' is not there right now)' : ' (its file is not there: it comes back missing)'));
+    }
+    xs_log('DEL', 'restored ' . $id . ': ' . (string) ($was['title'] ?? '?') . ' (' . (string) ($was['platform'] ?? '?') . ')'
+        . ', deleted ' . substr((string) ($was['at'] ?? '?'), 0, 10) . $where . ', ' . count(xs_deleted()) . ' still deleted');
     xs_json(['ok' => true]);
 }
 

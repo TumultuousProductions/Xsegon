@@ -18,6 +18,18 @@ const { api, BASE, DATA, sleep } = require("./lib");
 
 const FIX = path.join(os.tmpdir(), "xs-scan-fixture");
 
+/* Whether the scan window names a folder outside its "Left out as not games" lines
+   (js\scanpassed.js), and whether those lines name <folder>\<file> (every file is on pointing). */
+function namedWhere(folder, file) {
+  return `(() => { const ed = document.getElementById("editor"), sl = String.fromCharCode(92);
+    const h = [...ed.querySelectorAll("h2.bk-head")].find(x => x.textContent === "Left out as not games"), lines = [];
+    for (let n = h && h.nextElementSibling; n && n.tagName === "P"; n = n.nextElementSibling) { lines.push(n); }
+    let rest = ed.textContent;
+    [h, ...lines].forEach(n => { if (n) { rest = rest.replace(n.textContent, ""); } });
+    return [rest.includes(${JSON.stringify(folder)}),
+            lines.some(n => n.title.split(String.fromCharCode(10)).some(f => f.endsWith(${JSON.stringify(folder)} + sl + ${JSON.stringify(file)})))]; })()`;
+}
+
 function buildFixture() {
   fs.rmSync(FIX, { recursive: true, force: true });
   const put = (rel, body) => {
@@ -683,7 +695,8 @@ module.exports = async function (b, check) {
           await b.ev(`(g => !!g && !!(g.compareDocumentPosition(document.querySelector("#editor .sc-rows")) & Node.DOCUMENT_POSITION_FOLLOWING) && getComputedStyle(g.closest(".fl-bar")).position === "sticky")([...document.querySelectorAll("#editor button")].find(x => /^Add the selected games/.test(x.textContent)))`), true);
     check("what was skipped says why, and a folder of arcade sets says what its files were taken for",
           await b.ev(`(t => [/not a console folder/.test(t), /5 files, 2 games named from MAME's own list/.test(t), /1 BIOS or device set/.test(t)])(document.getElementById("editor").textContent)`), [true, true, true]);
-    check("a folder with no games in it is not listed", await b.ev(`/weirdfolder/.test(document.getElementById("editor").textContent)`), false);
+    check("a folder with no games in it is not listed: its file is named only under Left out as not games",
+          await b.ev(namedWhere("weirdfolder", "file.bin")), [false, true]);
     await b.key("Escape");
     await sleep(600);
 
@@ -1082,8 +1095,8 @@ module.exports = async function (b, check) {
             await b.waitFor(`/No games were offered/.test(document.getElementById("editor").textContent)`, 10000));
       check("and does not claim the library has it all",
             await b.ev(`/Nothing new/.test(document.getElementById("editor").textContent)`), false);
-      check("the folder skipped on purpose is listed, the one with no games in it is not",
-            await b.ev(`(t => [/not a console folder/.test(t), /weird/.test(t)])(document.getElementById("editor").textContent)`), [true, false]);
+      check("the folder skipped on purpose is listed, the one with no games in it is not: its file is named under Left out as not games",
+            [await b.ev(`/not a console folder/.test(document.getElementById("editor").textContent)`), ...await b.ev(namedWhere("weird", "file.bin"))], [true, false, true]);
       await b.key("Escape");
       await sleep(600);
       await api("api/settings.php", { paths: { romRoot: BLANK } });

@@ -73,6 +73,7 @@ if ($method !== 'POST') {
         . count($found['skippedFolders']) . ' skipped, '
         . array_sum(array_column($found['unsure'], 'n')) . ' files no console could be read from, '
         . $found['junk'] . ' junk files, ' . count($found['passed']) . ' other files of known games, '
+        . $found['deletedLeft'] . ' of games deleted from Xsegon, '
         . count($found['copies'] ?? []) . ' second copies, in ' . $found['ms'] . 'ms');
     // A file offered as the console it names, not its folder's (includes\scan.php, xs_scan_file_says).
     if ($found['refiled']) {
@@ -85,6 +86,19 @@ if ($method !== 'POST') {
         $empty = array_column($found['unknown'], 'folder');
         xs_log('SCAN', 'no games in: ' . implode(', ', array_slice($empty, 0, 12))
             . (count($empty) > 12 ? ' and ' . (count($empty) - 12) . ' more' : ''));
+    }
+    // What was taken for no game, by ending with a few names, as the screen's "Left out as not games" shows it.
+    if ($found['junkFiles']) {
+        $byEnd = [];
+        foreach ($found['junkFiles'] as $f) {
+            $e = strtolower((string) pathinfo((string) $f, PATHINFO_EXTENSION));
+            $byEnd[$e === '' ? 'with no ending' : '.' . $e][] = basename((string) $f);
+        }
+        uasort($byEnd, static fn ($a, $b) => count($b) <=> count($a));
+        $shown = array_slice($byEnd, 0, 12, true);
+        xs_log('SCAN', 'left out as not games: ' . implode('; ', array_map(static fn ($e, $names) => count($names) . ' ' . $e . ' (' . implode(', ', array_slice($names, 0, 3))
+            . (count($names) > 3 ? ' and ' . (count($names) - 3) . ' more' : '') . ')', array_keys($shown), $shown))
+            . (count($byEnd) > 12 ? '; and ' . (count($byEnd) - 12) . ' more endings' : ''));
     }
     // The folders whose files no console could be read from, with their kinds, so a report says what they are.
     if ($found['unsure']) {
