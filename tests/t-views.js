@@ -1310,33 +1310,46 @@ module.exports = async function (b, check) {
 
   await b.ev(`fetch("api/settings.php", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ view: { systemsStyle: "wheel" } }) })`);
 
-  /* An empty Recently added stands greyed on the rim wearing its reason, and
-     refuses to open with the reason on the strip. Only checkable while it is
-     empty; otherwise these step aside (the api group covers both sides). */
+  /* An empty Recently added stands on the rim wearing its reason, not greyed,
+     and opens: its list says why, with the dropdown that looks further back.
+     Made empty by looking back to Today when the month has games, and put
+     back after; with games added today too, these step aside. */
   const cols = (await api("api/library.php")).collections || [];
   const added = cols.find((c) => c.key === "@added");
-  if (added && added.count === 0) {
+  const addedIn = async (k) => (((await api("api/library.php?added=" + k)).collections || []).find((c) => c.key === "@added") || {}).count;
+  const periodWas = ((await api("api/settings.php")).settings.view || {}).addedPeriod || "month";
+  const quiet = (await addedIn(periodWas)) === 0 ? periodWas : (await addedIn("today")) === 0 ? "today" : null;
+  if (quiet) {
+    await api("api/settings.php", { view: { addedPeriod: quiet } });
+    const emptyAdded = ((await api("api/library.php")).collections || []).find((c) => c.key === "@added") || {};
     await b.goto();
-    if (await b.ev(`!document.getElementById("syswall").hidden`)) {
-      /* Walk to it by name: a position on the rim moves when a collection is
-         added. Position is not identity. */
-      const where = await b.ev(`(() => {
-        const all = [...document.querySelectorAll("#syswall .switem, #syswall .syscard")];
-        const names = all.map(x => ((x.querySelector("img") || {}).alt || "") + "|" + x.textContent);
-        return { at: all.findIndex(x => x.classList.contains("sel")), want: names.findIndex(t => /Recently added/.test(t)) };
-      })()`);
-      check("Recently added is on the rim to be found", where.want >= 0);
-      const steps = where.want - where.at;
-      for (let i = 0; i < Math.abs(steps); i++) { await b.key(steps > 0 ? "ArrowRight" : "ArrowLeft"); }
-      check("an empty Recently added stands greyed on the rim", await b.until(`!!document.querySelector(".switem.sel.off, .syscard.sel.off")`));
-      await b.settled();
-      check("wearing its reason", await b.ev(`(document.querySelector(".sysinfo .syscount, .syscard.sel .syscount") || {}).textContent || ""`).then((t) => /30 days/.test(t)));
-      await b.key("Enter");
-      check("Enter stays on the wall and explains", await b.until(`!document.getElementById("syswall").hidden && /30 days/.test(document.getElementById("strip").textContent)`));
-      check("and the dropdown lists it unchoosable", await b.ev(`(o => !!o && o.disabled)([...document.getElementById("platform").options].find(o => o.value === "@added"))`));
+    try {
+      if (await b.ev(`!document.getElementById("syswall").hidden`)) {
+        /* Walk to it by name: a position on the rim moves when a collection is
+           added. Position is not identity. */
+        const where = await b.ev(`(() => {
+          const all = [...document.querySelectorAll("#syswall .switem, #syswall .syscard")];
+          const names = all.map(x => ((x.querySelector("img") || {}).alt || "") + "|" + x.textContent);
+          return { at: all.findIndex(x => x.classList.contains("sel")), want: names.findIndex(t => /Recently added/.test(t)) };
+        })()`);
+        check("Recently added is on the rim to be found", where.want >= 0);
+        const steps = where.want - where.at;
+        for (let i = 0; i < Math.abs(steps); i++) { await b.key(steps > 0 ? "ArrowRight" : "ArrowLeft"); }
+        check("the rim's selection reaches it", await b.until(`(s => !!s && /Recently added/.test(((s.querySelector("img") || {}).alt || "") + "|" + s.textContent))(document.querySelector("#syswall .switem.sel, #syswall .syscard.sel"))`));
+        await b.settled();
+        check("an empty Recently added is not greyed on the rim", await b.ev(`!document.querySelector("#syswall .sel.off, .sysinfo.off")`));
+        check("wearing its reason", await b.ev(`(document.querySelector(".sysinfo .syscount, .syscard.sel .syscount") || {}).textContent || ""`), emptyAdded.note);
+        await b.key("Enter");
+        check("Enter opens it", await b.until(`document.getElementById("syswall").hidden && document.getElementById("platform").value === "@added"`));
+        check("its empty list says why", await b.until(`((document.querySelector("#view .empty") || {}).textContent || "").indexOf(${JSON.stringify(emptyAdded.note || "?")}) === 0`));
+        check("with the dropdown that looks further back", await b.ev(`!document.getElementById("added").hidden`));
+        check("and the dropdown lists it choosable", await b.ev(`(o => !!o && !o.disabled)([...document.getElementById("platform").options].find(o => o.value === "@added"))`));
+      }
+    } finally {
+      await api("api/settings.php", { view: { addedPeriod: periodWas } });
     }
   } else {
-    console.log("    (Recently added is not empty right now; the greyed-rim checks step aside)");
+    console.log("    (games were added today; the empty Recently added checks step aside)");
   }
 
   /* Two players or more: on the rim like any collection, and opening it

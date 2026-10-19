@@ -7,7 +7,7 @@ import { FAN_KEY, dropFanPage, openFanPage } from "./fanprojects.js";
 import { openFilterWindow } from "./filterwin.js";
 import { paintHelp } from "./help.js";
 import { showStrip } from "./launch.js";
-import { addedPeriods, collectionCount, collectionsAll, consoleCounts, filterWords, libraryTotal, load, periodOf, platformArtUrl, platformsAll, setPeriod, sysShow } from "./library.js";
+import { addedPeriods, collectionCount, collectionsAll, consoleCounts, filterWords, libraryTotal, load, opensEmpty, periodOf, platformArtUrl, platformsAll, setPeriod, sysShow } from "./library.js";
 import { L, logWarn } from "./log.js";
 import { TIPS } from "./menu-tips.js";
 import { popupMenu } from "./menus.js";
@@ -46,9 +46,10 @@ function buildSysList() {
     var n = collectionCount(c);
     // Only a filter can empty one here: the server leaves out a
     // collection with nothing in it, bar the one that says why.
-    if (!n && !c.note) { return; }
+    if (!n && !c.note && !opensEmpty(c.key)) { return; }
+    // off: greyed and refused; Recently added wears its reason but opens.
     sysList.push({ name: c.key, label: c.label, count: n, show: sysShow[c.key] || null,
-                   collection: true, note: c.note || null });
+                   collection: true, note: c.note || null, off: !!c.note && !opensEmpty(c.key) });
   });
   // Fan projects rides last: a page of its own, not a list of games (js\fanprojects.js).
   // Extensions just before it: programs Xsegon works with, a page of its own too (js\extensions.js).
@@ -143,9 +144,10 @@ export function chooseSystem(name) {
   // An empty collection stays on the rim, greyed, so it can explain its
   // rule instead of vanishing and reading as broken. Opening it would show
   // nothing; the answer is the rule, from every door that leads here.
+  // Recently added opens anyway: its empty list says why.
   for (var ci = 0; ci < collectionsAll.length; ci++) {
     var c = collectionsAll[ci];
-    if (c.key === name && !c.count) {
+    if (c.key === name && !c.count && !opensEmpty(name)) {
       L("NAV", "refused empty " + name);
       // Recently added and Recently changed can look further back, and their menus are the way from here.
       var wider = periodOf(name) && periodOf(name) !== "year" ? ". Its menu (right-click, or Y) looks further back" : "";
@@ -234,8 +236,8 @@ export function openSysMenu(p, i, x, y) {
              checked: periodOf(p.name) === o[0], run: function () { setPeriod(p.name, o[0]); } };
   }));
   popupMenu([
-    { icon: "play", label: "Open " + (p.label || p.name), hint: p.note ? "empty" : null, tip: p.note ? TIPS.sysEmpty : null,
-      run: p.note ? null : function () { chooseSystem(p.name); } },
+    { icon: "play", label: "Open " + (p.label || p.name), hint: p.note ? "empty" : null, tip: p.off ? TIPS.sysEmpty : null,
+      run: p.off ? null : function () { chooseSystem(p.name); } },
   ].concat(stretch, [
     { rule: true },
     { icon: "filter", label: "Filter by...", hint: filterWords() || null, tip: TIPS.filter, run: openFilterWindow },
@@ -275,7 +277,7 @@ export function renderSystems() {
     $syswall.appendChild(sysInfoEl);
 
     sysNodes = sysList.map(function (p, i) {
-      var n = el("div", "switem" + (p.collection ? " coll" : "") + (p.note ? " off" : ""));
+      var n = el("div", "switem" + (p.collection ? " coll" : "") + (p.off ? " off" : ""));
       n.hidden = true;
       /* The name first, the banner when it arrives. The plate is sized by its
          content, so one that is only an unloaded img is a zero-area box (never
@@ -327,7 +329,7 @@ export function renderSystems() {
       card.appendChild(art);
 
       if (p.collection) { card.classList.add("coll"); }
-      if (p.note) { card.classList.add("off"); }
+      if (p.off) { card.classList.add("off"); }
       card.appendChild(el("div", "sysname", p.label || p.name));
       card.appendChild(el("div", "syscount", countLabel(p)));
       wireSys(card, p, i);
@@ -398,7 +400,7 @@ function paintSysArt(p) {
 function paintSysInfo(p) {
   if (!sysInfoEl || !p) { return; }
   paintSysArt(p);
-  sysInfoEl.classList.toggle("off", !!p.note);
+  sysInfoEl.classList.toggle("off", !!p.off);
   SI.name.textContent = p.label || p.name;
   SI.count.textContent = countLabel(p);
 }

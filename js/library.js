@@ -277,6 +277,14 @@ export function periodOf(c) { var p = PERIODS[c]; return p ? (S.view && S.view[p
 export function addedPeriods() {
   return Array.prototype.map.call($added.options, function (o) { return [o.value, o.text]; });
 }
+// Recently added opens even when empty: its dropdown is inside, so the way to look further back is there.
+export function opensEmpty(c) { return c === "@added"; }
+// What an empty list says inside such a collection: the server's reason, and where to look further back.
+export function addedEmptyWords() {
+  var c = collectionsAll.find(function (x) { return x.key === $platform.value; });
+  if (!c || !opensEmpty(c.key) || !c.note) { return ""; }
+  return c.note + (periodOf(c.key) !== "year" ? ": the dropdown at the top looks further back" : "");
+}
 function paintAddedPeriod() {
   var p = PERIODS[$platform.value];
   $added.hidden = !p;
@@ -416,8 +424,8 @@ function dropdownRows(map) {
     rows.push({ value: null, label: "----------", off: true });
     collectionsAll.forEach(function (c) {
       // An empty one is listed but not choosable, wearing its reason, so
-      // the dropdown and the rim tell the same story.
-      rows.push({ value: c.key, label: c.label, n: c.note || collectionCount(c), glyph: "★", off: !collectionCount(c) });
+      // the dropdown and the rim tell the same story; Recently added opens anyway.
+      rows.push({ value: c.key, label: c.label, n: c.note || collectionCount(c), glyph: "★", off: !collectionCount(c) && !opensEmpty(c.key) });
     });
   }
   return rows;
