@@ -69,6 +69,7 @@ import { initList } from "./list.js";
 import { listGlide } from "./listglide.js";
 import { initListMenu } from "./listmenu.js";
 import { L, LOG_MOVES, bug, initLog } from "./log.js";
+import { askLogging } from "./logask.js";
 import { initMenus } from "./menus.js";
 import { initMotion } from "./motion.js";
 import { initNewGames } from "./newgames.js";
@@ -265,12 +266,13 @@ load({ noDraw: consolesFirst, boot: true }).then(function () {
   else if (startInSystems) { startOnAllGames(); }
   pollStatus();
   padsBegin();              // controller found or not, for the log (js\padfound.js)
+  // Keep a log? comes before anything else is offered, once (js\logask.js).
   // What changed since last time, once, after the screen is up: it sweeps
   // every game file, and this server answers one request at a time, so it
   // goes last rather than racing the library the page is waiting on.
   // The two after it run whatever the news check does: a failure there is
   // logged as a bug, never a reason for someone new to miss the guide.
-  checkNews().catch(function (e) { bug("startup news check", e); }).then(function () {
+  askLogging().then(checkNews).catch(function (e) { bug("startup news check", e); }).then(function () {
     // Someone new (no RetroArch in use, or no games) gets the getting
     // started guide, once (js\setup.js). Everyone else hears nothing.
     firstRunSetup();

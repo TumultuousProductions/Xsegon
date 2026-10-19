@@ -9,6 +9,8 @@ import { S } from "./state.js";
 var LOG_ON = !(S.debug && S.debug.logging === false);
 // For work done only to have a line to write: with logging off it is not done at all.
 export function logOn() { return LOG_ON; }
+/* "No log" at the log question (js\logask.js): nothing more is kept or sent from this page. */
+export function logStop() { LOG_ON = false; logQueue.length = 0; logRing.length = 0; routineN = 0; }
 export var LOG_MOVES = !(S.debug && S.debug.logMoves === false);
 var logRing = [], logQueue = [], logTimer = null, logSeq = 0;
 /* SENDING. Never fetch(keepalive): a browser allows 64 KiB of keepalive requests
