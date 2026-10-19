@@ -23,6 +23,7 @@ import { openScreenScraper } from "./screenscraper.js";
 import { sound } from "./sound.js";
 import { setViewMode } from "./state.js";
 import { chooseSystem } from "./systems.js";
+import { openReportTool } from "./tools.js";
 import { pressUpdate } from "./updaterow.js";
 import { closeOnBackdrop, el } from "./util.js";
 
@@ -154,6 +155,8 @@ var MAIL_GOES = {
     if (page.indexOf("https://github.com/TumultuousProductions/Xsegon/releases/") !== 0) { page = "https://github.com/TumultuousProductions/Xsegon/releases/latest"; }
     window.open(page, "_blank", "noopener");
   }],
+  // A fault of Xsegon's own, where the details go (bin\update-switch.php): Help > Report a problem.
+  report: ["Report a problem...", function () { openReportTool(); }],
   // New games left out for want of an emulator RetroArch would be (includes\newgames.php xs_ng_tell).
   rasetup: [raLabel("setup"), function () { getRetroArch("a message"); }],
   raget: [raLabel("get"), function () { getRetroArch("a message"); }],

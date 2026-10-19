@@ -17,6 +17,7 @@
  *     data\update\back.json     Go back was pressed
  *     data\update\switch.json   the last switch, which Go back undoes
  *     data\update\skipped.json  a version gone back from: not got ready again by itself
+ *     data\update\failed.json   the last switch that did not work: its version and why, for Settings
  *
  * The download is a release's Xsegon-update-<v>.zip, .json and .sig
  * (tools\update-release.js): the list must be signed with the key whose public
@@ -177,11 +178,18 @@ function xs_update_state(): array
     $job   = xs_read_json(xs_update_file('fetch.json'), null);
     $have  = xs_version()['version'];
     $wait  = is_array($ready) && is_dir(xs_update_file('next')) ? (string) ($ready['version'] ?? '') : null;
+    $out   = xs_update_out($have, $wait);
+    // The last switch that failed, while it is about the version on offer. A copy thrown away and got ready again starts afresh.
+    $fail  = xs_read_json(xs_update_file('failed.json'), null);
+    $fto   = is_array($fail) ? (string) ($fail['to'] ?? '') : '';
+    $failed = $fto !== '' && (($fto === $wait && empty($fail['thrownAway'])) || ($wait === null && $fto === ($out['version'] ?? null)))
+        ? array_intersect_key($fail, array_flip(['to', 'from', 'why', 'at'])) : null;
     return [
         'have'     => $have,
         'cannot'   => xs_update_cannot(),
         'ready'    => $wait,
-        'out'      => xs_update_out($have, $wait),
+        'out'      => $out,
+        'failed'   => $failed,
         // Getting one ready: its step and bytes for the corner bar; how it ended, with why.
         'fetch'    => is_array($job) ? array_intersect_key($job, array_flip(['state', 'version', 'by', 'step', 'got', 'size', 'why', 'at', 'ended']))
                                        + ['alive' => xs_update_fetching($job)] : null,

@@ -10,7 +10,8 @@
     (bin\update.php: the signed list, the zip, every file, a trial start), then
     presses (a backup, then go.json), and bin\update-start.ps1 makes the switch
     as start.ps1 would. Then Go back, and on copies where new versions download
-    by themselves: the power going halfway, and releases that are damaged,
+    by themselves: the power going halfway, a file another program holds open,
+    a waiting copy changed on the disk, and releases that are damaged,
     signed by another key, or will not start. start.ps1 itself is not run here:
     a fresh copy's first start makes a Games folder on the PC. Last, the Update
     now window on the run's page, against a stand-in answer.                   */
@@ -19,7 +20,7 @@ const fs = require("fs");
 const path = require("path");
 const http = require("http");
 const crypto = require("crypto");
-const { execFile } = require("child_process");
+const { execFile, spawn } = require("child_process");
 const { api, ROOT, OUT, Guard, sleep } = require("./lib");
 const ur = require("../tools/update-release");
 
@@ -128,6 +129,16 @@ module.exports = async function (b, check) {
   const ps = (copy, call) => run("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command",
     ". '" + path.join(copy, "bin", "update-start.ps1") + "'; " + call + " '" + copy + "' '" + phpExe + "'"], {}, copy);
   const php = (copy, code) => run(phpExe, ["-r", "require 'includes/boot.php'; require 'includes/update.php'; " + code], { XSEGON_DATA: path.join(copy, "data") }, copy);
+  const logOf = (copy) => walk(path.join(copy, "data", "log"), "", []).map((f) => fs.readFileSync(path.join(copy, "data", "log", f), "utf8")).join("");
+  const failMsg = (copy) => (readJson(path.join(copy, "data", "messages.json")) || []).find((x) => x.id === "msg-update-failed") || null;
+  const versionOf = async (copy) => JSON.parse((await run(phpExe, ["-r", "require 'includes/version.php'; echo json_encode(xs_release());"], {}, copy)).out);
+  /** Another program holding a file open with no sharing, as an antivirus scan can. Answers the call that lets go, or null when it could not. */
+  const hold = (file) => new Promise((ready) => {
+    const p = spawn("powershell.exe", ["-NoProfile", "-Command",
+      "$f = [IO.File]::Open('" + file + "', 'Open', 'Read', 'None'); [Console]::Out.WriteLine('held'); [void][Console]::In.ReadLine(); $f.Close()"], { windowsHide: true });
+    p.stdout.on("data", (d) => { if (/held/.test(String(d))) { ready(() => new Promise((gone) => { p.on("exit", gone); p.stdin.end("\n"); })); } });
+    p.on("exit", () => ready(null));
+  });
 
   try {
     /* ---- a good update -------------------------------------------------- */
@@ -200,6 +211,54 @@ module.exports = async function (b, check) {
     await php(c, "xs_update_press('update');");
     r = await ps(c, "Invoke-XsegonUpdate");
     check("and Update now still works afterwards, with no new download", [r.out.trim(), JSON.parse((await run(phpExe, ["-r", "require 'includes/version.php'; echo json_encode(xs_release());"], {}, c)).out)], ["switched", "0.16"]);
+
+    /* ---- a file held open mid-switch: said, not silent (roadmap BH5) ------ */
+    c = install("held", true);
+    const held0 = prints(c);
+    await lookAndWait(c);
+    await php(c, "xs_update_press('update');");
+    const letGo = await hold(path.join(c, "js", "library.js"));
+    r = await ps(c, "Invoke-XsegonUpdate");
+    if (letGo) { await letGo(); }   // the checks below read every file
+    let fm = failMsg(c) || {};
+    check("a file another program holds open: nothing is put in place, and the copy is byte for byte as before",
+      [!!letGo, r.out.trim(), differ(held0, prints(c)).length, fs.existsSync(upFile(c, "switch.json"))], [true, "", 0, false]);
+    check("  the mailbox says why: the file, the version kept, nothing lost, where to write, with Update now and Report a problem",
+      [fm.title, /move js\/library\.js, so 0\.15 was put back as it was/.test(fm.body || ""), /Nothing was lost/.test(fm.body || ""), /Report a problem/.test(fm.body || ""), fm.opens],
+      ["Xsegon 0.16 was not put in place", true, true, true, ["updatenow", "report"]]);
+    let st2 = JSON.parse((await php(c, "echo json_encode(xs_update_state());")).out || "{}");
+    check("  Settings is told the last try did not work and why; 0.16 still waits, the press is used up",
+      [st2.ready, (st2.failed || {}).to, /js\/library\.js/.test((st2.failed || {}).why || ""), st2.going], ["0.16", "0.16", true, null]);
+    check("  the log says why, and that the mailbox was told",
+      /UPD  update not done: could not move js\/library\.js aside \(in use\?\): put back as it was; said in the mailbox/.test(logOf(c)), true);
+    await php(c, "xs_update_press('update');");
+    r = await ps(c, "Invoke-XsegonUpdate");
+    check("  let go, Update now puts 0.16 in place, and the failure's message and record are gone",
+      [r.out.trim(), failMsg(c), fs.existsSync(upFile(c, "failed.json")), await versionOf(c)], ["switched", null, false, "0.16"]);
+
+    /* ---- a waiting copy changed on the disk after it was checked --------- */
+    c = install("changed", true);
+    await lookAndWait(c);
+    await php(c, "xs_update_press('update');");
+    fs.appendFileSync(path.join(upFile(c, "next"), "js", "library.js"), "\n// changed after it was checked\n");
+    const changed0 = prints(c);
+    r = await ps(c, "Invoke-XsegonUpdate");
+    fm = failMsg(c) || {};
+    check("a waiting copy changed after it was checked is not put in place, and is thrown away",
+      [r.out.trim(), differ(changed0, prints(c)).length, fs.existsSync(upFile(c, "next")), fs.existsSync(upFile(c, "ready.json"))], ["", 0, false, false]);
+    check("  the mailbox says so, and that Update now downloads it again; the ready message is gone",
+      [fm.title, /changed on the disk after it was checked \(js\/library\.js\), so it was not used and has been removed/.test(fm.body || ""),
+       /Update now downloads it again/.test(fm.body || ""), fm.opens, message(c)],
+      ["Xsegon 0.16 was not put in place", true, true, ["updatenow", "report"], null]);
+    st2 = JSON.parse((await php(c, "echo json_encode(xs_update_state());")).out || "{}");
+    check("  Settings offers it to download again, saying why the last try did not work",
+      [st2.ready, (st2.out || {}).version, /downloads it again/.test((st2.failed || {}).why || "")], [null, "0.16", true]);
+    await php(c, "xs_update_get_now();");
+    job = await waitFetch(c);
+    await php(c, "xs_update_press('update');");
+    r = await ps(c, "Invoke-XsegonUpdate");
+    check("  Update now downloads it again, checks it and puts it in place",
+      [job && job.state, r.out.trim(), failMsg(c), await versionOf(c)], ["done", "switched", null, "0.16"]);
 
     /* ---- releases that must never be put in place ------------------------ */
     for (const [name, why] of [["damaged", /arrived damaged/], ["forged", /not signed with Xsegon's key/], ["broken", /did not start when tried on its own: it answered with an error/]]) {
@@ -285,6 +344,23 @@ module.exports = async function (b, check) {
       check("and once it is ready, Update now is pressed for them: a backup, then the switch at the next start",
         [await b.until(strip, true, 8000), await b.ev(`window.__upd.posts`), await b.ev(line)], [true, ["get", "update"], "Xsegon 0.16: done"]);
       await b.ev(`window.fetch = window.__upd.real`);
+
+      // Settings > Window > New versions after a try that did not work.
+      await b.ev(`(() => {
+        const real = window.fetch;
+        window.__updReal = real;
+        window.fetch = (u, o) => String(u).indexOf("api/update.php") < 0 ? real(u, o) : Promise.resolve(new Response(JSON.stringify({ ok: true, have: "0.15",
+          release: true, on: true, get: false, cannot: null, going: null, back: null, kept: [], restarts: false, look: {}, fetch: null, out: null, ready: "0.16",
+          failed: { to: "0.16", from: "0.15", why: "Windows would not let Xsegon move js/library.js", at: "2026-10-19T10:00:00-04:00" } }), { headers: { "Content-Type": "application/json" } }));
+        return import("/js/updaterow.js").then((m) => { const d = document.createElement("div"); window.__updRow = d; m.updateRow(d); });
+      })()`);
+      const rowText = `((window.__updRow && window.__updRow.querySelector(".hint")) || {}).textContent || ""`;
+      check("Settings' row says the last try did not work and why, beside Update now",
+        [await b.until(`/did not work/.test(${rowText})`, true, 5000),
+         /0\.16 is ready: .* The last try, .+, did not work: Windows would not let Xsegon move js\/library\.js\./.test(await b.ev(rowText)),
+         await b.ev(`[...window.__updRow.querySelectorAll("button")].map((x) => x.textContent)`)],
+        [true, true, ["Update now..."]]);
+      await b.ev(`window.fetch = window.__updReal`);
     } finally {
       keep.restore();
     }
