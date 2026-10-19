@@ -182,6 +182,10 @@ function xs_scan_m3u_offers_in(string $dir): array
         if ($ext === 'bin' && (xs_scan_track_bin($n) || is_file($dir . DIRECTORY_SEPARATOR . (string) preg_replace('/\.bin$/i', '.cue', $n)))) {
             continue;
         }
+        // Likewise a .img or .ccd that belongs to the sheet of its name (xs_scan_dump_part).
+        if (xs_scan_dump_part($dir . DIRECTORY_SEPARATOR . $n, $ext)) {
+            continue;
+        }
         $bySet[xs_scan_m3u_name($n) . '|' . $ext][] = $dir . DIRECTORY_SEPARATOR . $n;
     }
     $offers = [];

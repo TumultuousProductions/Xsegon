@@ -185,11 +185,11 @@ function xs_scan_disc_platforms(): array
             'Sega CD', 'NEC TurboGrafx-CD'];
 }
 
-/** What counts as a game file, per kind of console. */
+/** What counts as a game file, per kind of console. A disc's order is the dive's: earlier wins, a .cue over its .ccd over its .img. */
 function xs_scan_extensions(bool $disc): array
 {
     return $disc
-        ? ['m3u', 'cue', 'gdi', 'chd', 'pbp', 'iso', 'ciso', 'cso', 'wbfs', 'wux', 'rvz', 'gcm', 'cdi', 'bin']
+        ? ['m3u', 'cue', 'gdi', 'chd', 'pbp', 'iso', 'ciso', 'cso', 'wbfs', 'wux', 'rvz', 'wia', 'gcm', 'cdi', 'ccd', 'bin', 'img']
         : ['zip', '7z', 'z64', 'n64', 'v64', 'nes', 'unf', 'fds', 'sfc', 'smc', 'gb', 'gbc', 'gba', 'nds',
            'md', 'gen', '32x', 'sms', 'gg', 'a26', 'a78', 'lnx', 'pce', 'vb', 'chd',
            // the rest of the consoles named in xs_scan_platforms
@@ -224,7 +224,7 @@ function xs_scan_file_says(array $row, string $platform, bool $disc): ?string
     $says = null;
     if (isset($ends[$ext]) && !in_array($ext, ['md', 'gen', 'vb'], true)) {
         $says = $ends[$ext];
-    } elseif ($disc && in_array($ext, ['cue', 'm3u', 'iso', 'bin', 'img', 'pbp', 'ciso', 'rvz', 'wia', 'chd'], true)) {
+    } elseif ($disc && in_array($ext, ['cue', 'ccd', 'm3u', 'iso', 'bin', 'img', 'pbp', 'ciso', 'rvz', 'wia', 'chd'], true)) {
         $read = xs_romid((string) $row['rom'], 0, false);
         $says = is_string($read) ? $read : null;
     }
@@ -367,6 +367,23 @@ function xs_scan_track_bin(string $name): bool
 }
 
 /**
+ * A file of another file's dump, by name: a .img beside the .cue or .ccd of
+ * its name, a .sub beside its .ccd, a .ccd beside its .cue. The sheet is the
+ * game, as a .bin beside its .cue is the cue's data.
+ */
+function xs_scan_dump_part(string $full, string $ext): bool
+{
+    $sheets = ['img' => ['cue', 'ccd'], 'sub' => ['ccd'], 'ccd' => ['cue']][$ext] ?? [];
+    $stem = substr($full, 0, -strlen($ext) - 1);
+    foreach ($sheets as $sheet) {
+        if (is_file($stem . '.' . $sheet)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
  * True when a folder holds a disc's track bins and no sheet (cue or gdi)
  * to bind them: an incomplete dump, reported rather than junk-counted. A
  * sheet anywhere in the folder absolves it, because the dive would have
@@ -486,7 +503,7 @@ function xs_scan_candidates(string $dir, bool $disc, int $depth = 0): array
             }
             continue;
         }
-        if ($ext === 'bin' && ($sheet || xs_scan_track_bin($n))) {
+        if (($ext === 'bin' && ($sheet || xs_scan_track_bin($n))) || xs_scan_dump_part($full, $ext)) {
             continue;
         }
         if (xs_scan_note_not_game($full, $ext)) {
@@ -653,6 +670,8 @@ function xs_scan_walk(?string $rootOverride = null): array
              // An empty .zip or .7z: a download not finished (xs_scan_unfinished), named and never offered to unpack.
              'unfinished' => [],
              'skippedFolders' => [], 'alreadyHave' => 0, 'junk' => 0, 'newPlatforms' => [], 'noEmulator' => [],
+             // Of alreadyHave, the files of games deleted from Xsegon: the screen says where they come back.
+             'deletedLeft' => 0,
              // Said, never passed over in silence: a file taken for a game that is here under another
              // file ('passed'), and what was counted as no game at all ('junkFiles').
              'passed' => [], 'junkFiles' => [],
@@ -745,13 +764,15 @@ function xs_scan_walk(?string $rootOverride = null): array
                 . xs_scan_letters((string) $h['title'])] ??= ['why' => 'hidden', 'rom' => ''];
         }
     }
-    // And the ones deleted on purpose, for the same reason.
+    // And the ones deleted on purpose, for the same reason; counted, so the screen says where they come back.
     require_once __DIR__ . '/deleted.php';
+    $deletedRoms = [];
     foreach (xs_deleted() as $d) {
         $knownTitle[strtolower((string) ($d['platform'] ?? '')) . '|'
             . xs_scan_letters((string) ($d['title'] ?? ''))] ??= ['why' => 'deleted', 'rom' => (string) ($d['rom'] ?? '')];
         if (!empty($d['rom'])) {
             $known[strtolower(str_replace('/', '\\', (string) $d['rom']))] = true;
+            $deletedRoms[strtolower(str_replace('/', '\\', (string) $d['rom']))] = true;
         }
     }
     $platformsHave = array_change_key_case($lib['platforms'] ?? [], CASE_LOWER);
@@ -777,7 +798,7 @@ function xs_scan_walk(?string $rootOverride = null): array
        folder and for rows a file's own contents placed (includes\romid.php).
        Each row: name (what the title is made from), rom, ext, and sibs when
        it stands for the discs of one folder. */
-    $process = static function (string $platform, array $rows) use (&$out, &$countedKnown, &$idHeld, $discs, $known, $knownTitle, $platformsHave, $table): void {
+    $process = static function (string $platform, array $rows) use (&$out, &$countedKnown, &$idHeld, $discs, $known, $knownTitle, $deletedRoms, $platformsHave, $table): void {
         /* Second pass: collapse disc sets. m3u beats PBP beats Disc 1. */
         $bySet = [];
         foreach ($rows as $i => $r) {
@@ -887,6 +908,10 @@ function xs_scan_walk(?string $rootOverride = null): array
                 if (!isset($countedKnown[$romKey])) {
                     $countedKnown[$romKey] = true;
                     $out['alreadyHave']++;
+                    // The file of a game deleted from Xsegon, or another file of one: left out, and Settings > Library puts it back.
+                    if (isset($deletedRoms[$romKey]) || (!isset($known[$romKey]) && $knownTitle[$titleKey]['why'] === 'deleted')) {
+                        $out['deletedLeft']++;
+                    }
                     // Known by its name alone: another file of a game that is here, hidden or taken out.
                     // Said with all it takes to add it after all, as another version of that game.
                     if (!isset($known[$romKey])) {
@@ -1025,6 +1050,10 @@ function xs_scan_walk(?string $rootOverride = null): array
                 $archive($full);
                 continue;
             }
+            // A .img, .sub or .ccd that belongs to the sheet of its name: the sheet is the game, and this is no junk.
+            if ($isDisc && xs_scan_dump_part($full, $ext)) {
+                continue;
+            }
             if (!isset($exts[$ext]) && !xs_scan_cart_bin($full, $ext, $isDisc)) {
                 if (preg_match('/\.(7z|zip)$/i', $n) && $isDisc) {
                     $archive($full);
@@ -1063,7 +1092,8 @@ function xs_scan_walk(?string $rootOverride = null): array
             return false;
         }
         // A track, or the data of the sheet beside it: the sheet answers for it.
-        if ($ext === 'bin' && (xs_scan_track_bin($n) || is_file((string) preg_replace('/\.bin$/i', '.cue', $full)))) {
+        if (($ext === 'bin' && (xs_scan_track_bin($n) || is_file((string) preg_replace('/\.bin$/i', '.cue', $full))))
+            || xs_scan_dump_part($full, $ext)) {
             return false;
         }
         $console = xs_romid($full);

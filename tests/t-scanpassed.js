@@ -30,7 +30,7 @@ module.exports = async function (b, check) {
     check("scanpassed: runs only on the test server's own copy", true, true);
     return;
   }
-  const kept = new Guard(["scanned-games.json", "messages.json", "library-seen.json"]);
+  const kept = new Guard(["scanned-games.json", "messages.json", "library-seen.json", "deleted.json"]);
   const before = (await api("api/settings.php")).settings.paths;
   fs.rmSync(FIX, { recursive: true, force: true });
   const usa = put("systems/n64/Xsp Fighter (USA).z64");
@@ -168,6 +168,62 @@ module.exports = async function (b, check) {
       [r.added, dcLeft.map((g) => g.id).sort()], [1, dc.slice(1).map((g) => g.id).sort()]);
     r = await api("api/scan.php", { action: "accept", games: dcLeft });
     check("and they are taken in beside it", [r.added, scanned().filter((g) => g.platform === "Sega Dreamcast").length], [2, 3]);
+
+    /* ---- discs kept as .img, as CloneCD's .ccd, or as Dolphin's .wia (roadmap BJ19) ----
+       Each dump is offered once, by its sheet: a .img or .sub beside the sheet of its name is part of it. */
+    const lone = put("systems/psx/Xsp Lone (USA).img", Buffer.alloc(4000, 7));
+    put("systems/psx/Xsp Sheet (USA).cue", 'FILE "Xsp Sheet (USA).img" BINARY\n');
+    put("systems/psx/Xsp Sheet (USA).img", Buffer.alloc(4000, 7));
+    put("systems/psx/Xsp Clone (USA).ccd", "[CloneCD]\nVersion=3\n");
+    put("systems/psx/Xsp Clone (USA).img", Buffer.alloc(4000, 7));
+    put("systems/psx/Xsp Clone (USA).sub", Buffer.alloc(96, 0));
+    put("systems/psx/Xsp Both (USA)/Xsp Both (USA).cue", 'FILE "Xsp Both (USA).img" BINARY\n');
+    put("systems/psx/Xsp Both (USA)/Xsp Both (USA).ccd", "[CloneCD]\nVersion=3\n");
+    put("systems/psx/Xsp Both (USA)/Xsp Both (USA).img", Buffer.alloc(4000, 7));
+    put("systems/psx/Xsp Both (USA)/Xsp Both (USA).sub", Buffer.alloc(96, 0));
+    put("systems/gc/Xsp Cube (USA).wia", Buffer.alloc(4000, 0));
+    const dumps = /Xsp (Lone|Sheet|Clone|Both|Cube) /;
+    r = await api("api/scan.php");
+    check("a disc kept as .img, as a .ccd with its .img and .sub, or as .wia is offered; a .cue beside a .ccd is the one offered",
+      r.new.filter((g) => dumps.test(g.rom)).map((g) => [path.basename(g.rom), g.platform]).sort(),
+      [["Xsp Both (USA).cue", "Sony Playstation"], ["Xsp Clone (USA).ccd", "Sony Playstation"], ["Xsp Cube (USA).wia", "Nintendo GameCube"],
+       ["Xsp Lone (USA).img", "Sony Playstation"], ["Xsp Sheet (USA).cue", "Sony Playstation"]]);
+    check("and the .img, .sub and .ccd that are part of a sheet are not left out as not games", r.junkFiles.filter((f) => dumps.test(f)), []);
+
+    /* ---- a game deleted from Xsegon: the scan says so, and Settings puts it back (roadmap BJ1) ---- */
+    await api("api/scan.php", { action: "accept", games: [r.new.find((g) => g.rom === lone)] });
+    const loneId = ((await api("api/library.php")).games.find((g) => g.title === "Xsp Lone") || {}).id;
+    await api("api/deleted.php", { action: "delete", ids: [loneId], confirm: "1" });
+    r = await api("api/scan.php");
+    check("a scan leaves a game deleted from Xsegon out, and counts it", [r.new.some((g) => g.rom === lone), r.deletedLeft], [false, 1]);
+    await b.openBar("games");
+    await b.menuItem(/Scan for Games/);
+    await b.waitFor(`${title} === "SCAN FOR GAMES"`, 10000);
+    const goneLine = `[...document.querySelectorAll("#editor p.mt-note")].find(p => /deleted from Xsegon/.test(p.textContent))`;
+    check("Scan for Games says it left one out as deleted, and where it comes back",
+      await b.until(`(p => p ? p.firstChild.textContent.trim() : null)(${goneLine})`,
+        "1 file was left out because its game was deleted from Xsegon. Settings > Library > Deleted from Xsegon puts it back.", 10000),
+      "1 file was left out because its game was deleted from Xsegon. Settings > Library > Deleted from Xsegon puts it back.");
+    check("and names what it took for no game, by ending",
+      await b.ev(`(() => { const h = [...document.querySelectorAll("#editor h2.bk-head")].find(x => x.textContent === "Left out as not games"); const out = [];
+        for (let n = h && h.nextElementSibling; n && n.tagName === "P"; n = n.nextElementSibling) { out.push(n.textContent); } return out.filter(t => /^1 \\.(bin|srm) file:/.test(t)).sort(); })()`),
+      ["1 .bin file: genesis\\Xsp bios.bin", "1 .srm file: genesis\\Xsp Lost World.srm"]);
+    await b.ev(`${goneLine}.querySelector("button").click()`);
+    const delList = `[...document.querySelectorAll('#settings .opt[data-land="deleted"] .hl-row')]`;
+    check("its press opens Settings > Library on Deleted from Xsegon, which lists the game with Put back",
+      [await b.until(`!document.getElementById("settings").hidden && ${delList}.some(r => r.querySelector(".t").textContent === "Xsp Lone  (Sony Playstation)")`, true, 10000),
+       await b.ev(`[...document.querySelectorAll("#settings .set-page")].find(p => !p.hidden).dataset.group`),
+       await b.ev(`(n => n ? n.dataset.land : null)(document.querySelector("#settings .opt.at"))`),
+       await b.ev(`${delList}.find(r => r.querySelector(".t").textContent === "Xsp Lone  (Sony Playstation)").querySelector("button").textContent`)],
+      [true, "library", "deleted", "Put back"]);
+    await b.ev(`${delList}.find(r => r.querySelector(".t").textContent === "Xsp Lone  (Sony Playstation)").querySelector("button").click()`);
+    check("Put back takes it off the list, and it is in the library again",
+      [await b.until(`${delList}.some(r => r.querySelector(".t").textContent === "Xsp Lone  (Sony Playstation)")`, false, 8000),
+       (await api("api/deleted.php")).deleted.some((d) => d.id === loneId), (await api("api/library.php")).games.some((g) => g.id === loneId)],
+      [false, false, true]);
+    check("and the next scan has nothing deleted to say", (await api("api/scan.php")).deletedLeft, 0);
+    await b.key("Escape");
+    await sleep(500);
   } finally {
     await api("api/settings.php", { paths: { romRoot: before.romRoot, scanFolders: before.scanFolders || [] } });
     kept.restore();

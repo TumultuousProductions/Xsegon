@@ -1,5 +1,5 @@
 import { confirmWindow } from "./confirm.js";
-import { paintHiddenList } from "./editors.js";
+import { paintDeletedList, paintHiddenList } from "./editors.js";
 import { gamesdbRow } from "./gamesdbrow.js";
 import { paintHelp, paintHelpHere } from "./help.js";
 import { iconEl } from "./icons.js";
@@ -320,6 +320,7 @@ function paintSettings(res) {
           "Import the library again now, without waiting for a restart.", "Import", function () { runImport(); }));
       }
       paintHiddenList(part("Which games"));
+      paintDeletedList(part("Which games"));
       var pics = part("Names, details and pictures");
       gamesdbRow(pics, actionRow);   // js\gamesdbrow.js
       pics.appendChild(actionRow("Thumbnail cache",
