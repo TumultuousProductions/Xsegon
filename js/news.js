@@ -23,6 +23,7 @@ import { openScreenScraper } from "./screenscraper.js";
 import { sound } from "./sound.js";
 import { setViewMode } from "./state.js";
 import { chooseSystem } from "./systems.js";
+import { pressUpdate } from "./updaterow.js";
 import { closeOnBackdrop, el } from "./util.js";
 
 var DOT = document.getElementById("mail-dot");
@@ -145,6 +146,14 @@ var MAIL_GOES = {
   archivevid: ["Videos from online archives...", function () { openArchiveVideos(); }],
   cheatlists: ["Get the cheat lists...", function () { askCheatLists(); }],
   fillcheck: ["Check these games...", function (m) { openFillTool(null, false, (m.ids || []).map(String)); }],
+  // A newer Xsegon (includes\update.php): asks first, downloads it if need be, then put in place as Xsegon starts again.
+  updatenow: ["Update now...", function () { pressUpdate("update"); }],
+  // A newer Xsegon (includes\newversion.php): its release page, in a window of its own. Only that page.
+  newversion: ["Open its page", function (m) {
+    var page = String(m.url || "");
+    if (page.indexOf("https://github.com/TumultuousProductions/Xsegon/releases/") !== 0) { page = "https://github.com/TumultuousProductions/Xsegon/releases/latest"; }
+    window.open(page, "_blank", "noopener");
+  }],
   // New games left out for want of an emulator RetroArch would be (includes\newgames.php xs_ng_tell).
   rasetup: [raLabel("setup"), function () { getRetroArch("a message"); }],
   raget: [raLabel("get"), function () { getRetroArch("a message"); }],

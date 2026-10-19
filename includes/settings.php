@@ -267,6 +267,8 @@ function xs_settings_defaults(): array
             'confirmClose' => true,
             'phoneStays'    => 'on',       // how long the phone page stays open once switched on (includes\phone.php)
             'fillBigScreen' => true,       // read when the window is started (bin\xsbrowser.ps1); the page only asks when its screen changes
+            'tellNewVersions' => true,     // a daily look for a newer release, said once in the mailbox (includes\newversion.php)
+            'getNewVersions'  => false,    // a newer one downloaded and checked as soon as it is out; off, only when Update now is pressed
         ],
 
         // What the screen does when nobody touches it.
@@ -470,7 +472,7 @@ function xs_settings_schema(): array
         'feel' => [
             '_label' => 'Feel',
             '_help'  => 'The costume. None of it changes what the app does.',
-            '_sections' => ['Text and brightness', 'Colour and effects', 'On screen', 'Speed'],
+            '_sections' => ['Text and brightness', 'Colour and effects', 'On screen', 'Speed', 'Your own look'],
             // Its choices are the files in themes\ (api\settings.php fills them in).
             'theme'        => ['label' => 'Theme', 'type' => 'enum', 'options' => 'themes', 'section' => 'Colour and effects',
                                'help' => 'The colours of everything. Xsegon is the look it comes with, and is always here to go back to. Also in the round X menu.'],
@@ -569,7 +571,11 @@ function xs_settings_schema(): array
         'window' => [
             '_label' => 'Window',
             '_help'  => 'The Xsegon window itself.',
-            '_sections' => ['Closing Xsegon', 'On a big screen', 'Connecting a phone'],
+            '_sections' => ['Closing Xsegon', 'On a big screen', 'Connecting a phone', 'New versions'],
+            'tellNewVersions' => ['label' => 'Tell me when a new version is out', 'section' => 'New versions',
+                                  'help' => 'Once a day, when this PC is online, Xsegon asks its page on GitHub which version is the newest, and Messages says once when a newer one is out, with Update now. Nothing of this copy changes until you press it. Off, Xsegon never asks.'],
+            'getNewVersions'  => ['label' => 'Download new versions by themselves', 'section' => 'New versions',
+                                  'help' => 'A newer version is downloaded in the background as soon as Xsegon hears of it (about 7 MB), checked against the list its maker signed and tried once on its own, so Update now takes only a moment. Off, nothing is downloaded until you press Update now. Either way nothing of this copy changes until you press it. Update now asks this too.'],
             'phoneStays'   => ['label' => 'Phone page stays open', 'type' => 'enum', 'section' => 'Connecting a phone',
                                'options' => ['on' => 'Until I switch it off', 'close' => 'Until Xsegon closes', 'idle' => 'Off by itself when no phone uses it'],
                                'help' => 'The phone page lets a phone on the home Wi-Fi browse your games and start one on this PC. It is closed until you switch it on in the round X\'s menu, under Connect a phone... This says how long it then stays open: until you switch it off, also after Xsegon is closed and opened again; until Xsegon closes; or until no phone has asked anything for 30 minutes. Closed, nothing on this PC is open to the home network.'],

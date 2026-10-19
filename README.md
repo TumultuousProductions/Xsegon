@@ -201,6 +201,17 @@ screen every minute or two. **Xsegon theme** goes back to how it came.
 
 ## Updating to a newer version
 
+Xsegon says in Messages when a new version is out, once for each version.
+Press **Update now...**: it says what happens and asks whether the next new
+versions should download by themselves. Then it downloads the new version
+(about 7 MB), checks it and tries it once, takes a backup of your data,
+closes, puts the new version in place and opens again. A damaged download is
+never put in place, and if the new version will not start on your PC the one
+before comes back by itself. Settings > Window > New versions has **Go
+back**, the same download choice, and switches the messages off.
+
+To update by hand instead:
+
 1. Settings > Library > Backup, to be safe.
 2. Close Xsegon.
 3. Download the new zip from the [latest release](https://github.com/TumultuousProductions/Xsegon/releases/latest)
@@ -215,10 +226,16 @@ keeps them.
 ## Good to know
 
 - Your game files are only ever read. Xsegon never changes or moves them.
+- Make it look your own: Settings > Feel > Your own look > Open my folder
+  gives you a stylesheet that Xsegon reads after its own. Updates never
+  touch that folder.
 - Everything Xsegon makes lives inside the folder you unzipped. To remove it,
   close Xsegon and delete that folder. Nothing is installed anywhere else.
 - After the first setup it works without the internet. Only fetching
-  pictures, videos and cheat lists needs it.
+  pictures, videos and cheat lists needs it, and a look once a day for a
+  newer Xsegon, which Settings > Window > New versions switches off. A new
+  version (about 7 MB) is downloaded only when you press Update now, or by
+  itself if you chose that.
 - It only ever answers this PC: nothing else on your network can reach it,
   unless you switch on Connect a phone.
 

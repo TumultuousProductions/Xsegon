@@ -50,6 +50,10 @@ doc/*
 # and the privacy scan's word list. Xsegon runs without them.
 private/
 
+# A person's own look (a stylesheet read after Xsegon's, their pictures):
+# theirs, never in a download, never replaced by an update.
+custom/
+
 # stray logs from other tools (log_screens is a Skraper run log: ROM paths
 # and file names from this machine)
 log_screens
