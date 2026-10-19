@@ -171,6 +171,9 @@ module.exports = async function (b, check) {
     await api("api/settings.php", { paths: { launchbox: "C:\\NoSuchLaunchBox" } });
     const st = await api("api/status.php");
     check("LaunchBox can be missing", st.checks.launchbox.present, false);
+    // RetroArch's quit and resume are read from the games as shown, not from library.json (roadmap BH9).
+    check("and the status still finds RetroArch from the games, so the quit hint can show",
+          /retroarch\.exe$/i.test((st.retroarch || {}).exe || ""), true);
 
     const offGone = await api("api/cores.php?id=" + encodeURIComponent(snes.id));
     check("the cores are still listed without LaunchBox", offGone.ok && offGone.cores.length, offer.cores.length);

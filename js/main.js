@@ -85,7 +85,7 @@ import { initVolume, wireHoverSound } from "./sound.js";
 import { $added, $btnSystems, $editor, $info, $platform, $q, $settings, $sort, $syswall, $view, $viewsel, startInSystems, sysStage, view } from "./state.js";
 import { checkIdle, lastStatus, paintStatus, pollStatus, statusOnFocus, touch } from "./status.js";
 import { backToWall, enterSystems, hasWallShape, moveSys, startOnAllGames, sysStyle } from "./systems.js";
-import { closeOnBackdrop, initVersionTips } from "./util.js";
+import { HELP_MAIL, closeOnBackdrop, initVersionTips } from "./util.js";
 import { paintViewLock } from "./viewlock.js";
 import { ctl, move, setView, tickClock } from "./views.js";
 import { applyViewSizes } from "./viewsize.js";
@@ -105,7 +105,6 @@ initLog();
    white line across the top, offering restart or write in, gone after fifteen
    seconds or at its x. Where and why are in the log's BUG line. */
 var bugBar = null, bugHide = null;
-var HELP = "help@tumultuousproductions.site";
 window.addEventListener("xs:bug", function (e) {
   var d = e.detail || {}, code = d.code || "XS-APP-0000", area = d.area || "Xsegon";
   if (!bugBar) {
@@ -126,8 +125,8 @@ window.addEventListener("xs:bug", function (e) {
   text.appendChild(document.createElement("b")).textContent = code;
   text.appendChild(document.createTextNode("). Restarting Xsegon usually sorts it out. If it keeps happening, email "));
   var a = text.appendChild(document.createElement("a"));
-  a.textContent = HELP;
-  a.href = "mailto:" + HELP + "?subject=" + encodeURIComponent("Xsegon error " + code) +
+  a.textContent = HELP_MAIL;
+  a.href = "mailto:" + HELP_MAIL + "?subject=" + encodeURIComponent("Xsegon error " + code) +
     "&body=" + encodeURIComponent("Error code: " + code + "\nWhere: " + area + "\nBuild: " + ((window.XSEGON || {}).build || "unknown") +
     "\n\nWhat were you doing when it happened?\n\n\n(If you can, attach the report from Settings > Debug > Something is wrong.)");
   text.appendChild(document.createTextNode(" with that code."));

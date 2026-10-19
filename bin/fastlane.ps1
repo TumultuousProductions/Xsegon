@@ -28,9 +28,11 @@ $dataDir = if ($env:XSEGON_DATA) { $env:XSEGON_DATA } else { Join-Path $root 'da
 
 function Say([string]$msg) {
     try {
-        if (-not (Test-XsegonLogging $dataDir)) { return }
+        # Only into a log folder that is there: the main server makes it long before this starts, and
+        # one cleared under this last word (a test copy) is not made again. Appending never makes a folder.
         $dir = Join-Path $dataDir 'log'
-        if (-not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+        if (-not (Test-Path -LiteralPath $dir)) { return }
+        if (-not (Test-XsegonLogging $dataDir)) { return }
         $file = Join-Path $dir ((Get-Date).ToString('yyyy-MM-dd') + '.log')
         $line = (Get-Date).ToString('HH:mm:ss.fff') + ' S LANE ' + $msg + "`n"
         [System.IO.File]::AppendAllText($file, $line, (New-Object System.Text.UTF8Encoding($false)))

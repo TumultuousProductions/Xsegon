@@ -349,6 +349,18 @@ module.exports = async function (b, check) {
     const back = await api("api/edit.php", { id: sat.id, set: { title: "Xsfix Dragoon Saga" } });
     check("typing the scanner's own title back stops being an edit", back.edited, ["genre"]);
     check("reset all takes the rest off", (await api("api/edit.php", { id: sat.id, reset: "all" })).edited, []);
+    // A match chosen by hand is no metadata: Reset all keeps libretro's as it keeps the Games Database's (roadmap BH11).
+    const OVR = path.join(DATA, "overrides.json");
+    const ovr = () => { try { return JSON.parse(fs.readFileSync(OVR, "utf8").replace(/^﻿/, "")); } catch (e) { return {}; } };
+    const withLr = ovr();
+    withLr[sat.id] = Object.assign({}, withLr[sat.id], { lrName: "Xsfix Dragoon Saga (USA)", genre: "Role Playing" });
+    fs.writeFileSync(OVR, JSON.stringify(withLr));
+    const keptLr = await api("api/edit.php", { id: sat.id, reset: "all" });
+    check("reset all keeps a libretro match chosen by hand, as it keeps a Games Database one",
+          [keptLr.edited, (ovr()[sat.id] || {}).lrName, (ovr()[sat.id] || {}).genre], [["lrName"], "Xsfix Dragoon Saga (USA)", undefined]);
+    const noLr = ovr();
+    delete noLr[sat.id];
+    fs.writeFileSync(OVR, JSON.stringify(noLr));
     // The title is not how a scanned game is found on the disk, so renaming
     // one must not touch its launch. The id is a hash of console and file
     // name for the same reason.
