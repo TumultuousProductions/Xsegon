@@ -173,6 +173,12 @@ export function launchNow(g, slot, direct, choice, hack, hc) {
       askHardcore(g.title, res.why, slot, function (answer, fromStart) { launchNow(g, fromStart ? null : slot, direct, choice, hack, answer); });
       return;
     }
+    // The games check steps aside for this game (api\launch.php): Play is pressed again once it has.
+    if (!res.ok && res.makingWay) {
+      showStrip(res.error.charAt(0).toUpperCase() + res.error.slice(1) + "...", false);
+      afterTheCheck(g, function () { launchNow(g, slot, direct, choice, hack, hc); });
+      return;
+    }
     if (!res.ok) {
       // The guardrail speaks for itself; anything else gets the real reason.
       // "waiting" is the cores download under way (api\launch.php): said as
@@ -197,6 +203,31 @@ export function launchNow(g, slot, direct, choice, hack, hc) {
     $strip.dataset.kind = "running";
     watchGame(res.launched, null, false);
   });
+}
+
+/*  The games check making way for a Play (bin\runcheck.ps1 Wait-Pause): the
+    light poll is asked each second until the check has paused or ended. */
+var wayT = null;
+function afterTheCheck(g, go) {
+  clearInterval(wayT);
+  var until = Date.now() + 90000;
+  wayT = setInterval(function () {
+    api("api/running.php").then(function (r) {
+      if (!r || !r.ok || !wayT) { return; }        // no answer: the next second asks again
+      var runs = r.runs;
+      if (!runs || !runs.running || runs.paused) {
+        clearInterval(wayT);
+        wayT = null;
+        L("LNCH", g.title + ": the games check " + (runs && runs.running ? "has paused" : "is over") + ", Play again");
+        go();
+      } else if (Date.now() > until) {
+        clearInterval(wayT);
+        wayT = null;
+        L("LNCH", g.title + ": the games check did not make way in 90 s");
+        showStrip("The games check did not make way for " + g.title + ": Stop on its bar in the corner stops it", true);
+      }
+    });
+  }, 1000);
 }
 
 /*  The game the bottom line is about, so it can be taken down when the game

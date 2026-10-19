@@ -21,7 +21,9 @@
         saves are the check's own, so one that ignores QUIT is still ended.)
 
     One at a time, stoppable (data\runcheck\stop) and resumable: results.json
-    is written after every game.
+    is written after every game. Play pressed during the check leaves
+    data\runcheck\pause: the check closes its try, waits while that game runs,
+    then carries on (Wait-Pause).
 
     Run by hand to see a game's check in a terminal:
         .\bin\runcheck.ps1 -Plan data\runcheck\plan.json -DataDir data
@@ -34,6 +36,8 @@ param(
     [int]    $Wait = 10,
     # Seconds RetroArch has to say a game is playing before it is given up on.
     [int]    $StartWithin = 45,
+    # Seconds a pause waits for the game Play was pressed on to start.
+    [int]    $PauseFor = 60,
     [switch] $Log
 )
 
@@ -48,6 +52,8 @@ $raLogDir = Join-Path $dir 'ralog'
 $statusF  = Join-Path $dir 'status.json'
 $resultsF = Join-Path $dir 'results.json'
 $stopF    = Join-Path $dir 'stop'
+$pauseF   = Join-Path $dir 'pause'
+$runningF = Join-Path $DataDir 'running.json'
 $batF     = Join-Path $dir 'run.bat'
 $sessions = Join-Path $DataDir 'sessions.jsonl'
 $before   = Join-Path $dir 'sessions.before.jsonl'
@@ -92,12 +98,15 @@ function Send-RetroArch([int] $port, [string] $command, [int] $waitMs) {
     } catch { return '' } finally { $udp.Close() }
 }
 
+# Stop pressed, or Play pressed on a game of yours: the try in hand ends.
+function Test-Interrupt { return (Test-Path -LiteralPath $stopF) -or (Test-Path -LiteralPath $pauseF) }
+
 # Wait up to $ms, a little at a time, returning early when the game has gone
-# or a stop was asked for. True when the whole wait passed.
+# or a stop or pause was asked for. True when the whole wait passed.
 function Wait-While($proc, [int] $ms) {
     $until = (Get-Date).AddMilliseconds($ms)
     while ((Get-Date) -lt $until) {
-        if ($proc.HasExited -or (Test-Path -LiteralPath $stopF)) { return $false }
+        if ($proc.HasExited -or (Test-Interrupt)) { return $false }
         Send-Pulse
         Start-Sleep -Milliseconds 250
     }
@@ -111,6 +120,45 @@ function Send-Pulse {
     if (((Get-Date) - $script:lastPulse).TotalSeconds -lt 5) { return }
     $script:lastPulse = Get-Date
     try { Write-JsonFile $statusF $status } catch { }
+}
+
+<#  A game of yours on: bin\launch.ps1's running.json with its launcher alive,
+    or api\launch.php's note of one starting, under 30 seconds old.        #>
+function Test-YourGame {
+    $run = Read-JsonFile $runningF
+    if (-not $run) { return $false }
+    $lp = 0
+    try { $lp = [int] $run.launcherPid } catch { }
+    if ($lp -gt 0) { return [bool] (Get-Process -Id $lp -ErrorAction SilentlyContinue) }
+    try { $age = ((Get-Date) - (Get-Item -LiteralPath $runningF).LastWriteTime).TotalSeconds } catch { return $false }
+    return ([bool] $run.pending -and $age -lt 30)
+}
+
+<#  Play was pressed during the check, and no game of the check's is open now:
+    paused while that game runs, or until it has had $PauseFor seconds to
+    start. Three looks without it, so a running.json caught mid-write is not
+    an ending. False when Stop was pressed during the pause.               #>
+function Wait-Pause {
+    $note = Read-JsonFile $pauseF
+    $for = if ($note -and $note.title) { [string] $note.title } else { 'a game of yours' }
+    $status.paused = $true; $status.pausedFor = $for; $status.current = $null
+    Write-JsonFile $statusF $status
+    Write-Log ("paused for {0} at game {1} of {2}: carries on when it is closed" -f $for, $status.index, $status.total)
+    $asked = Get-Date; $seen = $false; $off = 0; $go = $true
+    while ($true) {
+        if (Test-Path -LiteralPath $stopF) { $go = $false; break }
+        if (Test-YourGame) { $seen = $true; $off = 0 }
+        elseif ($seen) { $off++; if ($off -ge 3) { break } }
+        elseif (((Get-Date) - $asked).TotalSeconds -ge $PauseFor) { break }
+        Send-Pulse
+        Start-Sleep -Milliseconds 500
+    }
+    Remove-Item -LiteralPath $pauseF -ErrorAction SilentlyContinue
+    $status.paused = $false; $status.pausedFor = $null
+    Write-JsonFile $statusF $status
+    Write-Log $(if (-not $go) { "stopped while paused for $for" } elseif ($seen) { "$for was closed: carrying on" }
+                else { "$for did not start within ${PauseFor}s: carrying on" })
+    return $go
 }
 
 # The game and everything it started (cmd, a wrapper .bat, retroarch.exe).
@@ -479,7 +527,7 @@ function Test-EmuGame($g, [string] $safe) {
         }
     }
     $until = $t0.AddSeconds([int] $g.start)
-    while ((Get-Date) -lt $until -and -not $proc.HasExited -and -not (Test-Path -LiteralPath $stopF)) {
+    while ((Get-Date) -lt $until -and -not $proc.HasExited -and -not (Test-Interrupt)) {
         . $hear
         $wins = Get-EmuWindows $name $since
         $main = Get-Biggest $wins
@@ -530,8 +578,8 @@ function Test-EmuGame($g, [string] $safe) {
     } elseif ($fails.Count -or $box) {
         $o.result = 'nostart'
         $o.reason = if ($box) { "it put up a box, `"$box`", and the game never started" } else { 'it said the game could not start' }
-    } elseif (Test-Path -LiteralPath $stopF) {
-        $o.skip = $true                                                  # stopped before anything could be told
+    } elseif (Test-Interrupt) {
+        $o.skip = $true                                                  # stopped or paused before anything could be told
     } else {
         # Open and quiet, and nothing it showed said the game started: no proof either way.
         $pic = Save-EmuShot $name $since $safe
@@ -573,6 +621,7 @@ $status = [ordered]@{
     running = $true; pid = $PID; startedAt = $runStarted.ToString('o'); total = $list.Count; index = 0
     current = $null; counts = [ordered]@{ boots = 0; crashed = 0; nostart = 0; noanswer = 0; look = 0 }
     stopped = $false; why = $null; restored = $false; endedAt = $null; label = [string] $planData.label
+    paused = $false; pausedFor = $null
 }
 Write-JsonFile $statusF $status
 Remove-Item -LiteralPath $stopF -ErrorAction SilentlyContinue
@@ -584,6 +633,8 @@ $heard = $false                # RetroArch has answered for a game in this check
 $again = $false                # the one second go at a first no answer is used
 for ($n = 0; $n -lt $list.Count; $n++) {
     if (Test-Path -LiteralPath $stopF) { $status.stopped = $true; break }
+    # Play pressed between two games, or during the one cut short below: step aside first.
+    if ((Test-Path -LiteralPath $pauseF) -and -not (Wait-Pause)) { $status.stopped = $true; break }
     $g = $list[$n]
     # The games folder gone part way: every game left would be recorded as
     # "did not start", so the check stops. One file gone with its folder
@@ -606,9 +657,13 @@ for ($n = 0; $n -lt $list.Count; $n++) {
 
     $t0 = Get-Date
     $emuClosed = $true
+    $cut = $false; $playing = $false
     if ($g.mode -eq 'emu') {
         $o = Test-EmuGame $g $safe
-        if ($o.skip) { $status.stopped = $true; break }
+        if ($o.skip) {
+            if (Test-Path -LiteralPath $stopF) { $status.stopped = $true; break }
+            $cut = $true                                       # Play was pressed, not Stop
+        }
         $result = $o.result; $reason = $o.reason; $code = $o.code; $shot = $o.shot; $blank = $o.blank
         $emuClosed = $o.closed
     } else {
@@ -625,7 +680,7 @@ for ($n = 0; $n -lt $list.Count; $n++) {
         try {
             $proc = Start-Process -FilePath $batF -PassThru -WindowStyle Hidden
             $until = $t0.AddSeconds($StartWithin)
-            while ((Get-Date) -lt $until -and -not $proc.HasExited -and -not (Test-Path -LiteralPath $stopF)) {
+            while ((Get-Date) -lt $until -and -not $proc.HasExited -and -not (Test-Interrupt)) {
                 $st = Send-RetroArch $port 'GET_STATUS' 700
                 if ($st) { $answered = $true }
                 if ($st -match 'PLAYING|PAUSED') { $playing = $true; break }
@@ -706,13 +761,27 @@ for ($n = 0; $n -lt $list.Count; $n++) {
         # read off a slow disk): until it has answered once, a no answer gets
         # one more go.
         if ($answered) { $heard = $true }
-        if ($result -eq 'noanswer' -and -not $heard -and -not $again -and -not (Test-Path -LiteralPath $stopF)) {
+        if ($result -eq 'noanswer' -and -not $heard -and -not $again -and -not (Test-Interrupt)) {
             $again = $true
             Write-Log ("{0} [{1}]: no answer, and RetroArch has not answered yet in this check: tried once more" -f $g.title, $g.platform)
             Start-Sleep -Milliseconds 800
             $n--
             continue
         }
+    }
+    # Play pressed while this game was tried, before it could be told: nothing
+    # recorded, and it is tried again once the pause at the top of the loop is over.
+    if (-not (Test-Path -LiteralPath $stopF) -and (Test-Path -LiteralPath $pauseF) -and ($cut -or ($g.mode -ne 'emu' -and -not $playing))) {
+        if (-not $emuClosed) {
+            $status.stopped = $true
+            $status.why = "$($g.emu) did not close when asked to make way for a game of yours, so the check stopped at game $($n + 1) of $($list.Count) rather than force it shut. Close it yourself, then Start carries on from this game."
+            Write-Log $status.why
+            break
+        }
+        Write-Log ("{0} [{1}]: cut short for a game of yours, tried again after it" -f $g.title, $g.platform)
+        Start-Sleep -Milliseconds 800                              # RetroArch's port and files let go
+        $n--
+        continue
     }
     if (Test-Path -LiteralPath $stopF) { $status.stopped = $true }
 
@@ -741,8 +810,8 @@ try {
     if (Test-Path -LiteralPath $before) {
         $a = [System.IO.File]::ReadAllBytes($before)
         $b = if (Test-Path -LiteralPath $sessions) { [System.IO.File]::ReadAllBytes($sessions) } else { [byte[]] @() }
-        # Lines only added after what was there are real play (a web game the
-        # page timed, as Play is refused during the check), so they are kept.
+        # Lines only added after what was there are real play (a game played
+        # while the check paused for it, a web game the page timed), so they are kept.
         # Anything else (shorter, or the old part changed) is put back.
         $added = $b.Length -gt $a.Length -and
                  [Convert]::ToBase64String($b, 0, $a.Length) -eq [Convert]::ToBase64String($a)
@@ -767,6 +836,7 @@ $status.current = $null
 $status.endedAt = (Get-Date).ToString('o')
 Write-JsonFile $statusF $status
 Remove-Item -LiteralPath $stopF -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath $pauseF -ErrorAction SilentlyContinue
 Remove-Item -LiteralPath $batF -ErrorAction SilentlyContinue
 Write-Log ("{0}: boots {1}, crashed {2}, did not start {3}, no answer {4}, look at it {5}" -f $(if ($status.stopped) { 'stopped' } else { 'done' }),
            $status.counts.boots, $status.counts.crashed, $status.counts.nostart, $status.counts.noanswer, $status.counts.look)

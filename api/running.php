@@ -38,7 +38,9 @@ if (is_file($rcFile) && time() - (int) @filemtime($rcFile) < 120) {
         $runs = ['running' => !empty($rc['running']) || !empty($rc['starting']), 'index' => (int) ($rc['index'] ?? 0),
                  'total' => (int) ($rc['total'] ?? 0), 'title' => (string) (($rc['current'] ?? [])['title'] ?? ''),
                  'counts' => $rc['counts'] ?? null, 'stopped' => !empty($rc['stopped']), 'why' => $rc['why'] ?? null,
-                 'startedAt' => (string) ($rc['startedAt'] ?? ''), 'endedAt' => $rc['endedAt'] ?? null];
+                 'startedAt' => (string) ($rc['startedAt'] ?? ''), 'endedAt' => $rc['endedAt'] ?? null,
+                 // Stepped aside for a game of yours (bin\runcheck.ps1 Wait-Pause).
+                 'paused' => !empty($rc['paused']), 'pausedFor' => (string) ($rc['pausedFor'] ?? '')];
     }
 }
 

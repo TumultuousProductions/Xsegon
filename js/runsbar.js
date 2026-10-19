@@ -64,7 +64,8 @@ export function paintRunsBar(r) {
   if (r.running) {
     build();
     clearTimeout(hideT);
-    line.textContent = "Runs check: " + (r.index ? "game " + r.index + " of " + r.total + (r.title ? ", " + r.title : "") : "starting " + plural(r.total, "game", "games"));
+    line.textContent = r.paused ? "Runs check: paused for " + (r.pausedFor || "your game") + " at game " + r.index + " of " + r.total + ", carries on when you close it"
+      : "Runs check: " + (r.index ? "game " + r.index + " of " + r.total + (r.title ? ", " + r.title : "") : "starting " + plural(r.total, "game", "games"));
     track.firstChild.style.width = Math.round((r.total ? Math.max(0, r.index - 1) / r.total : 0) * 100) + "%";
     stopBtn.hidden = false;
     bar.classList.remove("ended");
@@ -111,7 +112,7 @@ export function askAutoRuns() {
       showStrip("the Runs check would start " + plural(r.games, "game", "games") + " now (a test copy: nothing is started)" + out, false);
     } else if (r && r.ok) {
       sound("select");
-      showStrip("checking that each game starts: they open on the screen for a few seconds each, and Skip on the list in the corner stops it" + out, false);
+      showStrip("checking that each game starts: they open on the screen for a few seconds each. Play on any game makes it wait for you, and Stop on its bar in the corner ends it" + out, false);
     } else if (r && out) {
       showStrip("the Runs check has nothing it can start yet" + out, false);
     } else if (r && /nothing left to check|no RetroArch games/.test(r.error || "")) {

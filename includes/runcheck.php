@@ -71,6 +71,12 @@ function xs_runcheck_active(): bool
     return xs_runcheck_status()['running'];
 }
 
+/** Play pressed during the check: a note asking it to make way (bin\runcheck.ps1 pauses while that game runs). */
+function xs_runcheck_make_way(array $game, ?string &$why = null): bool
+{
+    return xs_write_json(xs_runcheck_dir('pause'), ['id' => (string) ($game['id'] ?? ''), 'title' => (string) ($game['title'] ?? ''), 'at' => date('c')], $why);
+}
+
 /** id => the last result for that game. */
 function xs_runcheck_results(): array
 {

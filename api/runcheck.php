@@ -317,6 +317,7 @@ if (is_file(xs_runcheck_dir('stop'))) {
     // game with nothing saying why.
     xs_fail('an old stop file is stuck (' . xs_file_error_reason() . '), so a new check would stop at once; nothing was started', 500);
 }
+@unlink(xs_runcheck_dir('pause'));      // a Play from a check that is over
 
 // A status written now, so the page sees it start before PowerShell is up.
 xs_write_json(xs_runcheck_dir('status.json'), ['running' => false, 'starting' => true, 'total' => count($plan),

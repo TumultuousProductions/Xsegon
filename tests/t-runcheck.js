@@ -7,17 +7,24 @@
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const { execFile } = require("child_process");
+const { execFile, spawn } = require("child_process");
 const { api, BASE, DATA, ROOT, sleep, romDrive } = require("./lib");
 
 const post = (body) => api("api/runcheck.php", body);
 
-function runRunner(data, wait = "1") {
+function runRunner(data, wait = "1", more = []) {
   return new Promise((resolve) => {
     execFile("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", path.join(ROOT, "bin", "runcheck.ps1"),
-      "-Plan", path.join(data, "runcheck", "plan.json"), "-DataDir", data, "-Wait", wait, "-StartWithin", "4", "-Log"],
+      "-Plan", path.join(data, "runcheck", "plan.json"), "-DataDir", data, "-Wait", wait, "-StartWithin", "4", "-Log"].concat(more),
       { timeout: 120000, windowsHide: true }, (err, out, e2) => resolve({ err, out: String(out || ""), e2: String(e2 || "") }));
   });
+}
+const logOf = (data) => fs.existsSync(path.join(data, "log")) ? fs.readdirSync(path.join(data, "log")).map((f) => fs.readFileSync(path.join(data, "log", f), "utf8")).join("") : "";
+/** What fn answers once it answers something, or its last answer after ms. */
+async function until(fn, ms) {
+  const end = Date.now() + ms;
+  while (Date.now() < end) { const v = fn(); if (v) { return v; } await sleep(200); }
+  return fn();
 }
 
 function fakePlan(data, modes) {
@@ -117,6 +124,101 @@ async function runnerGuards(check) {
     const log5 = fs.readdirSync(path.join(d4, "log")).map((f) => fs.readFileSync(path.join(d4, "log", f), "utf8")).join("");
     check("a RetroArch that never answers gets that second go once, not for every game",
       [deaf.map((g) => (res2[g.id] || {}).result), (log5.match(/tried once more/g) || []).length], [["noanswer", "noanswer"], 1]);
+  } finally {
+    fs.rmSync(d4, { recursive: true, force: true });
+  }
+}
+
+/* Play pressed during a check (roadmap AY5): it steps aside for the game and
+   carries on after it. The pause note is written as api\launch.php writes it,
+   and a game of yours is a live launcher in running.json, as bin\launch.ps1
+   writes it: no real game is started. */
+async function pauseForPlay(check) {
+  const note = (rc) => fs.writeFileSync(path.join(rc, "pause"), JSON.stringify({ id: "your-game", title: "Your Game", at: new Date().toISOString() }));
+  const results = (rc) => readJson(path.join(rc, "results.json")) || {};
+  const status = (rc) => readJson(path.join(rc, "status.json")) || {};
+  // Play pressed while its first game sits in RetroArch's menu, before it could be told.
+  const pressDuringFirst = async (rc, games) => { await until(() => (status(rc).current || {}).id === games[0].id, 15000); await sleep(600); note(rc); };
+
+  const d1 = fs.mkdtempSync(path.join(os.tmpdir(), "xs-runcheck-pause-"));
+  let you = null;
+  try {
+    const games = fakePlan(d1, ["nostart", "play", "play"]);
+    const rc = path.join(d1, "runcheck");
+    fs.writeFileSync(path.join(rc, "sessions.before.jsonl"), '{"a":1}\n');
+    fs.writeFileSync(path.join(d1, "sessions.jsonl"), '{"a":1}\n');
+    const done = runRunner(d1, "1", ["-PauseFor", "30"]);
+    await pressDuringFirst(rc, games);
+    const p = await until(() => status(rc).paused && status(rc), 15000) || {};
+    check("Play during the check: it closes its try and says it is paused for that game", [p.paused, p.pausedFor, p.current, p.running], [true, "Your Game", null, true]);
+    check("  the game it cut short is not recorded", Object.keys(results(rc)), []);
+    you = spawn(process.execPath, ["-e", "setTimeout(() => {}, 60000)"], { windowsHide: true });
+    fs.writeFileSync(path.join(d1, "running.json"), JSON.stringify({ title: "Your Game", launcherPid: you.pid, startedAt: new Date().toISOString() }));
+    await sleep(3000);
+    fs.appendFileSync(path.join(d1, "sessions.jsonl"), '{"played during the pause":1}\n');
+    check("  while your game is on it stays paused, starting nothing", [status(rc).paused, Object.keys(results(rc)).length], [true, 0]);
+    you.kill();
+    you = null;
+    fs.rmSync(path.join(d1, "running.json"), { force: true });
+    await done;
+    const res = results(rc), end = status(rc), log = logOf(d1);
+    check("  your game closed: it carries on from the game it cut short and checks every one",
+      [games.map((g) => (res[g.id] || {}).result), end.paused, end.stopped, end.running], [["nostart", "boots", "boots"], false, false, false]);
+    check("  the play line added during the pause is kept", fs.readFileSync(path.join(d1, "sessions.jsonl"), "utf8"), '{"a":1}\n{"played during the pause":1}\n');
+    check("  the log says paused, cut short and carrying on, and the note is gone",
+      [/RCHK paused for Your Game at game 1 of 3/.test(log), /RCHK Fake nostart \[Test\]: cut short for a game of yours/.test(log), /RCHK Your Game was closed: carrying on/.test(log), fs.existsSync(path.join(rc, "pause"))],
+      [true, true, true, false]);
+  } finally {
+    if (you) { you.kill(); }
+    fs.rmSync(d1, { recursive: true, force: true });
+  }
+
+  // The game Play was pressed on never started: the pause ends by itself.
+  const d2 = fs.mkdtempSync(path.join(os.tmpdir(), "xs-runcheck-pause-none-"));
+  try {
+    const games = fakePlan(d2, ["nostart", "play"]);
+    const rc = path.join(d2, "runcheck");
+    const done = runRunner(d2, "1", ["-PauseFor", "2"]);
+    await pressDuringFirst(rc, games);
+    await done;
+    check("a pause no game uses ends by itself after its wait, and the check finishes",
+      [games.map((g) => (results(rc)[g.id] || {}).result), status(rc).paused, status(rc).stopped, /RCHK Your Game did not start within 2s: carrying on/.test(logOf(d2))],
+      [["nostart", "boots"], false, false, true]);
+  } finally {
+    fs.rmSync(d2, { recursive: true, force: true });
+  }
+
+  // Stop pressed during a pause.
+  const d3 = fs.mkdtempSync(path.join(os.tmpdir(), "xs-runcheck-pause-stop-"));
+  try {
+    const games = fakePlan(d3, ["nostart", "play"]);
+    const rc = path.join(d3, "runcheck");
+    const done = runRunner(d3, "1", ["-PauseFor", "30"]);
+    await pressDuringFirst(rc, games);
+    await until(() => status(rc).paused, 15000);
+    fs.writeFileSync(path.join(rc, "stop"), "now");
+    await done;
+    check("Stop during a pause stops the check, with nothing recorded for the game it cut",
+      [status(rc).stopped, status(rc).paused, Object.keys(results(rc)), /RCHK stopped while paused for Your Game/.test(logOf(d3)), fs.existsSync(path.join(rc, "pause"))],
+      [true, false, [], true, false]);
+  } finally {
+    fs.rmSync(d3, { recursive: true, force: true });
+  }
+
+  // Play pressed while a game already plays: that one keeps its boot, and the pause comes before the next.
+  const d4 = fs.mkdtempSync(path.join(os.tmpdir(), "xs-runcheck-pause-played-"));
+  try {
+    const games = fakePlan(d4, ["play", "play"]);
+    const rc = path.join(d4, "runcheck");
+    const done = runRunner(d4, "4", ["-PauseFor", "2"]);
+    await until(() => (status(rc).current || {}).id === games[0].id, 15000);
+    await sleep(2500);
+    note(rc);
+    await done;
+    const log = logOf(d4);
+    check("Play while a game is already playing: its boot is kept, and the check pauses before the next",
+      [games.map((g) => (results(rc)[g.id] || {}).result), log.indexOf("RCHK Fake play [Test]: boots") < log.indexOf("RCHK paused for Your Game at game 1 of 2"), /cut short/.test(log)],
+      [["boots", "boots"], true, false]);
   } finally {
     fs.rmSync(d4, { recursive: true, force: true });
   }
@@ -305,6 +407,7 @@ module.exports = async function (b, check) {
   try {
     await body(b, check);
     await runnerGuards(check);
+    await pauseForPlay(check);
     await emuProfiles(check);
     await emuRunner(check);
   } finally {
@@ -640,14 +743,23 @@ async function body(b, check) {
     const st = await api("api/runcheck.php");
     check("a live check is seen as running", st.status.running, true);
     const play = await api("api/launch.php", { id: g1.id, dry: true });
-    check("Play is refused while it runs, and says why", [play.ok, /runs check is going/.test(play.error || "")], [false, true]);
-    check("so is a second start", (await post({ action: "start", dry: true })).ok, false);
+    check("Play while it runs asks it to make way for that game, and says so",
+      [play.ok, play.makingWay, /games check is making way for /.test(play.error || ""), (readJson(path.join(rc, "pause")) || {}).id], [false, true, true, g1.id]);
+    check("a second start is refused", (await post({ action: "start", dry: true })).ok, false);
     check("and a verdict on a result: the runner is still writing them", (await post({ action: "set", id: g1.id, as: "runs" })).ok, false);
     const stop = await post({ action: "stop" });
     check("stop asks it to stop", [stop.ok, fs.existsSync(path.join(rc, "stop"))], [true, true]);
+    // Paused for a game of yours (bin\runcheck.ps1 Wait-Pause).
+    fs.writeFileSync(status, JSON.stringify({ running: true, paused: true, pausedFor: g1.title, pid: process.pid, total: 5, index: 2, current: null }));
+    const poll = await api("api/running.php");
+    check("the light poll says the check is paused, and for which game", [(poll.runs || {}).running, (poll.runs || {}).paused, (poll.runs || {}).pausedFor], [true, true, g1.title]);
+    const play2 = await api("api/launch.php", { id: g1.id, dry: true });
+    check("with the check paused, Play goes on past it", [!!play2.makingWay, /games check|runs check/.test(play2.error || "")], [false, false]);
+    check("while a second start is still refused", (await post({ action: "start", dry: true })).ok, false);
   } finally {
     fs.rmSync(status, { force: true });
     fs.rmSync(path.join(rc, "stop"), { force: true });
+    fs.rmSync(path.join(rc, "pause"), { force: true });
   }
   check("a check whose runner has gone is not running", (await api("api/runcheck.php")).status.running, false);
   /* Windows' answer about the runner can blip mid-game: a status written
@@ -716,5 +828,37 @@ async function body(b, check) {
     check("the same blue on another console is still a boot", m1.result, "boots");
   } finally {
     fs.rmSync(data, { recursive: true, force: true });
+  }
+
+  /* ---- the page while the check makes way, against stand-in answers ------- */
+  // api\launch.php says "making way", then the light poll says paused; every other ask is the real server's.
+  await b.ev(`(() => {
+    const real = window.fetch;
+    window.__rc = { real: real, launches: 0, polls: 0 };
+    const answer = (o, code) => Promise.resolve(new Response(JSON.stringify(o), { status: code || 200, headers: { "Content-Type": "application/json" } }));
+    window.fetch = (u, o) => {
+      const s = String(u);
+      if (s.indexOf("api/launch.php") >= 0) {
+        return ++window.__rc.launches === 1 ? answer({ ok: false, makingWay: true, error: "the games check is making way for Fake Game" }, 409)
+          : answer({ ok: true, launched: "Fake Game", via: "test", slot: null });
+      }
+      if (s.indexOf("api/running.php") >= 0) {
+        return answer({ ok: true, light: true, runs: { running: true, paused: ++window.__rc.polls >= 2, pausedFor: "Fake Game", index: 2, total: 5 } });
+      }
+      return real(u, o);
+    };
+  })()`);
+  try {
+    await b.ev(`import("/js/launch.js").then((m) => { m.launchNow({ id: "t-fake", title: "Fake Game", platform: "Test" }, null); })`);
+    check("Play answered with making way says so, not as a failure",
+      await b.until(`document.getElementById("strip").textContent.indexOf("The games check is making way for Fake Game...") >= 0`, true, 3000), true);
+    check("  and once the check has paused, Play is pressed again by itself",
+      await b.until(`window.__rc.launches === 2 && document.getElementById("strip").textContent.indexOf("running: Fake Game") >= 0`, true, 8000), true);
+    await b.ev(`import("/js/runsbar.js").then((m) => { m.paintRunsBar({ running: true, paused: true, pausedFor: "Fake Game", index: 2, total: 5 }); })`);
+    check("the corner bar says the check is paused for your game",
+      await b.ev(`(document.querySelector(".runs-bar .fb-line") || {}).textContent`), "Runs check: paused for Fake Game at game 2 of 5, carries on when you close it");
+  } finally {
+    await b.ev(`window.fetch = window.__rc.real`);
+    await b.ev(`import("/js/runsbar.js").then((m) => { m.paintRunsBar(null); })`);
   }
 }

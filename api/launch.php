@@ -193,12 +193,18 @@ if ($busy !== null) {
     xs_json(['ok' => false, 'error' => ($busy['title'] ?? 'a game') . ' is still running: quit it first',
              'running' => $busy['title'] ?? null], 409);
 }
-// The runs check starts games of its own, one after another.
-// A dry run is refused too, so the tests can see this without a real launch.
+// The runs check starts games of its own, one after another. Play asks it to
+// make way, and the page presses Play again once it has paused for this game.
+// A dry run asks too, so the tests can see this without a real launch.
 require_once __DIR__ . '/../includes/runcheck.php';
-if (xs_runcheck_active()) {
-    xs_log('FAIL', '409 ' . $game['title'] . ' was not started: the runs check is going (launch.php)');
-    xs_json(['ok' => false, 'error' => 'the runs check is going: stop it first (Emulators > Runs check)'], 409);
+$rc = xs_runcheck_status();
+if ($rc['running'] && empty($rc['paused'])) {
+    if (!xs_runcheck_make_way($game, $why)) {
+        xs_log('FAIL', '409 ' . $game['title'] . ' was not started: the runs check could not be asked to make way (' . $why . ')');
+        xs_json(['ok' => false, 'error' => 'the games check could not be asked to make way (' . $why . '): Stop in the corner stops it'], 409);
+    }
+    xs_log('RCHK', 'Play on ' . $game['title'] . ' at game ' . (int) ($rc['index'] ?? 0) . ' of ' . (int) ($rc['total'] ?? 0) . ': the check is asked to make way');
+    xs_json(['ok' => false, 'makingWay' => true, 'error' => 'the games check is making way for ' . $game['title']], 409);
 }
 
 $script = XS_ROOT . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'launch.ps1';
