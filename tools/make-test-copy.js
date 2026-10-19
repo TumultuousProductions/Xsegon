@@ -49,6 +49,8 @@ const withLb = release || process.argv.includes("--with-launchbox");
 const buildAt = process.argv.indexOf("--build");
 const build = buildAt > 0 ? String(process.argv[buildAt + 1] || "") : "";
 if (buildAt > 0 && !/^[A-Za-z0-9][A-Za-z0-9._-]{0,23}$/.test(build)) { console.log("--build wants a short name, like v0.01"); process.exit(2); }
+// A release says which version it is (RELEASE.json, below): copies compare it with the newest.
+if (release && !/^v\d+(\.\d+){1,3}$/.test(build)) { console.log("--release wants --build with its version, like --build v0.15"); process.exit(2); }
 const args = process.argv.slice(2).filter((a, i) => a !== "--with-launchbox" && a !== "--release" && a !== "--build" && i + 2 !== buildAt + 1);
 const out = args[0];
 if (!out) { console.log("say where: node tools\\make-test-copy.js <folder>"); process.exit(2); }
@@ -190,6 +192,19 @@ if (build) {
   console.log("package " + line);
 } else {
   console.log("no --build: this package will not say which copy it is");
+}
+
+// A release names its version and each of Xsegon's own files with its size and
+// SHA-256 in a signed list (RELEASE.json and .sig, read by includes\version.php
+// xs_release and bin\update.php), and makes the update the copies before it take:
+// Xsegon-update-<v>.zip, .json and .sig beside the big zip, uploaded with it
+// (tools\update-release.js). A tester's copy has none, so it never asks for a newer one.
+if (release) {
+  const ur = require("./update-release");
+  if (!fs.existsSync(ur.PRIVATE_KEY)) { console.log("STOP: a release is signed, and there is no key yet: node tools\\update-release.js --new-key, once"); process.exit(1); }
+  const made = ur.makeUpdate({ app, version: build.slice(1), key: ur.PRIVATE_KEY, out: path.dirname(path.resolve(out)) });
+  console.log("release " + build.slice(1) + ": " + made.files + " of Xsegon's own files in the signed list; the update, "
+    + (made.zipBytes / 1048576).toFixed(1) + " MB, and its list and signature beside the zip: upload all four");
 }
 
 // php.ini: the certificate lines name a folder on this PC; start.ps1 gives

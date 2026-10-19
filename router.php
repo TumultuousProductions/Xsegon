@@ -62,7 +62,9 @@ if ($path !== '/' && is_file($file)) {
     if ($real !== false && strncasecmp($real, __DIR__ . DIRECTORY_SEPARATOR, strlen(__DIR__) + 1) === 0
         && preg_match('#^(index\.php|play\.php|api/[a-z0-9\-]+\.php|js/[a-z0-9\-]+\.js|css/[a-z0-9\-]+\.css|img/[a-z0-9\-]+\.(png|ico)'
             // private\, where it exists: its pages and scripts, nothing else in it
-            . '|private/api/[a-z0-9\-]+\.php|private/web/[a-z0-9\-]+\.js)$#i', $rel)) {
+            . '|private/api/[a-z0-9\-]+\.php|private/web/[a-z0-9\-]+\.js'
+            // custom\, a person's own look (includes\custom.php): stylesheets and the pictures they name, never a script
+            . '|custom/[a-z0-9_\-]+\.css|custom/[a-z0-9_\-]+\.(png|jpe?g|webp|gif))$#i', $rel)) {
         // js\ rides inside the page (index.php) and is asked for here only by the
         // ordinary load. TODO: css\ goes out with no cache headers, so every load sends it again.
         return false;   // let the built-in server handle it

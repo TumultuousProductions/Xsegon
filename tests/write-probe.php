@@ -110,7 +110,7 @@ $check('and keeps it short enough to scan', $longest > 0 && $longest < 200, true
 
 // ---- the version stamp -----------------------------------------------------
 $check('the build line names Xsegon, a version, PHP and the OS',
-    (bool) preg_match('/^Xsegon \d+\.\d+\.\d+ .*PHP \d+\.\d+\.\d+, Windows/', xs_version_line()));
+    (bool) preg_match('/^Xsegon \d+(\.\d+){1,3} .*PHP \d+\.\d+\.\d+, Windows/', xs_version_line()));
 $v = xs_version();
 $check('it found the commit, being a git checkout', (bool) preg_match('/^[0-9a-f]{7}$/', (string) $v['commit']));
 $check('and the branch it is on', is_string($v['branch']) && $v['branch'] !== '');

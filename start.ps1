@@ -12,6 +12,7 @@ param(
     [switch]$NoBrowser,    # server only
     [switch]$Restart,      # stop a server that has stopped answering, and start fresh
     [switch]$Hidden,       # the server out of sight, ended when the app window closes (Start Xsegon.bat)
+    [switch]$GoBack,       # take the last update out again, for when its page will not work
     [int]$Port = 8099      # somewhere else, if 8099 belongs to something of yours
 )
 
@@ -274,6 +275,29 @@ if ($holder) {
     Write-Host '  Stopped. Starting fresh.' -ForegroundColor DarkGray
 }
 
+# --- a new version, put in place while no server runs (bin\update-start.ps1) ---
+# Update now or Go back was pressed (or -GoBack given): the switch is made now,
+# and the start goes on in the start.ps1 of the version that is now in place.
+$updateStart = Join-Path $root 'bin\update-start.ps1'
+if (Test-Path -LiteralPath $updateStart) {
+    if ($GoBack -and (Test-Path -LiteralPath (Join-Path $root 'data\update\switch.json'))) {
+        Set-Content -LiteralPath (Join-Path $root 'data\update\back.json') -Value '{}' -Encoding ascii
+    }
+    . $updateStart
+    $updated = Invoke-XsegonUpdate $root $phpPath
+    if ($updated) {
+        Write-Host "  Xsegon $(if ($updated -eq 'back') { 'went back to the version before' } else { 'was updated' }): starting it." -ForegroundColor Cyan
+        $again = @{} + $PSBoundParameters
+        [void]$again.Remove('GoBack')
+        try { & (Join-Path $root 'start.ps1') @again; exit $LASTEXITCODE }
+        catch {
+            # The new start.ps1 would not run at all: the version before is put back, and starts.
+            if ($updated -eq 'switched' -and (Undo-XsegonUpdate $root $phpPath)) { & (Join-Path $root 'start.ps1') @again; exit $LASTEXITCODE }
+            throw
+        }
+    }
+}
+
 Write-Host ''
 Write-Host "  http://127.0.0.1:$port" -ForegroundColor Cyan
 Write-Host '  Ctrl+C to stop.' -ForegroundColor DarkGray
@@ -301,6 +325,8 @@ $phpArgs += @('-d', "opcache.cache_id=$cacheId")
 if (Test-Path -LiteralPath (Join-Path (Split-Path $phpPath -Parent) 'ext\php_ffi.dll')) {
     $phpArgs += @('-d', 'extension=ffi', '-d', 'ffi.enable=1')
 }
+# Update now says whether Xsegon opens again by itself (includes\update.php): only a start that waits on the window does.
+if ($hiding) { $env:XSEGON_RESTARTS = '1' } else { Remove-Item Env:XSEGON_RESTARTS -ErrorAction SilentlyContinue }
 $server = Start-Process -FilePath $phpPath -NoNewWindow -PassThru -ArgumentList ($phpArgs + @(
     '-S', "127.0.0.1:$port", '-t', "`"$root`"", "`"$(Join-Path $root 'router.php')`""))
 
@@ -315,6 +341,24 @@ for ($i = 0; $i -lt 120 -and -not $up -and -not $server.HasExited; $i++) {
 # The port being open is not the same as the app working: a PHP that dies on
 # a parse error can still have been listening for a moment. Ask it something.
 $alive = $up -and (Test-XsegonAlive $port)
+
+# The first start of a version just put in place: one that does not answer is taken out again.
+$firstStart = Join-Path $root 'data\update\first-start.json'
+if (Test-Path -LiteralPath $firstStart) {
+    Remove-Item -LiteralPath $firstStart -Force -ErrorAction SilentlyContinue
+    if (-not $alive) {
+        if (-not $server.HasExited) { Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue }
+        for ($i = 0; $i -lt 20 -and (Test-PortListening $port); $i++) { Start-Sleep -Milliseconds 150 }
+        . (Join-Path $root 'bin\update-start.ps1')
+        if (Undo-XsegonUpdate $root $phpPath) {
+            Write-Line 'the new version did not answer at its first start: the version before is back'
+            Write-Host '  The new version did not start on this PC. The version before is back: starting it.' -ForegroundColor Yellow
+            & (Join-Path $root 'start.ps1') @PSBoundParameters
+            exit $LASTEXITCODE
+        }
+    }
+}
+
 if (-not $alive) {
     Write-Host ''
     if ($server.HasExited) {
@@ -403,6 +447,11 @@ try {
             break
         }
         if (-not $goneAt) { $goneAt = Get-Date }
+        # Update now or Go back closed the window: no waiting for it to come back.
+        if ((Test-Path -LiteralPath (Join-Path $root 'data\update\go.json')) -or (Test-Path -LiteralPath (Join-Path $root 'data\update\back.json'))) {
+            Write-Line "the app window was closed to update: ending the server (process $($server.Id))"
+            break
+        }
         if (((Get-Date) - $goneAt).TotalSeconds -lt $GoneSec) { continue }
         if (Test-GameOn) {
             if (-not $heldFor) { $heldFor = 'game'; Write-Line 'the app window is closed but a game is still running: the server stays until it ends' }
@@ -414,4 +463,12 @@ try {
     if ($server.HasExited) { Write-Line "the server ended by itself (exit code $($server.ExitCode))" }
 } finally {
     if (-not $server.HasExited) { Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue }
+}
+
+# Update now or Go back closed the window: with the server ended, the switch is made and Xsegon opens again.
+if ((Test-Path -LiteralPath (Join-Path $root 'data\update\go.json')) -or (Test-Path -LiteralPath (Join-Path $root 'data\update\back.json'))) {
+    for ($i = 0; $i -lt 20 -and (Test-PortListening $port); $i++) { Start-Sleep -Milliseconds 150 }
+    Write-Line 'starting again to put the new version in place'
+    & (Join-Path $root 'start.ps1') @PSBoundParameters
+    exit $LASTEXITCODE
 }
