@@ -56,8 +56,9 @@ module.exports = async function (b, check) {
 
   // ---- the stand-in ----
   const asked = [];
-  const say = { search: {}, rom: {}, media: {}, refuse: null, shared: null };
+  const say = { search: {}, rom: {}, media: {}, refuse: null, shared: null, sharedOff: false };
   let siteAsked = 0;
+  const sitePress = [];
   const quota = { requeststoday: "12", maxrequestsperday: "20000", maxthreads: "1", id: LOGIN.user };
   const server = http.createServer((req, res) => {
     const u = new URL(req.url, "http://127.0.0.1");
@@ -67,6 +68,9 @@ module.exports = async function (b, check) {
     // The website's copy of Xsegon's own developer ID, not ScreenScraper's.
     if (u.pathname === "/shared.json") {
       siteAsked++;
+      sitePress.push(q.press || "");
+      // Past its daily limit the real page says "off" to a Fetch only.
+      if (say.sharedOff && q.press === "fetch") { return send(200, JSON.stringify({ v: 1, off: true }), "application/json"); }
       return say.shared ? send(200, say.shared, "application/json") : send(404, "Not Found");
     }
     if (say.refuse) { return send(say.refuse.status, say.refuse.body); }
@@ -376,6 +380,19 @@ module.exports = async function (b, check) {
     const logsNow = fs.readdirSync(path.join(DATA, "log")).map((f) => fs.readFileSync(path.join(DATA, "log", f), "utf8")).join("\n");
     check("neither shared one is in the job file or the log", [SHARED, SHARED2].some((d) => told(fs.readFileSync(jobFile, "utf8"), d) || told(logsNow, d)), false);
     check("the log says where it came from", /SSCR Xsegon's own developer ID fetched from the website \(a new one\)/.test(logsNow) && /SSCR Xsegon's own developer ID: the website gave none \(it answered 404\); the kept copy is used/.test(logsNow), true);
+
+    // The website counts only a Fetch; past its daily limit it answers "off" to one.
+    check("each ask of the website says which press it was", [...new Set(sitePress)].sort(), ["check", "fetch", "save"]);
+    say.sharedOff = true;
+    asked.length = 0;
+    const paused = await api("api/screenscraper.php", { ids: [A.id] });
+    check("past the website's daily limit a Fetch is refused, kept copy or not, and says why",
+      [paused.ok, /^ScreenScraper videos are paused for today; the other video sources still work$/.test(paused.error || ""), asked.filter((a) => a.path !== "/shared.json").length], [false, true, 0]);
+    const stillChecks = await api("api/screenscraper.php", { check: true });
+    check("Check the login is still answered then", [stillChecks.check.ok, stillChecks.account.shared], [true, true]);
+    const logsPaused = fs.readdirSync(path.join(DATA, "log")).map((f) => fs.readFileSync(path.join(DATA, "log", f), "utf8")).join("\n");
+    check("the log says the website paused it", /SSCR Xsegon's own developer ID: the website says fetches are paused for today/.test(logsPaused), true);
+    say.sharedOff = false;
 
     await b.goto();
     await b.setView("grid");
