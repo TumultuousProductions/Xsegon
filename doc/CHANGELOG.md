@@ -2,6 +2,10 @@
 
 Newest first: what changed for the person at the screen.
 
+## 2026-10-19
+
+- **ScreenScraper videos pause on a day with too many fetches.** Everyone with no developer ID of their own shares Xsegon's, so Xsegon's website now counts each Fetch. Past the day's limit, Fetch says "ScreenScraper videos are paused for today; the other video sources still work" until midnight, New York time; Check the login still answers. A developer ID of your own is never paused, and when the website cannot be reached the copy kept on this PC is used as before.
+
 ## 2026-10-18
 
 - **A look of your own that updates never undo.** Settings > Feel > Your own look > Open my folder makes a custom folder in Xsegon's folder, with a stylesheet that says what to do in it. Xsegon reads it after its own, so what you write there wins; save, press F5, and the change shows. No download carries that folder and no update touches it. A mistake there only makes the page look wrong, and High contrast leaves it out. Report a problem now also says which of Xsegon's own files were changed from the release.
