@@ -120,8 +120,8 @@ module.exports = async function (b, check) {
     /* ---- what a phone that was let in is told ------------------------------ */
     const list = await ask(port, "/p/list", { cookie });
     const games = list.json.games || [];
-    check("the list: five things a game and nothing else of yours",
-          [list.status, list.json.ok, games.length > 0, Object.keys(games[0] || {}).sort().join()], [200, true, true, "hasArt,id,platform,playable,title"]);
+    check("the list: six things a game and nothing else of yours",
+          [list.status, list.json.ok, games.length > 0, Object.keys(games[0] || {}).sort().join()], [200, true, true, "hasArt,hasLogo,id,platform,playable,title"]);
     check("200 at a time at the most, with how many there are in all and the consoles",
           [games.length <= 200, list.json.count >= games.length, (list.json.consoles || []).length > 0], [true, true, true]);
     const word = ((games[0] || {}).title || "").split(/\s+/).filter((w) => w.length > 3)[0] || (games[0] || {}).title || "a";
@@ -133,7 +133,18 @@ module.exports = async function (b, check) {
     if (boxed) {
       const art = await ask(port, "/p/art?id=" + encodeURIComponent(boxed.id), { cookie });
       check("a game's box comes as a picture", [art.status, /^image\//.test(art.headers["content-type"] || ""), art.raw.length > 500], [200, true, true]);
+      const bigArt = await ask(port, "/p/art?id=" + encodeURIComponent(boxed.id) + "&big=1", { cookie });
+      check("and at its own size, for the large cover in the middle of Covers",
+            [bigArt.status, /^image\//.test(bigArt.headers["content-type"] || ""), bigArt.raw.length >= art.raw.length], [200, true, true]);
     } else { console.log("    (no game on the first page has a box: the picture check steps aside)"); }
+    const logoed = games.find((g) => g.hasLogo);
+    if (logoed) {
+      const lg = await ask(port, "/p/art?id=" + encodeURIComponent(logoed.id) + "&kind=logo", { cookie });
+      check("a game's Clear Logo comes as a picture too, for the Wheel's plates", [lg.status, /^image\//.test(lg.headers["content-type"] || "")], [200, true]);
+    } else { console.log("    (no game on the first page has a Clear Logo: the logo check steps aside)"); }
+    const tick = await ask(port, "/p/sound", { cookie });
+    check("the Wheel's click: the PC's Move sound", [tick.status, /^audio\//.test(tick.headers["content-type"] || "")], [200, true]);
+    check("and not for a phone that was never let in", (await ask(port, "/p/sound", {})).status, 401);
     check("a picture asked for by a path is refused", (await ask(port, "/p/art?id=" + encodeURIComponent("..\\..\\settings.json"), { cookie })).status, 404);
     const now = await ask(port, "/p/now", { cookie });
     check("what plays on the TV: nothing", [now.status, now.json.running], [200, null]);
@@ -211,6 +222,71 @@ module.exports = async function (b, check) {
         await b.send("Network.setCookie", { name: "xsp", value: cookie.slice(4), domain: "127.0.0.1", path: "/", httpOnly: true, sameSite: "Strict" });
         await b.send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
         phoneSized = true;
+
+        // ---- your games in pictures (AB4): List, Grid, Covers, with nothing playing ----------
+        fs.rmSync(runFile, { force: true });
+        const openPhone = async () => {
+          await b.send("Page.navigate", { url: "http://127.0.0.1:" + port + "/" });
+          await b.until(`document.querySelectorAll("#list li, #c-row .cover").length > 0`, true, 10000);
+        };
+        await openPhone();
+        await b.ev(`localStorage.removeItem("xsLook")`);         // a first visit, as the next check assumes
+        await openPhone();
+        const LOOKS = `[...document.querySelectorAll("#looks button")].map((x) => x.textContent + (x.classList.contains("on") ? " (on)" : ""))`;
+        check("above your games: List, Grid, Covers and Wheel, List as it comes", await b.ev(LOOKS), ["List (on)", "Grid", "Covers", "Wheel"]);
+        await b.clickSel('#looks button[data-look="grid"]');
+        const arty = games.slice(0, 12).some((g) => g.hasArt);
+        check("Grid: box art three across, each with its name under it",
+              await b.until(`(l => [l.className, getComputedStyle(l).gridTemplateColumns.split(" ").length, [...l.children].slice(0, 12).every((li) => li.querySelector(".t").textContent.length > 0),
+                ${arty} ? [...l.querySelectorAll("img.art")].slice(0, 12).some((i) => i.complete && i.naturalWidth > 0) : true])(document.getElementById("list"))`, ["grid", 3, true, true], 8000),
+              ["grid", 3, true, true]);
+        await openPhone();
+        check("kept on this phone: opened again, it is Grid", await b.ev(`[${LOOKS}, document.getElementById("list").className]`), [["List", "Grid (on)", "Covers", "Wheel"], "grid"]);
+        await b.clickSel('#looks button[data-look="covers"]');
+        const MID = `[[...document.getElementById("c-row").children].indexOf(document.querySelector(".cover.mid")), document.getElementById("c-title").textContent]`;
+        check("Covers: the first game large in the middle, its name under it", await b.until(MID, [0, games[0].title], 6000), [0, games[0].title]);
+        check("with its console and where it is, of how many", await b.ev(`document.getElementById("c-sub").textContent`), games[0].platform + " · 1 of " + list.json.count);
+        await b.ev(`(r => { const k = r.children[2]; r.scrollLeft = k.offsetLeft + k.offsetWidth / 2 - r.clientWidth / 2; })(document.getElementById("c-row"))`);
+        check("a swipe brings the next ones to the middle", await b.until(MID, [2, games[2].title], 4000), [2, games[2].title]);
+        if (games[2].hasArt) {
+          check("the one in the middle is drawn at its own size",
+                await b.until(`(i => !!i && /&big=1$/.test(i.src) && i.naturalWidth > 0)(document.querySelector(".cover.mid img"))`, true, 8000), true);
+        }
+        await b.clickSel(".cover.mid");
+        check("a tap on it opens its sheet, with Play on the TV",
+              await b.until(`[document.getElementById("sheet").className, document.getElementById("s-title").textContent]`, ["on", games[2].title], 3000), ["on", games[2].title]);
+        await b.clickSel("#s-shut");
+        const typeIn = (w) => b.ev(`(q => { q.value = ${JSON.stringify(w)}; q.dispatchEvent(new Event("input", { bubbles: true })); })(document.getElementById("q"))`);
+        await typeIn(word);
+        check("typed words narrow the covers too", await b.until(`document.getElementById("c-row").children.length`, Math.min(found.json.count, 200), 5000), Math.min(found.json.count, 200));
+        await typeIn("");
+        await b.until(`document.getElementById("c-row").children.length`, games.length, 5000);
+        await b.clickSel('#looks button[data-look="wheel"]');
+        const WSEL = `[[...document.querySelectorAll("#w-plates .wp")].indexOf(document.querySelector(".wp.sel")), document.getElementById("w-title").textContent]`;
+        check("Wheel: the first game's plate chosen, larger, its name under the wheel", await b.until(WSEL, [0, games[0].title], 6000), [0, games[0].title]);
+        check("the chosen plate level, the ones after it turned down the curve",
+              await b.ev(`(p => [p[0].style.transform, p[1].style.transform, p[2].style.transform])([...document.querySelectorAll("#w-plates .wp")])`),
+              ["translateY(-50%) rotate(0deg)", "translateY(-50%) rotate(-12deg)", "translateY(-50%) rotate(-21deg)"]);    // as the browser writes them back
+        if (games[0].hasArt) {
+          check("with the chosen game's box art beside it",
+                await b.until(`(a => !a.hidden && a.dataset.id === ${JSON.stringify(games[0].id)} && a.complete && a.naturalWidth > 0)(document.getElementById("w-art"))`, true, 6000), true);
+        }
+        if (games.slice(0, 8).some((g) => g.hasLogo)) {
+          check("the plates near it wear their Clear Logos", await b.until(`[...document.querySelectorAll("#w-plates .wp img")].some((i) => i.complete && i.naturalWidth > 0)`, true, 8000), true);
+        }
+        await b.ev(`document.getElementById("wheel").scrollTop = 3 * 28`);
+        check("the plates that turned away are gone, not left faint where they went",
+              await b.ev(`[...document.querySelectorAll("#w-plates .wp")].filter((p) => getComputedStyle(p).display !== "none").length <= 11`), true);
+        check("a swipe turns the wheel: the fourth game chosen, named, and where it is of how many",
+              await b.until(`[${WSEL}, document.getElementById("w-sub").textContent]`, [[3, games[3].title], games[3].platform + " · 4 of " + list.json.count], 4000),
+              [[3, games[3].title], games[3].platform + " · 4 of " + list.json.count]);
+        await b.clickSel(".wp.sel");
+        check("a tap on the chosen plate opens its sheet, with Play on the TV",
+              await b.until(`[document.getElementById("sheet").className, document.getElementById("s-title").textContent]`, ["on", games[3].title], 3000), ["on", games[3].title]);
+        await b.clickSel("#s-shut");
+        await b.clickSel('#looks button[data-look="list"]');
+        await b.until(`document.querySelectorAll("#list li").length === ${games.length}`, true, 6000);
+
         standIn();
         await b.send("Page.navigate", { url: "http://127.0.0.1:" + port + "/" });
         const GAME = `[document.body.classList.contains("in-game"), (document.getElementById("g-title") || {}).textContent, [...document.querySelectorAll("#g-tabs button")].map((t) => t.textContent)]`;

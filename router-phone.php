@@ -46,11 +46,12 @@ const XS_PHONE_PATHS = [
     '/p/place'   => 'POST',
     '/p/buttons' => 'GET',
     '/p/cheats'  => 'GET',
+    '/p/sound'   => 'GET',          // the Wheel's click: the PC's own Move sound
 ];
 // The booklet's libraries, as the main server's door names them (router.php): a folder per version, scripts and decoders.
 const XS_PHONE_VENDOR = '#^/js/vendor/([a-z][a-z0-9\-]*-\d+(?:\.\d+)*)/([a-z0-9_\-]+(?:\.[a-z0-9]+)*\.(js|wasm))$#i';
-// What a phone is told of a game: enough to find it and start it. No file name, no path, no play history, no notes.
-const XS_PHONE_ROW = ['id', 'title', 'platform', 'hasArt', 'playable'];
+// What a phone is told of a game: enough to find it, show it and start it. No file name, no path, no play history, no notes.
+const XS_PHONE_ROW = ['id', 'title', 'platform', 'hasArt', 'hasLogo', 'playable'];
 const XS_PHONE_ID = '/^[A-Za-z0-9._:-]{1,120}$/';
 
 function xs_phone_say(int $code, array $answer): void
@@ -302,12 +303,22 @@ if ($path === '/p/buttons' || $path === '/p/cheats') {
              'from' => (string) max(0, (int) ($asked['from'] ?? 0)), 'lot' => '200', 'sort' => 'title'];
     ob_start('xs_phone_slim');
     $file = $root . '/api/library.php';
+} elseif ($path === '/p/sound') {
+    // Move in the set chosen on the PC, the one the TV's wheel plays; nothing while the PC's sounds are off.
+    require_once $root . '/includes/settings.php';
+    if (empty(xs_settings()['sound']['sounds'])) {
+        http_response_code(204);
+        exit;
+    }
+    $_GET = ['name' => 'move'];
+    $file = $root . '/api/sound.php';
 } else {                                       // /p/art
     $id = (string) ($asked['id'] ?? '');
     if (!preg_match('/^[A-Za-z0-9._:-]{1,120}$/', $id)) {
         xs_phone_say(404, ['ok' => false, 'error' => 'no such picture']);
     }
-    $_GET = ['id' => $id, 'kind' => 'box'];
+    // big=1: the box at its own size, for the one cover large in the middle of Covers; kind=logo: the Clear Logo on a plate of the Wheel (roadmap AB4)
+    $_GET = ['id' => $id, 'kind' => ($asked['kind'] ?? '') === 'logo' ? 'logo' : 'box'] + (($asked['big'] ?? '') === '1' ? ['size' => 'full'] : []);
     $file = $root . '/api/image.php';
 }
 $_SERVER['SCRIPT_NAME'] = '/api/' . basename($file);

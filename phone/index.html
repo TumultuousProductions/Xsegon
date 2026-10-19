@@ -1,5 +1,6 @@
 <!doctype html>
-<!-- The phone page: the library on a phone, Play on the TV, and while a game
+<!-- The phone page: the library on a phone as a list, a grid of box art or
+     covers swiped side to side (roadmap AB4), Play on the TV, and while a game
      plays its own page: the manual as a booklet (reader.js), maps, buttons and
      cheats (roadmap BA6, AB2). Served by router-phone.php only, with reader.js
      and the booklet's libraries beside it. -->
@@ -32,6 +33,52 @@
   .t { display: block; }
   .p { display: block; color: var(--mute); font-size: 13px; }
   #more { padding: 18px; text-align: center; color: var(--mute); }
+
+  /* the three looks of your games, chosen at the top and kept on this phone */
+  .looks { display: flex; margin-top: 8px; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+  .looks button { flex: 1 1 0; border: 0; border-radius: 0; padding: 7px 4px; font-size: 14px; }
+  .looks button + button { border-left: 1px solid var(--rule); }
+  .looks button.on { background: var(--cyan); color: var(--ground); font-weight: 700; }
+  /* Grid: box art three across (four on a wide phone), the name under each */
+  #list.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 10px; padding: 12px; }
+  @media (min-width: 560px) { #list.grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  #list.grid li { flex-direction: column; align-items: stretch; gap: 6px; padding: 0; border: 0; min-height: 0; }
+  #list.grid .art { width: 100%; height: auto; aspect-ratio: 3 / 4; }
+  #list.grid .t { font-size: 13px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  #list.grid .p { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* Covers: one large in the middle, the next ones swiped in from the sides */
+  #covers { padding: 6px 0 4px; }
+  #c-row { position: relative; display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain;
+           padding: 14px calc(50% - min(31vw, 170px)); scrollbar-width: none; }
+  #c-row::-webkit-scrollbar { display: none; }
+  .cover { flex: none; width: min(62vw, 340px); aspect-ratio: 3 / 4; padding: 0; border: 0; border-radius: 6px; overflow: hidden; background: #000;
+           scroll-snap-align: center; display: grid; place-items: center; transform: scale(.84); opacity: .55; transition: transform .18s ease-out, opacity .18s; }
+  .cover.mid { transform: none; opacity: 1; box-shadow: 0 0 0 2px var(--cyan); }
+  .cover img { display: block; width: 100%; height: 100%; object-fit: contain; }
+  .cover .none { padding: 14px; color: var(--mute); font-size: 15px; text-align: center; }
+  #c-title { margin: 8px 16px 0; font-size: 19px; text-align: center; }
+  #c-sub { margin: 2px 16px 0; color: var(--mute); font-size: 14px; text-align: center; font-variant-numeric: tabular-nums; }
+  @media (prefers-reduced-motion: reduce) { .cover { transition: none; } }
+  /* Wheel, as the TV's: plates (a Clear Logo, or the name) on a curve turning round a point off the right edge,
+     the chosen one larger, its box art beside it. The phone's own scroll turns it, so a flick spins and settles. */
+  #wheel { position: relative; overflow-y: auto; overscroll-behavior: contain; scroll-snap-type: y mandatory; scrollbar-width: none; }
+  #wheel::-webkit-scrollbar { display: none; }
+  #w-stage { position: sticky; top: 0; height: var(--wh, 480px); margin-bottom: calc(-1 * var(--wh, 480px)); overflow: hidden; pointer-events: none; z-index: 1; }
+  #w-track { padding: calc(var(--wh, 480px) / 2 - var(--ws, 28px) / 2) 0; }
+  #w-track div { height: var(--ws, 28px); scroll-snap-align: center; }
+  #w-art { position: absolute; left: 3%; top: 44%; width: 44%; aspect-ratio: 3 / 4; object-fit: contain; transform: translateY(-50%); filter: drop-shadow(0 6px 14px rgba(0, 0, 0, .6)); }
+  .wp { position: absolute; top: 44%; right: 10px; width: 45%; height: 35px; display: flex; align-items: center; justify-content: center; padding: 3px 8px;
+        background: rgba(18, 28, 48, .86); border: 1px solid rgba(94, 224, 255, .3); color: var(--mute); font-size: 12px; letter-spacing: .04em;
+        white-space: nowrap; overflow: hidden; transform-origin: calc(50% + 184px) 50%; will-change: transform, opacity;
+        clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px)); }
+  .wp[hidden] { display: none; }        /* else display: flex keeps a plate that turned away, faint where it left */
+  .wp img { display: block; max-height: 26px; max-width: 100%; object-fit: contain; }
+  .wp .t { overflow: hidden; text-overflow: ellipsis; }
+  .wp.sel { width: 50%; height: 50px; color: var(--ink); border-color: var(--cyan); background: rgba(18, 28, 48, .96); font-size: 14px; }
+  .wp.sel img { max-height: 38px; }
+  #w-cap { position: absolute; left: 0; right: 0; bottom: 10px; padding: 0 12px; text-align: center; }
+  #w-title { margin: 0; font-size: 18px; }
+  #w-sub { margin: 2px 0 0; color: var(--mute); font-size: 14px; font-variant-numeric: tabular-nums; }
   #sheet, #dsheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 9; display: none; background: var(--sheet); border-top: 1px solid var(--cyan);
            padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); }
   #sheet.on, #dsheet.on { display: block; }
@@ -53,7 +100,7 @@
   /* the playing game's page: the list steps aside while it is open */
   #game { display: none; padding: 10px 12px 18px; }
   body.in-game #game { display: block; }
-  body.in-game #find, body.in-game #list, body.in-game #more, body.in-game #said { display: none !important; }
+  body.in-game #find, body.in-game #looks, body.in-game #list, body.in-game #covers, body.in-game #wheel, body.in-game #more, body.in-game #said { display: none !important; }
   #now.go { cursor: pointer; }
   #now.go::after { content: " \203A"; }
   .g-top { display: flex; align-items: center; gap: 10px; }
@@ -99,11 +146,19 @@
     <input id="q" type="search" placeholder="Search your games" autocomplete="off" spellcheck="false">
     <select id="console" aria-label="Console"><option value="">All consoles</option></select>
   </div>
+  <div class="looks" id="looks" role="tablist" aria-label="How your games are shown" hidden>
+    <button type="button" role="tab" data-look="list">List</button><button type="button" role="tab" data-look="grid">Grid</button><button type="button" role="tab" data-look="covers">Covers</button><button type="button" role="tab" data-look="wheel">Wheel</button>
+  </div>
   <div id="now"></div>
 </header>
 <p id="said">Asking the PC...</p>
 <button id="again" type="button" hidden>Open it again</button>
 <ul id="list"></ul>
+<div id="covers" hidden><div id="c-row"></div><p id="c-title"></p><p id="c-sub"></p></div>
+<div id="wheel" hidden>
+  <div id="w-stage"><img id="w-art" alt="" hidden><div id="w-plates"></div><div id="w-cap"><p id="w-title"></p><p id="w-sub"></p></div></div>
+  <div id="w-track"></div>
+</div>
 <div id="more" hidden></div>
 <section id="game" aria-labelledby="g-title">
   <div class="g-top"><button id="g-back" type="button">&#8249; Library</button><div><p id="g-title"></p><p id="g-sub"></p></div></div>
@@ -127,6 +182,11 @@
   "use strict";
   var $ = function (id) { return document.getElementById(id); };
   var LOT = 200, games = [], total = 0, asked = 0, chosen = null, busy = false, consolesIn = false, timer = 0;
+  var LOOKS = ["list", "grid", "covers", "wheel"], look = "list", mid = -1, raf = 0;
+  var STEP = 28, ARC = 9, GAP = 3, plates = [], wsel = -1, wraf = 0, bigT = 0;     // the Wheel: px of swipe a game, degrees a plate
+  var audio = null, tick = null, tickAt = 0;                                         // the Wheel's click: the PC's Move sound
+  try { look = localStorage.getItem("xsLook") || "list"; } catch (e) { /* nothing kept on this phone: List */ }
+  if (LOOKS.indexOf(look) < 0) { look = "list"; }
 
   // Every question to the PC: the cookie goes by itself, and the header says this page sent it.
   function ask(path, body) {
@@ -167,17 +227,186 @@
       busy = false;
       if (a.status === 401) { notIn(a.error); return; }
       if (!a.ok) { say(a.error || "The list could not be read.", true); return; }
-      if (fresh) { games = []; $("list").textContent = ""; window.scrollTo(0, 0); }
+      if (fresh) { games = []; clearLooks(); window.scrollTo(0, 0); }
       total = a.count;
-      a.games.forEach(function (g) { games.push(g); $("list").appendChild(row(g)); });
+      a.games.forEach(function (g) { games.push(g); add(g); });
       if (!consolesIn && a.consoles.length) {
         consolesIn = true;
         a.consoles.forEach(function (c) { var o = document.createElement("option"); o.value = c.name; o.textContent = c.name + " (" + c.count + ")"; $("console").appendChild(o); });
       }
       say(total ? "" : "No game matches that.", false);
-      $("more").hidden = games.length >= total;
-      $("more").textContent = games.length + " of " + total + " shown: scroll for more";
+      more();
+      settle();
     });
+  }
+  function more() {
+    $("more").hidden = look === "wheel" || games.length >= total;      // the Wheel asks for more as it nears its end
+    $("more").textContent = games.length + " of " + total + " shown: " + (look === "covers" ? "swipe on for more" : "scroll for more");
+  }
+
+  /* ---- the four looks: List, Grid (the list's rows as box art three across), Covers, Wheel ---- */
+
+  function setLook(v) {
+    look = v;
+    try { localStorage.setItem("xsLook", v); } catch (e) { /* kept for this visit only */ }
+    [].forEach.call($("looks").children, function (b) { var on = b.dataset.look === v; b.className = on ? "on" : ""; b.setAttribute("aria-selected", on ? "true" : "false"); });
+    $("list").className = v === "grid" ? "grid" : "";
+    $("list").hidden = v === "covers" || v === "wheel";
+    $("covers").hidden = v !== "covers";
+    $("wheel").hidden = v !== "wheel";
+    clearLooks();
+    if (v === "wheel") { wheelSize(); }
+    games.forEach(add);
+    settle();
+    more();
+  }
+  function clearLooks() {
+    $("list").textContent = ""; $("c-row").textContent = ""; $("c-row").scrollLeft = 0; mid = -1;
+    $("w-plates").textContent = ""; $("w-track").textContent = ""; $("wheel").scrollTop = 0; plates = []; wsel = -1;
+  }
+  // One game into the look in sight.
+  function add(g) {
+    if (look === "covers") { $("c-row").appendChild(cover(g)); }
+    else if (look === "wheel") { var p = plate(g); plates.push(p); $("w-plates").appendChild(p); $("w-track").appendChild(document.createElement("div")); }
+    else { $("list").appendChild(row(g)); }
+  }
+  function settle() { if (look === "covers") { centre(); } else if (look === "wheel") { spin(); } }
+
+  // The Wheel takes the screen under the top bar; each game is a stretch of swipe, so the phone's own scroll turns it.
+  function wheelSize() {
+    var h = Math.max(300, window.innerHeight - document.querySelector("header").offsetHeight);
+    $("wheel").style.height = h + "px";
+    $("wheel").style.setProperty("--wh", h + "px");
+    $("wheel").style.setProperty("--ws", STEP + "px");
+  }
+  // The TV wheel's click, the PC's own Move sound. A phone lets a page sound only after a touch, so it wakes at one.
+  function wake() {
+    if (look !== "wheel") { return; }
+    if (audio) { if (audio.state === "suspended") { audio.resume(); } return; }
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) { return; }
+    audio = new AC();
+    fetch("/p/sound", { credentials: "same-origin", headers: { "X-Xsegon-Phone": "1" } }).then(function (r) { return r.status === 200 ? r.arrayBuffer() : null; }).then(function (b) {
+      if (b) { audio.decodeAudioData(b, function (d) { tick = d; }, function () { /* a sound the phone cannot play: silent */ }); }
+    }, function () { /* no answer: silent */ });
+  }
+  // At most one a frame and a half, so a fast fling ticks like a wheel instead of buzzing.
+  function click() {
+    var t = Date.now();
+    if (!tick || audio.state !== "running" || t - tickAt < 25) { return; }
+    tickAt = t;
+    var s = audio.createBufferSource(), v = audio.createGain();
+    v.gain.value = 0.6;
+    s.buffer = tick; s.connect(v); v.connect(audio.destination); s.start();
+  }
+  function plate(g) {
+    var n = document.createElement("div"), t = document.createElement("span");
+    n.className = "wp"; n.hidden = true;
+    t.className = "t"; t.textContent = g.title;
+    n.appendChild(t);
+    return n;
+  }
+  // A plate's Clear Logo, asked for the first time it turns near: the name stays until it has come.
+  function logo(n, g) {
+    n.logoAsked = true;
+    if (!g.hasLogo) { return; }
+    var img = document.createElement("img"), t = n.firstChild;
+    img.alt = g.title; img.decoding = "async";
+    img.onload = function () { if (t.parentNode) { t.remove(); } };
+    img.onerror = function () { img.remove(); };
+    img.src = "/p/art?id=" + encodeURIComponent(g.id) + "&kind=logo";
+    n.appendChild(img);
+  }
+  function spin() {
+    wraf = 0;
+    if (!plates.length) { $("w-title").textContent = ""; $("w-sub").textContent = ""; $("w-art").hidden = true; return; }
+    var f = $("wheel").scrollTop / STEP, near = Math.max(0, Math.min(plates.length - 1, Math.round(f)));
+    for (var i = 0; i < plates.length; i++) {
+      var n = plates[i], d = i - f;
+      if (Math.abs(d) >= 6) { if (!n.hidden) { n.hidden = true; } continue; }
+      if (n.hidden) { n.hidden = false; if (!n.logoAsked) { logo(n, games[i]); } }
+      // Minus turns later games downward round the pivot off the right edge, as the TV's wheel hangs; the chosen one's neighbours stand a little further off.
+      n.style.transform = "translateY(-50%) rotate(" + (d * -ARC - Math.max(-1, Math.min(1, d)) * GAP).toFixed(2) + "deg)";
+      n.style.opacity = String(Math.max(0, 1 - Math.abs(d) / 6).toFixed(3));        // gone by the time it is hidden
+      n.style.zIndex = String(100 - Math.round(Math.abs(d) * 10));
+      n.classList.toggle("sel", i === near);
+    }
+    if (near !== wsel) { if (wsel >= 0) { click(); } wsel = near; wheelChose(near); }
+  }
+  // The chosen game: named under the wheel, its box beside it (sharp once the wheel rests), more asked for near the end.
+  function wheelChose(i) {
+    var g = games[i], art = $("w-art");
+    $("w-title").textContent = g.title;
+    $("w-sub").textContent = g.platform + " · " + (i + 1) + " of " + total;
+    art.hidden = !g.hasArt;
+    clearTimeout(bigT);
+    if (g.hasArt) {
+      var want = "/p/art?id=" + encodeURIComponent(g.id);
+      art.dataset.id = g.id;
+      art.src = want;
+      bigT = setTimeout(function () {
+        var big = new Image();
+        big.onload = function () { if (art.dataset.id === g.id) { art.src = big.src; } };
+        big.src = want + "&big=1";
+      }, 250);
+    }
+    if (i > plates.length - 8 && games.length < total) { load(false); }
+  }
+  // A tap: on the chosen plate or its box, its sheet; on another plate, the wheel turns to it.
+  function wheelTap(e) {
+    var order = [wsel];
+    for (var k = 1; k <= 8; k++) { order.push(wsel - k, wsel + k); }
+    for (var j = 0; j < order.length; j++) {
+      var i = order[j], n = plates[i];
+      if (!n || n.hidden) { continue; }
+      var r = n.getBoundingClientRect();
+      if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
+        if (i === wsel) { open(games[i]); } else { $("wheel").scrollTo({ top: i * STEP, behavior: "smooth" }); }
+        return;
+      }
+    }
+    var a = $("w-art").getBoundingClientRect();
+    if (wsel >= 0 && !$("w-art").hidden && e.clientX >= a.left && e.clientX <= a.right && e.clientY >= a.top && e.clientY <= a.bottom) { open(games[wsel]); }
+  }
+  function cover(g) {
+    var c = document.createElement("button");
+    c.type = "button"; c.className = "cover"; c.setAttribute("aria-label", g.title + ", " + g.platform);
+    var none = function () { c.textContent = ""; var s = document.createElement("span"); s.className = "none"; s.textContent = g.title; c.appendChild(s); };
+    if (g.hasArt) {
+      var img = document.createElement("img");
+      img.alt = ""; img.loading = "lazy"; img.decoding = "async";
+      img.src = "/p/art?id=" + encodeURIComponent(g.id);
+      img.onerror = none;
+      c.appendChild(img);
+    } else { none(); }
+    // The one in the middle opens its sheet; one beside it comes to the middle first.
+    c.addEventListener("click", function () {
+      if (c.classList.contains("mid")) { open(g); } else { c.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" }); }
+    });
+    return c;
+  }
+  // Which cover is in the middle: lit, named under the row, drawn at its own size, and more asked for near the end.
+  function centre() {
+    raf = 0;
+    var r = $("c-row"), kids = r.children;
+    if (!kids.length) { $("c-title").textContent = ""; $("c-sub").textContent = ""; return; }
+    var step = kids.length > 1 ? kids[1].offsetLeft - kids[0].offsetLeft : 1;
+    var i = Math.round((r.scrollLeft + r.clientWidth / 2 - kids[0].offsetLeft - kids[0].offsetWidth / 2) / step);
+    i = Math.max(0, Math.min(kids.length - 1, i));
+    if (i === mid) { return; }
+    if (kids[mid]) { kids[mid].classList.remove("mid"); }
+    mid = i;
+    var c = kids[i], g = games[i], img = c.querySelector("img");
+    c.classList.add("mid");
+    $("c-title").textContent = g.title;
+    $("c-sub").textContent = g.platform + " · " + (i + 1) + " of " + total;
+    if (img && !img.dataset.big) {
+      img.dataset.big = "1";
+      var big = new Image();
+      big.onload = function () { img.src = big.src; };
+      big.src = "/p/art?id=" + encodeURIComponent(g.id) + "&big=1";
+    }
+    if (i > kids.length - 8 && games.length < total) { load(false); }
   }
 
   function open(g) {
@@ -217,6 +446,7 @@
       nowId = rid;
       $("now").className = r ? "on" + (rid ? " go" : "") : "";
       $("now").textContent = r ? "Playing on the TV: " + r.title : "";
+      if (look === "wheel" && !$("wheel").hidden) { wheelSize(); }     // the line takes height from under the bar
       if (rid && rid !== lastRun && (!game || game.id !== rid)) { openGame(rid); }
       if (!rid && lastRun && game && game.id === lastRun) { closeGame(); }
       lastRun = rid;
@@ -353,7 +583,7 @@
       $("dsheet").className = "";
       clearInterval(timer);
       if (game) { closeGame(); }
-      $("find").hidden = true; $("list").textContent = ""; $("more").hidden = true; $("disc").hidden = true; $("now").className = "";
+      $("find").hidden = true; $("looks").hidden = true; $("covers").hidden = true; $("wheel").hidden = true; $("list").textContent = ""; $("more").hidden = true; $("disc").hidden = true; $("now").className = "";
       say("Disconnected: the phone page is switched off on the PC. To come back, choose Switch on in Xsegon's Connect a phone... window on the TV, then Open it again here.", false);
       $("again").hidden = false;
     });
@@ -363,13 +593,15 @@
     clearInterval(timer);
     if (game) { closeGame(); }
     $("disc").hidden = true;
-    $("find").hidden = true; $("list").textContent = ""; $("more").hidden = true; $("who").textContent = "";
+    $("find").hidden = true; $("looks").hidden = true; $("covers").hidden = true; $("wheel").hidden = true; $("list").textContent = ""; $("more").hidden = true; $("who").textContent = "";
     say(why || "This phone has not been let in. On the TV, open the round X's menu, then Connect a phone..., and point this phone's camera at the square.", true);
   }
   function start(name) {
     $("who").textContent = name;
     $("find").hidden = false;
     $("disc").hidden = false;
+    $("looks").hidden = false;
+    setLook(look);
     load(true);
     now();
     timer = setInterval(now, 5000);
@@ -387,8 +619,14 @@
   $("again").addEventListener("click", function () { location.reload(); });
   $("now").addEventListener("click", function () { if (nowId && (!game || game.id !== nowId)) { openGame(nowId); } });
   window.addEventListener("scroll", function () {
-    if (!$("more").hidden && window.innerHeight + window.scrollY > document.body.offsetHeight - 900) { load(false); }
+    if (look !== "covers" && !$("more").hidden && window.innerHeight + window.scrollY > document.body.offsetHeight - 900) { load(false); }
   }, { passive: true });
+  $("c-row").addEventListener("scroll", function () { if (!raf) { raf = requestAnimationFrame(centre); } }, { passive: true });
+  $("wheel").addEventListener("scroll", function () { if (!wraf) { wraf = requestAnimationFrame(spin); } }, { passive: true });
+  $("wheel").addEventListener("click", wheelTap);
+  ["touchend", "click"].forEach(function (k) { document.addEventListener(k, wake, { passive: true }); });
+  window.addEventListener("resize", function () { if (look === "wheel" && !$("wheel").hidden) { wheelSize(); spin(); } });
+  [].forEach.call($("looks").children, function (b) { b.addEventListener("click", function () { if (b.dataset.look !== look) { setLook(b.dataset.look); } }); });
   document.addEventListener("visibilitychange", function () { if (!document.hidden && !$("find").hidden) { now(); } });
 
   // A link from the square carries a code: it is handed in once, and taken out of the address so a bookmark is clean.
