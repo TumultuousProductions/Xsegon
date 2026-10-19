@@ -12,6 +12,7 @@
  * Xsegon's own developer ID comes from Xsegon's website on a press, never in
  * the public code; one the person types is used instead. The sealing stops a
  * casual look only: ScreenScraper puts the developer password in every address it answers with.
+ * The website counts each Fetch, and past its daily limit it answers "off": no fetch is made then.
  *
  * Kept apart from settings.json on purpose: that file goes into a problem
  * report and a backup whole, and these go into neither. The page is told
@@ -160,9 +161,9 @@ function xs_ss_ready(array $a): bool
 
 /**
  * The logins a question goes out with: the person's own developer ID when both
- * its boxes are filled, else Xsegon's own ('shared' true). $pull as xs_ss_shared.
+ * its boxes are filled, else Xsegon's own ('shared' true). $pull and $press as xs_ss_shared.
  */
-function xs_ss_account_in_use(bool $pull = false, ?string &$why = null): array
+function xs_ss_account_in_use(bool $pull = false, ?string &$why = null, string $press = 'check'): array
 {
     $why = null;
     $a   = xs_ss_account();
@@ -171,7 +172,7 @@ function xs_ss_account_in_use(bool $pull = false, ?string &$why = null): array
         return $a;
     }
     // The site is asked only when there is a member login to go with what it gives.
-    $dev = xs_ss_shared($pull && $a['user'] !== '' && $a['password'] !== '', $why);
+    $dev = xs_ss_shared($pull && $a['user'] !== '' && $a['password'] !== '', $why, $press);
     return $dev === null ? $a : array_merge($a, $dev, ['shared' => true]);
 }
 
@@ -223,11 +224,15 @@ function xs_ss_account_forget(): bool
 
 // ---- Xsegon's own developer ID ----------------------------------------------
 
-/** Where the website serves it. Tests point it at a stand-in (XSEGON_SS_SHARED), honoured only beside XSEGON_DATA. */
-function xs_ss_shared_url(): string
+/**
+ * Where the website serves it, saying which press asks (fetch, check or save):
+ * the site counts only a fetch. Tests point it at a stand-in (XSEGON_SS_SHARED), honoured only beside XSEGON_DATA.
+ */
+function xs_ss_shared_url(string $press = 'check'): string
 {
     $test = getenv('XSEGON_SS_SHARED');
-    return is_string($test) && $test !== '' && getenv('XSEGON_DATA') ? $test : 'https://tumultuousproductions.site/xsegon/ss.json';
+    $url  = is_string($test) && $test !== '' && getenv('XSEGON_DATA') ? $test : 'https://tumultuousproductions.site/xsegon/ss.php';
+    return $url . (str_contains($url, '?') ? '&' : '?') . 'press=' . rawurlencode($press);
 }
 
 /** The website copy's key. bin\screenscraper.ps1 builds the same one. */
@@ -289,17 +294,23 @@ function xs_ss_site_file(array $dev): string
 /**
  * Xsegon's own developer ID, or null with $why. $pull asks the website first
  * and keeps what comes, sealed to this computer; without it, or when the
- * website gives none, the kept copy is used.
+ * website gives none, the kept copy is used. $press is the button that asks;
+ * past the website's daily limit of fetches it answers "off", and then nothing is used.
  */
-function xs_ss_shared(bool $pull = false, ?string &$why = null): ?array
+function xs_ss_shared(bool $pull = false, ?string &$why = null, string $press = 'check'): ?array
 {
     $why  = null;
     $path = xs_ss_shared_path();
     $kept = xs_read_json($path, null);
     $have = is_array($kept) && is_string($kept['sealed'] ?? null) ? xs_ss_dev_read(xs_ss_unseal($kept['sealed'], xs_ss_pc_key())) : null;
     if ($pull) {
-        $got  = xs_ss_fetch(xs_ss_shared_url(), 10);
+        $got  = xs_ss_fetch(xs_ss_shared_url($press), 10);
         $site = $got !== null && $got['status'] === 200 ? json_decode(xs_strip_bom($got['body']), true) : null;
+        if (is_array($site) && ($site['off'] ?? false) === true) {
+            $why = 'ScreenScraper videos are paused for today; the other video sources still work';
+            xs_log('SSCR', "Xsegon's own developer ID: the website says fetches are paused for today (its daily limit is reached)");
+            return null;
+        }
         $new  = is_array($site) && is_string($site['sealed'] ?? null) ? xs_ss_dev_read(xs_ss_unseal($site['sealed'], xs_ss_site_key())) : null;
         if ($new !== null) {
             if ($new !== $have) {

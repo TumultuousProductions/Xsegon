@@ -55,7 +55,7 @@ if (is_array($body['account'] ?? null) || !empty($body['check'])) {
         }
         xs_log('SSCR', 'logins saved');           // never what they are
     }
-    $use   = xs_ss_account_in_use(true, $devWhy);
+    $use   = xs_ss_account_in_use(true, $devWhy, is_array($body['account'] ?? null) ? 'save' : 'check');
     $check = xs_ss_check($use, $devWhy);
     xs_log('SSCR', $check['ok']
         ? 'login accepted' . ($use['shared'] ? " with Xsegon's own developer ID" : '') . ': ' . $check['today'] . ' of ' . $check['max'] . ' requests used today'
@@ -67,7 +67,8 @@ $job = xs_ss_job();
 if (is_array($job) && ($job['state'] ?? '') === 'running' && empty($body['dry'])) {
     xs_fail('snaps are already being fetched; that has to finish first', 409);
 }
-$use = xs_ss_account_in_use(true, $devWhy);
+// Only a real Fetch counts toward the website's daily limit; a dry plan asks as a check.
+$use = xs_ss_account_in_use(true, $devWhy, empty($body['dry']) ? 'fetch' : 'check');
 if ($use['user'] === '' || $use['password'] === '') {
     xs_fail('the ScreenScraper logins are not filled in yet', 409);
 }
