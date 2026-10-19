@@ -51,6 +51,12 @@ const build = buildAt > 0 ? String(process.argv[buildAt + 1] || "") : "";
 if (buildAt > 0 && !/^[A-Za-z0-9][A-Za-z0-9._-]{0,23}$/.test(build)) { console.log("--build wants a short name, like v0.01"); process.exit(2); }
 // A release says which version it is (RELEASE.json, below): copies compare it with the newest.
 if (release && !/^v\d+(\.\d+){1,3}$/.test(build)) { console.log("--release wants --build with its version, like --build v0.15"); process.exit(2); }
+// The number a checkout, its log and the wiki show is the release's own, so the two never drift apart.
+const typed = release ? (fs.readFileSync(path.join(ROOT, "includes", "version.php"), "utf8").match(/const XS_VERSION = '([^']+)'/) || [])[1] : "";
+if (release && typed !== build.slice(1)) {
+  console.log("--build " + build + ", but includes\\version.php says " + (typed || "no version") + ": set XS_VERSION to '" + build.slice(1) + "' in the release's pull request first");
+  process.exit(2);
+}
 const args = process.argv.slice(2).filter((a, i) => a !== "--with-launchbox" && a !== "--release" && a !== "--build" && i + 2 !== buildAt + 1);
 const out = args[0];
 if (!out) { console.log("say where: node tools\\make-test-copy.js <folder>"); process.exit(2); }
