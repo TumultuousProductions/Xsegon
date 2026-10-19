@@ -85,7 +85,10 @@ function save(g, name, on, x, y, done) {
     }
     apply(g, r.tags);
     setTagsAll(r.all);
-    if (filters.tags.length || $q.value.trim() || name.toLowerCase() === "needs fix") { reloadKeeping(g.id); }
+    // A tag goes on every version of a game (includes\versions.php): the list is read again so each row shows it.
+    var versions = (r.ids || []).length > 1;
+    if (versions) { L("VERS", g.title + ": tag \"" + name + "\" " + (on ? "on" : "off") + " for its " + r.ids.length + " versions, the list read again"); }
+    if (filters.tags.length || $q.value.trim() || name.toLowerCase() === "needs fix" || versions) { reloadKeeping(g.id); }
     if (done) { done(r); }
     return r;
   });

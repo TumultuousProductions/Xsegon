@@ -16,7 +16,7 @@ import { sound } from "./sound.js";
 import { $body, $details, $main, $toolbar, games, sel, sysStage } from "./state.js";
 import { startOnAllGames } from "./systems.js";
 import { texPackFact } from "./texpacktab.js";
-import { artUrl, discWords, el, fixMark, fixWords, hhmm, stars, titleText, versionsFact } from "./util.js";
+import { artUrl, discWords, el, fixMark, fixWords, hhmm, stars, titleText, versionInUse, versionsFact } from "./util.js";
 import { render, setCarNodes, setWheelNodes } from "./views.js";
 
 // ---------- details ----------
@@ -82,11 +82,21 @@ function rateGame(g, n) {
   sound("select");
   starsAgain(g);
   postJson("api/my-rating.php", { id: g.id, stars: n }).then(function (r) {
-    if (r.ok) { return; }
+    if (r.ok) { markVersions(r.ids, g, function (x) { x.myRating = n; rowStarsAgain(x); }); return; }
     g.myRating = was;
     starsAgain(g);
     showStrip("Rating not saved: " + (r.error || "the server said no"), true);
   });
+}
+
+/* A mark is kept on every version of a game (includes\versions.php), and the
+   answer names them: the other rows of it in the list (Show every version)
+   wear it at once. How many, for the log. */
+function markVersions(ids, g, apply) {
+  var n = 0;
+  games.forEach(function (x) { if (x !== g && (ids || []).indexOf(x.id) >= 0) { apply(x); n++; } });
+  if (n) { L("VERS", g.title + ": the same mark shown on " + n + " other row" + (n === 1 ? "" : "s") + " of it in the list"); }
+  return n;
 }
 
 // Wherever a game's stars stand they say the same: its details, the panel beside the list, its row.
@@ -117,7 +127,10 @@ export function toggleFav(g) {
   rowsStale();                                        // the Favourites row changes
   render();
   postJson("api/favourite.php", { id: g.id, fav: g.favourite }).then(function (r) {
-    if (r.ok) { return; }
+    if (r.ok) {
+      if (markVersions(r.ids, g, function (x) { x.favourite = g.favourite; })) { setWheelNodes(null); setCarNodes(null); render(); }
+      return;
+    }
     // Not saved: the star goes back and says why, as a tag does.
     g.favourite = !g.favourite;
     setWheelNodes(null);
@@ -396,7 +409,10 @@ function notesByHand(box, inner, e) {
 var DST_SHOW = 3;
 function paintStates(g) {
   if (g.local || !tabPane("about")) { return; }        // another tab is open: About asks when it is back
-  api("api/states.php?id=" + encodeURIComponent(g.id)).then(function (res) {
+  // Save slots are a file's: the selected version's, and none shown while a card of several has none selected.
+  var fg = versionInUse(g);
+  if (!fg) { L("VERS", g.title + ": About shows no save slots until a version is selected"); return; }
+  api("api/states.php?id=" + encodeURIComponent(fg.id)).then(function (res) {
     if (!res.ok || !res.states || !res.states.length) { return; }
     if ($details.hidden || !games[sel] || games[sel].id !== g.id) { return; }
     var about = tabPane("about");                      // and it may have been left while the answer came
@@ -412,7 +428,7 @@ function paintStates(g) {
       if (st.shot !== null) {
         var img = el("img");
         img.alt = "";
-        img.src = "api/states.php?id=" + encodeURIComponent(g.id) + "&shot=" + st.slot + "&t=" + st.shot;
+        img.src = "api/states.php?id=" + encodeURIComponent(fg.id) + "&shot=" + st.slot + "&t=" + st.shot;
         fr.appendChild(img);
       } else {
         fr.appendChild(el("div", "st-fresh", "?"));
@@ -421,9 +437,9 @@ function paintStates(g) {
       c.appendChild(el("div", "st-label", "Slot " + st.slot));
       c.appendChild(el("div", "st-cap", whenSaved(st.when)));
       c.addEventListener("click", function () {
-        L("MNU", "run slot " + st.slot + " (details)");
+        L("MNU", "run slot " + st.slot + " (details)" + (fg !== g ? " of version " + fg.id : ""));
         closeDetails();
-        launchNow(g, st.slot);
+        launchNow(fg, st.slot);
       });
       strip.appendChild(c);
     });
@@ -433,7 +449,7 @@ function paintStates(g) {
       var more = el("button", "dst-more", "All " + res.states.length + " saves...");
       more.addEventListener("click", function () {
         closeDetails();
-        openStates(g);
+        openStates(fg);
       });
       wrap.appendChild(more);
     }

@@ -3,11 +3,13 @@
  * GET /api/game.php?id=<game id>  - one game, in full.
  *
  * The library rows stay lean, so the fields only the details screen wants
- * (the notes above all) are fetched here when details opens.
+ * (the notes above all) are fetched here when details opens. The cheats and
+ * the note are the game's, over all its versions (includes\versions.php); the
+ * saves, texture packs and file check are this file's own.
  */
 declare(strict_types=1);
 
-require_once __DIR__ . '/../includes/import.php';
+require_once __DIR__ . '/../includes/versions.php';
 require_once __DIR__ . '/../includes/cores.php';
 require_once __DIR__ . '/../includes/cheats.php';
 require_once __DIR__ . '/../includes/extras.php';
@@ -16,7 +18,10 @@ require_once __DIR__ . '/../includes/needsfix.php';
 
 $id = xs_id_or_fail($_GET['id'] ?? '');
 
-$g = xs_game_or_404($id);
+[$g, $versionIds] = xs_game_versions($id);
+if ($g === null) {
+    xs_fail('unknown game', 404);
+}
 
 /* Which core will run this, and whose choice it was: otherwise a core that
    plays a game badly looks like a broken game. */
@@ -29,7 +34,7 @@ if (($g['launch']['kind'] ?? '') === 'retroarch') {
     $coreMine = $chosen !== null;
 }
 /* And how many cheats it plays with, for the same reason. */
-$cheatPick = xs_cheats_for($id);
+$cheatPick = xs_cheats_for_game($versionIds);
 // With none on: how many there are to choose from, so the game says it has cheats before its tab is opened.
 $cheatsThere = 0;
 if ($cheatPick === null && ($g['launch']['kind'] ?? '') === 'retroarch') {
@@ -141,6 +146,13 @@ xs_json(['ok' => true, 'game' => $played + [
     'gameOwn'   => $gameMap !== null || $turboMine,
     // What its file really is, by checksum, as last checked (includes\filecheck.php).
     'fileCheck' => xs_fc_for($g),
-    // Whether you wrote a note on it (api\notes.php), for the mark on its Notes tab.
-    'myNote'    => trim((string) (((array) xs_read_json(xs_data_path('notes.json'), []))[$id]['text'] ?? '')) !== '',
+    // Whether you wrote a note on it, on any of its versions (api\notes.php), for the mark on its Notes tab.
+    'myNote'    => (static function (array $notes, array $ids): bool {
+        foreach ($ids as $vid) {
+            if (trim((string) ($notes[$vid]['text'] ?? '')) !== '') {
+                return true;
+            }
+        }
+        return false;
+    })((array) xs_read_json(xs_data_path('notes.json'), []), $versionIds),
 ]]);

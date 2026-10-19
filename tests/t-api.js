@@ -593,6 +593,57 @@ module.exports = async function (b, check) {
     const noPick = ((await api("api/library.php")).games || []).find((c) => (c.versions || []).some((v) => v.id === pick.id)) || {};
     check("deselected, the card carries no chosen version and Play asks again", [off.ok, noPick.chosen === undefined], [true, true]);
     if (had) { await api("api/select-version.php", { id: had, selected: true }); }
+
+    /* A game's versions are one game (includes\versions.php): a star, rating, tag,
+       note or cheats set on any version are on every version, and marks set apart
+       before show on the card together. The five files are put back as they were. */
+    const markFiles = ["favourites.json", "my-ratings.json", "tags.json", "notes.json", "cheats.json"].map((n) => path.join(DATA, n));
+    const markWas = markFiles.map((f) => (fs.existsSync(f) ? fs.readFileSync(f) : null));
+    const ids = set.map((g) => g.id).sort();
+    const rowsOf = async () => ((await api("api/library.php?versions=all")).games || []).filter((g) => ids.includes(g.id));
+    const cardOf = async () => ((await api("api/library.php")).games || []).find((c) => (c.versions || []).some((v) => v.id === set[0].id)) || {};
+    const other = set[1];
+    try {
+      const star = await api("api/favourite.php", { id: other.id, fav: true });
+      check("a star on one version goes on every version, and the answer names them", [star.ok, (star.ids || []).slice().sort()], [true, ids]);
+      check("so every version's row wears it", (await rowsOf()).map((g) => g.favourite), set.map(() => true));
+      const unstar = await api("api/favourite.php", { id: set[0].id, fav: false });
+      check("and unstarred on any version, none wears it", [unstar.ok, (await rowsOf()).every((g) => !g.favourite)], [true, true]);
+      await api("api/my-rating.php", { id: other.id, stars: 4 });
+      check("a rating on one version is every version's", (await rowsOf()).map((g) => g.myRating), set.map(() => 4));
+      await api("api/my-rating.php", { id: set[0].id, stars: 0 });
+      check("and taken off on another, it is off on all", (await rowsOf()).map((g) => g.myRating), set.map(() => 0));
+      const tagged = await api("api/tags.php", { id: other.id, add: "xs versions test" });
+      check("a tag goes on every version", [tagged.ok, (tagged.ids || []).slice().sort(), (await rowsOf()).every((g) => (g.tags || []).includes("xs versions test"))],
+            [true, ids, true]);
+      await api("api/tags.php", { id: set[0].id, remove: "xs versions test" });
+      check("and comes off every version", (await rowsOf()).some((g) => (g.tags || []).includes("xs versions test")), false);
+      await api("api/notes.php", { id: set[0].id, text: "xs versions note" });
+      check("a note written on one version is read on another", (await api("api/notes.php?id=" + encodeURIComponent(other.id))).text, "xs versions note");
+      await api("api/notes.php", { id: other.id, text: "" });
+      check("and cleared on that one, it is gone from the first too", (await api("api/notes.php?id=" + encodeURIComponent(set[0].id))).text, "");
+
+      /* Marks set on versions apart, as before: the card shows them together. */
+      const lead = await cardOf();
+      const apart = set.find((g) => g.id !== lead.id);
+      fs.writeFileSync(markFiles[0], JSON.stringify(Object.fromEntries(set.map((g) => [g.id, g.id === apart.id]))));
+      fs.writeFileSync(markFiles[1], JSON.stringify({ [apart.id]: 3 }));
+      fs.writeFileSync(markFiles[2], JSON.stringify({ [apart.id]: ["xs apart"] }));
+      fs.writeFileSync(markFiles[3], JSON.stringify({ [lead.id]: { text: "first", at: 1 }, [apart.id]: { text: "second", at: 2 } }));
+      fs.writeFileSync(markFiles[4], JSON.stringify({ [apart.id]: { file: "xs/test.cht", on: [{ i: 0, desc: "xs test" }] } }));
+      const joined = await cardOf();
+      check("a star, rating and tag set apart on another version show on the card",
+            [joined.favourite, joined.myRating, (joined.tags || []).includes("xs apart")], [true, 3, true]);
+      check("the card counts the cheats chosen on another version", joined.cheats, 1);
+      check("notes written apart are read together", (await api("api/notes.php?id=" + encodeURIComponent(lead.id))).text, "first\n\nsecond");
+      check("and the cheats chosen on another version are the game's",
+            ((await api("api/cheats.php?id=" + encodeURIComponent(lead.id))).chosen || {}).file, "xs/test.cht");
+      const cleared = await api("api/cheats.php", { id: lead.id, clear: true });
+      check("cleared from any version, no version keeps them",
+            [cleared.ok, Object.keys(JSON.parse(fs.readFileSync(markFiles[4], "utf8"))).some((k) => ids.includes(k))], [true, false]);
+    } finally {
+      markFiles.forEach((f, i) => { if (markWas[i] === null) { fs.rmSync(f, { force: true }); } else { fs.writeFileSync(f, markWas[i]); } });
+    }
   } else {
     console.log("    (no game here has two versions on one console; the roll-up checks step aside)");
   }

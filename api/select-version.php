@@ -9,7 +9,7 @@
  */
 declare(strict_types=1);
 
-require_once __DIR__ . '/../includes/import.php';
+require_once __DIR__ . '/../includes/versions.php';
 
 xs_post_only();
 
@@ -34,7 +34,7 @@ if ($g === null && $selected) {
     xs_fail('unknown game', 404);
 }
 if ($g !== null) {
-    $key = mb_strtolower((string) $g['platform']) . '|' . mb_strtolower(trim((string) $g['title']));
+    $key = xs_version_key($g);
     if ($selected) {
         $overlay[$key] = $id;
     } elseif (($overlay[$key] ?? null) === $id) {
@@ -45,5 +45,8 @@ if ($g !== null) {
 }
 xs_write_or_fail($path, $overlay, 'the selection could not be kept: ');
 
-xs_log('VERS', $id . ($selected ? ' selected' : ' deselected'));
+xs_log('VERS', ($g === null ? $id : (string) $g['title'] . ' (' . (string) $g['platform'] . '): '
+    . basename(str_replace(chr(92), '/', (string) ($g['romPath'] ?? ''))) . ', ' . $id)
+    . ($selected ? ' selected; Play starts it, and its saves, save slots, texture packs, achievements and file check show in details'
+                 : ' deselected; Play asks which, and the per-file tabs ask for a version'));
 xs_json(['ok' => true, 'id' => $id, 'selected' => $selected]);

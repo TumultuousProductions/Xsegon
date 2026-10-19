@@ -163,6 +163,13 @@ var STACK = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3" width
 export function versionLabel(v) {
   return v.variant || v.file || v.title;
 }
+/* The file a card's per-file things stand for (saves, save slots, texture packs,
+   achievements, file check): the game itself, the version selected in its
+   Versions tab, or null for a card of several versions with none selected. */
+export function versionInUse(g) {
+  if (!g || !g.versions || g.versions.length < 2) { return g || null; }
+  return g.versions.filter(function (v) { return v.id === g.chosen; })[0] || null;
+}
 // The versions fact in details: every version, the selected one said (js\versionstab.js).
 export function versionsFact(g) {
   return g.versions.map(function (v) { return versionLabel(v) + (g.chosen === v.id ? " (selected)" : ""); }).join("  ·  ");

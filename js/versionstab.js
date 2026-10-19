@@ -5,12 +5,15 @@
     never waits for the full record. */
 
 import { setFact } from "./details.js";
-import { setTabRows, tabPane } from "./detailtabs.js";
+import { setTabRows, tabPane, versionChanged } from "./detailtabs.js";
 import { iconEl } from "./icons.js";
 import { showStrip } from "./launch.js";
 import { L, postJson } from "./log.js";
 import { sound } from "./sound.js";
 import { el, versionLabel, versionsFact } from "./util.js";
+
+// The Versions pane drawn last, so a selection saved after details was drawn again paints the one on screen.
+var shown = null;
 
 export function versionsTabLabel(g) {
   return "Versions (" + (g.versions || []).length + ")";
@@ -57,10 +60,16 @@ export function versionsPane(pane, g) {
       saving = false;
       if (!r.ok) { sound("back"); showStrip("Selection not kept: " + (r.error || "the server said no"), true); return; }
       g.chosen = off ? null : v.id;
-      L("VERS", g.title + ": " + versionLabel(v) + (off ? " deselected, Play asks again" : " selected"));
+      L("VERS", g.title + ": " + versionLabel(v) + " (" + v.id + ")" + (off ? " deselected, Play asks again and the file tabs ask for one"
+        : " selected, Play starts it and the file tabs follow it"));
       sound("select");
       setFact("versions", versionsFact(g));
-      if (tabPane("versions") === pane) { paint(); }
+      versionChanged();
+      // The game's record may have drawn details again while this was saving: paint the pane on screen now.
+      if (shown && tabPane("versions") === shown.pane) {
+        if (shown.pane !== pane) { L("VERS", g.title + ": details was drawn again while the selection was saving; the Versions tab on screen shows it"); }
+        shown.paint();
+      }
     });
   }
 
@@ -84,11 +93,14 @@ export function versionsPane(pane, g) {
       cells.push(line);
       list.appendChild(line);
     });
+    // The versions are one game: what is chosen is the game's, what lives in a file is the file's (includes\versions.php).
     foot.textContent = g.chosen
-      ? "Play starts the selected one. Each version keeps saves and plays of its own."
-      : "Nothing is selected, so Play asks which one each time.";
+      ? "Play starts the selected one, and its saves, save slots, texture packs, achievements and file check show in the other tabs."
+        + " The star, rating, tags, notes and cheats are the whole game's."
+      : "Nothing is selected, so Play asks which one each time, and the tabs about a file ask you to select one here.";
     focusAt(Math.min(at, cells.length - 1));
   }
+  shown = { pane: pane, paint: paint };
   paint();
   // Details is built before it is on the screen, and setTabRows ignores a
   // pane that is not on it: the list is handed over again a moment later.

@@ -9,10 +9,12 @@
  * Both POSTs answer with the game's tags and the whole list as they now
  * stand. Written to data\tags.json. "needs fix" is the NEEDS FIX mark itself,
  * so it is written as your word on the mark (data\fix-marks.json) instead.
+ * A game's versions are one game (includes\versions.php): a tag goes on and
+ * off every version; "needs fix" stays with the one file it is about.
  */
 declare(strict_types=1);
 
-require_once __DIR__ . '/../includes/import.php';
+require_once __DIR__ . '/../includes/versions.php';
 require_once __DIR__ . '/../includes/tags.php';
 require_once __DIR__ . '/../includes/needsfix.php';
 
@@ -31,7 +33,10 @@ if (!$adding && !array_key_exists('remove', $body)) {
 
 // Only a game that is in the library can carry a tag: a typo in an id would
 // otherwise leave a tag on nothing, counted in the list and never shown.
-$game = xs_game_or_404($id, 'no game with that id');
+[$game, $ids] = xs_game_versions($id);
+if ($game === null) {
+    xs_fail('no game with that id', 404);
+}
 
 $name = xs_tag_clean((string) ($adding ? $body['add'] : $body['remove']), $why);
 if ($name === null) {
@@ -43,10 +48,12 @@ $key  = mb_strtolower($name);
 $has  = array_values(array_filter($mine, static fn($t) => mb_strtolower($t) === $key));
 
 // The tag and the answer as they stand now, "needs fix" being the mark.
-$answer = static function (array $map) use ($id): never {
+// ids: every version the tag went on, so the page shows it on each of them.
+$answer = static function (array $map, bool $everyVersion = true) use ($id, $ids): never {
     $fix = xs_needs_fix();
     $shown = xs_tags_effective($map, $fix);
-    xs_json(['ok' => true, 'id' => $id, 'tags' => $shown[$id] ?? [], 'all' => xs_tags_all($shown), 'needsFix' => $fix[$id] ?? null]);
+    xs_json(['ok' => true, 'id' => $id, 'tags' => $shown[$id] ?? [], 'all' => xs_tags_all($shown), 'needsFix' => $fix[$id] ?? null,
+             'ids' => $everyVersion ? $ids : [$id]]);
 };
 
 if ($key === XS_TAG_NEEDS_FIX) {
@@ -54,27 +61,37 @@ if ($key === XS_TAG_NEEDS_FIX) {
         xs_fail('could not save that: ' . (string) $why, 500);
     }
     xs_log('TAG', ($adding ? 'marked ' : 'unmarked ') . ($game['title'] ?? $id) . ' needs fix (the "needs fix" tag)');
-    $answer($map);
+    $answer($map, false);
 }
 
+// Every version, the same: what each carried before goes in the log.
+$before = [];
 if ($adding) {
-    if (!$has) {
-        if (count($mine) >= XS_TAGS_PER_GAME) {
-            xs_fail('a game can carry at most ' . XS_TAGS_PER_GAME . ' tags', 400);
-        }
-        $name = xs_tag_spelling($map, $name);
-        $mine[] = $name;
-        usort($mine, 'strnatcasecmp');
-    }
-} else {
-    $mine = array_values(array_filter($mine, static fn($t) => mb_strtolower($t) !== $key));
+    $name = xs_tag_spelling($map, $name);
 }
-$map[$id] = $mine;
+foreach ($ids as $vid) {
+    $tags = $map[$vid] ?? [];
+    $before[] = $vid . ' [' . implode(', ', $tags) . ']';
+    $there = array_filter($tags, static fn($t) => mb_strtolower($t) === $key);
+    if ($adding) {
+        if (!$there) {
+            if (count($tags) >= XS_TAGS_PER_GAME) {
+                xs_fail('a game can carry at most ' . XS_TAGS_PER_GAME . ' tags', 400);
+            }
+            $tags[] = $name;
+            usort($tags, 'strnatcasecmp');
+        }
+    } else {
+        $tags = array_values(array_filter($tags, static fn($t) => mb_strtolower($t) !== $key));
+    }
+    $map[$vid] = $tags;
+}
 
 if (!xs_tags_write($map, $why)) {
     xs_fail((string) $why, 500);
 }
 xs_log('TAG', ($adding ? 'add ' : 'remove ') . '"' . ($has && !$adding ? $has[0] : $name) . '" '
-            . ($adding ? 'to ' : 'from ') . ($game['title'] ?? $id));
+            . ($adding ? 'to ' : 'from ') . xs_versions_said($game, $ids, $id)
+            . (count($ids) > 1 ? ' on every version; before: ' . implode(', ', $before) : ''));
 
 $answer(array_filter($map));

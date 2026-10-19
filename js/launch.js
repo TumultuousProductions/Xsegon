@@ -13,7 +13,7 @@ import { stopVideo } from "./snap.js";
 import { sound } from "./sound.js";
 import { $body, $editor, $hero, $strip, S, busy, games, sel, setBusy, view } from "./state.js";
 import { stopGame } from "./status.js";
-import { el, hhmm, versionLabel, wheelSideways } from "./util.js";
+import { el, hhmm, versionInUse, versionLabel, wheelSideways } from "./util.js";
 import { carNodes, flatNodes, row } from "./views.js";
 
 // ---------- launching ----------
@@ -117,6 +117,16 @@ function askPlay(g) {
 export function openStates(g) {
   g = g || games[sel];
   if (!g || g.local) { return; }
+  // Save slots are a file's (includes\versions.php): a card of several versions shows the selected one's.
+  var v = versionInUse(g);
+  if (!v) {
+    L("VERS", g.title + ": Save States asked with no version selected");
+    showStrip("Select a version in " + g.title + "'s Versions tab (in its details) to see its save states", false);
+    sound("back");
+    return;
+  }
+  if (v !== g) { L("VERS", g.title + ": Save States of " + versionLabel(v) + " (" + v.id + ")"); }
+  g = v;
   api("api/states.php?id=" + encodeURIComponent(g.id)).then(function (res) {
     if (!res.ok || !res.states || !res.states.length) {
       showStrip("no save states for " + g.title + " yet", false);
