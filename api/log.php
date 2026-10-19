@@ -3,6 +3,8 @@
  * /api/log.php - the page's half of the log (includes\boot.php has the format).
  *
  *   POST {"lines": [[stamp, code, msg], ...]}   the page's buffered lines, appended as "P"
+ *   POST {"forget": {"day", "since"}}           No log at the log question (js\logask.js): every
+ *                                               line from that time on goes; only with logging off
  *   GET  ?tail=300[&day=YYYY-MM-DD]             the last lines of a day, for the viewer
  *   GET  ?days=1                                which days have a log
  *
@@ -14,11 +16,62 @@ declare(strict_types=1);
 require_once __DIR__ . '/../includes/boot.php';
 require_once __DIR__ . '/../includes/version.php';
 
+/**
+ * Takes out every line stamped $since or later in $day's log, and every later
+ * day's log whole; a file left empty goes, and the folder when nothing is left
+ * in it. Answers how many lines went. Stamps sort as text within a day.
+ */
+function xs_log_forget(string $day, string $since): int
+{
+    $dir   = xs_data_path('log');
+    $taken = 0;
+    foreach (xs_glob($dir, '????-??-??.log') as $file) {
+        $d = basename($file, '.log');
+        if ($d < $day || ($fh = @fopen($file, 'r+')) === false) {
+            continue;
+        }
+        flock($fh, LOCK_EX);
+        $keep = '';
+        while (($line = fgets($fh)) !== false) {
+            if ($d === $day && strncmp($line, $since, 12) < 0) {
+                $keep .= $line;
+            } else {
+                $taken++;
+            }
+        }
+        ftruncate($fh, 0);
+        rewind($fh);
+        fwrite($fh, $keep);
+        fflush($fh);
+        flock($fh, LOCK_UN);
+        fclose($fh);
+        if ($keep === '') {
+            @unlink($file);
+        }
+    }
+    if (is_dir($dir) && xs_glob($dir, '*') === []) {
+        @rmdir($dir);
+    }
+    return $taken;
+}
+
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
 if ($method === 'POST') {
     xs_local_origin_only();
     $body = xs_body();
+    if (is_array($body['forget'] ?? null)) {
+        // Only what was written before logging went off is taken back, never a log still being kept.
+        if (xs_log_enabled()) {
+            xs_fail('logging is on, so nothing is taken back', 409);
+        }
+        $day   = (string) ($body['forget']['day'] ?? '');
+        $since = (string) ($body['forget']['since'] ?? '');
+        if (!preg_match('/^\d{4}-\d\d-\d\d$/', $day) || !preg_match('/^\d\d:\d\d:\d\d\.\d{3}$/', $since)) {
+            xs_fail('a day and a time of day are needed', 400);
+        }
+        xs_json(['ok' => true, 'taken' => xs_log_forget($day, $since)]);
+    }
     $lines = $body['lines'] ?? [];
     if (!is_array($lines)) {
         xs_fail('lines must be a list', 400);
