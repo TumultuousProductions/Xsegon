@@ -1,14 +1,36 @@
-# Xsegon
+<p align="center">
+  <img src="doc/screens/banner.jpg" alt="Xsegon: your games, like a console menu. Free, yours to change, and it updates itself.">
+</p>
 
-Xsegon shows your games like a console menu and starts them for you. It is
-made for a TV and a controller, and it is just as happy with a keyboard and
-mouse. It runs on your own Windows PC, needs no account, and is free.
+<p align="center">
+  <a href="https://github.com/TumultuousProductions/Xsegon/releases/latest"><img src="https://img.shields.io/github/v/release/TumultuousProductions/Xsegon?style=for-the-badge&label=download&color=22d3ee&labelColor=0b1324" alt="Download the latest release"></a>
+  <a href="https://github.com/TumultuousProductions/Xsegon/releases"><img src="https://img.shields.io/github/downloads/TumultuousProductions/Xsegon/total?style=for-the-badge&label=downloads&color=e879f9&labelColor=0b1324" alt="Downloads"></a>
+  <img src="https://img.shields.io/badge/price-free-22c55e?style=for-the-badge&labelColor=0b1324" alt="Free">
+  <img src="https://img.shields.io/badge/account-none-22c55e?style=for-the-badge&labelColor=0b1324" alt="No account">
+  <img src="https://img.shields.io/badge/windows-10%20%7C%2011-22d3ee?style=for-the-badge&labelColor=0b1324" alt="Windows 10 and 11">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/licence-MIT-e879f9?style=for-the-badge&labelColor=0b1324" alt="MIT licence"></a>
+</p>
 
-**[Download Xsegon](https://github.com/TumultuousProductions/Xsegon/releases/latest)**
-· [Yours to change](#yours-to-change) · [Install](#2-install) · [Set it up](#3-set-it-up)
-· [Themes](#5-themes) · [What else it does](#6-what-else-it-does)
+<h3 align="center">Xsegon shows your games like a console menu and starts them for you.</h3>
 
-![The consoles screen](doc/screens/consoles.jpg)
+<p align="center">
+  Made for a TV and a controller, and just as happy with a keyboard and mouse.<br>
+  It runs on your own Windows PC, needs no account, and is free. All of it.
+</p>
+
+<p align="center">
+  <a href="https://github.com/TumultuousProductions/Xsegon/releases/latest"><b>Download Xsegon</b></a>
+  &nbsp;·&nbsp; <a href="#themes-that-move">Themes</a>
+  &nbsp;·&nbsp; <a href="#yours-to-change">Yours to change</a>
+  &nbsp;·&nbsp; <a href="#it-updates-itself-when-you-say">Updates</a>
+  &nbsp;·&nbsp; <a href="#how-xsegon-compares">How it compares</a>
+  &nbsp;·&nbsp; <a href="#2-install">Install</a>
+</p>
+
+<p align="center">
+  <img src="doc/screens/tour.webp" width="100%" alt="Turning the consoles, opening one, moving down its games and opening a game's own page">
+  <br><sub><i>Turn to a console, open it, rest on a game. Space opens its own page.</i></sub>
+</p>
 
 > **Download Xsegon from the [Releases page](https://github.com/TumultuousProductions/Xsegon/releases/latest),
 > not with the green Code button on this page.** The release zip has
@@ -18,7 +40,145 @@ mouse. It runs on your own Windows PC, needs no account, and is free.
 
 Xsegon does not come with any games, BIOS files or keys. You bring your own.
 
+## Why Xsegon
+
+<table>
+<tr>
+<td width="33%" valign="top">
+
+**Free, all of it**<br>
+No account, no paid tier, no big-screen mode held back. The TV view, the
+themes, the phone remote and every update are in the one free download.
+
+</td>
+<td width="33%" valign="top">
+
+**Everything in one download**<br>
+RetroArch, the PHP it runs on and a copy of the LaunchBox Games Database come
+inside the zip. One window sets it all up, then it says **Ready to play**.
+
+</td>
+<td width="33%" valign="top">
+
+**It checks your games start**<br>
+Xsegon can open each game for a moment to see that it starts, and marks the
+ones that do not, with why. You find out before you sit down to play.
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+**Themes that move**<br>
+Sixteen themes, and most of them move: stars drifting over galaxies, the deep
+sea, a storm, snow, digital rain, a synthwave floor, embers, and a bat now and then.
+
+</td>
+<td valign="top">
+
+**Yours to change**<br>
+Every screen is a plain file. Change one in Notepad, save, press F5. Nothing to
+build, nothing to install, and your own look is kept through every update.
+
+</td>
+<td valign="top">
+
+**It updates itself, when you say**<br>
+Told once per version. Update now checks the new version against a signed
+list, tries it, backs up your data, and puts the old one back if it fails.
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+**Your phone as a remote**<br>
+Scan a square on the TV with your phone, look through your games, tap one,
+and it starts on the PC. Same Wi-Fi, nothing installed on the phone.
+
+</td>
+<td valign="top">
+
+**Any controller**<br>
+Press a button and it works. The bar along the bottom names your own
+controller's buttons, Xbox, PlayStation or Nintendo, and thousands more are known.
+
+</td>
+<td valign="top">
+
+**Videos, cheats and texture packs**<br>
+Videos from free online archives, cheats in one press, and the texture packs
+made for your PS2, GameCube, Wii and N64 games, put in place for you.
+
+</td>
+</tr>
+</table>
+
+## Themes that move
+
+Press the Xsegon logo at the top left, and under **Themes** there are
+sixteen, most of them in five folders. Most of them move, gently, behind your
+games.
+
+<table>
+<tr>
+<td width="33%" align="center"><img src="doc/screens/move-space.webp" alt="The Space theme: coloured stars drifting over galaxies"><br><b>Space</b><br><sub>Stars drift over galaxies, and one falls now and then.</sub></td>
+<td width="33%" align="center"><img src="doc/screens/move-trees.webp" alt="The Space with trees theme"><br><b>Space with trees</b><br><sub>The same sky, over a wood of firs.</sub></td>
+<td width="33%" align="center"><img src="doc/screens/move-deepsea.webp" alt="The Deep sea theme with rising bubbles"><br><b>Deep sea</b><br><sub>Bubbles rise from the dark.</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="doc/screens/move-storm.webp" alt="The Storm theme with slanting rain"><br><b>Storm</b><br><sub>Rain falls at a slant.</sub></td>
+<td align="center"><img src="doc/screens/move-winter.webp" alt="The Winter theme with falling snow"><br><b>Winter</b><br><sub>Snow falls behind panes of glass.</sub></td>
+<td align="center"><img src="doc/screens/move-matrix.webp" alt="The Matrix theme with falling green code"><br><b>Matrix</b><br><sub>Digital rain behind see-through panels.</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="doc/screens/move-synthwave.webp" alt="The Synthwave theme with a rolling floor of lines"><br><b>Synthwave</b><br><sub>A floor of lines rolls to a glowing horizon.</sub></td>
+<td align="center"><img src="doc/screens/move-carbon.webp" alt="The Dark red theme with a carbon weave and embers"><br><b>Carbon</b><br><sub>Five dark reds on a carbon weave, with embers.</sub></td>
+<td align="center"><img src="doc/screens/move-dracula.webp" alt="The Dracula theme over quilted leather"><br><b>Dracula</b><br><sub>Quilted leather, and a bat crosses now and then.</sub></td>
+</tr>
+</table>
+
+And three more of the sixteen:
+
+<p align="center">
+  <img src="doc/screens/theme-xsegon.jpg" width="32%" alt="The Xsegon theme, the one it comes in">
+  <img src="doc/screens/theme-dark.jpg" width="32%" alt="The Dark theme">
+  <img src="doc/screens/theme-carbon-weave.jpg" width="32%" alt="The Dark red strong weave theme">
+</p>
+<p align="center"><sub><i>Xsegon, the one it comes in. Dark. Dark red strong weave.</i></sub></p>
+
+**Make your own theme.** A theme is one small file. Copy one in the `themes`
+folder, such as `themes\neon\synthwave.json`, give it a new name and change
+its colours, and it shows under Themes. A theme you add is kept through
+updates.
+
+```json
+{
+  "format": 1,
+  "name": "My theme",
+  "colours": {
+    "ground": "#120a22",
+    "panel": "#1b1132",
+    "panelRaised": "#281a47",
+    "words": "#f4eeff",
+    "wordsSecond": "#bcabdd",
+    "wordsThird": "#9a88bf",
+    "highlight": "#ff4fd8",
+    "highlightSecond": "#36f9f6"
+  },
+  "has": { "glow": true, "scanlines": false },
+  "texture": { "kind": "horizon", "strength": 100 }
+}
+```
+
+The accent colour, the size of the menu words, glow, scanlines and High
+contrast are in Settings > Feel too.
+
 ## Yours to change
+
+<p align="center">
+  <img src="doc/screens/yours.webp" width="100%" alt="In Notepad, the stars and slashes come off one line of style.css; it is saved, F5 is pressed, and Xsegon's highlight turns orange">
+</p>
 
 Xsegon is yours to change, with nothing to learn first:
 
@@ -34,6 +194,126 @@ Xsegon is yours to change, with nothing to learn first:
 - **Kept through every update.** Update now never touches your games,
   settings, pictures or your own folder, and a file of Xsegon's you changed
   is kept aside and named, never lost.
+
+## It updates itself, when you say
+
+<p align="center">
+  <img src="doc/screens/update-messages.jpg" width="49%" alt="Messages saying Xsegon 0.17 is out, with an Update now button">
+  <img src="doc/screens/update-window.jpg" width="49%" alt="The Update now window, asking first, with a choice to download the next versions by themselves">
+</p>
+<p align="center"><sub><i>A new version is said once, in Messages. Update now says what happens and asks first.</i></sub></p>
+
+- **Said once, never pushed.** Xsegon looks once a day and says in Messages
+  when a new version is out, once for each version. Nothing is downloaded or
+  changed until you press **Update now**.
+- **Your choice of how.** The Update now window asks whether the next
+  versions should download by themselves, so Update now takes only a moment.
+  Leave it off and each one downloads when you press (about 7 MB).
+- **Checked before it is trusted.** Each new version is checked against a
+  list its maker signed, and tried once on its own, before your copy is
+  touched. A damaged or changed download is never put in place.
+- **Safe to say yes.** It takes a backup of your data, closes, puts the new
+  version in place and opens again by itself. If the new version will not
+  start on your PC, the one before comes back by itself, and Settings >
+  Window > New versions has **Go back** any time.
+- **Never in the way.** A game you are playing is left to finish first.
+
+<p align="center">
+  <img src="doc/screens/update-bar.jpg" width="60%" alt="A bar in the corner: Xsegon 0.17, downloading, 3.0 of 7.1 MB">
+</p>
+
+## Six ways to see your games
+
+Press **G** to change how the games are shown, or pick one at the top right.
+
+<table>
+<tr>
+<td width="33%" align="center"><img src="doc/screens/view-wheel.jpg" alt="The Wheel"><br><b>Wheel</b></td>
+<td width="33%" align="center"><img src="doc/screens/view-carousel.jpg" alt="The Carousel"><br><b>Carousel</b></td>
+<td width="33%" align="center"><img src="doc/screens/view-rows.jpg" alt="Rows"><br><b>Rows</b></td>
+</tr>
+<tr>
+<td align="center"><img src="doc/screens/view-shelf.jpg" alt="The Shelf"><br><b>Shelf</b></td>
+<td align="center"><img src="doc/screens/view-grid.jpg" alt="The Grid"><br><b>Grid</b></td>
+<td align="center"><img src="doc/screens/view-list.jpg" alt="The List"><br><b>List</b></td>
+</tr>
+</table>
+
+## Every game has its own page
+
+<p align="center">
+  <img src="doc/screens/details.jpg" width="100%" alt="A game's own page: its story, its facts and its tabs">
+</p>
+
+<p align="center">
+  <img src="doc/screens/cheats.jpg" width="49%" alt="A game's Cheats tab with two cheats on">
+  <img src="doc/screens/media.jpg" width="49%" alt="A game's Media tab: another game's pictures beside its own">
+</p>
+<p align="center"><sub><i>Cheats in one press, and a game's Media tab copying another game's pictures.</i></sub></p>
+
+Its story, its saves, its cheats, its versions, its texture packs and your own
+notes, each in a tab. A game's video plays as you rest on it.
+
+<p align="center">
+  <img src="doc/screens/phone.jpg" width="49%" alt="Connect a phone">
+  <img src="doc/screens/controller-check.jpg" width="49%" alt="The Controller check">
+</p>
+<p align="center"><sub><i>Connect a phone, and the Controller check, which lights up what you press.</i></sub></p>
+
+## And all this, free
+
+- **New games come in by themselves.** Put games in your games folder, come
+  back to Xsegon, and they are there.
+- **Names, descriptions and box art filled in** from a copy of the LaunchBox
+  Games Database that comes with Xsegon. If its picture server ever stops
+  answering, libretro's thumbnails fill in instead.
+- **Videos for your games** from free online archives, arcade games
+  included, and from ScreenScraper with only a free member account.
+- **Saves, cheats and versions.** Pick up where you left off, turn a cheat on
+  in one press, and choose which version of a game plays.
+- **Texture packs** for PS2, GameCube, Wii and N64 games: the packs made for
+  each game listed in its page, and put in place with one press.
+- **Pictures and videos your way.** Change any of them, clear them, or copy
+  another game's onto it.
+- **What each file really is**, read from its checksum: region, revision,
+  translation or hack.
+- **Steam games and programs of your own** in the same library.
+- **Backups** of everything Xsegon keeps, part by part, read back before they
+  are called made.
+- **Big libraries.** A list of 40,000 games opens on its first 2,000 at once
+  and the rest comes in as you go.
+- **Your files left alone.** Your game files are only ever read. Xsegon never
+  changes or moves them, and after the first setup it works without the
+  internet.
+- **Coming from LaunchBox?** Games > Bring in a LaunchBox library... brings
+  your games and your own play data across, once. Nothing of LaunchBox's
+  pictures, videos or sounds comes with them, and LaunchBox's folder is
+  never changed.
+
+## How Xsegon compares
+
+Each of these is a good program, and people love them. This is where Xsegon
+is different.
+
+| | **Xsegon** | LaunchBox and Big Box | Playnite | ES-DE | RetroBat |
+|---|---|---|---|---|---|
+| **The TV and controller view** | ✅ Free | Big Box is Premium: $30, or $75 for life (free 30 minute trial sessions) | Free | Free | Free |
+| **Open source** | ✅ MIT | No | MIT | MIT (desktop) | LGPL v3 and CC BY-NC-SA |
+| **Account needed** | ✅ None | None (an email address for the download) | None | None | None |
+| **Emulators** | ✅ RetroArch inside the download, set up in one window | Downloads and sets up the ones it supports | You install them | You install and set them up | RetroArch inside, others fetched and set up |
+| **Checks that each game starts** | ✅ One check across your library, with why a game failed | Not offered | Not offered | Not offered | Not offered (a BIOS check) |
+| **Updating** | ✅ Asks first; checked against a signed list and tried before it goes in; the old version comes back by itself if the new one will not start | Downloads in the background, then asks | Asks, then downloads | Downloads; on Windows you install it yourself | Asks, then downloads |
+| **Your phone as a remote** | ✅ Built in, nothing to install on the phone | No official one | No official one (Playnite Web, by others) | No official one | No official one |
+| **Changing the look** | ✅ A JSON theme or your own stylesheet; save and press F5 | XAML themes; restart after a change | XAML themes; restart after a change | XML themes; Ctrl+R in debug mode | XML themes |
+| **Changing the program itself** | ✅ Every screen is a plain file: edit it in Notepad, press F5 | Closed source | Open, needs a build | Open, needs a build | Open, needs a build |
+| **Game videos** | ✅ Free online archives, and ScreenScraper with a free account | EmuMovies; playing videos is Premium | Through an add-on by others | ScreenScraper and TheGamesDB | ScreenScraper and others |
+| **Runs on** | Windows 10 and 11 | Windows 10 and 11 (an Android app, sold apart) | Windows 10 and 11 | Windows, macOS, Linux, Android (paid) | Windows 10 and 11 |
+
+<sub>Checked on 19 October 2026 against each program's own website, documents
+and code: LaunchBox 14.0.1, Playnite 10.62, ES-DE 3.5.0 and RetroBat 8.3.1.
+LaunchBox's prices are its standing prices in US dollars, without sales. "Not
+offered" and "No official one" mean none of their own pages says it has one.
+Something here out of date? Open an issue and it is put right.</sub>
 
 ## 1. What you need
 
@@ -125,84 +405,7 @@ a phone and the themes beneath them.
 
 ![A console's games on the wheel](doc/screens/wheel.jpg)
 
-![A game's own page: its story, your saves, cheats and notes](doc/screens/details.jpg)
-
-## 5. Themes
-
-Press the Xsegon logo at the top left: under **Themes** there are folders, and
-some of the themes move. **Space** has a sky of drifting stars, with one
-falling now and then, and the same sky over a wood of firs. **Nature** has the
-Deep sea with its bubbles, a Storm, and Winter with snow. **Neon** has Matrix
-and Synthwave. Carbon has embers, and in the Dracula ones a bat crosses the
-screen every minute or two. **Xsegon theme** goes back to how it came.
-
-<p>
-  <img src="doc/screens/theme-space.jpg" width="49%" alt="The Space theme">
-  <img src="doc/screens/theme-trees.jpg" width="49%" alt="The Space with trees theme">
-</p>
-
-*Space, and Space with trees.*
-
-<p>
-  <img src="doc/screens/theme-deepsea.jpg" width="49%" alt="The Deep sea theme">
-  <img src="doc/screens/theme-storm.jpg" width="49%" alt="The Storm theme">
-</p>
-
-*Deep sea, and Storm.*
-
-<p>
-  <img src="doc/screens/theme-synthwave.jpg" width="49%" alt="The Synthwave theme">
-  <img src="doc/screens/theme-dracula.jpg" width="49%" alt="The Dracula theme">
-</p>
-
-*Synthwave, and Dracula.*
-
-## 6. What else it does
-
-- **Six ways to look at your games**, from the wheel to a list with the
-  columns you choose.
-- **New games come in by themselves.** Put games in your games folder, come
-  back to Xsegon, and they are there.
-- **Names, descriptions and box art filled in** from a copy of the LaunchBox
-  Games Database that comes with Xsegon. If its picture server ever stops
-  answering, libretro's thumbnails fill in instead.
-- **Your games on your phone.** Look through them on the phone, tap one, and
-  it starts on the PC. Same Wi-Fi, nothing installed on the phone.
-- **Videos for your games**, from free online archives, arcade games included.
-- **Themes**, some that move: a sky of stars, the deep sea, a storm
-  ([see them above](#5-themes)).
-- **Saves, cheats and versions.** Pick up where you left off, turn a cheat on
-  in one press, and choose which version of a game plays.
-- **Pictures and videos your way.** A game's Media tab shows its box art,
-  logo, screenshot, background and video: change any of them, clear them, or
-  copy another game's onto it.
-- **Any controller.** The bar names your controller's own buttons, and the
-  Controller check lights up what you press.
-- **Steam games and programs of your own** in the same library.
-- **Coming from LaunchBox?** Games > Bring in a LaunchBox library... brings
-  your games and your own play data across, once. Nothing of LaunchBox's
-  pictures, videos or sounds comes with them, and LaunchBox's folder is
-  never changed.
-
-![A game's video playing beside the wheel](doc/screens/video.jpg)
-
-*A game's video plays as you rest on it.*
-
-<p>
-  <img src="doc/screens/cheats.jpg" width="49%" alt="A game's Cheats tab with two cheats on">
-  <img src="doc/screens/media.jpg" width="49%" alt="A game's Media tab: another game's pictures beside its own">
-</p>
-
-*Cheats in one press, and a game's Media tab copying another game's pictures.*
-
-<p>
-  <img src="doc/screens/phone.jpg" width="49%" alt="Connect a phone">
-  <img src="doc/screens/controller-check.jpg" width="49%" alt="The Controller check">
-</p>
-
-*Connect a phone, and the Controller check.*
-
-## 7. If something goes wrong
+## 5. If something goes wrong
 
 - **Stuck somewhere?** Press Esc a few times. It always backs out one step.
 - **Still stuck?** Close Xsegon and start it again. Nothing is lost: it keeps
