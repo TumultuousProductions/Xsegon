@@ -109,6 +109,14 @@ $jsV = $jsV ?: time();
 $pageAt['scripts'] = microtime(true);
 ?>
 <link rel="stylesheet" href="css/xsegon.css?v=<?= $cssV ?>">
+<?php
+// A stylesheet of the person's own, read after the house one so it wins (includes\custom.php); High contrast leaves it out.
+require_once __DIR__ . '/includes/custom.php';
+$customLook = xs_custom_state();
+if ($customLook['css'] && !$s['feel']['highContrast']) {
+    echo '<link rel="stylesheet" href="custom/style.css?v=' . (int) $customLook['stamp'] . '">' . "\n";
+}
+?>
 </head>
 <body class="<?= htmlspecialchars(implode(' ', $bodyClass), ENT_QUOTES) ?>"<?= $bodyStyle !== '' ? ' style="' . htmlspecialchars($bodyStyle, ENT_QUOTES) . '"' : '' ?>>
 
@@ -358,8 +366,9 @@ $pageAt['scripts'] = microtime(true);
     gamesdb: <?= (function () { require_once __DIR__ . '/includes/gamesdb.php'; xs_gamesdb_update_maybe(); return xs_details_from() === 'gamesdb'; })() ? 'true' : 'false' ?>,
     // private\web\main.js (js/main.js loads it): its stamp, or 0 where private\ is not
     private: <?= (int) @filemtime(__DIR__ . '/private/web/main.js') ?>,
-    // the version and commit (in a package, which package), for the error bar's email (js/main.js)
-    build: <?= json_encode((function () { require_once __DIR__ . '/includes/version.php'; return xs_version_short(); })(), JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) ?>
+    // the version and commit (in a package, which package), for the error bar's email (js/main.js);
+    // and, once a day, a look for a newer Xsegon in the background (includes\newversion.php)
+    build: <?= json_encode((function () { require_once __DIR__ . '/includes/newversion.php'; xs_newversion_maybe(); return xs_version_short(); })(), JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) ?>
   };
 </script>
 <?php $pageAt['facts'] = microtime(true); ?>

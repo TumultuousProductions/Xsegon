@@ -106,6 +106,19 @@ function xs_report_checks(): array
 
     $add('build', 'This build', 'info', xs_version_line());
 
+    // What the person changed: Xsegon's own files not as the release made them, and a look of their own (includes\custom.php).
+    require_once __DIR__ . '/custom.php';
+    $rc = xs_release_changes();
+    $own = xs_custom_state();
+    $names = static fn (array $l): string => implode(', ', array_slice($l, 0, 20)) . (count($l) > 20 ? ' and ' . (count($l) - 20) . ' more' : '');
+    $add('changed', 'Changed from the release', 'info',
+        ($rc === null ? 'not a release (a checkout or a tester\'s copy): there is no list to compare its files with.'
+            : (!$rc['changed'] && !$rc['missing'] ? 'every one of the ' . $rc['files'] . ' files of release ' . $rc['version'] . ' is as it came.'
+                : ($rc['changed'] ? count($rc['changed']) . ' of the ' . $rc['files'] . ' files of release ' . $rc['version'] . ' differ: ' . $names($rc['changed']) . '. ' : '')
+                  . ($rc['missing'] ? count($rc['missing']) . ' are not there: ' . $names($rc['missing']) . '.' : '')))
+        . ($own['css'] ? ' A stylesheet of their own is read after Xsegon\'s (custom\\style.css, ' . $own['lines'] . ' lines'
+            . (!empty($own['starter']) ? ', as Xsegon made it' : '') . (!empty($s['feel']['highContrast']) ? ', left out with High contrast' : '') . ').' : ''));
+
     // Can it write at all. Everything else is downstream of this one.
     $why = null;
     if (xs_report_write_test($why)) {

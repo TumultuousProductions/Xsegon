@@ -9,8 +9,20 @@
  */
 declare(strict_types=1);
 
-/** Bumped by hand when something ships. */
-const XS_VERSION = '0.9.0';
+/** A checkout's or a tester's copy's version. A release names its own in RELEASE.json (xs_release). */
+const XS_VERSION = '0.14';
+
+/**
+ * The release this copy is, or null in a checkout or a tester's copy. Its number
+ * is read from RELEASE.json beside index.php, which tools\make-test-copy.js
+ * --release writes with every file's size and SHA-256. Only the head is read:
+ * the status asks every few seconds.
+ */
+function xs_release(?string $root = null): ?string
+{
+    $head = @file_get_contents(($root ?? dirname(__DIR__)) . DIRECTORY_SEPARATOR . 'RELEASE.json', false, null, 0, 512);
+    return is_string($head) && preg_match('/"version":\s*"(\d+(?:\.\d+){1,3})"/', $head, $m) === 1 ? $m[1] : null;
+}
 
 /** The commit this copy sits on, or null when there is no .git to read. */
 function xs_git_commit(): ?array
@@ -75,8 +87,10 @@ function xs_package(?string $root = null): ?string
 function xs_version(): array
 {
     $commit = xs_git_commit();
+    $release = xs_release();
     return [
-        'version' => XS_VERSION,
+        'version' => $release ?? XS_VERSION,
+        'release' => $release !== null,
         'package' => xs_package(),
         'commit'  => $commit['short'] ?? null,
         'branch'  => $commit['branch'] ?? null,
