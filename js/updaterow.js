@@ -147,6 +147,11 @@ function day(iso) {
   return isNaN(d) ? "" : d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
+/* The last try at putting it in place, when it did not work (bin\update-switch.php failed.json). */
+function tried(x) {
+  return "The last try" + (day(x.at) ? ", " + day(x.at) + "," : "") + " did not work: " + (x.why || "no reason was given") + ".";
+}
+
 /* What the row says: this copy, the last look, and what is waiting or can be undone. */
 function words(r) {
   if (!r.release) { return "This is " + r.have + ", not a copy from the release page (a tester's copy or a checkout), so it never looks for a newer one."; }
@@ -159,9 +164,13 @@ function words(r) {
   else if (f.alive) { out.push("Getting " + f.version + " ready: " + stepLine(f) + "."); }
   else if (r.out) {
     if (f.state === "failed" && f.version === r.out.version) { out.push("Downloading it did not work: " + (f.why || "it stopped") + "."); }
+    if (r.failed) { out.push(tried(r.failed)); }
     out.push("Update now asks first, then downloads it (" + mb(r.out.mb) + "), checks it and puts it in place.");
   }
-  else if (r.ready) { out.push(r.ready + " is ready: Update now takes a backup, closes Xsegon, puts it in place and opens it again."); }
+  else if (r.ready) {
+    out.push(r.ready + " is ready: Update now takes a backup, closes Xsegon, puts it in place and opens it again.");
+    if (r.failed) { out.push(tried(r.failed)); }
+  }
   if (r.back && !r.going) { out.push("Updated from " + r.back + ": Go back puts it back the same way."); }
   if ((r.kept || []).length) { out.push("Files of Xsegon's you had changed are kept in data\\update\\previous: " + r.kept.slice(0, 5).join(", ") + (r.kept.length > 5 ? " and " + (r.kept.length - 5) + " more" : "") + "."); }
   if (r.cannot && r.release) { out.push("It cannot update itself: " + r.cannot + "."); }

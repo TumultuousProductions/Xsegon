@@ -4,6 +4,7 @@ Newest first: what changed for the person at the screen.
 
 ## 2026-10-19
 
+- **An update that does not work says why.** When Update now cannot put a new version in place (say another program, such as an antivirus scan, has one of Xsegon's files open), Xsegon opens on the version you had, as before, and now Messages says which file and that nothing was lost, with Update now to try again and Report a problem. Settings > Window > New versions says the last try did not work, and why. A downloaded copy that changed on the disk after it was checked is thrown away, so Update now downloads it again instead of failing the same way at every press. This works from the update after v0.16 is in: v0.15's own first update runs its own older code.
 - **ScreenScraper videos pause on a day with too many fetches.** Everyone with no developer ID of their own shares Xsegon's, so Xsegon's website now counts each Fetch. Past the day's limit, Fetch says "ScreenScraper videos are paused for today; the other video sources still work" until midnight, New York time; Check the login still answers. A developer ID of your own is never paused, and when the website cannot be reached the copy kept on this PC is used as before.
 
 ## 2026-10-18
