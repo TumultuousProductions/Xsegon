@@ -471,6 +471,7 @@ function xs_report_make(): array
               'local-games.json' => 'games of your own',
               'overrides.json'  => 'your text edits',
               'last-error.json' => 'the launcher\'s last failure',
+              'launch-results.json' => 'how each game\'s last start went, and why one failed',
               'running.json'    => 'a game it thinks is running'];
     foreach ($small as $name => $note) {
         $p = xs_data_path($name);
