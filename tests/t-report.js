@@ -88,6 +88,8 @@ module.exports = async function (b, check) {
   check("so is what PHP is running", names.includes("php.txt"));
   check("so are the settings", names.includes("settings.json"));
   check("and at least one day of log", names.some((n) => /^log\/\d{4}-\d\d-\d\d\.log$/.test(n)));
+  check("and how each game's last start went, where any game has been started",
+    names.includes("launch-results.json"), fs.existsSync(path.join(DATA, "launch-results.json")));
 
   /* What must NOT be in it. This is the rule that lets someone send it. */
   check("no ROM, picture or video went in",

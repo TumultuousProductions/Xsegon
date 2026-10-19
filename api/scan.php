@@ -86,6 +86,11 @@ if ($method !== 'POST') {
         xs_log('SCAN', 'no games in: ' . implode(', ', array_slice($empty, 0, 12))
             . (count($empty) > 12 ? ' and ' . (count($empty) - 12) . ' more' : ''));
     }
+    // The folders whose files no console could be read from, with their kinds, so a report says what they are.
+    if ($found['unsure']) {
+        xs_log('SCAN', 'no console read from the files in: ' . implode('; ', array_map(static fn ($u) => $u['folder'] . ' (' . $u['kinds'] . ')',
+            array_slice($found['unsure'], 0, 12))) . (count($found['unsure']) > 12 ? '; and ' . (count($found['unsure']) - 12) . ' more folders' : ''));
+    }
     // Consoles with no emulator that RetroArch plays, and the press that gets it (js\raoffer.js).
     $found['raFor'] = [];
     $found['raOffer'] = null;
