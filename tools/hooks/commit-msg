@@ -1,0 +1,36 @@
+#!/bin/sh
+# Xsegon: a commit that changes code names the roadmap rows it finishes, in a
+# line such as "Roadmap: BC1, BC2" ("Roadmap: none" when it finishes none).
+# The wiki's Next list counts a row done once a commit on main names it.
+# Installed with the changelog check: git config core.hooksPath tools/hooks
+# A commit that truly needs no line: git commit --no-verify
+[ -f "$(git rev-parse --git-dir)/MERGE_HEAD" ] && exit 0
+code=$(git diff --cached --name-only --diff-filter=ACMRD | grep -E '\.(js|php|ps1|css)$' | grep -v '^tests/')
+[ -z "$code" ] && exit 0
+line=$(grep -iE '^Roadmap:' "$1" | head -n 1)
+if [ -z "$line" ]; then
+    echo "Xsegon: this commit changes code but its message has no Roadmap line."
+    echo "Add one naming the roadmap rows it finishes, such as"
+    echo "  Roadmap: BC1, BC2"
+    echo "or \"Roadmap: none\" when it finishes none, or commit with --no-verify."
+    exit 1
+fi
+echo "$line" | grep -qiE '^Roadmap:[[:space:]]*none[[:space:]]*$' && exit 0
+ids=$(echo "$line" | grep -oE '\b[A-Z]{1,2}[0-9]+[a-z]*\b')
+if [ -z "$ids" ]; then
+    echo "Xsegon: the Roadmap line names no row: $line"
+    echo "Name rows such as BC1, BC2, or write \"Roadmap: none\"."
+    exit 1
+fi
+# A row the roadmap does not have is most likely a slip. The roadmap is kept on this PC only.
+road="$(git rev-parse --show-toplevel)/doc/roadmap.md"
+[ -f "$road" ] || exit 0
+missing=""
+for id in $ids; do
+    grep -qE "^\| *$id *\|" "$road" || missing="$missing $id"
+done
+if [ -n "$missing" ]; then
+    echo "Xsegon: the Roadmap line names rows doc/roadmap.md does not have:$missing"
+    exit 1
+fi
+exit 0
