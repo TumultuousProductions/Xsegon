@@ -82,7 +82,8 @@ export function openFanPage() {
   dropDetails();                         // a game's details never stay over the page
   dropExtPage();                         // nor the Extensions page
   stopVideo();                           // nor a snap playing behind it
-  FP.from = sysStage === "inside" ? "inside" : "wall";
+  // The consoles screen only when it is the one showing: with Systems first off the games show with no stage yet.
+  FP.from = sysStage === "wall" ? "wall" : "inside";
   FP.open = true;
   L("NAV", "fan projects, from the " + FP.from);
   $syswall.hidden = true;

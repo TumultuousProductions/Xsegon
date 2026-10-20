@@ -385,6 +385,29 @@ module.exports = async function (b, check) {
     await b.key("Escape");
     check("and Escape leaves the details for every game", await b.until(shown, "main", 5000), "main");
 
+    /* ---- with Systems first off, the way back is the games (roadmap AR18) ----
+       The games show with no screen stage yet; the consoles screen is not where they came from. */
+    try {
+      await api("api/settings.php", { view: { default: "grid", systemsFirst: false } });
+      await b.goto(BASE + "/", { keepView: true });
+      await b.waitFor(`!document.getElementById("main").hidden && document.querySelectorAll("#view .tile").length > 0`, 10000);
+      await fromGames();
+      await b.key("Escape");
+      check("with Systems first off, Escape from the page goes back to the games, not the consoles screen", await b.until(shown, "main", 5000), "main");
+      await fromGames();
+      await b.setView("list");
+      check("and a view switch from the page shows the games as a list, not a blank screen",
+        [await b.until(shown, "main", 5000), await b.ev(`document.getElementById("view").classList.contains("list")`)], ["main", true]);
+      await b.openBar("games");
+      await b.menuItem(/Extensions/);
+      await b.waitFor(`!!document.getElementById("extpage") && !document.getElementById("extpage").hidden`, 10000);
+      await b.key("Escape");
+      check("and Extensions goes back to the games the same way",
+        await b.until(`["extpage", "syswall", "main"].filter((id) => document.getElementById(id) && !document.getElementById(id).hidden).join()`, "main", 5000), "main");
+    } finally {
+      await api("api/settings.php", { view: { default: "wheel", systemsFirst: true, systemsStyle: "wheel" } });
+    }
+
     /* ---- Make, from stand-ins of a team's own places (roadmap AQ2) ---------- */
     // A tiny game in the library, the team's list, its patch and its GitHub release: files under
     // data\fan-fixtures\remote that a test copy fetches in place of the internet (includes\fanmake.php).

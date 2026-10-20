@@ -344,11 +344,20 @@ export function aboutPane(pane, g, full) {
     pane.appendChild(box);
   }
   if (full && full.wikipedia) {
-    var wik = el("a", "wikilink", "Wikipedia ↗");
-    wik.href = full.wikipedia;
-    wik.target = "_blank";
-    wik.rel = "noopener";
-    pane.appendChild(wik);
+    /* Only a web address: the value comes from a data file, which a hand edit or a
+       shared copy could make a script link (javascript:). One written without its
+       https:// gets it; anything else is no link, and the log says so. */
+    var wiki = String(full.wikipedia).trim();
+    if (!/^https?:\/\//i.test(wiki) && /^[a-z0-9-]+(\.[a-z0-9-]+)+(\/|$)/i.test(wiki)) { wiki = "https://" + wiki; }
+    if (/^https?:\/\/[^\s]+$/i.test(wiki)) {
+      var wik = el("a", "wikilink", "Wikipedia ↗");
+      wik.href = wiki;
+      wik.target = "_blank";
+      wik.rel = "noopener";
+      pane.appendChild(wik);
+    } else {
+      L("NAV", "details: " + g.title + "'s Wikipedia link left out, not a web address: " + wiki.slice(0, 60));
+    }
   }
   if (full && pane.isConnected) { startNotesScroll(); paintStates(g); }
 }
