@@ -303,8 +303,8 @@ module.exports = async function (b, check) {
          "Export Games with No videos"].concat(ownFind ? ["Find videos from Package..."] : [], ["Import Xsegon Video Package..."]));
   check("Emulators: RetroArch, the two checks, adding one of your own and their settings", bar.emulators.labels,
         ["Open RetroArch", "BIOS check...", "Runs check...", "Add an emulator...", "Emulator settings..."]);
-  check("Help: the guide, what changed, the log, a report and the data folder", bar.help.labels,
-        ["Getting started...", "What's new", "Show the log", "Report a problem...", "Open the data folder"]);
+  check("Help: the guide, what changed, the log, a report, the data folder and About", bar.help.labels,
+        ["Getting started...", "What's new", "Show the log", "Report a problem...", "Open the data folder", "About Xsegon..."]);
   check("every menu opens under its own button, whole, with nothing to scroll",
         Object.keys(bar).filter(k => !bar[k].under || !bar[k].whole), []);
   await b.openBar("emulators");

@@ -197,7 +197,9 @@ if ($phone === null) {
 @touch(xs_data_path('phone-seen'));            // "off by itself" counts from the last of these
 
 if ($path === '/p/me') {
-    xs_phone_say(200, ['ok' => true, 'name' => (string) ($phone['name'] ?? '')]);
+    // brand: the name set on the PC for its window (includes\brand.php), '' for Xsegon's own.
+    require_once $root . '/includes/brand.php';
+    xs_phone_say(200, ['ok' => true, 'name' => (string) ($phone['name'] ?? ''), 'brand' => xs_brand()['name']]);
 }
 if ($path === '/p/now') {
     $run = xs_game_running();

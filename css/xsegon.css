@@ -412,6 +412,9 @@ body.no-anim .ctx { animation: none; }
   letter-spacing: .12em; color: var(--bad);
 }
 .confirm p { margin: 8px 0; font-size: 13px; color: var(--mute); letter-spacing: .03em; line-height: 1.6; }
+/* Help > About Xsegon (js\about.js): the version in ink, the rest as any asking window. */
+.confirm.about .about-version { color: var(--ink); font-size: 15px; }
+.confirm.about .about-where { user-select: text; overflow-wrap: anywhere; }
 .confirm-game { color: var(--ink) !important; font-weight: 700; }
 /* The sentence that stops the worst misreading of the word "Delete". */
 .confirm-safe { color: var(--good) !important; }
@@ -735,17 +738,26 @@ body.no-glow h1 { text-shadow: none; }
 h1.brand-logo { line-height: 0; letter-spacing: 0; text-shadow: none; }
 h1.brand-logo::before, h1.brand-logo::after { content: none; }
 h1.brand-logo img { display: block; height: 26px; width: auto; }
+/* Yours (Settings > Feel, js\brand.js): a picture fitted in 40 by 240, never stretched,
+   or a name in letters in the wordmark's cyan. */
+h1.brand-logo img.brand-own { height: auto; max-height: 40px; max-width: 240px; object-fit: contain; }
+/* Settings > Feel > Your picture: shown as it stands, on the top bar's own ground. */
+.opt .brand-look { display: inline-flex; align-items: center; flex: none; padding: 4px 8px; margin-right: 8px;
+                   background: rgb(var(--ground-rgb)); border: 1px solid var(--rule); }
+.opt .brand-look img { display: block; max-height: 32px; max-width: 160px; object-fit: contain; }
+h1.brand-logo .brand-name { display: block; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+                            font-size: 20px; font-weight: 700; line-height: 1.2; letter-spacing: .08em; color: var(--cyan); }
 /* On a wheel, a carousel or rows the menu bar is not there, and the wordmark
    is its round X (.as-orb, js\views.js): it glows under the pointer and
    while its menu is open, as the X does. Not under a pointer that is hidden. */
 h1.brand-logo.as-orb { cursor: pointer; }
-h1.brand-logo.as-orb img { transition: filter 160ms ease; }
-body:not(.no-cursor) h1.brand-logo.as-orb:hover img,
-body h1.brand-logo.as-orb.open img { filter: brightness(1.25) drop-shadow(0 0 8px rgba(var(--cyan-rgb), .8)); }
-body.no-glow:not(.no-cursor) h1.brand-logo.as-orb:hover img,
-body.no-glow h1.brand-logo.as-orb.open img { filter: brightness(1.25); }
-body:not(.no-cursor) h1.brand-logo.as-orb:active img { filter: brightness(.9); }
-body.no-anim h1.brand-logo.as-orb img { transition: none; }
+h1.brand-logo.as-orb > * { transition: filter 160ms ease; }
+body:not(.no-cursor) h1.brand-logo.as-orb:hover > *,
+body h1.brand-logo.as-orb.open > * { filter: brightness(1.25) drop-shadow(0 0 8px rgba(var(--cyan-rgb), .8)); }
+body.no-glow:not(.no-cursor) h1.brand-logo.as-orb:hover > *,
+body.no-glow h1.brand-logo.as-orb.open > * { filter: brightness(1.25); }
+body:not(.no-cursor) h1.brand-logo.as-orb:active > * { filter: brightness(.9); }
+body.no-anim h1.brand-logo.as-orb > * { transition: none; }
 /* The logo tip (js\logotip.js): in the masthead's empty middle, its arrow at
    the logo, until its X or the logo's menu. Only the X takes the pointer. */
 .logo-tip {

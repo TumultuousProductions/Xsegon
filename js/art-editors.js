@@ -25,8 +25,8 @@ export function uploadArt(g, kind, file, say) {
   return uploadPieces("api/art.php?id=" + encodeURIComponent(g.id) + "&kind=" + kind, file, say);
 }
 
-// Shared by images and videos: url is the endpoint with its id (and kind).
-function uploadPieces(url, file, say) {
+// Shared by images, videos and your logo (js\brand.js): url is the endpoint with its id (and kind).
+export function uploadPieces(url, file, say) {
   var pieces = Math.max(1, Math.ceil(file.size / ART_PIECE));
   var base = url + "&of=" + pieces;
   function sendPiece(n) {

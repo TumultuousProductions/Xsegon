@@ -81,6 +81,7 @@ const GROUPS = {
   phone: "./t-phone",
   jobs: "./t-jobs",
   themes: "./t-themes",
+  brand: "./t-brand",
   more: "./t-more",
   fanprojects: "./t-fanprojects",
   extensions: "./t-extensions",

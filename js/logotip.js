@@ -8,6 +8,7 @@
  *  middle has no room.
  */
 
+import { logoTipWords } from "./brand.js";
 import { L } from "./log.js";
 import { saveSetting } from "./savednote.js";
 import { $logo, S } from "./state.js";
@@ -33,7 +34,7 @@ function make() {
   $tip = el("div", "logo-tip");
   $tip.setAttribute("role", "note");
   $tip.appendChild(el("span", "logo-tip-arrow"));
-  $tip.appendChild(el("span", "logo-tip-words", "Press the Xsegon logo for the menus: Games, Pictures & Videos, Emulators and Help"));
+  $tip.appendChild(el("span", "logo-tip-words", logoTipWords()));
   var x = el("button", "logo-tip-x", "✕");
   x.type = "button";
   x.tabIndex = -1;                  // out of the Tab order: Enter on a focused button is also Enter, the game key

@@ -110,6 +110,11 @@ module.exports = async function (b, check) {
     check("a square works once", (await ask(port, "/p/join", { body: { code }, headers: own })).status, 403);
     const me = await ask(port, "/p/me", { cookie });
     check("the phone is known by what it is", [me.status, me.json.name], [200, "iPhone, Safari 18"]);
+    // Your name on the PC (Settings > Feel, roadmap BB1) heads the phone page too; empty is Xsegon's own.
+    await api("api/settings.php", { feel: { brandName: "The Basement Arcade" } });
+    check("and it is told the name the PC wears, for its tab and header", (await ask(port, "/p/me", { cookie })).json.brand, "The Basement Arcade");
+    await api("api/settings.php", { feel: { brandName: "" } });
+    check("none set: an empty name, so the phone page says Xsegon", (await ask(port, "/p/me", { cookie })).json.brand, "");
     st = await api("api/phone.php");
     check("and the Connect a phone window lists it", st.phones.map((p) => p.name), ["iPhone, Safari 18"]);
     check("its key is kept as a sum, never as itself", fs.readFileSync(path.join(lib.DATA, "phone.json"), "utf8").includes(cookie.slice(4)), false);

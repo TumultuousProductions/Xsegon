@@ -41,14 +41,21 @@ if ($game === null) {
     $title = (string) $game['title'];
     $why = null;
 }
+// Your name after the game's, and your picture as the icon when it is square (includes\brand.php).
+require_once __DIR__ . '/includes/brand.php';
+$brand = xs_brand();
 ?>
 <!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title><?= htmlspecialchars($title, ENT_QUOTES) ?><?= $why === null ? ' - Xsegon' : '' ?></title>
+<title><?= htmlspecialchars($title . ($why === null ? ' - ' . $brand['title'] : ''), ENT_QUOTES) ?></title>
+<?php if ($brand['square']): ?>
+<link rel="icon" href="<?= htmlspecialchars(xs_brand_url($brand), ENT_QUOTES) ?>">
+<?php else: ?>
 <link rel="icon" type="image/png" sizes="32x32" href="/img/xsegon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/img/xsegon-192.png">
+<?php endif; ?>
 <link rel="apple-touch-icon" href="/img/xsegon-180.png">
 <style>
   html, body { margin: 0; height: 100%; background: #000; color: #eafcff;

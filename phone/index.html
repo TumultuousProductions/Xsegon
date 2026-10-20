@@ -634,6 +634,8 @@
   if (location.search) { try { history.replaceState(null, "", "/"); } catch (e) { /* the address stays as it is */ } }
   (code ? ask("/p/join", { code: code }) : Promise.resolve(null)).then(function (joined) {
     ask("/p/me").then(function (me) {
+      // Your name, where Xsegon's would be (Settings > Feel > Your name and logo on the PC).
+      if (me.ok && me.brand) { document.title = me.brand; document.querySelector(".top h1").textContent = me.brand; }
       if (me.ok) { start(me.name); return; }
       notIn(me.status === 401 ? (joined && !joined.ok && joined.error ? joined.error : me.error) : me.error);
     });

@@ -180,6 +180,8 @@ function xs_settings_defaults(): array
 
             // The status strip under the masthead: diagnostics, brought out by the (i) beside the logo.
             'statusBar'    => false,
+            // Your name on the window's title and the phone, in letters at the top left with no picture (includes\brand.php).
+            'brandName'    => '',
 
             // For a TV across a room: white ink, near-opaque secondary text,
             // visible borders, no scanline wash, slightly larger type.
@@ -473,7 +475,7 @@ function xs_settings_schema(): array
         'feel' => [
             '_label' => 'Feel',
             '_help'  => 'The costume. None of it changes what the app does.',
-            '_sections' => ['Text and brightness', 'Colour and effects', 'On screen', 'Speed', 'Your own look'],
+            '_sections' => ['Text and brightness', 'Colour and effects', 'On screen', 'Speed', 'Your name and logo', 'Your own look'],
             // Its choices are the files in themes\ (api\settings.php fills them in).
             'theme'        => ['label' => 'Theme', 'type' => 'enum', 'options' => 'themes', 'section' => 'Colour and effects',
                                'help' => 'The colours of everything. Xsegon is the look it comes with, and is always here to go back to. Also in the round X menu.'],
@@ -502,6 +504,8 @@ function xs_settings_schema(): array
             'clock'        => ['label' => 'Clock', 'section' => 'On screen'],
             'statusBar'    => ['label' => 'Status info bar', 'section' => 'On screen', 'help' => 'The strip under the logo. The (i) beside XSEGON toggles it too.'],
             'highContrast' => ['label' => 'High contrast', 'section' => 'Text and brightness', 'help' => 'For a TV across a room.'],
+            'brandName'    => ['label' => 'Your name', 'section' => 'Your name and logo',
+                               'help' => 'On the window\'s title, a game\'s window and the phone. With no picture of your own, it stands at the top left in letters. Leave it empty for Xsegon.'],
             'drawNearOnly' => ['label' => 'Draw only what is near the screen', 'section' => 'Speed',
                                'help' => 'The list skips drawing rows far off screen until you scroll near them, which makes a long list quicker to show and to scroll. Turn off if a row ever looks late to appear.'],
             'openFromLast' => ['label' => 'Open on the copy from last time', 'section' => 'Speed',

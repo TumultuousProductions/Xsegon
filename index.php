@@ -81,15 +81,22 @@ if (!empty($s['view']['listStripes'])) { $bodyClass[] = 'list-stripes'; }   // t
 foreach ((array) ($s['view']['badges'] ?? []) as $badge => $on) {
     if ($on && $marks && preg_match('/^[a-z]+$/', (string) $badge)) { $bodyClass[] = 'badge-' . $badge; }
 }
+// Your name and logo (Settings > Feel, includes\brand.php): the title, the icon and the wordmark's place.
+require_once __DIR__ . '/includes/brand.php';
+$brand = xs_brand($s);
 ?>
 <!DOCTYPE html>
 <html lang="en" data-theme="<?= htmlspecialchars((string) $theme['id'], ENT_QUOTES) ?>"<?= $themeWears ?><?= $themeStyle !== '' ? ' style="' . htmlspecialchars($themeStyle, ENT_QUOTES) . '"' : '' ?>>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Xsegon</title>
+<title><?= htmlspecialchars($brand['title'], ENT_QUOTES) ?></title>
+<?php if ($brand['square']): ?>
+<link rel="icon" id="icon-own" href="<?= htmlspecialchars(xs_brand_url($brand), ENT_QUOTES) ?>">
+<?php else: ?>
 <link rel="icon" type="image/png" sizes="32x32" href="/img/xsegon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/img/xsegon-192.png">
+<?php endif; ?>
 <link rel="apple-touch-icon" href="/img/xsegon-180.png">
 <?php
 // Cache-bust on file mtime, so a fix to the CSS is never hidden behind the browser's old copy.
@@ -135,7 +142,11 @@ if ($customLook['css'] && !$s['feel']['highContrast']) {
            reader, in the alt. Where the menu bar is not (wheel, carousel, rows)
            it is the round X: a press opens Xsegon's own menu. -->
       <div class="brand">
-        <h1 class="brand-logo" id="brand-logo" data-menu="xsegon"><img src="/img/xsegon-wordmark.png" alt="Xsegon" width="145" height="26"></h1>
+        <h1 class="brand-logo" id="brand-logo" data-menu="xsegon"><?php
+        // Yours where it is set (js\brand.js draws the same three when it changes): your picture, your name in letters, or the wordmark.
+        if ($brand['has']): ?><img class="brand-own" src="<?= htmlspecialchars(xs_brand_url($brand), ENT_QUOTES) ?>" alt="<?= htmlspecialchars($brand['name'] !== '' ? $brand['name'] : 'Your logo', ENT_QUOTES) ?>"><?php
+        elseif ($brand['name'] !== ''): ?><span class="brand-name"><?= htmlspecialchars($brand['name'], ENT_QUOTES) ?></span><?php
+        else: ?><img src="/img/xsegon-wordmark.png" alt="Xsegon" width="145" height="26"><?php endif; ?></h1>
         <!-- The status strip lives behind this: diagnostics, not needed to choose a game. -->
         <button type="button" id="btn-info" class="infobtn" title="Status info"
                 aria-label="Status info" aria-controls="status"
@@ -348,6 +359,8 @@ if ($customLook['css'] && !$s['feel']['highContrast']) {
     autoImported: <?= $autoImported ? 'true' : 'false' ?>,
     // the look being worn and the ones to choose from (js\themes.js)
     theme: <?= json_encode($theme + ['list' => $themeList], JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) ?>,
+    // your name and logo (includes\brand.php, js\brand.js)
+    brand: <?= json_encode($brand, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) ?>,
     // The fast lane (includes\fastlane.php): where the reads a person waits on
     // go; null when it cannot be used. js\log.js falls back to this server
     // whenever it does not answer, or answers as anything but this folder's.

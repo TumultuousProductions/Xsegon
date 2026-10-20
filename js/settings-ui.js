@@ -1,3 +1,4 @@
+import { brandRows } from "./brand.js";
 import { confirmWindow } from "./confirm.js";
 import { paintDeletedList, paintHiddenList } from "./editors.js";
 import { gamesdbRow } from "./gamesdbrow.js";
@@ -301,6 +302,8 @@ function paintSettings(res) {
     }
     // Which version this is, what is waiting, and Go back (js\updaterow.js).
     if (group === "window") { updateRow(part("New versions")); }
+    // Your picture and the way back to Xsegon's, under Your name (js\brand.js).
+    if (group === "feel") { brandRows(part("Your name and logo"), actionRow); }
     // A stylesheet of your own, in a folder updates never touch (includes\custom.php).
     if (group === "feel") {
       part("Your own look").appendChild(actionRow("Your own stylesheet",

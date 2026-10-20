@@ -78,6 +78,7 @@ export var TIPS = {
   whatsnew: "What changed in each version, newest first.",
   log: "What Xsegon has been doing, line by line. The place to look when something went wrong.",
   report: "Checks for the usual problems first. It can also make a zip to send, and says what is in it.",
+  about: "Xsegon's version, its licence and who makes it, whatever name and logo this copy wears.",
   // View
   list: "One line per game, in columns you can sort and choose.",
   grid: "A wall of pictures.",

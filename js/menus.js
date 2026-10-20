@@ -3,6 +3,7 @@
     popupMenu() draws it, the keyboard walks it, and one press anywhere else
     closes it.                                                              */
 
+import { openAbout } from "./about.js";
 import { openAddChooser } from "./add.js";
 import { openArchiveVideos } from "./archivevid.js";
 import { openArtEditor, openVideoEditor } from "./art-editors.js";
@@ -397,7 +398,9 @@ function mbEntries(which) {
       { rule: true },
       { icon: "lines", label: "Show the log", hint: "L", tip: TIPS.log, run: openLogViewer },
       { icon: "shield", label: "Report a problem...", tip: TIPS.report, run: openReportTool },
-      { icon: "folder", label: "Open the data folder", tip: TIPS.data, run: openDataFolder }
+      { icon: "folder", label: "Open the data folder", tip: TIPS.data, run: openDataFolder },
+      { rule: true },
+      { icon: "info", label: "About Xsegon...", tip: TIPS.about, run: openAbout }
     ];
   }
   if (which === "view") {
