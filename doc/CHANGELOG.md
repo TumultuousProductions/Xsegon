@@ -2,6 +2,10 @@
 
 Newest first: what changed for the person at the screen.
 
+## 2026-10-20
+
+- **A manual's turn arrows take the theme's colours.** The round shade behind the arrows at a manual's edges stayed navy under every theme; it is now the theme's own ground colour. The paper behind a page while it draws stays paper under every theme.
+
 ## 2026-10-19
 
 - **A copy run from Xsegon's code says its version.** Run from the code rather than a download, Xsegon said 0.14 in its log, its status and Report a problem while 0.15 and 0.15.1 were out. It says 0.16 now, and the number moves with each release: building a release whose number differs from it stops and says so. A downloaded copy always named its own version, and still does.

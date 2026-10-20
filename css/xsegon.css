@@ -20,6 +20,8 @@
   --panel-2: #172640;
   /* What a grid tile's picture stands on. Black on purpose: see .tile .shot. */
   --art-bed: #000000;
+  /* A manual's page while it draws: paper, the same under every theme. */
+  --paper:   #f2eee4;
   --rule:    rgba(var(--cyan-rgb), .30);
   --rule-hi: rgba(var(--cyan-rgb), .65);
 
@@ -5242,7 +5244,7 @@ body.no-anim .dmedium.is-disc:hover { animation: none; }
 .rd-area { flex: 1 1 0; min-width: 0; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
 .rd-book { position: relative; flex: none; }
 .rd-book .stf__wrapper { height: 100%; }
-.rd-page, .rd-slot { background: #f2eee4; overflow: hidden; }
+.rd-page, .rd-slot { background: var(--paper); overflow: hidden; }
 .rd-page canvas, .rd-slot canvas, .rd-zpage canvas { display: block; width: 100%; height: 100%; }
 .rd-num { position: absolute; inset: 0; display: grid; place-items: center; font-size: 32px; color: rgba(0, 0, 0, .22); }
 .rd-book.is-flat { display: flex; }
@@ -5252,7 +5254,7 @@ body.no-anim .dmedium.is-disc:hover { animation: none; }
 .rd-wait, .rd-fail { color: var(--mute); text-align: center; max-width: 60ch; margin: 0 16px; }
 .rd-fail + button { position: absolute; bottom: 20%; }
 .rd-zoom { position: absolute; inset: 0; overflow: auto; background: var(--art-bed); cursor: grab; z-index: 2; padding: 12px 0; }
-.rd-zpage { position: relative; margin: 0 auto 12px; background: #f2eee4; cursor: zoom-out; }
+.rd-zpage { position: relative; margin: 0 auto 12px; background: var(--paper); cursor: zoom-out; }
 /* Each page's number, under it; the cover's left side is blank. */
 .rd-folios { display: flex; flex: none; padding-top: 6px; }
 .rd-folio { flex: 1 1 0; text-align: center; font-size: 13px; letter-spacing: .08em; color: var(--mute); font-variant-numeric: tabular-nums; }
@@ -5263,7 +5265,7 @@ body.no-anim .dmedium.is-disc:hover { animation: none; }
 .rd-hot.off { cursor: default; }
 .rd-hot::after {
   content: ""; position: absolute; top: 50%; width: 46px; height: 46px; margin-top: -23px; border-radius: 50%;
-  background: rgba(6, 13, 28, .55) no-repeat center / 22px; opacity: 0; transition: opacity .15s;
+  background: rgba(var(--ground-rgb), .55) no-repeat center / 22px; opacity: 0; transition: opacity .15s;
 }
 .rd-hot.prev::after { left: 10px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 5l-7 7 7 7'/%3E%3C/svg%3E"); }
 .rd-hot.next::after { right: 10px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 5l7 7-7 7'/%3E%3C/svg%3E"); }
