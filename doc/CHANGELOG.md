@@ -4,6 +4,7 @@ Newest first: what changed for the person at the screen.
 
 ## 2026-10-20
 
+- **Main on GitHub stays a straight line.** Nothing in Xsegon itself changes: this is the check that runs before Xsegon's code is pushed to GitHub (`tools\hooks\pre-push`). A push to main that brings a merge commit is now refused, with how to send the work as a straight step instead. A merge commit takes one side's copy of every file, so when main had moved on since the branch began, it could quietly undo the newer changes.
 - **Leaving Fan projects or Extensions goes back to the games, and a game's Wikipedia link is only ever a web address.** With Settings > Views > Systems first off, Esc from Fan projects or Extensions brought up the consoles screen you had turned off, and changing the view from either page left the screen blank until a reload; both now go back to the games you came from. The Wikipedia link in a game's About tab comes from an imported data file: a link that is not a web address (a script, for one) is no longer made into a link, and one written without its https:// gets it.
 - **A manual's turn arrows take the theme's colours.** The round shade behind the arrows at a manual's edges stayed navy under every theme; it is now the theme's own ground colour. The paper behind a page while it draws stays paper under every theme.
 

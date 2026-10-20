@@ -1,4 +1,25 @@
 #!/bin/sh
 # Xsegon: nothing of this PC's is pushed. tools/privacy-scan.js reads what the
 # push sends (one line a ref, on stdin) and stops the push on a finding.
-exec node tools/privacy-scan.js --push
+refs=$(cat)
+printf '%s\n' "$refs" | node tools/privacy-scan.js --push || exit 1
+# Main is a straight line: a branch is rebased onto it and main steps forward to
+# it. A merge commit takes one side's files whole, so it can undo newer work.
+zero=0000000000000000000000000000000000000000
+printf '%s\n' "$refs" | while read -r lref lsha rref rsha; do
+    [ "$rref" = "refs/heads/main" ] || continue
+    [ "$lsha" = "$zero" ] && continue
+    if [ "$rsha" = "$zero" ]; then range="$lsha --not --remotes"; else range="$rsha..$lsha"; fi
+    if ! merges=$(git log --merges --format='%h %s' $range 2>/dev/null); then
+        echo "Xsegon: main on GitHub has commits this folder has not got."
+        echo "git fetch, rebase the branch onto origin/main, and push it again."
+        exit 1
+    fi
+    if [ -n "$merges" ]; then
+        echo "Xsegon: main is a straight line, and this push brings merge commits to it:"
+        echo "$merges" | sed 's/^/  /'
+        echo "Rebase the branch onto origin/main instead, then: git push origin <branch>:main"
+        exit 1
+    fi
+done || exit 1
+exit 0
