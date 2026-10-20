@@ -73,7 +73,8 @@ export function openExtPage() {
   dropDetails();
   dropFanPage();                         // the two pages never stand one over the other
   stopVideo();
-  XP.from = sysStage === "inside" ? "inside" : "wall";
+  // The consoles screen only when it is the one showing: with Systems first off the games show with no stage yet.
+  XP.from = sysStage === "wall" ? "wall" : "inside";
   XP.open = true;
   L("NAV", "extensions, from the " + XP.from);
   $syswall.hidden = true;

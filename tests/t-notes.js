@@ -101,6 +101,19 @@ module.exports = async function (b, check) {
       [await b.until(tabOn, "Notes", 6000), g.id in stored()], ["Notes", false]);
     await b.key("Escape");
     await b.until(`document.getElementById("details").hidden`, true, 6000);
+
+    /* About's Wikipedia link is only ever a web address (roadmap S14): the value comes from
+       an imported data file. Built on a pane of its own from stand-in records, nothing saved. */
+    const wikiOf = (value) => b.ev(`import("/js/details.js").then((m) => {
+      const pane = document.createElement("div");
+      m.aboutPane(pane, { id: "xs-wiki-test", title: "Wiki Test" }, { wikipedia: ${JSON.stringify(value)} });
+      const a = pane.querySelector("a.wikilink");
+      return a ? a.getAttribute("href") : null;
+    })`);
+    check("a script given as a game's Wikipedia link is no link, and one with no https:// gets it",
+      [await wikiOf("javascript:alert(1)"), await wikiOf(" JavaScript:alert(1)"), await wikiOf("data:text/html,x"),
+       await wikiOf("en.wikipedia.org/wiki/Star_Fox_64"), await wikiOf("https://en.wikipedia.org/wiki/Star_Fox_64")],
+      [null, null, null, "https://en.wikipedia.org/wiki/Star_Fox_64", "https://en.wikipedia.org/wiki/Star_Fox_64"]);
     check("no script errors through any of it", await b.ev(`(window.__errs || []).length`), 0);
   } finally {
     kept.restore();
