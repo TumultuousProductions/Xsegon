@@ -61,7 +61,7 @@ const LEFT_OUT = /^(main-busy|phone\.json|phone-(stop|seen|closed)|browser-profi
 const HARD_LINKED = ["gamesdb.sqlite"];
 
 function php() {
-  const cands = [process.env.XSEGON_PHP, path.join(ROOT, "..", "php-8.5.4-nts-Win32-vs17-x64", "php.exe")];
+  const cands = [process.env.XSEGON_PHP, path.join(ROOT, "..", "php-8.5.12-nts-Win32-vs17-x64", "php.exe")];
   for (const c of cands) { if (c && fs.existsSync(c)) { return c; } }
   return "php";
 }

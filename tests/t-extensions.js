@@ -22,7 +22,7 @@ const GAME_E = "ee55ee55-0000-4000-8000-000000000005";       // tagged with a ta
 const GAME_F = "ff66ff66-0000-4000-8000-000000000006";       // marked broken
 
 function php() {
-  for (const c of [process.env.XSEGON_PHP, path.join(ROOT, "..", "php-8.5.4-nts-Win32-vs17-x64", "php.exe")]) {
+  for (const c of [process.env.XSEGON_PHP, path.join(ROOT, "..", "php-8.5.12-nts-Win32-vs17-x64", "php.exe")]) {
     if (c && fs.existsSync(c)) { return c; }
   }
   return "php";
