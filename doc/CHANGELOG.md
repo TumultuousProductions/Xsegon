@@ -4,6 +4,7 @@ Newest first: what changed for the person at the screen.
 
 ## 2026-10-21
 
+- **Xsegon 0.17.1.** The four fixes below, as a download and as an update for copies from 0.15 on.
 - **A web game's own close and minimise work with your name on it, and Xsegon comes back after a game.** With a name set in Settings > Feel, a web game's X, minimise and Esc found no window, and Xsegon, open in a browser tab, was not brought back to the front after a game. A name's double quotes become single ones.
 - **Get everything missing waits its turn for ScreenScraper, and its Stop stops only what it started.** A Media tab compare asking ScreenScraper as the free sources finished made the whole ScreenScraper pass fail; it now waits for the compare. Stop pressed at that moment no longer lets ScreenScraper start, and it leaves alone a fetch you started yourself. A game whose video came from another of its versions no longer stays at asking, so the bar ends on the right count.
 - **The Media tab compare keeps a waiting Use.** Looking along the other choices while one comes down no longer lets it go: it is used once it lands, and the screen says which one is waiting. Moving back onto the one shown no longer starts its video over.
