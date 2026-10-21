@@ -81,6 +81,10 @@ function xs_settings_defaults(): array
             'getPictures'      => 'free-ss',
             'getVideos'        => 'free-ss',
             'getManuals'       => 'free-ss',
+            // The Media tab's compare, Look in (includes\mediachoice.php): each group's places in the person's
+            // order, and the ones turned off as "group:place". A set, so Settings draws no row for it.
+            'look'             => ['pictures' => ['steam', 'gamesdb', 'ss', 'libretro'], 'videos' => ['steam', 'arcadedb', 'archive', 'ss'],
+                                   'manuals' => ['archive', 'ss'], 'off' => []],
         ],
 
         'view' => [

@@ -7,7 +7,7 @@
 import { $details } from "./state.js";
 
 // Every box in details that scrolls in what the screen leaves (css\xsegon.css, var(--fit-max, ...)).
-var FIT = ".notes-box, .ach-list, .sv-list, .ch-tab .ch-list, .ch-tab .hck-list, .ch-tab .md-list, .md-tab .pk-grid, .nt-box";
+var FIT = ".notes-box, .ach-list, .sv-list, .ch-tab .ch-list, .ch-tab .hck-list, .ch-tab .md-list, .md-tab .pk-grid, .nt-box, .mt-fit";
 var asked = false;
 
 /* What stands under a box in its own column: its later siblings, and theirs up the tree. */

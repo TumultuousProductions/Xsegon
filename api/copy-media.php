@@ -73,6 +73,7 @@ foreach ($want as $k) {
     }
     $copied[] = $k;
     $rev = (int) @filemtime($path);
+    xs_art_from_set($id, $k, 'copy', $rev, (string) $from['title']);
     foreach ($rows as &$r) {
         if ($r['kind'] === $k) {
             $r['to']   = xs_cm_url($id, $k, $path);

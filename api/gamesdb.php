@@ -76,5 +76,6 @@ if ($got === null) {
     }
     xs_fail((string) $why, $code);
 }
+xs_art_from_set($id, $kind, 'gamesdb', (int) $got['rev']);
 xs_log('DB', 'picture ' . $kind . ' for ' . $game['title'] . ' ' . $file . ' ' . $got['width'] . 'x' . $got['height']);
 xs_json(['ok' => true] + $got);

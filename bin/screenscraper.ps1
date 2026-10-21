@@ -36,6 +36,8 @@ function Read-Job { ConvertFrom-Json ([IO.File]::ReadAllText($Job, $utf8)) }
 # Written beside and swapped in, so the page never reads it half written; a swap Windows refuses
 # while the server reads is tried again, and at the last it is written in place as before.
 function Save-Job($j) {
+    # A compare closed meanwhile took its job file away: nothing is written for nobody.
+    if (($j.look -or $j.fetch) -and -not [IO.File]::Exists($Job)) { return }
     $text = $j | ConvertTo-Json -Depth 6
     $tmp = $Job + '.part'
     [IO.File]::WriteAllText($tmp, $text, $utf8)
@@ -292,6 +294,68 @@ function Has-Own-Box([string] $id) {
     return [bool] (Get-ChildItem -LiteralPath $j.art -File -Filter ($id + '-box.*') -ErrorAction SilentlyContinue | Select-Object -First 1)
 }
 
+# An address with the logins taken out, for a look's answer (includes\mediachoice.php keeps no login),
+# and put back only here as it is fetched.
+function Strip-Auth([string] $url) {
+    $u = $url -replace '([?&])(devid|devpassword|softname|ssid|sspassword)=[^&]*', '$1'
+    return (($u -replace '&{2,}', '&') -replace '\?&', '?') -replace '[?&]$', ''
+}
+# The logins go to ScreenScraper alone: its own servers, or the address its job was given to ask (a test's stand-in).
+function Is-SS([string] $url) {
+    try { $h = ([Uri] $url).Host } catch { return $false }
+    return ($h -match '(^|\.)screenscraper\.fr$') -or ($script:ssHost -and $h -eq $script:ssHost)
+}
+function Add-Auth([string] $url) {
+    if (-not (Is-SS $url)) { throw 'an address that is not ScreenScraper''s was not sent the logins' }
+    return $url + $(if ($url.Contains('?')) { '&' } else { '?' }) + $auth
+}
+
+<#  A look at one game (the Media tab's compare, -Job data\mediachoice\<ticket>\ss.json): every picture,
+    video and manual ScreenScraper has for it, each address without the logins, and the pictures of the
+    kinds asked brought down into the ticket's folder, the game's own region first.  #>
+function Look-At($jeu, $g) {
+    $types = @('box-2D', 'box-3D', 'wheel-hd', 'wheel', 'ss', 'fanart', 'video-normalized', 'video', 'manuel')
+    $own = @(Regions-Of ([string] $g.rom))
+    Set-Field $g 'own' $own
+    $list = @()
+    foreach ($m in @($jeu.medias)) {
+        if (-not $m.url -or $types -notcontains [string] $m.type) { continue }
+        # Kept only when it is ScreenScraper's and no login is left in it (one written another way, &amp; and the like).
+        $u = Strip-Auth ([string] $m.url)
+        if (-not (Is-SS $u) -or $u -match 'password=|ssid=[^&]') { continue }
+        $size = [long] 0
+        [void][long]::TryParse([string] $m.size, [ref] $size)
+        $list += [ordered]@{ type = [string] $m.type; region = [string] $m.region; format = [string] $m.format; size = $size
+                             md5 = ([string] $m.md5).ToLowerInvariant(); url = $u; file = '' }
+    }
+    Set-Field $g 'medias' $list
+    $g.state = 'listed'; Save-Job $j
+    $order = @($own) + @('us', 'wor', 'eu', 'uk', 'au', 'ca', 'ss', 'jp')
+    foreach ($type in @($j.lookTypes)) {
+        $mine = @(for ($i = 0; $i -lt $list.Count; $i++) { if ($list[$i].type -eq $type) { $i } })
+        $mine = @($mine | Sort-Object { $r = [array]::IndexOf($order, $list[$_].region); if ($r -lt 0) { 99 } else { $r } }, { $_ })
+        foreach ($i in ($mine | Select-Object -First ([int] $j.lookMax))) {
+            # The compare closed: no more of its pictures are fetched, and none of the day's requests spent on them.
+            if (-not [IO.File]::Exists($Job)) { return }
+            $part = Join-Path $j.dir ('ss-' + $i + '.part')
+            $got = Meaning (Get-Url (Add-Auth $list[$i].url) $part) $part
+            if ($Halts.ContainsKey($got) -and $got -ne 'busy') {
+                Remove-Item -LiteralPath $part -Force -ErrorAction SilentlyContinue
+                $script:halt = $Halts[$got]; return
+            }
+            $ext = $(if ($got -eq 'ok') { Image-Ext $part } else { '' })
+            if (-not $ext) { Remove-Item -LiteralPath $part -Force -ErrorAction SilentlyContinue; continue }
+            $name = 'ss-' + $i + '.' + $ext
+            Move-Item -LiteralPath $part -Destination (Join-Path $j.dir $name) -Force
+            $list[$i].file = $name
+            Set-Field $g 'medias' $list; Save-Job $j
+            if ($script:pause -gt 0) { Start-Sleep -Milliseconds $script:pause }
+        }
+    }
+    $g.state = 'done'
+    Save-Job $j
+}
+
 # Two answers of the same name (a hack, a re-release): the one with what this game is asked for.
 function Has-Wanted($x) {
     if ($script:needV) { return [bool] (Video-Of $x) }
@@ -329,7 +393,8 @@ try {
 } catch {
     try {
         if ($j) { Set-Field $j 'state' 'failed'; Set-Field $j 'error' ('could not start: ' + $_.Exception.Message); Save-Job $j }
-        else { [IO.File]::WriteAllText($Job, ('{"state":"failed","error":"the job file could not be read: ' + ($_.Exception.Message -replace '["\\]', "'") + '"}'), $utf8) }
+        # A job file that is not there has nobody waiting on it (a compare closed before this began): nothing is written.
+        elseif ([IO.File]::Exists($Job)) { [IO.File]::WriteAllText($Job, ('{"state":"failed","error":"the job file could not be read: ' + ($_.Exception.Message -replace '["\\]', "'") + '"}'), $utf8) }
     } catch { }
     exit 1
 }
@@ -352,7 +417,33 @@ function Fill-As([string] $template, $g, [string] $text) {
     return $u.Replace('{title}', (& $enc $text)).Replace('{rom}', (& $enc $text))
 }
 
+# The host this job asks ScreenScraper at (its own, or a test's stand-in): only there do the logins go (Is-SS).
+$ssHost = ''
 try {
+    if ($j.search) { $ssHost = ([Uri] ([string] $j.search).Replace('{auth}', '').Replace('{system}', '0').Replace('{title}', 'x')).Host }
+    elseif ($j.host) { $ssHost = [string] $j.host }
+} catch { $ssHost = '' }
+$part = $null
+try {
+    # One file brought down for the Media tab's compare (a video or manual chosen there): its address
+    # has no logins until here (Strip-Auth). -Job is that file's prep-*.json in the ticket's folder.
+    if ($j.fetch) {
+        $to = Join-Path $j.dir ([string] $j.to)
+        $part = $to + '.part'
+        $got = Meaning (Get-Url (Add-Auth ([string] $j.url)) $part) $part
+        $ok = $got -eq 'ok' -and $(switch ([string] $j.type) { 'video' { Is-Mp4 $part } 'pdf' { Is-Pdf $part } default { [bool] (Image-Ext $part) } })
+        if ($ok -and $j.md5 -and (Get-FileHash -LiteralPath $part -Algorithm MD5).Hash.ToLowerInvariant() -ne ([string] $j.md5).ToLowerInvariant()) { $ok = $false }
+        if ($ok) {
+            Move-Item -LiteralPath $part -Destination $to -Force
+            Set-Field $j 'size' (Get-Item -LiteralPath $to).Length
+            Set-Field $j 'got' $j.size
+            $j.state = 'done'
+        } else {
+            Remove-Item -LiteralPath $part -Force -ErrorAction SilentlyContinue
+            $j.state = 'failed'
+            Set-Field $j 'why' $(if ($Halts.ContainsKey($got)) { $Halts[$got] } elseif ($got -ne 'ok') { 'ScreenScraper did not send it (' + $got + ')' } else { 'what came is not what was asked, or it came damaged' })
+        }
+    }
     $answer = Join-Path $tmp 'answer.json'
     # Versions of one game on one console share a name: the first one's snap
     # and cover are copied to the rest, and ScreenScraper is asked once.
@@ -391,6 +482,8 @@ try {
                 Set-Field $g 'bstate' 'got'; Set-Field $g 'bfile' (Split-Path -Leaf $to)
             } else { $needB = $true }
         }
+        # A look (the Media tab's compare) brings nothing down by these rules: it asks for what its kinds are.
+        if ($j.look) { $needV = [bool] $g.video; $needM = [bool] $g.manual; $needB = [bool] $g.box }
         if (-not $needV -and -not $needM -and -not $needB) {
             # "manual": a game there for its manual or its cover alone, through with
             if (-not $wantV) { $g.state = 'manual' }
@@ -451,6 +544,13 @@ try {
         if ($json -and $json.response -and $json.response.ssuser -and $json.response.ssuser.maxrequestsperday) {
             Set-Field $j 'used' ([int] $json.response.ssuser.requeststoday)
             Set-Field $j 'allowed' ([int] $json.response.ssuser.maxrequestsperday)
+        }
+
+        if ($j.look) {
+            if (-not $jeu) { $g.state = $(if ($unreadable) { 'failed' } else { 'none' }); Save-Job $j; continue }
+            Look-At $jeu $g
+            if ($script:halt) { break }
+            continue
         }
 
         if (-not $jeu) {
@@ -556,13 +656,18 @@ try {
     if ($script:halt) {
         $j.state = 'failed'
         Set-Field $j 'error' $script:halt
-    } else {
+    } elseif (-not $j.fetch) {
         $j.state = 'done'
     }
 }
 catch {
     $j.state = 'failed'
     Set-Field $j 'error' ('stopped: ' + $_.Exception.Message)
+    # A compare's download says why where the compare reads it, and leaves no half file behind.
+    if ($j.fetch) {
+        Set-Field $j 'why' ('it stopped: ' + $_.Exception.Message)
+        if ($part) { Remove-Item -LiteralPath $part -Force -ErrorAction SilentlyContinue }
+    }
 }
 finally {
     # the answers in here carry the logins in their addresses

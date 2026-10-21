@@ -468,6 +468,9 @@ function xs_vm_match(string $root, array $game): array
     $rows = array_map(static fn ($x) => $x + [3 => count($tied) > 1 && $hevc($x[2])], $tied);
     usort($rows, static fn ($a, $b) => [$a[3], -$a[2]['size']] <=> [$b[3], -$b[2]['size']]);
     $best = $rows[0];
+    // 'all': every one that matched, best first, for a person choosing among them (the Media tab's compare):
+    // the tied ones in the order the best was chosen by, then the rest as they matched.
+    $all = array_merge($rows, array_slice($found, count($tied)));
     return ['video' => $best[2], 'kind' => $best[0], 'why' => '', 'near' => null, 'others' => count($found) - 1,
-            'hevc' => count($tied) > 1 ? $best[3] : $hevc($best[2])];
+            'hevc' => count($tied) > 1 ? $best[3] : $hevc($best[2]), 'all' => array_map(static fn ($x) => $x[2] + ['how' => $x[0]], $all)];
 }

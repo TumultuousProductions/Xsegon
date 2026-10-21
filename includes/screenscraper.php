@@ -630,6 +630,21 @@ function xs_ss_plan(array $games, bool $manuals, bool $boxes = false): array
     ];
 }
 
+/** Whether a Media tab compare is asking ScreenScraper now: its look, or a download of one choice (data\mediachoice). */
+function xs_ss_compare_busy(): bool
+{
+    foreach (xs_glob(xs_data_path('mediachoice'), '*', true) as $dir) {
+        foreach (array_merge([$dir . DIRECTORY_SEPARATOR . 'ss.json'], xs_glob($dir, 'prep-*.json')) as $f) {
+            $j = is_file($f) ? xs_read_json($f, null) : null;
+            if (is_array($j) && ($j['state'] ?? '') === 'running' && (basename($f) === 'ss.json' || !empty($j['fetch']))
+                && xs_job_dead($j, $f) === null) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 /**
  * Write the job and start the fetcher with these logins (xs_ss_account_in_use). False with $why.
  * The fetcher opens the kept copy of Xsegon's own developer ID itself; it is never on a command line.
@@ -637,6 +652,12 @@ function xs_ss_plan(array $games, bool $manuals, bool $boxes = false): array
 function xs_ss_start(array $plan, array $use, ?string &$why = null): bool
 {
     $why = null;
+    // A free account answers one at a time: started beside a compare's, either would be told "too many requests".
+    if (xs_ss_compare_busy()) {
+        $why = 'a Media tab compare is asking ScreenScraper now, and it answers one thing at a time: start this again in a minute';
+        xs_log('SSCR', 'fetch not started: ' . $why);
+        return false;
+    }
     if (!xs_write_json(xs_ss_job_path(), $plan, $why)) {
         return false;
     }

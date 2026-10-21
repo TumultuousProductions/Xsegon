@@ -25,8 +25,13 @@ export function uploadArt(g, kind, file, say) {
   return uploadPieces("api/art.php?id=" + encodeURIComponent(g.id) + "&kind=" + kind, file, say);
 }
 
+// The addresses a file is being sent to: a second one sent beside it would mix their pieces on the server.
+var sendingTo = {};
+
 // Shared by images, videos and your logo (js\brand.js): url is the endpoint with its id (and kind).
 export function uploadPieces(url, file, say) {
+  if (sendingTo[url]) { return Promise.reject(new Error("still sending the one before")); }
+  sendingTo[url] = true;
   var pieces = Math.max(1, Math.ceil(file.size / ART_PIECE));
   var base = url + "&of=" + pieces;
   function sendPiece(n) {
@@ -44,7 +49,7 @@ export function uploadPieces(url, file, say) {
       return n + 1 < pieces ? sendPiece(n + 1) : r;
     });
   }
-  return sendPiece(0);
+  return sendPiece(0).finally(function () { delete sendingTo[url]; });
 }
 
 export function openArtEditor(g) {

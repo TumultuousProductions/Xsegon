@@ -33,7 +33,8 @@ function stamp() {
    fine and fast is only counted, riding on the end of the next line as [*N]; a slow
    or failing one has a line of its own. A page left alone writes "LIVE still here
    [*N]" once every five minutes, so a quiet hour still shows the page was alive. */
-var ROUTINE = /^api\/(status|running)\.php(\?beat=1)?$|^api\/(pick-folder|step)\.php$/;
+// The Media tab's compare asks how its places are getting on every 700 ms: counted too, unless slow or failing.
+var ROUTINE = /^api\/(status|running)\.php(\?beat=1)?$|^api\/(pick-folder|step)\.php$|^api\/mediachoice\.php\?ticket=[a-f0-9]{16}$/;
 var routineN = 0, lastLineAt = Date.now();
 var LIVE_EVERY_MS = 300000;
 function routine() {

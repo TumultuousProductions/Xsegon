@@ -261,42 +261,18 @@ module.exports = async function (b, check) {
       const all = await cm(q + "&kind=all", "POST");
       check("Copy all it has copies the rest, the box art not twice", [all.ok, all.copied, all.rows.filter((x) => x.from).every((x) => x.same)], [true, rest, true]);
 
-      // The tab: second, right after About; a press that would replace a picture asks first.
+      // The tab: second, right after About; everything at a glance, a press on one opening its compare (roadmap BM).
       check("the scratch game is on the shelf again", await b.ev(choose), true);
       await b.ev(`(async () => (await import("/js/details.js")).openDetails())()`);
       await b.until(`!document.getElementById("details").hidden`, true, 6000);
       check("Media is the second tab", await b.until(`[...document.querySelectorAll("#details .dtab")].map(n => n.dataset.tab).slice(0, 2).join(",")`, "about,media", 6000), "about,media");
       await b.ev(`document.querySelector('#details .dtab[data-tab="media"]').click()`);
-      const ownRows = `[...document.querySelectorAll("#details .md-own .cr-row")].map(n => n.dataset.kind || (n.className.match(/md-(copy|clear)/) || [])[1]).join(",")`;
-      check("it opens on this game's own media: a row a picture, the video, Copy from another game and Clear all",
-        await b.until(ownRows, "box,box3d,logo,shot,fanart,video,copy,clear", 8000), "box,box3d,logo,shot,fanart,video,copy,clear");
-      const own = await api("api/art.php?id=" + bare.game.id);
-      check("each picture says how it stands, as Change Pictures does, and the video only where its file is",
-        await b.ev(`[document.querySelector('#details .md-kind[data-kind="box"] .sv-sub').textContent, document.querySelector("#details .md-video .md-path").textContent, !document.querySelector("#details .md-video video, #details .md-video img")]`),
-        ["replaced in Xsegon", own.video.has ? own.video.path : "none", true]);
-      if (own.video.has) {
-        await b.ev(`document.querySelector("#details .md-video").click()`);
-        check("a press on the video asks before clearing it", await b.until(`(document.querySelector(".confirm h2") || {}).textContent || ""`, "Clear the video of " + own.title + "?", 4000), "Clear the video of " + own.title + "?");
-        await b.ev(`[...document.querySelectorAll(".confirm-bar button")].find(x => x.textContent === "Cancel").click()`);
-        check("and Cancel keeps it", (await api("api/art.php?id=" + bare.game.id)).video.has, true);
-      }
-      await b.ev(`document.querySelector('#details .md-kind[data-kind="box"]').click()`);
-      const menuNow = `[...document.querySelectorAll(".ctx .ctx-item")].map(n => n.querySelector(".ctx-label").textContent).join("|")`;
-      const wantMenu = ["Replace..."].concat(await b.ev(`!!(window.XSEGON && window.XSEGON.gamesdb)`) ? ["Find online..."] : [], ["Remove"]).join("|");
-      check("a press on a picture opens the buttons Change Pictures has for it", await b.until(menuNow, wantMenu, 4000), wantMenu);
-      await b.ev(`(async () => (await import("/js/menus.js")).closeGameMenu())()`);
-      await b.until(`!document.querySelector(".ctx")`, true, 4000);
-      if (await b.ev(`!!(window.XSEGON && window.XSEGON.gamesdb)`)) {
-        // Find online in the tab: its presses are the tab's list, so Enter picks there and never plays (roadmap AR13).
-        await b.ev(`document.querySelector("#details .dtab-pane").dispatchEvent(new MouseEvent("mousedown", { bubbles: true }))`);
-        await b.ev(`document.querySelector('#details .md-kind[data-kind="box"]').click()`);
-        await b.until(`!!document.querySelector(".ctx")`, true, 4000);
-        await b.ev(`[...document.querySelectorAll(".ctx .ctx-item")].find(n => n.querySelector(".ctx-label").textContent === "Find online...").click()`);
-        await b.until(`!!document.querySelector("#details .pk .pk-head button")`, true, 8000);
-        await b.ev(`document.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }))`);
-        check("Find online in the tab: Enter presses its Back, not Play",
-          await b.until(`!document.getElementById("details").hidden && !document.querySelector("#details .pk") && !!document.querySelector('#details .md-own .md-kind[data-kind="box"]')`, true, 6000), true);
-      }
+      const cards = `[...document.querySelectorAll("#details .mt-over .mt-card")].map(n => n.dataset.kind).join(",")`;
+      check("it opens on everything at a glance: a card a picture, the video and the manuals",
+        await b.until(cards, "box,box3d,logo,shot,fanart,video,manual", 8000), "box,box3d,logo,shot,fanart,video,manual");
+      check("each says where it came from: the copied box art names the game it came from",
+        await b.ev(`document.querySelector('#details .mt-card[data-kind="box"] .mt-from').textContent`), "copied from " + donor.title);
+      check("and under them Another game... and Clear all", await b.ev(`[!!document.querySelector("#details .md-copy"), !!document.querySelector("#details .md-clear")]`), [true, true]);
       await b.ev(`document.querySelector("#details .md-copy").click()`);
       check("Copy from another game opens the games, with a find box and a way back",
         await b.until(`document.querySelectorAll("#details .md-game").length > ${at} && !!document.querySelector("#details .md-tab .ch-find input") && !!document.querySelector("#details .md-home")`, true, 8000), true);
@@ -318,20 +294,40 @@ module.exports = async function (b, check) {
           check("and Cancel copies nothing", boxRow(await cm(q)).same, true);
         }
       }
-      // Back through the games to this game's own media, and a picture's button pressed there.
+      // Back through the games to all media, and the box art's compare opened from its card.
       await b.ev(`document.querySelector("#details .md-back").click()`);
       await b.until(`!!document.querySelector("#details .md-home")`, true, 8000);
       await b.ev(`document.querySelector("#details .md-home").click()`);
-      await b.until(`!!document.querySelector('#details .md-own .md-kind[data-kind="box"]')`, true, 8000);
-      await b.ev(`document.querySelector('#details .md-kind[data-kind="box"]').click()`);
-      await b.until(`!!document.querySelector(".ctx")`, true, 4000);
-      await b.ev(`[...document.querySelectorAll(".ctx .ctx-item")].find(n => n.querySelector(".ctx-label").textContent === "Remove").click()`);
-      check("Remove there takes the copied box art away, and the row says so",
-        [await b.until(`(document.querySelector('#details .md-kind[data-kind="box"] .sv-sub') || {}).textContent`, "no image", 8000),
-         (await api("api/art.php?id=" + bare.game.id)).kinds.box.replaced], ["no image", false]);
+      await b.until(`!!document.querySelector('#details .mt-over .mt-card[data-kind="box"]')`, true, 8000);
+      await b.ev(`document.querySelector('#details .mt-card[data-kind="box"]').click()`);
+      check("a press on the box art opens its compare: Now, This one, the kinds along the top, Look in beside",
+        await b.until(`(t => !!t && [t.querySelectorAll(".mc-side").length, (t.querySelector(".mc-kind.on") || {}).textContent, !!t.querySelector(".mc-look .mc-ptitle")])(document.querySelector("#details .mc-tab"))`,
+          [2, "Box art", true], 8000), [2, "Box art", true]);
+      check("and Now says where it came from", await b.until(`(document.querySelector("#details .mc-now .mc-cap") || {}).textContent`, "copied from " + donor.title, 6000), "copied from " + donor.title);
+      if (await b.ev(`!!(window.XSEGON && window.XSEGON.gamesdb)`)) {
+        // The Games Database's search in the compare: its presses are the tab's list, so Enter picks there and never plays (roadmap AR13).
+        await b.until(`!!document.querySelector("#details .mc-foot button[data-key=search]")`, true, 8000);
+        await b.ev(`document.querySelector("#details .dtab-pane").dispatchEvent(new MouseEvent("mousedown", { bubbles: true }))`);
+        await b.ev(`document.querySelector("#details .mc-foot button[data-key=search]").click()`);
+        await b.until(`!!document.querySelector("#details .pk .pk-head button")`, true, 8000);
+        await b.ev(`document.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }))`);
+        check("Wrong game? Search... in the compare: Enter presses its Back, not Play",
+          await b.until(`!document.getElementById("details").hidden && !document.querySelector("#details .pk") && !!document.querySelector("#details .mc-body:not([hidden])")`, true, 6000), true);
+      }
+      await b.ev(`[...document.querySelectorAll("#details .mc-acts button")].find(x => x.textContent === "Remove").click()`);
+      // It deletes what nothing in the compare brings back, so it asks first, saying where the picture came from.
+      check("Remove asks first, naming the picture it deletes",
+        await b.until(`(w => w ? [w.querySelector("h2").textContent, /copied from/.test(w.textContent)] : null)(document.querySelector(".confirm"))`,
+          ["Remove the box art?", true], 4000), ["Remove the box art?", true]);
+      await b.ev(`[...document.querySelectorAll(".confirm-bar button")].find(x => x.textContent === "Remove").click()`);
+      check("Remove there takes the copied box art away, and Now says so",
+        [await b.until(`(document.querySelector("#details .mc-now .mc-cap") || {}).textContent`, "none yet", 8000),
+         (await api("api/art.php?id=" + bare.game.id)).kinds.box.replaced], ["none yet", false]);
       // Details' cover follows, both ways, with no broken picture between (roadmap AR14).
       const coverIs = `document.querySelector("#details .dleft img.cover") ? "cover" : document.querySelector("#details .dleft .cover-noart.can-add") ? "NO ART" : "none"`;
       check("and the cover beside it is NO ART again, not a broken picture", await b.until(coverIs, "NO ART", 6000), "NO ART");
+      await b.ev(`document.querySelector("#details .mc-back").click()`);
+      await b.until(`!!document.querySelector("#details .md-copy")`, true, 8000);
       await b.ev(`document.querySelector("#details .md-copy").click()`);
       await b.until(`document.querySelectorAll("#details .md-game").length > ${at}`, true, 8000);
       await b.ev(`document.querySelectorAll("#details .md-game")[${at}].click()`);

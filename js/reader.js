@@ -36,6 +36,33 @@ function loadLibs() {
   return libs;
 }
 
+/* A PDF drawn a page at a time outside the booklet (the Media tab's compare, two manuals side by side):
+   { pages, page(i, width) -> a canvas, close() }, or a rejection when it will not open. */
+export function pdfPages(url) {
+  var task = null;
+  return loadLibs().then(function (lib) {
+    task = lib.pdfjs.getDocument({ url: url, worker: lib.worker, wasmUrl: location.origin + PDF_AT, rangeChunkSize: 1048576, isEvalSupported: false });
+    // One that would not open lets go of what it holds too.
+    return task.promise.catch(function (e) { if (task) { task.destroy(); task = null; } throw e; });
+  }).then(function (pdf) {
+    var dpr = Math.min(2.5, window.devicePixelRatio || 1);
+    return {
+      pages: pdf.numPages,
+      page: function (i, width) {
+        return pdf.getPage(i + 1).then(function (p) {
+          var vp = p.getViewport({ scale: width * dpr / p.getViewport({ scale: 1 }).width });
+          var c = el("canvas");
+          c.width = Math.floor(vp.width);
+          c.height = Math.floor(vp.height);
+          // A page drawn is let go: paging through a long manual does not keep every page in memory.
+          return p.render({ canvasContext: c.getContext("2d"), viewport: vp }).promise.then(function () { p.cleanup(); return c; });
+        });
+      },
+      close: function () { if (task) { task.destroy(); task = null; } }
+    };
+  });
+}
+
 /* opts.gid: the game whose documents folder holds it; opts.move(step): the
    documents beside (up and down), opts.many when there are any; opts.browser():
    the browser's own reader. */

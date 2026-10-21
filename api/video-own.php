@@ -72,6 +72,7 @@ if (($_GET['reset'] ?? '') === '1') {
             xs_fail('the video could not be removed (' . xs_file_error_reason() . '): it still plays', 500);
         }
     }
+    xs_art_from_drop($id, ['video']);
     xs_log('VID', $id . ': own video removed');
     xs_json(['ok' => true, 'id' => $id, 'replaced' => false]);
 }
@@ -84,6 +85,7 @@ if (($_GET['clear'] ?? '') === '1') {
         xs_log('VID', $game['title'] . ': Clear video stopped: ' . $r['why'] . ($r['gone'] ? ' (' . count($r['gone']) . ' deleted before that)' : ''));
         xs_fail('the video could not be cleared: ' . $r['why'], 500);
     }
+    xs_art_from_drop($id, ['video']);
     xs_log('VID', $game['title'] . ': video cleared, ' . count($r['gone']) . ' deleted (' . implode(', ', array_map('basename', $r['gone'])) . ')'
         . ($shared ? '; ' . implode(', ', $shared) . ' played it too' : ''));
     xs_json(['ok' => true, 'id' => $id, 'gone' => count($r['gone']), 'shared' => $shared]);
@@ -91,29 +93,12 @@ if (($_GET['clear'] ?? '') === '1') {
 
 xs_upload_piece($tmp, XS_VIDEO_MAX, 'video is larger than 400 MB', 400);
 
-// ---- last piece: what is it, really? ------------------------------------
-// By its first bytes, never by the name it arrived under. MP4 family: a box
-// whose type is "ftyp" at offset 4. WebM / Matroska: the EBML magic number.
-$head = (string) @file_get_contents($tmp, false, null, 0, 16);
-$ext  = null;
-if (strlen($head) >= 12 && substr($head, 4, 4) === 'ftyp') {
-    $ext = 'mp4';
-} elseif (substr($head, 0, 4) === "\x1A\x45\xDF\xA3") {
-    $ext = 'webm';
-}
-if ($ext === null) {
-    @unlink($tmp);
-    $what = substr($head, 0, 4) === 'RIFF' ? 'That file is an AVI, which a browser cannot play.'
-          : (substr($head, 0, 3) === 'FLV' ? 'That file is an FLV, which a browser cannot play.'
-          : 'That file is not a video a browser can play.');
-    xs_fail($what . ' Use an MP4 (H.264) or WebM.', 415);
-}
-
-$final = xs_put_file($tmp, $dir . DIRECTORY_SEPARATOR . $id, $ext, array_keys(video_types()), $held);
+// ---- last piece: what is it, really? (video_own_store, by its first bytes) ----
+$final = video_own_store($id, $tmp, $why, $code);
 if ($final === null) {
-    xs_fail('could not store the video (' . $held . '): the one before it is still there', 500);
+    xs_fail($why, $code);
 }
-xs_changed_note([$id], 'video');
+xs_art_from_set($id, 'video', 'file', (int) filemtime($final));
 
 xs_log('VID', $id . ': own video set (' . round(filesize($final) / 1048576, 1) . ' MB)');
 xs_json(['ok' => true, 'id' => $id, 'replaced' => true, 'bytes' => filesize($final), 'rev' => (int) filemtime($final)]);

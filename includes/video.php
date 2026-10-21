@@ -161,6 +161,43 @@ function video_own(string $id): ?string
     return $index[$id] ?? null;
 }
 
+/**
+ * A whole video file made a game's own (data\video-own\<id>.<ext>), moved from $tmp: an upload's last
+ * piece, or one fetched for the Media tab's compare. Read by its first bytes, never by the name it came
+ * under: an MP4 has "ftyp" at offset 4, a WebM the EBML number. The path, or null with $why and the
+ * status to answer with; $tmp is gone either way.
+ */
+function video_own_store(string $id, string $tmp, ?string &$why = null, ?int &$code = null): ?string
+{
+    $code = 500;
+    $why  = null;
+    $head = (string) @file_get_contents($tmp, false, null, 0, 16);
+    $ext  = null;
+    if (strlen($head) >= 12 && substr($head, 4, 4) === 'ftyp') {
+        $ext = 'mp4';
+    } elseif (substr($head, 0, 4) === "\x1A\x45\xDF\xA3") {
+        $ext = 'webm';
+    }
+    if ($ext === null) {
+        @unlink($tmp);
+        $what = substr($head, 0, 4) === 'RIFF' ? 'That file is an AVI, which a browser cannot play.'
+              : (substr($head, 0, 3) === 'FLV' ? 'That file is an FLV, which a browser cannot play.'
+              : 'That file is not a video a browser can play.');
+        $why  = $what . ' Use an MP4 (H.264) or WebM.';
+        $code = 415;
+        return null;
+    }
+    $final = xs_put_file($tmp, video_own_dir() . DIRECTORY_SEPARATOR . $id, $ext, array_keys(video_types()), $held);
+    if ($final === null) {
+        @unlink($tmp);
+        $why  = 'could not store the video (' . $held . '): the one before it is still there';
+        $code = 500;
+        return null;
+    }
+    xs_changed_note([$id], 'video');
+    return $final;
+}
+
 /** Every folder a served video may live in. */
 function video_allowed_roots(array $s): array
 {

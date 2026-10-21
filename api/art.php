@@ -32,24 +32,36 @@ $hidden = xs_art_hidden();
 // HEAD reads too: it arrives from other sites with no Origin header, so it
 // must never reach the writes below, which take everything from the query.
 if (in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true)) {
+    // Where each own file came from (xs_art_from), believed only while the file is the one that line was written for.
+    $from   = xs_art_from()[$id] ?? [];
+    $fromOf = static function (string $kind, ?string $file) use ($from): ?array {
+        $f = $from[$kind] ?? null;
+        return is_array($f) && $file !== null && (int) ($f['rev'] ?? 0) === (int) @filemtime($file)
+            ? ['from' => (string) ($f['from'] ?? ''), 'game' => (string) ($f['game'] ?? '')] : null;
+    };
     $out = [];
     foreach ($kinds as $kind => $label) {
+        $replaced = array_key_exists($kind, $game['artSource'] ?? []);
         $out[$kind] = [
             'label'    => $label,
             'has'      => !empty($game['art'][$kind]),
-            'replaced' => array_key_exists($kind, $game['artSource'] ?? []),
+            'replaced' => $replaced,
             'hadOne'   => !empty($game['artSource'][$kind] ?? null),   // it had a picture before the replacement
             // "Use no picture": the file is on disk but Xsegon is told not
             // to show it (includes\overrides.php, data\art-hidden.json).
             'hidden'   => in_array($kind, (array) ($hidden[$id] ?? []), true),
+            'from'     => $replaced ? $fromOf($kind, xs_slot_file(xs_own_art_dir() . DIRECTORY_SEPARATOR . $id . '-' . $kind, ['png', 'jpg', 'jpeg', 'webp', 'gif'])) : null,
         ];
     }
     // The video too, for Clear all's window: what it deletes, and who else plays the same file.
     $s      = xs_settings();
     $layers = video_layers($s, $game);
     $now    = video_for_game($s, $game);
+    $own    = video_own($id);
     $video  = ['has' => $now !== null, 'file' => $now !== null ? basename($now) : null, 'path' => $now, 'files' => count($layers),
-               'shared' => $now !== null ? video_shared_with($s, $game, $layers) : []];
+               'shared' => $now !== null ? video_shared_with($s, $game, $layers) : [],
+               'layer'  => video_from($s, $game, $layers), 'bytes' => $now !== null ? (int) @filesize($now) : 0,
+               'from'   => $own !== null && $now !== null && strcasecmp($own, $now) === 0 ? $fromOf('video', $own) : null];
     xs_json(['ok' => true, 'id' => $id, 'title' => $game['title'], 'rev' => $game['artRev'] ?? 0, 'kinds' => $out, 'video' => $video]);
 }
 
@@ -88,9 +100,14 @@ if (($_GET['clear'] ?? '') === '1') {
         $hidden[$id] = $list;
     }
     xs_write_or_fail(xs_data_path('art-hidden.json'), $hidden ?: new stdClass());
+    xs_art_from_drop($id, array_keys($kinds));
     $s = xs_settings();
     $shared = video_shared_with($s, $game, video_layers($s, $game));
     $r = video_clear($s, $game);
+    // The video's words go only with the video: one that stays keeps saying where it came from.
+    if ($r['why'] === null) {
+        xs_art_from_drop($id, ['video']);
+    }
     xs_log('ART', $game['title'] . ': Clear all, ' . $deleted . ' pictures deleted, ' . $hid . ' originals hidden, '
         . count($r['gone']) . ' videos deleted' . ($shared ? ' (' . implode(', ', $shared) . ' played it too)' : '')
         . ($r['why'] !== null ? '; the video stays: ' . $r['why'] : ''));
@@ -155,6 +172,7 @@ if (($_GET['reset'] ?? '') === '1') {
             xs_fail('the replacement could not be removed (' . xs_file_error_reason() . '): it still shows', 500);
         }
     }
+    xs_art_from_drop($id, [$kind]);
     xs_log('ART', $game['title'] . ': ' . $kind . ' back to the original');
     xs_json(['ok' => true, 'id' => $id, 'kind' => $kind, 'replaced' => false]);
 }
@@ -177,6 +195,7 @@ if ($final === null) {
 }
 $dropThumb();
 xs_changed_note([$id], $kind);
+xs_art_from_set($id, $kind, 'file', (int) filemtime($final));
 xs_log('ART', $game['title'] . ': ' . $kind . ' replaced (' . $info[0] . 'x' . $info[1] . ')');
 
 xs_json(['ok' => true, 'id' => $id, 'kind' => $kind, 'replaced' => true,

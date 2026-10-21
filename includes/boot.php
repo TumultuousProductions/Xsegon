@@ -1262,11 +1262,16 @@ function xs_spawn_ps(string $call, array $opts = []): bool
     return true;
 }
 
-/** Starts a worker of Xsegon's own in the background, by its file in bin\. */
-function xs_spawn_worker(string $script): bool
+/** Starts a worker of Xsegon's own in the background, by its file in bin\. $args: plain words only (letters, digits, - and _). */
+function xs_spawn_worker(string $script, array $args = []): bool
 {
-    $cmd = [xs_php_exe(), '-d', 'display_errors=0', '-d', 'date.timezone=' . date_default_timezone_get(),
-            XS_ROOT . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . $script];
+    foreach ($args as $a) {
+        if (!preg_match('/^[A-Za-z0-9_-]+$/D', (string) $a)) {
+            return false;
+        }
+    }
+    $cmd = array_merge([xs_php_exe(), '-d', 'display_errors=0', '-d', 'date.timezone=' . date_default_timezone_get(),
+            XS_ROOT . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . $script], array_map('strval', $args));
     $h = @popen('start /B "" ' . implode(' ', array_map(static fn ($a) => '"' . $a . '"', $cmd)) . ' > NUL 2>&1', 'r');
     if ($h === false) {
         return false;

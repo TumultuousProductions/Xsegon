@@ -56,6 +56,7 @@ const GROUPS = {
   videopack: "./t-videopack",
   archivevid: "./t-archivevid",
   archivedoc: "./t-archivedoc",
+  mediatab: "./t-mediatab",
   arcadevid: "./t-arcadevid",
   cheatlists: "./t-cheatlists",
   runcheck: "./t-runcheck",

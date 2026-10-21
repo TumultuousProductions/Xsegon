@@ -1,516 +1,356 @@
-/*  The Media tab of a game's details (js\detailtabs.js): this game's own
-    pictures and video, and another game's copied onto it (api\copy-media.php).
+/*  The Media tab of a game's details (js\detailtabs.js, roadmap BM): what the
+    game shows at a glance, each kind in its own shape and saying where it came
+    from: the pictures, the video, the manuals and maps. A press on one opens
+    its compare (js\mediacompare.js), every place's choices beside the one it
+    shows; a file dropped on a picture replaces it. Under them, Everything one
+    place has (js\mediafrom.js): one place's whole answer, or another game's
+    media, beside this game's, and Clear all.  */
 
-    It opens on what this game shows, a row a picture and one for the video. A
-    press on a picture opens what Change Pictures offers for that slot
-    (js\art-editors.js), and a file dropped on one replaces it. The video row
-    says where its file is, and a press clears it. Copy from another game opens
-    the library's games, this console's first, with a find box: a press on one
-    shows what it has beside what this game shows, and a press on a row copies
-    that one, asking first when it replaces one this game shows. */
-
-import { askClearAll, openPicker, uploadArt, videoClearLines } from "./art-editors.js";
-import { confirmWindow } from "./confirm.js";
-import { onTabLeave, setTabRows, tabPane, tabSays } from "./detailtabs.js";
+import { askClearAll, uploadArt } from "./art-editors.js";
+import { onTabLeave, setTabRows, tabGameId, tabPane, tabSays } from "./detailtabs.js";
 import { reloadKeeping } from "./editors.js";
 import { iconEl } from "./icons.js";
 import { showStrip } from "./launch.js";
 import { L, api } from "./log.js";
-import { popupMenu } from "./menus.js";
-import { addsMissing } from "./missing.js";
-import { stopVideo } from "./snap.js";
+import { closeCompare, compareView } from "./mediacompare.js";
+import { coverAgain, findView, pickGame, placeView, showFrom } from "./mediafrom.js";
+import { KIND_LABEL, PIC_KINDS, PLACE_NAME, picFrom, sizeWords, takesWhy, videoFrom } from "./mediaplaces.js";
 import { sound } from "./sound.js";
-import { games, hasGamesDb, sel } from "./state.js";
-import { artUrl, el } from "./util.js";
-import { render, setCarNodes, setWheelNodes } from "./views.js";
+import { games, sel } from "./state.js";
+import { el } from "./util.js";
 
 export function mediaTabLabel() { return "Media"; }
 
-// Which part of the tab is up, kept while this game's details is drawn again.
-var copyFrom = null;      // { forId, id }: the game being copied from
-var picking = null;       // the game whose tab shows the games to copy from
-var changed = null;       // the game whose pictures changed here: the views behind catch up when the tab is left
+// Which part of the tab is up, kept while this game's details is drawn again:
+// { forId, view: over | compare | pick | from | place | find, kind, fromId, place, kinds }.
+var route = null;
+var changed = null;       // the game whose media changed here: the views behind catch up when the tab is left
+var leaving = [];         // what a view lets go of when the tab or the view changes
+var sending = {};         // "id|kind" of a picture let go on a card and still being sent, past a redraw
+var lastCard = null;      // { id, key } selected last on the cards: coming back to them lands there
+var PLACE_ORDER = ["ss", "gamesdb", "libretro", "steam", "archive", "arcadedb"];
 
-var KIND_WORDS = { box: "box art", box3d: "3D box", logo: "clear logo", shot: "screenshot", fanart: "fanart", video: "video" };
-
-function nameOf(x) { return x.title + (x.variant ? " (" + x.variant + ")" : ""); }
-
-function hasWords(has) {
-  var pics = has.filter(function (k) { return k !== "video"; }).length;
-  var words = [];
-  if (pics) { words.push(pics + (pics === 1 ? " picture" : " pictures")); }
-  if (has.indexOf("video") >= 0) { words.push("a video"); }
-  return words.join(", ");
+/* The game whose documents folder holds its manuals: a card of several versions keeps them with the first that has any (js\docs.js). */
+function holderOf(g) {
+  var v = (g.versions || []).find(function (x) { return x.docs; });
+  return (v || g).id;
 }
 
-function listWords(kinds) {
-  var w = kinds.map(function (k) { return KIND_WORDS[k] || k; });
-  return w.length > 1 ? w.slice(0, -1).join(", ") + " and " + w[w.length - 1] : w[0] || "";
+function letGo() {
+  closeCompare();
+  leaving.forEach(function (fn) { fn(); });
+  leaving = [];
 }
 
 export function mediaPane(pane, g) {
   // The views behind are brought up to date once, when the tab is left, as Change Pictures does when it closes.
   onTabLeave(pane, function () {
+    letGo();
+    // Details drawn again comes straight back to this view; the tab left (another tab, details closed)
+    // opens on the cards next time, so no view asks every place again without a press.
+    setTimeout(function () { if (!tabPane("media")) { route = null; } }, 0);
     if (changed !== g.id) { return; }
     changed = null;
     reloadKeeping(games[sel] ? games[sel].id : g.id);
   });
-  if (copyFrom && copyFrom.forId === g.id) { showFrom(pane, g, copyFrom.id, 0); return; }
-  copyFrom = null;
-  if (picking === g.id) { pickGame(pane, g); return; }
-  picking = null;
-  ownMedia(pane, g, 0);
+  if (!route || route.forId !== g.id) { route = { forId: g.id, view: "over" }; }
+  go(pane, g);
 }
 
-/* ---- this game's own pictures and video ---- */
+function to(pane, g, r) {
+  route = Object.assign({ forId: g.id }, r);
+  go(pane, g);
+}
 
-function ownMedia(pane, g, keepAt) {
+/* A change made here: the views catch up on leaving, and details' cover shows a new box art at once.
+   One that lands after the tab was left catches the views up now, as the leaving has passed. */
+function markChanged(g, kind) {
+  if (tabGameId() === g.id && tabPane("media")) { changed = g.id; }
+  else { reloadKeeping(games[sel] ? games[sel].id : g.id); }
+  if (kind === "box" || kind === "all") {
+    coverAgain(g, "api/image.php?id=" + encodeURIComponent(g.id) + "&kind=box&size=full&v=" + Date.now());
+  }
+}
+
+/* Whether a view's late answer is still wanted: the tab up, and still on the route it was asked for. */
+function liveFor(pane, r) {
+  return function () { return route === r && tabPane("media") === pane; };
+}
+
+function go(pane, g) {
+  letGo();
+  // Until the new view hands over its own list, a press goes nowhere: never into the one that was just left.
+  setTabRows(pane, { cells: [], at: 0, look: true, word: "", move: function () {}, choose: function () {} });
+  var r = route, home = function () { to(pane, g, { view: "over" }); };
+  var changedHere = function (kind) { markChanged(g, kind || "all"); };
+  if (r.view === "compare") {
+    compareView(pane, g, r.kind, { back: home, holder: holderOf(g), changed: changedHere,
+      other: function () { to(pane, g, { view: "pick" }); },
+      kind: function (k) { to(pane, g, { view: "compare", kind: k }); } });
+  } else if (r.view === "pick") {
+    pickGame(pane, g, { home: home, live: liveFor(pane, r), open: function (id) { to(pane, g, { view: "from", fromId: id }); } });
+  } else if (r.view === "from") {
+    showFrom(pane, g, r.fromId, { back: function () { to(pane, g, { view: "pick" }); }, home: home, changed: changedHere, live: liveFor(pane, r) });
+  } else if (r.view === "place") {
+    placeView(pane, g, r.place, { home: home, changed: changedHere, holder: holderOf(g), live: liveFor(pane, r),
+      onLeave: function (fn) { leaving.push(fn); } });
+  } else if (r.view === "find") {
+    findView(pane, g, r.kinds, { home: home, changed: changedHere, holder: holderOf(g), live: liveFor(pane, r),
+      onLeave: function (fn) { leaving.push(fn); } });
+  } else {
+    overview(pane, g);
+  }
+}
+
+/* ---- everything at a glance ---- */
+
+function overview(pane, g) {
   if (!pane.firstChild) { pane.appendChild(el("p", "dtab-wait", "…")); }
-  api("api/art.php?id=" + encodeURIComponent(g.id)).then(function (res) {
-    if (tabPane("media") !== pane || picking === g.id || (copyFrom && copyFrom.forId === g.id)) { return; }
-    if (!res.ok) {
-      pane.textContent = "";
-      pane.appendChild(tabSays(res.error || "this game's pictures could not be read"));
-      setTabRows(pane, null);
+  var id = encodeURIComponent(g.id);
+  Promise.all([api("api/art.php?id=" + id), api("api/game.php?id=" + encodeURIComponent(holderOf(g))), api("api/mediachoice.php?id=" + id + "&places=1")])
+    .then(function (r) {
+      if (tabPane("media") !== pane || route.view !== "over" || route.forId !== g.id) { return; }
+      if (!r[0].ok) {
+        pane.textContent = "";
+        pane.appendChild(tabSays(r[0].error || "this game's pictures could not be read"));
+        setTabRows(pane, null);
+        return;
+      }
+      // Documents that would not read are not "none": Find any then leaves the manual out rather than add a second.
+      paintOver(pane, g, r[0], r[1].ok && r[1].game ? r[1].game.documents || [] : null, r[2].ok ? r[2].places : null);
+    });
+}
+
+function section(name, count) {
+  var s = el("div", "mt-sect");
+  var head = el("div", "mt-head");
+  head.appendChild(el("h3", "mt-name", name));
+  if (count) { head.appendChild(el("span", "mt-count", count)); }
+  s.appendChild(head);
+  return s;
+}
+
+function card(cls, key, word) {
+  var c = el("div", "mt-card " + cls);
+  c.dataset.key = key;
+  c.dataset.word = word;
+  return c;
+}
+
+function paintOver(pane, g, res, docs, places) {
+  pane.textContent = "";
+  var inner = el("div", "ch-inner ch-tab md-tab mt-over");
+  var top = el("div", "mt-top");
+  top.appendChild(el("p", "group-help", "What " + g.title + " shows, and where each came from. Press one to see every other choice "
+    + "beside it; a file dropped on a picture replaces it. Stored in Xsegon only."));
+  inner.appendChild(top);
+  var fit = el("div", "mt-fit");
+  inner.appendChild(fit);
+  pane.appendChild(inner);
+  var cells = [], at = 0;
+  var open = function (kind) { sound("select"); L("ART", g.title + ": compare " + kind + " from the Media tab"); to(pane, g, { view: "compare", kind: kind }); };
+
+  // Find any: the kinds this game has none of, looked for in every place at one press. A picture hidden
+  // on purpose is not missing, and is said apart. The manual is missing when no document is one (a map
+  // alone is not), and is left out when the documents would not read, so a second is never added blind.
+  var docsRead = docs !== null;
+  docs = docs || [];
+  var hidden = PIC_KINDS.filter(function (k) { return res.kinds[k].hidden; });
+  var hasManual = docs.some(function (d) { return d.kind === "pdf" || /^manual/i.test(d.label); });
+  var missing = PIC_KINDS.filter(function (k) { return !res.kinds[k].has && !res.kinds[k].hidden; })
+    .concat((res.video || {}).has ? [] : ["video"], hasManual || !docsRead ? [] : ["manual"]);
+  var hiddenWords = hidden.length ? "hidden, not looked for: " + hidden.map(function (k) { return KIND_LABEL[k]; }).join(", ") : "";
+  var findBox = el("div", "mt-findbox");
+  var find = el("button", "mt-place mt-find" + (missing.length ? " primary" : ""), "Find any");
+  find.type = "button";
+  find.dataset.key = "find";
+  find.dataset.word = missing.length ? "find what is missing" : "nothing is missing";
+  find.addEventListener("click", function () {
+    if (!missing.length) {
+      sound("back");
+      showStrip(g.title + " has every kind already" + (hidden.length ? " (the hidden ones stay hidden)" : "") + ". Press a card to choose a different one.", false);
       return;
     }
-    paintOwn(pane, g, res, keepAt);
+    sound("select");
+    L("ART", g.title + ": Find any for " + missing.join(", ") + " (Media tab)");
+    to(pane, g, { view: "find", kinds: missing });
   });
-}
+  cells.push(find);
+  findBox.appendChild(find);
+  findBox.appendChild(el("span", "mt-dim", (missing.length ? missing.length + " missing: " + missing.map(function (k) { return KIND_LABEL[k]; }).join(", ")
+                                                           : "Nothing missing") + (hiddenWords ? "; " + hiddenWords : "")));
+  top.appendChild(findBox);
 
-/* A picture in a row's frame, fresh from the disk, or a dash where there is none. */
-function ownShot(g, kind, k) {
-  var frame = el("div", "sv-shot md-shot");
-  if (!k.has) { frame.appendChild(el("span", "md-none", "none")); return frame; }
-  var img = el("img");
-  img.alt = "";
-  // size=full skips the thumbnail cache, and the moment makes it an address the browser has not kept.
-  img.src = "api/image.php?id=" + encodeURIComponent(g.id) + "&kind=" + kind + "&size=full&v=" + Date.now();
-  img.onerror = function () { img.remove(); frame.appendChild(el("span", "md-none", "none")); };
-  frame.appendChild(img);
-  return frame;
-}
+  // The pictures, each in its own shape: a file let go on one replaces it.
+  var shown = PIC_KINDS.filter(function (k) { return res.kinds[k].has; }).length;
+  var pics = section("Pictures", shown + " of " + PIC_KINDS.length + " shown");
+  var band = el("div", "mt-cards");
+  PIC_KINDS.forEach(function (kind) {
+    var k = res.kinds[kind];
+    var c = card("md-kind md-mine" + (k.hidden ? " md-hid" : ""), "k:" + kind, "compare and change");
+    c.dataset.kind = kind;
+    c.title = "Compare it with every other choice";
+    var frame = el("div", "mt-frame mt-k-" + kind);
+    if (k.has) {
+      var img = el("img");
+      img.alt = "";
+      // size=full skips the thumbnail cache, and the moment makes it an address the browser has not kept.
+      img.src = "api/image.php?id=" + encodeURIComponent(g.id) + "&kind=" + kind + "&size=full&v=" + Date.now();
+      img.onerror = function () { img.remove(); frame.appendChild(el("span", "md-none", "none")); };
+      frame.appendChild(img);
+    } else {
+      frame.appendChild(el("span", "md-none", k.hidden ? "hidden" : "none"));
+    }
+    c.appendChild(frame);
+    c.appendChild(el("span", "mt-label", k.label));
+    c.appendChild(el("span", "mt-from sv-sub" + (k.has ? "" : " none"), picFrom(k)));
+    c.addEventListener("click", function () { open(kind); });
+    c.addEventListener("dragover", function (e) { e.preventDefault(); c.classList.add("drop"); });
+    c.addEventListener("dragleave", function () { c.classList.remove("drop"); });
+    c.addEventListener("drop", function (e) {
+      e.preventDefault();
+      c.classList.remove("drop");
+      var files = e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files : [];
+      var file = files[0];
+      var said = c.querySelector(".mt-from");
+      // One picture at a time, and one for each kind until it is in: a second sent beside it would mix the two.
+      var no = !file ? "" : sending[g.id + "|" + kind] ? "still sending the one before"
+             : files.length > 1 ? "let go of one picture at a time"
+             : takesWhy(kind, file);
+      if (!file || no) {
+        if (no) { sound("back"); said.textContent = no; said.classList.add("bad"); L("ART", g.title + ": a file let go on the " + kind + " was not used: " + no); }
+        return;
+      }
+      sending[g.id + "|" + kind] = true;
+      uploadArt(g, kind, file, function (t) { said.textContent = t; }).then(function () {
+        delete sending[g.id + "|" + kind];
+        sound("select");
+        L("ART", g.title + ": " + kind + " from a file let go on the Media tab (" + file.name + ")");
+        markChanged(g, kind);
+        if (route && route.view === "over" && tabPane("media") === pane) { overview(pane, g); }
+      }, function (err) {
+        delete sending[g.id + "|" + kind];
+        said.textContent = err.message;
+        said.classList.add("bad");
+        L("ART", g.title + ": a file let go on the " + kind + " was refused: " + err.message);
+      });
+    });
+    cells.push(c);
+    band.appendChild(c);
+  });
+  pics.appendChild(band);
+  fit.appendChild(pics);
 
-function paintOwn(pane, g, res, keepAt) {
-  pane.textContent = "";
-  var inner = el("div", "ch-inner ch-tab md-tab");
-  inner.appendChild(el("p", "group-help", "What " + g.title + " shows. A press on a picture says what can be done with it, "
-    + "as Change Pictures does, and a file dropped on one replaces it. Stored in Xsegon only."));
-  var list = el("div", "ch-list md-list md-own");
-  inner.appendChild(list);
-  pane.appendChild(inner);
-
+  // The video and the manuals, side by side.
+  var two = el("div", "mt-two");
   var v = res.video || {};
-  var kinds = Object.keys(res.kinds);
-  var showing = v.has || kinds.some(function (kind) { return res.kinds[kind].has || res.kinds[kind].replaced; });
-  var lines = kinds.map(function (kind) { return { act: "pic", kind: kind, k: res.kinds[kind] }; })
-    .concat([{ act: "video" }, { act: "copy" }], showing ? [{ act: "clear" }] : []);
-  var WORD = { pic: "change it", video: "clear it", copy: "open", clear: "clear all" };
-  var cells = [], at = 0, finding = null;
-  var working = false;      // a change on its way: one at a time
+  var vs = section("Video");
+  var vc = card("mt-wide md-video" + (v.has ? "" : " md-none-card"), "k:video", "compare and change");
+  vc.dataset.kind = "video";
+  var vf = el("div", "mt-frame mt-k-video");
+  if (v.has) {
+    var vid = el("video");
+    vid.muted = true;                    // only its first frame: nothing plays here
+    vid.preload = "metadata";
+    vid.src = "api/video.php?id=" + encodeURIComponent(g.id) + "&v=" + Date.now();
+    vf.appendChild(vid);
+    vf.appendChild(iconEl("mt-play", "play"));
+  } else {
+    vf.appendChild(el("span", "md-none", "none"));
+  }
+  vc.appendChild(vf);
+  var vw = el("span", "mt-words");
+  vw.appendChild(el("span", "mt-label", "Video"));
+  vw.appendChild(el("span", "mt-from sv-sub" + (v.has ? "" : " none"), videoFrom(v)));
+  if (v.has) { vw.appendChild(el("span", "mt-dim md-path", [v.file, sizeWords(v.bytes)].filter(Boolean).join("  ·  "))); }
+  vw.appendChild(el("span", "mt-dim", v.has ? "Press to compare it with every place that has one." : "Press to see every place that has one."));
+  vc.appendChild(vw);
+  vc.addEventListener("click", function () { open("video"); });
+  cells.push(vc);
+  vs.appendChild(vc);
+  two.appendChild(vs);
 
-  function focusAt(i) {
-    i = Math.max(0, Math.min(cells.length - 1, i));
-    at = i;
-    cells.forEach(function (c, n) { c.classList.toggle("sel", n === i); });
-    var x = lines[i];
-    setTabRows(pane, { cells: cells, at: i, word: WORD[x.act], look: x.act === "video" && !v.has,
-                       move: function (d) { focusAt(at + d); }, choose: function () { choose(at); } });
-    if (cells[i]) { cells[i].scrollIntoView({ block: "nearest", inline: "nearest" }); }
+  var ms = section("Manuals and maps");
+  var mc = card("mt-wide md-manual" + (docs.length ? "" : " md-none-card"), "k:manual", "compare and change");
+  mc.dataset.kind = "manual";
+  var mf = el("div", "mt-frame mt-k-manual" + (docs.length ? " mt-paper" : ""));
+  mf.appendChild(docs.length ? iconEl("mt-book", "book") : el("span", "md-none", "none"));
+  mc.appendChild(mf);
+  var mw = el("span", "mt-words");
+  mw.appendChild(el("span", "mt-label", docs.length ? docs[0].label : "Manual"));
+  mw.appendChild(el("span", "mt-from sv-sub" + (docs.length ? "" : " none"), docs.length ? sizeWords(docs[0].bytes) : "none yet"));
+  if (docs.length > 1) {
+    mw.appendChild(el("span", "mt-dim", "Also here: " + docs.slice(1).map(function (d) { return d.label; }).join(", ") + "."));
   }
-  function say(cell, text, bad) {
-    var sub = cell.querySelector(".sv-sub");
-    if (sub) { sub.textContent = text; sub.classList.toggle("bad", !!bad); }
-  }
-  // A change made: the rows are read again, and the cover beside them shows a new box art at once.
-  function again(kind) {
-    changed = g.id;
-    if (kind === "box") { coverAgain(g, "api/image.php?id=" + encodeURIComponent(g.id) + "&kind=box&size=full&v=" + Date.now()); }
-    if (tabPane("media") === pane) { ownMedia(pane, g, at); }
-  }
-  function upload(x, cell, file) {
-    if (!file || working) { return; }
-    working = true;
-    uploadArt(g, x.kind, file, function (t) { say(cell, t, false); }).then(function () {
-      sound("select");
-      again(x.kind);
-    }).catch(function (e) { working = false; say(cell, e.message, true); });
-  }
-  function pickFile(x, cell) {
-    var fileBox = el("input");
-    fileBox.type = "file";
-    fileBox.accept = "image/png,image/jpeg,image/webp,image/gif";
-    fileBox.addEventListener("change", function () { upload(x, cell, fileBox.files[0]); });
-    fileBox.click();
-  }
-  function post(x, cell, q, fail) {
-    working = true;
-    api("api/art.php?id=" + encodeURIComponent(g.id) + "&kind=" + x.kind + q, { method: "POST" }).then(function (r) {
-      working = false;
-      if (!r.ok) { sound("back"); say(cell, r.error || fail, true); return; }
-      sound("select");
-      again(x.kind);
+  mw.appendChild(el("span", "mt-dim", docs.length ? "Press to page through it beside every other one found." : "Press to see every place that has one."));
+  mc.appendChild(mw);
+  mc.addEventListener("click", function () { open("manual"); });
+  cells.push(mc);
+  ms.appendChild(mc);
+  two.appendChild(ms);
+  fit.appendChild(two);
+
+  // Everything one place has, and the game to copy from.
+  var all = section("Everything one place has");
+  all.appendChild(el("p", "mt-help", "What one place has for this game, every kind of it, beside what it shows now. Take one, or all of it."));
+  var btns = el("div", "mt-places");
+  var seen = {};
+  if (places) {
+    ["pictures", "videos", "manuals"].forEach(function (grp) {
+      (places[grp] || []).forEach(function (p) { if (!seen[p.key]) { seen[p.key] = p; } });
     });
   }
-  // Find online takes the rows' place until Back, as it takes the slots' in Change Pictures.
-  // Its presses are the tab's list, read afresh as it fills, so Enter or A never falls through to Play.
-  function findOnline(x) {
-    finding = x.kind;
-    var box = openPicker(g, x.kind, x.k.label, list, function () { if (tabPane("media") === pane) { focusAt(at); } });
-    var on = 0;
-    function presses() { return Array.prototype.slice.call(box.querySelectorAll(".pk-head button, .pk-search button, .pk > button, .pk-cell, .pk-result")); }
-    function mark(i) {
-      var all = presses();
-      on = Math.max(0, Math.min(all.length - 1, i));
-      all.forEach(function (c, n) { c.classList.toggle("sel", n === on); });
-      if (all[on]) { all[on].scrollIntoView({ block: "nearest", inline: "nearest" }); }
-      setTabRows(pane, { cells: all, at: on, word: "choose", move: function (d) { mark(on + d); },
-                         choose: function () { var c = presses()[on]; if (c) { c.click(); } } });
-    }
-    mark(0);
-  }
-  inner.addEventListener("xs-art-changed", function () { if (finding) { again(finding); } });
-
-  function choose(i) {
-    var x = lines[i], cell = cells[i];
-    if (!x || working) { return; }
-    if (x.act === "copy") { sound("select"); picking = g.id; pickGame(pane, g); return; }
-    if (x.act === "clear") {
+  var button = function (cls, text, key, word, run) {
+    var b = el("button", cls, text);
+    b.type = "button";
+    b.dataset.key = key;
+    b.dataset.word = word;
+    b.addEventListener("click", run);
+    cells.push(b);
+    return b;
+  };
+  PLACE_ORDER.filter(function (k) { return seen[k]; }).forEach(function (k) {
+    var b = button("mt-place", PLACE_NAME[k], "p:" + k, "see everything " + PLACE_NAME[k] + " has", function () {
+      sound("select");
+      L("ART", g.title + ": everything " + PLACE_NAME[k] + " has (Media tab)");
+      to(pane, g, { view: "place", place: k });
+    });
+    if (seen[k].note) { b.title = seen[k].note; b.classList.add("mt-note-place"); }
+    btns.appendChild(b);
+  });
+  btns.appendChild(button("mt-place md-copy", "Another game...", "copy", "open", function () { sound("select"); to(pane, g, { view: "pick" }); }));
+  btns.appendChild(el("span", "mt-gap"));
+  var showing = v.has || PIC_KINDS.some(function (kind) { return res.kinds[kind].has || res.kinds[kind].replaced; });
+  if (showing) {
+    btns.appendChild(button("mt-place md-clear", "Clear all...", "clear", "clear all", function () {
       askClearAll(g, res, function (err) {
-        again("box");
+        markChanged(g, "all");
+        overview(pane, g);
         if (err) { showStrip(err, true); }
       });
-      return;
-    }
-    if (x.act === "video") {
-      if (!v.has) { sound("back"); return; }
-      confirmWindow("Clear the video of " + res.title + "?", function (box) { videoClearLines(box, v); }, { label: "Clear video", run: function () {
-        stopVideo();
-        api("api/video-own.php?id=" + encodeURIComponent(g.id) + "&clear=1", { method: "POST" }).then(function (r) {
-          L("ART", g.title + ": clear video from the Media tab: " + (r.ok ? r.gone + " deleted" : r.error));
-          sound(r.ok ? "ok" : "back");
-          again("video");
-          if (!r.ok) { showStrip(r.error || "the video could not be cleared", true); }
-        });
-      } });
-      return;
-    }
-    // A picture: the buttons Change Pictures has under its slot, as a menu on the row.
-    var k = x.k, r = cell.getBoundingClientRect();
-    var did = function (what, run) { return function () { L("ART", g.title + ": " + what + " " + x.kind + " (Media tab)"); run(); }; };
-    popupMenu([
-      { label: k.has ? "Replace..." : "Add...", icon: "folder", run: did("choose a file for", function () { pickFile(x, cell); }) },
-      { label: "Find online...", icon: "search", hidden: !hasGamesDb, run: did("find online", function () { findOnline(x); }) },
-      { label: k.hadOne ? "Reset to the original" : "Remove", icon: "refresh", hidden: !k.replaced,
-        run: did("reset", function () { post(x, cell, "&reset=1", "could not reset"); }) },
-      { label: k.hidden ? "Use the original again" : "Use no picture", icon: "minus", hidden: k.replaced || !(k.has || k.hidden),
-        run: did(k.hidden ? "use the original again for" : "use no picture for", function () { post(x, cell, "&hide=" + (k.hidden ? "0" : "1"), "could not change that"); }) }
-    ], Math.round(r.left + 24), Math.round(r.bottom), k.label);
+    }));
   }
+  all.appendChild(btns);
+  fit.appendChild(all);
 
-  lines.forEach(function (x, i) {
-    var line, words = el("div", "sv-words");
-    if (x.act === "pic") {
-      var k = x.k;
-      line = el("div", "cr-row sv-row md-kind md-mine" + (k.hidden ? " md-hid" : ""));
-      line.dataset.kind = x.kind;
-      line.title = "What can be done with this picture";
-      line.appendChild(ownShot(g, x.kind, k));
-      words.appendChild(el("span", "cr-name", k.label));
-      words.appendChild(el("span", "sv-sub", k.replaced ? "replaced in Xsegon" : k.hidden ? "hidden: the original is not used" : k.has ? "the original" : "no image"));
-      line.appendChild(words);
-      line.addEventListener("dragover", function (e) { e.preventDefault(); line.classList.add("drop"); });
-      line.addEventListener("dragleave", function () { line.classList.remove("drop"); });
-      line.addEventListener("drop", function (e) {
-        e.preventDefault();
-        line.classList.remove("drop");
-        upload(x, line, e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]);
-      });
-    } else if (x.act === "video") {
-      // Only where its file is: nothing plays here.
-      line = el("div", "cr-row sv-row md-kind md-video" + (v.has ? "" : " ro"));
-      line.dataset.kind = "video";
-      if (v.has) { line.title = "Clear this video"; }
-      line.appendChild(iconEl("cr-ico", "film"));
-      words.appendChild(el("span", "cr-name", "Video"));
-      words.appendChild(el("span", "sv-sub md-path", v.has ? v.path : "none"));
-      line.appendChild(words);
-      if (v.has) { line.appendChild(el("span", "cr-tag", "Clear video...")); }
-    } else if (x.act === "copy") {
-      line = el("div", "cr-row ch-act md-copy");
-      line.appendChild(iconEl("cr-ico", "download"));
-      line.appendChild(el("span", "cr-name", "Copy from another game..."));
-    } else {
-      line = el("div", "cr-row ch-act md-clear");
-      line.appendChild(iconEl("cr-ico", "trash"));
-      line.appendChild(el("span", "cr-name", "Clear all..."));
-      line.appendChild(el("span", "cr-tag", "every picture and the video show nothing; it asks first"));
-    }
-    line.addEventListener("mouseenter", function () { focusAt(i); });
-    line.addEventListener("click", function () { choose(i); });
-    cells.push(line);
-    list.appendChild(line);
-  });
-  // A file let go beside the rows must not open in place of the page.
+  // A file let go beside the cards must not open in place of the page.
   inner.addEventListener("dragover", function (e) { e.preventDefault(); });
   inner.addEventListener("drop", function (e) { e.preventDefault(); });
-  focusAt(keepAt || 0);
-  // Details is built before it is on the screen, and setTabRows ignores a
-  // pane that is not on it: the list is handed over again a moment later.
-  Promise.resolve().then(function () { if (tabPane("media") === pane) { focusAt(at); } });
-}
-
-/* ---- the games to copy from: a find box over the library, asked of the server as it is typed ---- */
-
-function pickGame(pane, g) {
-  pane.textContent = "";
-  var inner = el("div", "ch-inner ch-tab md-tab");
-  inner.appendChild(el("p", "group-help", "Copy pictures or a video from another game in the library onto " + g.title
-    + ". Press a game to see what it has. Games of " + g.platform + " come first."));
-  var seek = el("div", "set-find ch-find");
-  seek.appendChild(iconEl("find-ico", "search"));
-  var box = el("input");
-  box.type = "text";
-  box.placeholder = "find a game";
-  box.spellcheck = false;
-  seek.appendChild(box);
-  inner.appendChild(seek);
-  var list = el("div", "ch-list md-list");
-  inner.appendChild(list);
-  var foot = el("p", "mt-note", "Reading the library…");
-  inner.appendChild(foot);
-  pane.appendChild(inner);
-
-  // The first row goes back to this game's own media; the games follow it.
-  var back = el("div", "cr-row ch-act md-back md-home");
-  back.appendChild(iconEl("cr-ico", "back"));
-  back.appendChild(el("span", "cr-name", "Back to this game's media"));
-  back.addEventListener("mouseenter", function () { focusAt(0); });
-  back.addEventListener("click", function () { choose(0); });
-  var cells = [back], found = [], at = 0, asked = 0;
-  list.appendChild(back);
-  function focusAt(i) {
-    i = Math.max(0, Math.min(cells.length - 1, i));
-    at = i;
-    cells.forEach(function (c, k) { c.classList.toggle("sel", k === i); });
-    setTabRows(pane, { cells: cells, at: at, find: box, word: i === 0 ? "go back" : "open",
-                       move: function (d) { focusAt(at + d); }, choose: function () { choose(at); } });
-    if (cells[i]) { cells[i].scrollIntoView({ block: "nearest", inline: "nearest" }); }
-  }
-  function choose(i) {
-    if (i === 0) { sound("back"); picking = null; ownMedia(pane, g, 0); return; }
-    var x = found[i - 1];
-    if (!x) { return; }
-    sound("select");
-    copyFrom = { forId: g.id, id: x.id };
-    L("ART", g.title + ": looking at " + nameOf(x) + " to copy from");
-    showFrom(pane, g, x.id, 0);
-  }
-  function ask() {
-    var mine = ++asked, words = box.value.trim();
-    api("api/copy-media.php?id=" + encodeURIComponent(g.id) + "&find=" + encodeURIComponent(words)).then(function (res) {
-      if (mine !== asked || tabPane("media") !== pane) { return; }   // typed on since, or the tab left
-      cells.slice(1).forEach(function (c) { c.remove(); });
-      cells = [back];
-      found = (res.ok && res.games) || [];
-      if (!res.ok) { foot.textContent = "The library could not be read: " + (res.error || "the server gave no answer"); focusAt(0); return; }
-      found.forEach(function (x, i) {
-        var line = el("div", "cr-row md-game" + (x.same ? "" : " md-other"));
-        line.appendChild(iconEl("cr-ico", "image"));
-        line.appendChild(el("span", "cr-name", nameOf(x)));
-        line.appendChild(el("span", "cr-tag", (x.same ? "" : x.platform + "  ·  ") + hasWords(x.has)));
-        line.addEventListener("mouseenter", function () { focusAt(i + 1); });
-        line.addEventListener("click", function () { choose(i + 1); });
-        cells.push(line);
-        list.appendChild(line);
-      });
-      var n = found.length;
-      foot.textContent = !n ? (words ? "No game with pictures or a video matches “" + words + "”." : "No other game in the library has pictures or a video.")
-        : res.more ? "The first " + n + " shown. Type part of a name to find the rest."
-        : n + (n === 1 ? " game" : " games") + (words ? " match “" + words + "”." : " with pictures or a video.");
-      focusAt(Math.min(at, cells.length - 1));
-    });
-  }
-  var wait;
-  box.addEventListener("input", function () { clearTimeout(wait); wait = setTimeout(function () { at = 0; ask(); }, 200); });
-  focusAt(0);
-  ask();
-}
-
-/* A picture or the video in a row's frame, or a dash where there is none. */
-function shot(kind, url, cls) {
-  var frame = el("div", "sv-shot md-shot " + cls);
-  if (!url) { frame.appendChild(el("span", "md-none", "none")); return frame; }
-  if (kind === "video") {
-    var v = el("video");
-    v.muted = true;                     // only ever its first frame: nothing plays here
-    v.preload = "metadata";
-    v.src = url;
-    frame.appendChild(v);
-  } else {
-    var img = el("img");
-    img.loading = "lazy";
-    img.alt = "";
-    img.src = url;
-    img.onerror = function () { img.remove(); frame.appendChild(el("span", "md-none", "none")); };
-    frame.appendChild(img);
-  }
-  return frame;
-}
-
-/* What the other game has beside what this one shows. keepAt: the row the bar stays on after a copy. */
-function showFrom(pane, g, fromId, keepAt) {
-  if (!pane.firstChild) { pane.appendChild(el("p", "dtab-wait", "…")); }
-  api("api/copy-media.php?id=" + encodeURIComponent(g.id) + "&from=" + encodeURIComponent(fromId)).then(function (res) {
-    if (tabPane("media") !== pane) { return; }
-    if (!res.ok) {
-      copyFrom = null;
-      pane.textContent = "";
-      pane.appendChild(tabSays(res.error || "that game could not be read"));
-      setTabRows(pane, null);
-      return;
-    }
-    paintFrom(pane, g, res, keepAt);
-  });
-}
-
-function paintFrom(pane, g, res, keepAt) {
-  pane.textContent = "";
-  var inner = el("div", "ch-inner ch-tab md-tab");
-  inner.appendChild(el("p", "group-help", "From " + nameOf(res.from) + ", " + res.from.platform
-    + ". A press copies one onto " + g.title + "; what " + g.title + " shows now is on the right."));
-  var list = el("div", "ch-list md-list md-kinds");
-  inner.appendChild(list);
-  inner.appendChild(el("p", "mt-note", "A copy is this game's own picture or video: Change Pictures and Replace Video can take it away again."));
-  pane.appendChild(inner);
-
-  var can = res.rows.filter(function (r) { return r.from && !r.same; });
-  var lines = [{ act: "back" }, { act: "all" }].concat(res.rows.map(function (r) { return { act: "kind", r: r }; }));
-  var cells = [], at = 0, copying = false;
 
   function focusAt(i) {
     i = Math.max(0, Math.min(cells.length - 1, i));
     at = i;
-    cells.forEach(function (c, k) { c.classList.toggle("sel", k === i); });
-    var x = lines[i], off = x.act === "all" ? !can.length : x.act === "kind" && (!x.r.from || x.r.same);
-    setTabRows(pane, { cells: cells, at: i, word: x.act === "back" ? "go back" : "copy", look: off,
-                       move: function (d) { focusAt(at + d); }, choose: function () { choose(at); } });
-    if (cells[i]) { cells[i].scrollIntoView({ block: "nearest", inline: "nearest" }); }
+    lastCard = { id: g.id, key: cells[i].dataset.key };
+    cells.forEach(function (c, n) { c.classList.toggle("sel", n === i); });
+    setTabRows(pane, { cells: cells, at: i, word: cells[i].dataset.word, move: function (d) { focusAt(at + d); },
+                       choose: function () { cells[at].click(); } });
+    cells[i].scrollIntoView({ block: "nearest", inline: "nearest" });
   }
-
-  function choose(i) {
-    var x = lines[i];
-    if (copying || !x) { return; }
-    if (x.act === "back") { sound("back"); copyFrom = null; pickGame(pane, g); return; }
-    var kinds = x.act === "all" ? can.map(function (r) { return r.kind; }) : (x.r.from && !x.r.same ? [x.r.kind] : []);
-    if (!kinds.length) { sound("back"); return; }
-    var replaces = res.rows.filter(function (r) { return kinds.indexOf(r.kind) >= 0 && r.to; });
-    if (!replaces.length) { copy(x.act === "all" ? "all" : x.r.kind, cells[i]); return; }
-    confirmWindow("This replaces its " + listWords(replaces.map(function (r) { return r.kind; })), function (box) {
-      var one = replaces.length === 1;
-      box.appendChild(el("p", null, "On the left, what " + g.title + " shows now. On the right, " + nameOf(res.from)
-        + "’s, which " + (one ? "takes its" : "take their") + " place."));
-      replaces.forEach(function (r) {
-        var pair = el("div", "md-pair");
-        pair.appendChild(shot(r.kind, r.to, "md-to"));
-        pair.appendChild(el("span", "md-arrow", "→"));
-        pair.appendChild(shot(r.kind, r.from, "md-from"));
-        pair.appendChild(el("span", "md-what", r.label));
-        box.appendChild(pair);
-      });
-    }, { label: "Copy", run: function () { copy(x.act === "all" ? "all" : x.r.kind, cells[i]); } }, "Cancel");
-  }
-
-  function copy(kind, cell) {
-    copying = true;
-    var tag = cell && cell.querySelector(".sv-sub, .cr-tag");
-    if (tag) { tag.textContent = "copying…"; }
-    api("api/copy-media.php?id=" + encodeURIComponent(g.id) + "&from=" + encodeURIComponent(res.from.id) + "&kind=" + kind, { method: "POST" }).then(function (now) {
-      copying = false;
-      var got = (now && now.copied) || [], lost = (now && now.failed) || [];
-      if (got.length) { takeIn(g, now.patch, got); }
-      L("ART", g.title + ": " + (got.length ? listWords(got) + " copied from " + nameOf(res.from) : "nothing copied")
-        + (lost.length ? "; not copied: " + lost.map(function (f) { return f.kind + " (" + f.why + ")"; }).join(", ") : ""));
-      if (!now.ok || lost.length) {
-        sound("back");
-        showStrip((got.length ? "Copied " + listWords(got) + ". " : "") + "Not copied: "
-          + (lost.length ? lost.map(function (f) { return (KIND_WORDS[f.kind] || f.kind) + ", " + f.why; }).join("; ") : now.error || "the server gave no answer"), true);
-      } else if (!got.length) {
-        sound("back");
-        showStrip(g.title + " already shows everything " + nameOf(res.from) + " has.", false);
-      } else {
-        sound("ok");
-        showStrip(g.title + ": " + listWords(got) + " copied from " + nameOf(res.from), false);
-      }
-      if (tabPane("media") !== pane) { return; }
-      if (now.rows) { res.rows = now.rows; paintFrom(pane, g, res, at); }
-      else { showFrom(pane, g, res.from.id, at); }
-    });
-  }
-
-  lines.forEach(function (x, i) {
-    var line;
-    if (x.act === "back") {
-      line = el("div", "cr-row ch-act md-back");
-      line.appendChild(iconEl("cr-ico", "back"));
-      line.appendChild(el("span", "cr-name", "Back to the games"));
-    } else if (x.act === "all") {
-      line = el("div", "cr-row ch-act md-all" + (can.length ? "" : " ro"));
-      line.appendChild(iconEl("cr-ico", "download"));
-      line.appendChild(el("span", "cr-name", "Copy all it has"));
-      line.appendChild(el("span", "cr-tag", can.length ? listWords(can.map(function (r) { return r.kind; })) : "nothing more to copy"));
-    } else {
-      var r = x.r, off = !r.from || r.same;
-      line = el("div", "cr-row sv-row md-kind" + (off ? " ro" : "") + (r.same ? " on" : ""));
-      line.dataset.kind = r.kind;
-      line.appendChild(iconEl("cr-ico", r.same ? "check" : r.kind === "video" ? "film" : "image"));
-      var words = el("div", "sv-words");
-      words.appendChild(el("span", "cr-name", r.label));
-      words.appendChild(el("span", "sv-sub", !r.from ? nameOf(res.from) + " has none"
-        : r.same ? "the same as this game’s" : r.to ? "a press replaces this game’s" : "this game has none: a press copies it"));
-      line.appendChild(words);
-      line.appendChild(shot(r.kind, r.from, "md-from"));
-      line.appendChild(el("span", "md-arrow", "→"));
-      line.appendChild(shot(r.kind, r.to, "md-to"));
-    }
-    line.addEventListener("mouseenter", function () { focusAt(i); });
-    line.addEventListener("click", function () { choose(i); });
-    cells.push(line);
-    list.appendChild(line);
-  });
-  focusAt(keepAt || 0);
+  cells.forEach(function (c, i) { c.addEventListener("mouseenter", function () { focusAt(i); }); });
+  // The card selected last for this game, else the box art (as before Find any sat above it).
+  var was = lastCard && lastCard.id === g.id ? cells.map(function (c) { return c.dataset.key; }).indexOf(lastCard.key) : -1;
+  focusAt(was >= 0 ? was : 1);
   // Details is built before it is on the screen, and setTabRows ignores a
   // pane that is not on it: the list is handed over again a moment later.
   Promise.resolve().then(function () { if (tabPane("media") === pane) { focusAt(at); } });
-}
-
-/* The copy, onto the game's row: every view and details' cover show it without the library read again. */
-function takeIn(g, patch, got) {
-  if (!patch) { return; }
-  Object.keys(patch).forEach(function (k) {
-    if (k === "img" || k === "imgFull") { g[k] = Object.assign({}, g[k] || {}, patch[k]); }
-    else { g[k] = patch[k]; }
-  });
-  setWheelNodes(null);
-  setCarNodes(null);
-  render();
-  if (got.indexOf("box") >= 0) { coverAgain(g, artUrl(g, "box", true)); }
-  var lacks = document.querySelector("#details .dlacks");
-  if (lacks && got.indexOf("video") >= 0) { lacks.remove(); }
-}
-
-/* Details' cover after the box art changed in the tab: the new picture once
-   it has come, or NO ART back when there is none (its address answers 404),
-   each in the other's place. The old one shows until then. */
-function coverAgain(g, src) {
-  var now = document.querySelector("#details .dleft img.cover, #details .dleft .cover-noart");
-  if (!now) { return; }
-  var img = el("img", "cover");
-  img.alt = g.title;
-  img.onload = function () { now.replaceWith(img); };
-  img.onerror = function () {
-    if (now.classList.contains("cover-noart")) { return; }
-    now.replaceWith(addsMissing(el("div", "hero-noart cover-noart", "NO ART"), function () { return g; }, "art"));
-  };
-  img.src = src;
 }

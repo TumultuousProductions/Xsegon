@@ -305,6 +305,11 @@ export function tabPane(key) {
   return dtabUp && dtabUp.pane.isConnected && dtabKey === key ? dtabUp.pane : null;
 }
 
+/* The game details shows now, or null: an answer that comes late changes only the details it was asked for. */
+export function tabGameId() {
+  return dtabUp && dtabUp.pane.isConnected ? dtabUp.g.id : null;
+}
+
 /* A tab's list, handed over each time it is painted; null when it has none.
    A list that is not on the screen any more is not listened to. */
 export function setTabRows(pane, v) {

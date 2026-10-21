@@ -62,6 +62,8 @@ var ICONS = {
   tabs:    '<rect x="4" y="7" width="16" height="12" rx="1.5"/><path d="M4 11h16M9.5 7v4"/>',
   // a settings section's fold: points down while open, turned to point right when folded (css)
   caret:   '<path d="M6.5 9.2L12 14.8l5.5-5.6"/>',
+  // the caret turned over: a place moved up in the Media tab's Look in
+  up:      '<path d="M6.5 14.8L12 9.2l5.5 5.6"/>',
   dot:     '<circle fill="currentColor" stroke="none" cx="12" cy="12" r="2"/>'
 };
 export function iconEl(cls, name) {

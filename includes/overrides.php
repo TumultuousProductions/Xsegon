@@ -299,6 +299,66 @@ function xs_apply_art_hidden(array $games): array
     return $games;
 }
 
+/*
+ * Where a game's own picture or video came from, for the Media tab to say: data\art-from.json,
+ * id => kind => ['from' => ss | gamesdb | libretro | steam | archive | arcadedb | file | copy, 'game' => the
+ * title copied from, 'rev' => the file's time when it was stored]. A file stored since by anything that
+ * writes no line here (a fill, Get Everything) has another time, and its line is not believed.
+ */
+function xs_art_from_path(): string
+{
+    return xs_data_path('art-from.json');
+}
+
+function xs_art_from(): array
+{
+    $f = xs_read_json(xs_art_from_path(), []);
+    return is_array($f) ? $f : [];
+}
+
+/** One kind's line while it is still true of $file (its time unchanged), or null: a file replaced since by a path that writes no line is not named. */
+function xs_art_from_now(string $id, string $kind, ?string $file): ?array
+{
+    $f = xs_art_from()[$id][$kind] ?? null;
+    return is_array($f) && $file !== null && is_file($file) && (int) ($f['rev'] ?? 0) === (int) filemtime($file) ? $f : null;
+}
+
+/** One kind's line: $from as above, $game for a copy. A failed write only loses the words, so it is logged, not raised. */
+function xs_art_from_set(string $id, string $kind, string $from, int $rev, string $game = ''): void
+{
+    $all = xs_art_from();
+    // The game's other lines no longer true of their file (replaced since by a path that writes none) go, so the file never only grows.
+    foreach ((array) ($all[$id] ?? []) as $k => $f) {
+        if ($k === $kind || ($k === 'video' && !function_exists('video_own'))) {
+            continue;                                  // a caller without includes\video.php leaves the video's line be
+        }
+        $file = $k === 'video' ? video_own($id) : xs_slot_file(xs_own_art_dir() . DIRECTORY_SEPARATOR . $id . '-' . $k, ['png', 'jpg', 'jpeg', 'webp', 'gif']);
+        if ($file === null || (int) ($f['rev'] ?? 0) !== (int) @filemtime($file)) {
+            unset($all[$id][$k]);
+        }
+    }
+    $all[$id][$kind] = ['from' => $from, 'rev' => $rev] + ($game !== '' ? ['game' => $game] : []);
+    if (!xs_write_json(xs_art_from_path(), $all, $why)) {
+        xs_log('WARN', 'where ' . $id . ' ' . $kind . ' came from was not written: ' . $why);
+    }
+}
+
+/** Kinds taken away (reset, Clear all): every kind of the game when $kinds is empty. */
+function xs_art_from_drop(string $id, array $kinds = []): void
+{
+    $all = xs_art_from();
+    if (!isset($all[$id])) {
+        return;
+    }
+    foreach ($kinds ?: array_keys($all[$id]) as $k) {
+        unset($all[$id][$k]);
+    }
+    if (!$all[$id]) {
+        unset($all[$id]);
+    }
+    xs_write_json(xs_art_from_path(), $all ?: new stdClass());
+}
+
 function xs_own_art_kinds(): array
 {
     return ['box' => 'Box art', 'box3d' => '3D box', 'logo' => 'Clear logo', 'shot' => 'Screenshot', 'fanart' => 'Fanart / background'];
