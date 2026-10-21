@@ -254,7 +254,8 @@ function xs_rom_away(string $full, array $s): ?string
  */
 function xs_apply_missing(array $lib, array $s): array
 {
-    if (empty($lib['games']) || empty($s['launch']['sweepFiles'])) {
+    // Every drive left alone (the bar's counts) looks at no file: nothing is learned, so nothing is marked or kept for the next read.
+    if (empty($lib['games']) || empty($s['launch']['sweepFiles']) || xs_drives_alone()) {
         return $lib;
     }
     $root = xs_norm_path((string) ($s['paths']['romRoot'] ?? ''));

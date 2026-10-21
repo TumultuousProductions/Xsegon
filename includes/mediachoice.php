@@ -710,6 +710,8 @@ function xs_mc_prepare(string $ticket, array $job, string $ref, ?string &$why = 
         $why = 'the disk has only ' . round($free / 1048576) . ' MB free, not enough to bring it down and keep it';
         return false;
     }
+    // Asked again after a failure: its ending is said again, so the first one's mark goes.
+    @unlink(dirname($path) . DIRECTORY_SEPARATOR . 'told-' . basename($path));
     $to   = 'got-' . substr(md5($ref), 0, 12) . '.' . ($type === 'pdf' ? 'pdf' : ($type === 'video' ? 'mp4' : 'img'));
     $prep = ['state' => 'running', 'started' => time(), 'ref' => $ref, 'place' => $place, 'type' => $type, 'url' => (string) $it['src'],
              'to' => $to, 'dir' => xs_mc_dir($ticket), 'size' => $size, 'md5' => (string) ($it['md5'] ?? ''), 'max' => $cap];

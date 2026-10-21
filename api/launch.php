@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/import.php';
+require_once __DIR__ . '/../includes/brand.php';
 
 xs_post_only();
 
@@ -589,7 +590,8 @@ $params = [
     'Kind'         => (string) ($launch['kind'] ?? '') === 'retroarch' ? 'retroarch' : 'other',
     'RomPath'      => $launch['rom'],
     'DataDir'      => xs_data_dir(),
-    'FocusTitle'   => (string) $s['launch']['focusTitle'],
+    // Xsegon's window wears your name when one is set: the one to come back to is found by it.
+    'FocusTitle'   => (string) $s['launch']['focusTitle'] === 'Xsegon' ? xs_brand($s)['title'] : (string) $s['launch']['focusTitle'],
     'RestoreFocus' => (bool) $s['launch']['restoreFocus'],
     'StepAside'    => (bool) ($s['launch']['stepAside'] ?? true),
 ];

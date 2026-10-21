@@ -118,7 +118,8 @@ $brand = xs_brand();
 (function () {
   "use strict";
   var id = <?= json_encode($id) ?>;
-  var title = <?= json_encode($title . ' - Xsegon') ?>;
+  // The window's own title, word for word: its X, minimise and Esc find the window by it (api\window.php).
+  var title = <?= json_encode($title . ($why === null ? ' - ' . $brand['title'] : '')) ?>;
   var since = Date.now();
   var bar = document.getElementById("bar");
   var hint = document.getElementById("hint");

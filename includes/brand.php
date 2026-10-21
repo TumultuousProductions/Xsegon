@@ -35,8 +35,8 @@ function xs_brand_file(): ?string
 function xs_brand(?array $s = null): array
 {
     $s ??= xs_settings();
-    // One line, and short enough for a window's title.
-    $name = mb_substr(trim(preg_replace('/\s+/u', ' ', (string) ($s['feel']['brandName'] ?? '')) ?? ''), 0, 60);
+    // One line, and short enough for a window's title. No double quote: a window is asked for by its title, which may hold none (api\window.php).
+    $name = mb_substr(trim(preg_replace('/\s+/u', ' ', str_replace('"', "'", (string) ($s['feel']['brandName'] ?? ''))) ?? ''), 0, 60);
     $file = xs_brand_file();
     $w = $h = 0;
     if ($file !== null) {

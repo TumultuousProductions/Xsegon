@@ -21,11 +21,20 @@ xs_write_json(xs_ga_job_path(), $job);
 $wait = (array) ($job['ss']['waitOn'] ?? []);
 xs_log('GALL', 'waiting for ' . implode(', ', $wait) . ' to be through, then ScreenScraper');
 
+$told = false;
 while (true) {
     if (is_file(xs_ga_stop_path())) {
         exit(0);                       // xs_ga_stop wrote the ending's words
     }
     $left = array_values(array_filter($wait, static fn ($k) => xs_ga_running((string) $k)));
+    // A Media tab compare asking ScreenScraper goes first: it answers one thing at a time, and the pass would be refused.
+    if (!$left && xs_ss_compare_busy()) {
+        $left = ['a Media tab compare'];
+        if (!$told) {
+            xs_log('GALL', 'the free sources are through; a Media tab compare is asking ScreenScraper, so the pass waits for it');
+            $told = true;
+        }
+    }
     if (!$left) {
         break;
     }
@@ -34,7 +43,9 @@ while (true) {
 }
 
 // Read only now: this process has looked at no library yet, so it sees what the free sources added.
-$got = xs_ga_ss(xs_settings(), xs_library(), (array) $job['ss']['kinds'], (array) $job['ways']);
+// Stop is looked at again just before ScreenScraper is asked: reading the library takes a moment.
+$got = xs_ga_ss(xs_settings(), xs_library(), (array) $job['ss']['kinds'], (array) $job['ways'], false,
+                static fn (): bool => is_file(xs_ga_stop_path()));
 $job = xs_read_json(xs_ga_job_path(), $job);
 if (!is_array($job) || ($job['ss']['state'] ?? '') !== 'waiting') {
     exit(0);

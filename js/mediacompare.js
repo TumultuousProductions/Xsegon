@@ -182,7 +182,10 @@ function paintActs(c) {
     acts.appendChild(kept);
     acts.appendChild(mcButton("mc-putback", "Put back the one before", function () { putBack(c); }, "putback"));
   }
-  if (c.pending) { acts.appendChild(el("span", "mc-dim", "it is used as soon as it has come down")); }
+  if (c.pending) {
+    var waits = it && it.ref === c.pending.ref ? "it" : c.pending.it.label + " from " + PLACE_NAME[mcPlace(c.pending.it)];
+    acts.appendChild(el("span", "mc-dim", waits + " is used as soon as it has come down"));
+  }
   acts.appendChild(el("span", "mc-gap"));
   if (mcIsPic(kind)) {
     var k = c.now && c.now.kinds[kind];
@@ -268,9 +271,10 @@ function useItem(c, it, how) {
   var prep = c.view.prep[it.ref];
   // Used from what came down: a video or manual, or a picture still at its place, comes first and is used as it lands.
   var here = (prep && prep.state === "done") || (mcIsPic(c.kind) && (it.view || "").indexOf("api/mediachoice.php") === 0);
+  if (c.pending && c.pending.ref !== it.ref) { settle(c, "another was used"); }
   if (!here) {
     // Asked again after a failure: a "failed" read before the new asking answers is the old one.
-    c.pending = { ref: it.ref, how: how, asked: !prep || prep.state === "failed" };
+    c.pending = { ref: it.ref, it: it, how: how, asked: !prep || prep.state === "failed" };
     delete c.prepFail[it.ref];
     if (c.pending.asked) { prepare(c, it, true); }
     paintActs(c);
@@ -295,7 +299,8 @@ function useItem(c, it, how) {
     L("ART", c.g.title + ": " + c.kind + " from " + PLACE_NAME[mcPlace(it)] + ", " + it.label + (how === "keep" ? ", kept beside the others" : "") + " used (Media tab compare)");
     c.kept = { ticket: it.ticket };
     c.lastUsed = it.ref;
-    c.focusKey = "c:" + it.ref;          // the choice stays selected, not the Put back that took the Use button's place
+    // The choice stays selected, not the Put back that took the Use button's place; one used while another is looked at moves nothing.
+    if (!c.picked || c.picked.ref === it.ref) { c.focusKey = "c:" + it.ref; }
     readNow(c, r.doc);
     c.strip.querySelectorAll(".mc-cand").forEach(function (b) { b.classList.toggle("now", b.dataset.key === "c:" + it.ref); });
   });
@@ -396,9 +401,8 @@ function prepare(c, it, now) {
 }
 
 function pick(c, it) {
-  if (!it || c.closed) { return; }
-  // Another choice pressed while one waited to be used: the person changed their mind, and that one is not used.
-  if (c.pending && c.pending.ref !== it.ref) { settle(c, "another was chosen"); }
+  // The one shown already is not drawn again (its video would start over). A Use waiting on another stays: looking is not a change of mind.
+  if (!it || c.closed || (c.picked && c.picked.ref === it.ref)) { return; }
   c.picked = it;
   c.strip.querySelectorAll(".mc-cand").forEach(function (b) { b.classList.toggle("on", b.dataset.key === "c:" + it.ref); });
   if (!mcIsPic(c.kind) && !it.view && !c.view.prep[it.ref] && !c.prepFail[it.ref]) { prepare(c, it, false); }
@@ -622,7 +626,7 @@ function onView(c, v) {
 function checkPending(c) {
   if (!c.pending || c.pending.asked || c.working || c.closed) { return; }
   var p = c.view.prep[c.pending.ref];
-  if (p && p.state === "done" && c.picked && c.picked.ref === c.pending.ref) { useItem(c, c.picked, c.pending.how); }
+  if (p && p.state === "done") { useItem(c, c.pending.it, c.pending.how); }
   else if (p && p.state === "failed") {
     c.pending = null;
     showStrip(KIND_LABEL[c.kind] + " would not come down, so it was not used: " + (p.why || "no reason given"), true);

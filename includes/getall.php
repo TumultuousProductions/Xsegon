@@ -140,9 +140,10 @@ function xs_ga_free(array $s, array $lib, array $ways, bool $dry): array
 
 /**
  * The ScreenScraper pass for what is still missing, the library read as it is now:
- * ['state' => started | skipped | failed, 'said', 'games' => how many it asks about].
+ * ['state' => started | skipped | failed, 'said', 'games' => how many it asks about]. $stopped, when
+ * given, is asked right before ScreenScraper is: true leaves it unasked.
  */
-function xs_ga_ss(array $s, array $lib, array $kinds, array $ways, bool $dry = false): array
+function xs_ga_ss(array $s, array $lib, array $kinds, array $ways, bool $dry = false, ?callable $stopped = null): array
 {
     $games = xs_ss_plan_games($s, $lib, $kinds['video'] ? null : [], $kinds['manual'], $ways['manuals'] !== 'ss', $kinds['box']);
     if (!$games) {
@@ -162,6 +163,9 @@ function xs_ga_ss(array $s, array $lib, array $kinds, array $ways, bool $dry = f
     }
     if (!xs_ss_ready($use)) {
         return $fail((string) $devWhy);
+    }
+    if ($stopped !== null && $stopped()) {
+        return $fail('stopped before ScreenScraper was asked');
     }
     if (!xs_ss_start(xs_ss_plan($games, $kinds['manual'], $kinds['box']), $use, $why)) {
         return $fail((string) $why);
@@ -283,6 +287,10 @@ function xs_ga_stop(): void
     @touch(xs_ga_stop_path());
     require_once __DIR__ . '/jobs.php';
     foreach ($job['parts'] ?? [] as $p) {
+        // Only what this press started: a part at work before it, or one it skipped (maybe started by hand since), is left alone.
+        if (($p['state'] ?? '') !== 'started') {
+            continue;
+        }
         if ($p['key'] === 'fill' && xs_fill_running()) {
             @touch(xs_fill_stop_path());
         } elseif (in_array($p['key'], ['archivevid', 'archivedoc'], true)) {

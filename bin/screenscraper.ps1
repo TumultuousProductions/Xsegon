@@ -490,6 +490,8 @@ try {
             Save-Job $j
             continue
         }
+        # A game whose video is in already (another version's) asks for its manual or cover alone, and keeps "done" after.
+        $was = $g.state
         $g.state = 'asking'; Save-Job $j
 
         $ours = @([string] $g.title, (Rom-Title ([string] $g.rom)))
@@ -555,7 +557,7 @@ try {
 
         if (-not $jeu) {
             $miss = $(if ($unreadable) { 'failed' } else { 'none' })
-            if ($needV) { $g.state = $miss } elseif (-not $wantV) { $g.state = 'manual' }
+            if ($needV) { $g.state = $miss } elseif (-not $wantV) { $g.state = 'manual' } else { $g.state = $was }
             if ($needM) { Set-Field $g 'mstate' $miss }
             if ($needB) { Set-Field $g 'bstate' $miss }
             Save-Job $j
@@ -588,7 +590,7 @@ try {
                 if ($script:pause -gt 0) { Start-Sleep -Milliseconds $script:pause }
             }
         }
-        if (-not $wantV) { $g.state = 'manual' }
+        if (-not $wantV) { $g.state = 'manual' } elseif (-not $needV) { $g.state = $was }
 
         # The manual: downloaded into the job's own temp folder, so a documents folder is a game's
         # only once its manual is whole and a PDF, checked against ScreenScraper's checksum.
