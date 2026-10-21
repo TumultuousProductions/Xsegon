@@ -84,7 +84,7 @@ $myApps   = Split-Path $root -Parent
 # The PHP a download carries (runtime\php, put there by tools\make-test-copy.js).
 # A checkout has no runtime folder.
 $ownPhp   = "$root\runtime\php\php.exe"
-$knownPhp = "$myApps\php-8.5.4-nts-Win32-vs17-x64\php.exe"
+$knownPhp = "$myApps\php-8.5.12-nts-Win32-vs17-x64\php.exe"
 # Searched only when it is in neither place.
 $foundPhp = if (-not (Test-Path -LiteralPath $ownPhp) -and -not (Test-Path -LiteralPath $knownPhp)) {
     Get-ChildItem -LiteralPath $myApps -Filter 'php.exe' -Recurse -Depth 2 -ErrorAction SilentlyContinue |

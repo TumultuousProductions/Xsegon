@@ -41,7 +41,7 @@ const path = require("path");
 const { execFileSync } = require("child_process");
 
 const ROOT = path.join(__dirname, "..");
-const PHP = path.join(ROOT, "..", "php-8.5.4-nts-Win32-vs17-x64");
+const PHP = path.join(ROOT, "..", "php-8.5.12-nts-Win32-vs17-x64");
 // --release: the public download (a GitHub Release). LaunchBox is left on,
 // for whoever has it, as --with-launchbox does.
 const release = process.argv.includes("--release");
