@@ -997,8 +997,13 @@ module.exports = async function (b, check) {
     const fatalRes = await fetch(BASE + "/api/boom.php?fatal=1");
     const fatal = await fatalRes.json().catch(() => null);
     check("a request out of time answers in words too, as a 500, and the log has it",
-      [fatalRes.status, fatal && fatal.ok, /Maximum execution time/.test((fatal || {}).error || ""), /PHPE fatal: Maximum execution time/.test(logNow())],
-      [500, false, true, true]);
+      [fatalRes.status, fatal && fatal.ok, /PHPE fatal: Maximum execution time/.test(logNow())],
+      [500, false, true]);
+    check("and its words say what it was doing, not PHP's, in the answer, the log and the mailbox",
+      [/^something went wrong in the server: it ran out of its 1 second while counting on purpose/.test((fatal || {}).error || ""),
+       /SLOW boom\.php 1\.\d s, out of time, on counting on purpose at the end; parts: counting on purpose 1\.\d s/.test(logNow()),
+       (await faults()).some((m) => /^While answering boom\.php: it ran out of its 1 second while counting on purpose/.test(m.body || ""))],
+      [true, true, true]);
     check("and it is a second message, for its own place", (await faults()).map((m) => m.times), [1, 1]);
     await fetch(BASE + "/api/boom.php");
     const both = await faults();

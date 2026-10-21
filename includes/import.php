@@ -243,7 +243,7 @@ function xs_rom_away(string $full, array $s): ?string
     }
     $key = strtolower($home);
     // A drive that is not answering is away, for as long as it is not.
-    $there[$key] ??= xs_drive_stuck($home) === null && is_dir($home);
+    $there[$key] ??= xs_drive_stuck($home) === null && xs_look('is_dir', $home);
     return $there[$key] ? null : $home;
 }
 
@@ -333,13 +333,17 @@ function xs_game_or_404(string $id, string $why = 'unknown game'): array
  */
 function xs_library_build(?string $only = null): array
 {
+    $was = xs_doing('reading the library');
     $lib = xs_read_json(xs_library_path(), ['games' => [], 'counts' => ['games' => 0]]);
     // Your own games join before the overlays, so marks and edits work on them too.
     // They are never in library.json.
+    xs_doing('reading your own games');
     $lib = xs_apply_local($lib);
     // Scanned games likewise: merged at read, so a re-import cannot take them away.
     require_once __DIR__ . '/scan.php';
+    xs_doing('reading the games Scan for Games added');
     $lib = xs_apply_scanned($lib, $only);
+    xs_doing('reading the library');
     $lib = xs_apply_hidden($lib);        // games told not to show (data\hidden.json)
     // Deleted games go next, before any overlay is spent on them.
     require_once __DIR__ . '/deleted.php';
@@ -349,8 +353,10 @@ function xs_library_build(?string $only = null): array
     $lib = xs_apply_emu_choice($lib);
     // A disc set with a playlist plays through it; before the sweep, so the sweep
     // looks for the file that would launch.
+    xs_doing('checking disc sets and missing files');
     $lib = xs_apply_m3u($lib, xs_settings());
     $lib = xs_apply_missing($lib, xs_settings());
+    xs_doing('putting on pictures and your changes');
     if (isset($lib['games']) && is_array($lib['games'])) {
         $lib['games'] = xs_apply_overrides($lib['games']);
         // Order is rank, lowest first: the copy in data\media (includes\media.php),
@@ -369,6 +375,7 @@ function xs_library_build(?string $only = null): array
         // After the overrides, so a title you gave a game is the one compared.
         $lib['games'] = xs_apply_variants($lib['games']);
     }
+    xs_doing($was);
     return $lib;
 }
 

@@ -40,6 +40,7 @@ if (isset($_GET['warn'])) {
 // ?fatal=1: a request out of time, the fault PHP ends a request on that nothing can catch.
 if (isset($_GET['fatal'])) {
     set_time_limit(1);
+    xs_doing('counting on purpose');
     for (;;) {
         usleep(10000);
     }

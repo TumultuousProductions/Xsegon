@@ -1343,13 +1343,13 @@ function xs_file_there(string $file, array $share, array &$listed): bool
     $dir = dirname($file);
     $key = strtolower($dir);
     if (($share[$key] ?? 0) < 2) {
-        return is_file($file);
+        return xs_look('is_file', $file);
     }
     if (!array_key_exists($key, $listed)) {
-        $names = @scandir($dir);
+        $names = xs_look('scandir', $dir);
         $listed[$key] = is_array($names) ? array_fill_keys(array_map('mb_strtolower', $names), true) : [];
     }
-    return isset($listed[$key][mb_strtolower(basename($file))]) || is_file($file);
+    return isset($listed[$key][mb_strtolower(basename($file))]) || xs_look('is_file', $file);
 }
 
 /**

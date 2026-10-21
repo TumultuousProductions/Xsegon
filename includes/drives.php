@@ -15,17 +15,17 @@ declare(strict_types=1);
 const XS_DRIVE_STUCK_S  = 2.0;       // an announced look this old is a drive holding someone up
 const XS_DRIVE_WAITER_S = 180;       // a waiter not heard from for this long is gone: the drive is asked again
 
-/** The drive a path is on, as its root: "E:\" or "\\host\share"; '' when the path names none. */
-function xs_drive_of(string $path): string
+/**
+ * Every drive left alone for a while: each counts as not answering, so nothing on one is
+ * looked at and its games stand as they are. For a read no file can change (the bar's counts).
+ */
+function xs_drives_alone(?bool $on = null): bool
 {
-    if (isset($path[1]) && $path[1] === ':') {
-        return strtoupper($path[0]) . ':\\';
+    static $alone = false;
+    if ($on !== null) {
+        $alone = $on;
     }
-    $p = str_replace('/', '\\', $path);
-    if (!str_starts_with($p, '\\\\')) {
-        return '';
-    }
-    return preg_match('/^(\\\\\\\\[^\\\\]+\\\\[^\\\\]+)/', $p, $m) ? $m[1] : '';
+    return $alone;
 }
 
 /** Where the announcements are kept: one folder per data folder, in the system's temp folder. Never in data\, where the fast lane writes nothing. */
@@ -56,6 +56,9 @@ function xs_drive_stuck(string $path): ?string
     $drive = xs_drive_of($path);
     if ($drive === '') {
         return null;
+    }
+    if (xs_drives_alone()) {
+        return $drive;
     }
     $key = strtolower($drive);
     if (array_key_exists($key, $said)) {
@@ -102,7 +105,7 @@ function xs_drive_stuck(string $path): ?string
     $mine = $dir . DIRECTORY_SEPARATOR . $stem . '-' . getmypid() . '.look';
     @file_put_contents($mine, (string) $now);
     $t = microtime(true);
-    @is_dir($drive);
+    xs_look('is_dir', $drive);
     $took = microtime(true) - $t;
     @unlink($mine);
     @rmdir($dir);                        // gone when nothing else is kept in it: a copy that is deleted leaves no folder behind
@@ -115,7 +118,7 @@ function xs_drive_stuck(string $path): ?string
 /** Whether a file is there. Not asked when its drive is not answering: then nothing can say it is gone, and it counts as there. */
 function xs_file_seen(string $file): bool
 {
-    return xs_drive_stuck($file) !== null || is_file($file);
+    return xs_drive_stuck($file) !== null || xs_look('is_file', $file);
 }
 
 /**

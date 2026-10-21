@@ -62,7 +62,7 @@ function xs_scan_m3u_for(string $rom): ?string
         return null;
     }
     $m3u = dirname($rom) . DIRECTORY_SEPARATOR . xs_scan_m3u_name(basename($rom));
-    return is_file($m3u) ? $m3u : null;
+    return xs_look('is_file', $m3u) ? $m3u : null;
 }
 
 /** The other discs of this one's set in the same folder, itself included,
@@ -312,7 +312,9 @@ function xs_apply_m3u(array $lib, array $s): array
         if ($rom === '' || xs_scan_disc(basename($rom)) === null) {
             continue;
         }
-        $m3u = xs_scan_m3u_for(xs_rom_real_path($rom, $s));
+        // Its drive not answering, or left alone (includes\drives.php): the game stands as it is.
+        $real = xs_rom_real_path($rom, $s);
+        $m3u = xs_drive_stuck($real) === null ? xs_scan_m3u_for($real) : null;
         if ($m3u === null) {
             continue;
         }

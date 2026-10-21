@@ -17,19 +17,24 @@ require_once __DIR__ . '/../includes/news.php';
 xs_heartbeat();
 // Trouble that happened by itself goes into the mailbox here, on the main
 // server's own poll (includes\news.php); the page lights the dot from 'mail'.
+xs_doing('looking for trouble to keep in the mailbox');
 xs_trouble_sweep();
 // A ScreenScraper or Steam fetch that ended: its videos to Recently changed (includes\changed.php).
 xs_changed_fetches();
 /* The sizes of the spines, cartridges and discs are kept in a file
    (includes\extras.php). The fast lane never writes, so it is made here, on
    the main server's own poll, when pictures have come or gone. */
+xs_doing('sizing the spine, cartridge and disc pictures');
 xs_extras_index();
 
 $s   = xs_settings();
 $lib = xs_read_json(xs_library_path(), null);
 // The counts as shown: hidden games out, your own in, from the merged read,
 // since library.json usually does not exist. "built" below reports the file.
+// No count changes with a game's file there or not, so no drive is asked about one (roadmap BN1).
+xs_drives_alone(true);
 $shown = xs_library();
+xs_drives_alone(false);
 $noArt = 0;
 foreach ($shown['games'] ?? [] as $g) {
     if (empty($g['art']['box'])) {
@@ -53,6 +58,14 @@ foreach ($sessions as $row) {
     $played += (int) ($row['seconds'] ?? 0);
 }
 
+xs_doing('looking at the games drive and LaunchBox');
+$romThere = $romRoot === '' || (xs_drive_stuck($romRoot) === null && is_dir($romRoot));
+$lbThere  = xs_drive_stuck($launchbox) === null && is_dir($launchbox);
+$stale    = $built && xs_library_stale($s);
+xs_doing("reading RetroArch's settings");
+$ra = ra_capabilities($shown);
+xs_doing('');
+
 xs_json([
     'ok' => true,
     // Which build is answering. The status poll is the one request every page
@@ -62,10 +75,10 @@ xs_json([
         // The guardrail, surfaced before anything is pressed rather than after.
         // No ROM drive chosen (a new person's first run) is not a drive
         // unplugged: nothing to warn about, only a place to say "not set".
-        'romRoot'   => ['path' => $romRoot,   'present' => $romRoot === '' || (xs_drive_stuck($romRoot) === null && is_dir($romRoot)), 'set' => $romRoot !== ''],
-        'launchbox' => ['path' => $launchbox, 'present' => xs_drive_stuck($launchbox) === null && is_dir($launchbox)],
+        'romRoot'   => ['path' => $romRoot,   'present' => $romThere, 'set' => $romRoot !== ''],
+        'launchbox' => ['path' => $launchbox, 'present' => $lbThere],
         'library'   => ['built' => $built, 'at' => $lib['generatedAt'] ?? null],
-        'stale'     => $built && xs_library_stale($s),
+        'stale'     => $stale,
     ],
     'counts' => [
         'games'     => $lib['counts']['games'] ?? 0,
@@ -81,7 +94,7 @@ xs_json([
     // What RetroArch's own config currently permits, so the UI can explain a
     // missing button instead of offering one that does nothing. Read from the
     // library as shown: library.json is usually not there, and scanned games are only in it.
-    'retroarch' => ra_capabilities($shown),
+    'retroarch' => $ra,
     'running' => xs_game_running(),
     'error'   => xs_read_json(xs_data_path('last-error.json'), null),
     // Files of yours that will not read, and are not being saved over (boot.php)

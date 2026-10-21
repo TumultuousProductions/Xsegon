@@ -128,6 +128,14 @@ module.exports = async function (b, check) {
     const read = probe(["games"]);
     check("a game on that drive is read without a look at its file, and is not called missing",
       [read.games.length, /not there/.test(String((read.games[0] || [])[1])), read.ms < 1500], [1, false, true]);
+    /* The status check's read leaves every drive alone (roadmap BN1): a game on a share
+       nothing has announced is read with no look at all, so nothing is announced either. */
+    const fresh = "\\\\xs-no-such-pc-2\\games\\Xs Alone Game.zip", freshAt = probe(["where", fresh]);
+    fs.writeFileSync(path.join(drvData, "scanned-games.json"), JSON.stringify([{ id: "xs-scan-bbbbbbbbbbbb", title: "Xs Alone Game", platform: "Nintendo 64", rom: fresh, added: "2026-10-21T00:00:00-04:00" }]));
+    const alone = probe(["alone"]);
+    check("with every drive left alone, a game on a share never asked is read at once, with no look at any drive, and is not called missing",
+      [alone.games.length, /not there/.test(String((alone.games[0] || [])[1])), alone.looks, alone.ms < 1500,
+       fs.readdirSync(freshAt.dir).some((f) => f.startsWith(freshAt.stem))], [1, false, [], true, false]);
     // A drive letter nothing is on answers at once ("not there"), which is an answer.
     const free = "QRSTUVWXYZ".split("").find((l) => !fs.existsSync(l + ":\\"));
     if (free) {

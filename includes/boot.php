@@ -624,6 +624,108 @@ function xs_step_read(): ?array
     return ['what' => $words, 'done' => (int) $done, 'total' => (int) $total];
 }
 
+/* What a request spent its time on, said when it is slow or runs out of time (the shutdown
+   below): the part of the work it is on (xs_doing) and its looks at files, drive by drive
+   (xs_look). The line the clock stops on says only where it stopped. */
+$GLOBALS['xs_parts']    = [];            // words => seconds spent on that part
+$GLOBALS['xs_looks']    = [];            // drive => [looks, seconds, slowest, its path]
+$GLOBALS['xs_look_now'] = null;          // [path, since] while a look waits
+
+/** The part of the work this request is on, in words ("reading your own games"). Returns the part before, to put back. */
+function xs_doing(string $words): string
+{
+    static $now = '', $since = 0.0;
+    $t = microtime(true);
+    if ($now !== '') {
+        $GLOBALS['xs_parts'][$now] = ($GLOBALS['xs_parts'][$now] ?? 0.0) + $t - $since;
+    }
+    $was = $now;
+    [$now, $since] = [$words, $t];
+    return $was;
+}
+
+/** The drive a path is on, as its root: "E:\" or "\\host\share"; '' when the path names none. */
+function xs_drive_of(string $path): string
+{
+    if (isset($path[1]) && $path[1] === ':') {
+        return strtoupper($path[0]) . ':\\';
+    }
+    $p = str_replace('/', '\\', $path);
+    if (!str_starts_with($p, '\\\\')) {
+        return '';
+    }
+    return preg_match('/^(\\\\\\\\[^\\\\]+\\\\[^\\\\]+)/', $p, $m) ? $m[1] : '';
+}
+
+/** is_file, is_dir or scandir of a path, its time counted on its drive. The look under way is known while it waits. */
+function xs_look(string $how, string $path): mixed
+{
+    $t = microtime(true);
+    $GLOBALS['xs_look_now'] = [$path, $t];
+    $got  = $how === 'scandir' ? @scandir($path) : ($how === 'is_dir' ? @is_dir($path) : is_file($path));
+    $took = microtime(true) - $t;
+    $GLOBALS['xs_look_now'] = null;
+    $d = xs_drive_of($path);
+    $l = $GLOBALS['xs_looks'][$d] ?? [0, 0.0, 0.0, ''];
+    $GLOBALS['xs_looks'][$d] = [$l[0] + 1, $l[1] + $took, max($l[2], $took), $took > $l[2] ? $path : $l[3]];
+    return $got;
+}
+
+/** A path cut to its drive and last two parts, for a line that must stay short. */
+function xs_path_short(string $p): string
+{
+    if (mb_strlen($p) <= 60) {
+        return $p;
+    }
+    $parts = preg_split('#[\\\\/]+#', $p) ?: [$p];
+    return rtrim(xs_drive_of($p), '\\') . '\\...\\' . implode('\\', array_slice($parts, -2));
+}
+
+/**
+ * What this request spent its $seconds on: [the line for the log, the reason in plain words].
+ * $outOf: the time limit it ran out of, 0 when it ended by itself.
+ */
+function xs_time_said(float $seconds, int $outOf = 0): array
+{
+    $at    = xs_doing('');                  // the part it was on at the end, its time added up
+    $parts = array_filter($GLOBALS['xs_parts'], static fn($s) => $s >= 0.1);
+    arsort($parts);
+    $looks = $GLOBALS['xs_looks'];
+    uasort($looks, static fn($a, $b) => $b[1] <=> $a[1]);
+    $now   = $GLOBALS['xs_look_now'];
+    $sec   = static fn(float $s): string => number_format($s, 1) . ' s';
+    $place = static fn(string $d): string => $d !== '' ? $d : 'other places';
+    $many  = static fn(int $n): string => $n . ($n === 1 ? ' look' : ' looks');
+
+    $line = [];
+    foreach (array_slice($parts, 0, 4, true) as $w => $s) {
+        $line[] = $w . ' ' . $sec($s);
+    }
+    $drives = [];
+    foreach (array_slice($looks, 0, 3, true) as $d => [$n, $s, $max, $p]) {
+        // The slowest named only where it held anything up: the line is cut at 400 characters.
+        $drives[] = $place((string) $d) . ' ' . $many($n) . ' in ' . $sec($s) . ($max >= 0.1 ? ' (slowest ' . $sec($max) . ', ' . xs_path_short($p) . ')' : '');
+    }
+    $log = $sec($seconds) . ($outOf ? ', out of time' : '') . ($at !== '' ? ', on ' . $at . ' at the end' : '')
+         . ($now ? ', waiting ' . $sec(microtime(true) - $now[1]) . ' on a look at ' . xs_path_short($now[0]) : '')
+         . ($line ? '; parts: ' . implode(', ', $line) : '')
+         . ($drives ? '; looks at files: ' . implode(', ', $drives) : '; no looks at files');
+
+    // In words: where it was, and where the time went when looks at files hold most of it.
+    $plain = ($outOf ? 'it ran out of its ' . $outOf . ($outOf === 1 ? ' second' : ' seconds') : 'it took ' . $sec($seconds)) . ($at !== '' ? ' while ' . $at : '');
+    if ($now) {
+        $plain .= ', waiting on a look at ' . xs_path_short($now[0]) . ' (' . $sec(microtime(true) - $now[1]) . ' by then)';
+    }
+    $top = array_key_first($looks);
+    if ($top !== null && $looks[$top][1] >= max(1.0, $seconds / 4)) {
+        [$n, $s, $max, $p] = $looks[$top];
+        $plain .= '; ' . $many($n) . ' at files on ' . $place((string) $top) . ' took ' . $sec($s) . ' of it, the slowest ' . $sec($max) . ' (' . xs_path_short($p) . ')';
+    } elseif ($looks) {
+        $plain .= '; looks at files took only ' . $sec(array_sum(array_column($looks, 1))) . ' of it';
+    }
+    return [$log, $plain];
+}
+
 /**
  * A fault that cost a press its answer, left for the mailbox to keep (includes\news.php, xs_trouble_sweep).
  * Only the last one. Not from the fast lane, which writes no file: the page asks the main server again.
@@ -682,18 +784,30 @@ register_shutdown_function(static function (): void {
           // SETUP lines say what each came to.
           || (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && preg_match('#/api/(pick-folder|setup)\.php$#', $path));
     $err  = error_get_last();
+    $outOf = 0;
     if ($err !== null && in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
         xs_log('PHPE', 'fatal: ' . $err['message'] . ' at ' . basename($err['file']) . ':' . $err['line']);
         $code = 500;
-        xs_fault_note($err['message'], $err['file'], $err['line'], in_array($err['type'], [E_PARSE, E_COMPILE_ERROR], true));
+        // Out of time: what it was doing and where the time went, in place of PHP's words.
+        $what = $err['message'];
+        if (preg_match('/^Maximum execution time of (\d+) seconds? exceeded/', $what, $m)) {
+            $outOf = (int) $m[1];
+            [$line, $what] = xs_time_said($ms / 1000, $outOf);
+            xs_log('SLOW', basename($path) . ' ' . $line);
+        }
+        xs_fault_note($what, $err['file'], $err['line'], in_array($err['type'], [E_PARSE, E_COMPILE_ERROR], true));
         // Said in words where nothing has gone out yet: an empty answer reads "bad response" on the page.
         // PHP has made it a 500 already.
         if (str_contains($path, '/api/') && !headers_sent() && !ob_get_length()) {
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode(['ok' => false,
-                'error' => 'something went wrong in the server: ' . mb_substr($err['message'], 0, 300) . ' (the log has the details)'],
+                'error' => 'something went wrong in the server: ' . mb_substr($what, 0, 300) . ' (the log has the details)'],
                 JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE);
         }
+    }
+    // A slow answer that came says what took the time too; pictures and videos stream for as long as they are.
+    if (!$outOf && $ms >= 3000 && xs_log_enabled() && !preg_match('#/api/(image|video|sound)\.php$#', $path) && !str_starts_with($path, '/files/')) {
+        xs_log('SLOW', basename($path) . ' ' . xs_time_said($ms / 1000)[0]);
     }
     if ($quiet && $ms < 300 && $code < 400) {
         return;
