@@ -47,7 +47,7 @@ function xs_tips_tell(string $by): bool
         }
     }
     if ($need > 0) {
-        $lines[] = 'Videos: ' . $need . ($need === 1 ? ' game has' : ' games have') . ' no video, and Pictures & Videos > Videos from online archives '
+        $lines[] = 'Videos: ' . $need . ($need === 1 ? ' game has' : ' games have') . ' no video, and Get Media > Videos from online archives '
                  . 'fetches a short one for each game it is sure of. They come from the Internet Archive (archive.org), free and with no account.';
         $opens[] = 'archivevid';
     }

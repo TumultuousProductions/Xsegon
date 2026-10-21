@@ -194,7 +194,7 @@ function showWindow(state, guide, found) {
   var ra = row("disc", "RetroArch and the cores", "RetroArch plays most consoles; each console needs a core, 1 to 30 MB, from libretro.");
   ra.appendChild(el("span", "su-note", !st.canGet ? "the one on this PC" : st.get.carried ? "came with Xsegon" : megabytes(st.get.bytes)));
   parts.appendChild(ra);
-  parts.appendChild(switchRow("pictures", "image", "Names and box art", "Each game's name, year and box art, looked up once the games are in. Pictures & Videos > Get Pictures does it any time."));
+  parts.appendChild(switchRow("pictures", "image", "Names and box art", "Each game's name, year and box art, looked up once the games are in. Get Media > Get Pictures does it any time."));
   parts.appendChild(switchRow("self", "refresh", "Add new games by themselves", "Games you put in your games folder later come in when you come back to Xsegon. The ones it is not sure of wait for Games > Scan for Games."));
   var vRow = parts.appendChild(switchRow("videos", "film", "Videos", "A short video for each game Xsegon is sure of, from archive.org, free and with no account, after the names and pictures.",
     function () { return count() ? sizeWords(count() * VIDEO_MB) : "about 4 MB a game"; }));

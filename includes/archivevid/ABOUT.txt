@@ -1,7 +1,7 @@
 sets.json: sets of game videos on the Internet Archive (archive.org), one console each.
 
 Xsegon carries this list of sets and nothing of what is in them: no video and no
-file name. At a press (Pictures & Videos > Videos from online archives) it asks
+file name. At a press (Get Media > Videos from online archives) it asks
 the Archive for each set's own list of files, finds the video that is surely a
 game's, and fetches that one file for a game that has none.
 

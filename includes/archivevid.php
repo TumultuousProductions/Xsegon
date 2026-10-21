@@ -1,6 +1,6 @@
 <?php
 /**
- * Xsegon - videos for the games that have none, from the Internet Archive (Pictures & Videos > Videos from online archives).
+ * Xsegon - videos for the games that have none, from the Internet Archive (Get Media > Videos from online archives).
  *
  * Xsegon ships only the list of the Archive's video sets (includes\archivevid\sets.json); each
  * set's file list is asked for at a press, matched (includes\videomatch.php) and not kept.
@@ -416,7 +416,7 @@ function xs_av_tell(array $none): void
         'body'     => 'These videos come from the Internet Archive (archive.org): sets of game videos, and the first 30 seconds of a World of Longplays recording where a set leaves a gap. It does not have one for every game.'
                     . ($noSet ? ' It has none at all for ' . $names($noSet) . '.' : '')
                     . ($some ? ' It has none Xsegon is sure of for some games on ' . $names($some) . '.' : '')
-                    . ' ScreenScraper has short videos of many more: Pictures & Videos > ScreenScraper videos fetches them with a free ScreenScraper account, quick to make, with no phone number asked.',
+                    . ' ScreenScraper has short videos of many more: Get Media > ScreenScraper videos fetches them with a free ScreenScraper account, quick to make, with no phone number asked.',
         'n'        => $n,
         'opens'    => ['screenscraper', 'archivevid'],     // the page turns each into a button (js/news.js)
         'read'     => false,

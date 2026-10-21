@@ -28,7 +28,7 @@
  *   POST {"asked": "guide"}          the first-run guide was shown
  *   POST {"asked": "fill"}           Fill in has filled every game it was sure
  *                                    of: the ones still bare were left on purpose
- *   POST {"asked": "hint"}           the pictures hint under Pictures & Videos was shown
+ *   POST {"asked": "hint"}           the pictures hint under Get Media was shown
  *   GET  ?guide=1                    only the guide's counts, for that hint
  *
  * Every POST is refused when the rules say no, whatever the page showed:
@@ -202,7 +202,7 @@ if (array_key_exists('videos', $body) && empty($body['videos']) && !array_key_ex
     if (!xs_write_json(xs_data_path('setup.json'), $asked, $why)) {
         xs_setup_refuse((string) $why, 500);
     }
-    xs_log('SETUP', 'videos are left for later: Pictures & Videos > Videos from online archives fetches them any time');
+    xs_log('SETUP', 'videos are left for later: Get Media > Videos from online archives fetches them any time');
     xs_json(['ok' => true, 'run' => xs_setup_run_view()]);
 }
 
@@ -241,7 +241,7 @@ if (array_key_exists('runs', $body) && !array_key_exists('auto', $body)) {
     xs_log('SETUP', empty($body['runs']) ? 'the runs check is left for later: Emulators > Runs check does it any time'
         : 'the runs check is wanted: it starts when the downloads and pictures are done');
     if (array_key_exists('videos', $body)) {
-        xs_log('SETUP', empty($body['videos']) ? 'videos were not selected: Pictures & Videos > Videos from online archives fetches them any time'
+        xs_log('SETUP', empty($body['videos']) ? 'videos were not selected: Get Media > Videos from online archives fetches them any time'
             : 'videos are wanted: fetched from the online archives once the names are in');
     }
     // The cheat lists wait for nothing: fetched at once, into Xsegon's own folder.

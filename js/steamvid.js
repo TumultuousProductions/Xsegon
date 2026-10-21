@@ -1,4 +1,4 @@
-/*  Pictures & Videos > Steam trailers (includes\steamvid.php).
+/*  Get Media > Steam trailers (includes\steamvid.php).
  *
  *  The Steam games with no video, all selected. Fetch asks first, in the
  *  same window as the RetroArch downloads, then the trailers come down in

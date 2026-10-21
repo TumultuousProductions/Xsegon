@@ -554,6 +554,8 @@ body.no-anim .ctx { animation: none; }
 /* Sign in or out is one row: its box keeps the Cheats list's look, not its stretch over the pane. */
 .ch-list.ach-who { flex: 0 0 auto; min-height: 0; overflow: visible; }
 .ss-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+/* Manuals too, beside Fetch: a real box with its words, as the rows below have theirs. */
+.ss-manuals { display: inline-flex; align-items: center; gap: 6px; margin-left: 6px; color: var(--mute); font-size: 12.5px; cursor: pointer; }
 .ss-plat { color: var(--mute); font-size: 11.5px; white-space: nowrap; }
 .ss-plat { overflow: hidden; text-overflow: ellipsis; }
 /* Never taller than the screen: what is above the lists keeps its height, and both lists
@@ -5442,11 +5444,16 @@ body.no-anim .letterflash { transition: none; }
 }
 /* Set everything up (js\setupwin.js): the folder, a switch a part with what it
    takes beside it, and the one press under them. Rows are pressed whole. */
-.panel-inner.set-inner.su-inner {
+/* Get Media (js\getmedia.js) is laid out the same: a source a row, what it covers and its button at the right. */
+.panel-inner.set-inner.su-inner, .panel-inner.set-inner.gm-inner {
   width: min(calc(640px * var(--fs)), 96vw);
   height: auto; max-height: min(92vh, calc(100vh - 60px - var(--strip-h)));
 }
-.su-inner .set-sect { margin-bottom: calc(12px * var(--fs)); }
+.su-inner .set-sect, .gm-inner .set-sect { margin-bottom: calc(12px * var(--fs)); }
+.gm-inner .opt label { overflow-wrap: anywhere; }
+/* Get everything missing's opening lines (js\getall.js): a short list, spaced. */
+.ga-help { margin: 0 0 calc(16px * var(--fs)); padding-left: 18px; color: var(--faint); font-size: calc(12px * var(--fs)); letter-spacing: .04em; line-height: 1.6; }
+.ga-help li { margin-bottom: calc(6px * var(--fs)); }
 .su-inner .opt[tabindex], .su-inner .opt[tabindex] label { cursor: pointer; }
 .su-inner .opt label { overflow-wrap: anywhere; }
 .su-inner .opt .tgl { pointer-events: none; }

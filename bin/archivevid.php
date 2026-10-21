@@ -147,7 +147,7 @@ $games = xs_av_unlooked($lacking);
 $job['games'] = count($games);
 if (!$games) {
     $end('done', $lacking
-        ? 'Every game with no video on the consoles chosen was looked for before and the online archives had none: nothing was fetched. Look again in Pictures & Videos > Videos from online archives asks for them once more'
+        ? 'Every game with no video on the consoles chosen was looked for before and the online archives had none: nothing was fetched. Look again in Get Media > Videos from online archives asks for them once more'
         : 'Every game on the consoles chosen has a video already: nothing was fetched');
 }
 
@@ -641,5 +641,5 @@ $end('done', ($got === 0
     : $got . ' of ' . $n(count($games), 'game', 'games') . ' with no video got one from the online archives'
     . ' (' . round($done / 1048576) . ' MB in ' . $job['seconds'] . ' s'
     . ($cuts ? '; ' . $n($cuts, 'is', 'are') . ' the first 30 seconds of a World of Longplays playthrough' : '') . ').')
-    . ($left ? ' ' . $left . ' got none: Pictures & Videos > Videos from online archives lists them.' : '')
+    . ($left ? ' ' . $left . ' got none: Get Media > Videos from online archives lists them.' : '')
     . ($hevc ? ' ' . $n($hevc, 'is', 'are') . ' H.265 video, which some PCs do not play.' : '') . $lists . $wolSaid);

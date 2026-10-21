@@ -1,4 +1,4 @@
-/* The Arcade Database's part of Pictures & Videos > Videos from online archives
+/* The Arcade Database's part of Get Media > Videos from online archives
  * (includes\arcadevid.php): one press asks the Arcade Database first for
  * arcade games, then the online archives for the rest.
  * Nothing goes online: XSEGON_ARCADEDB (tests\sandbox.js) is a stand-in served
@@ -138,7 +138,7 @@ module.exports = async function (b, check) {
     check("the arcade games with no video are counted, and how many of them can be asked about by MAME's name",
       [first.ok, first.curl, first.job, first.need, first.named, first.unnamed], [true, true, null, 7, 6, 1]);
     check("it has no start of its own: asked for one, it names the one press there is",
-      /asked as part of Pictures & Videos > Videos from online archives: start it there/.test((await api("api/arcadevid.php", { fetch: true })).error || ""), true);
+      /asked as part of Get Media > Videos from online archives: start it there/.test((await api("api/arcadevid.php", { fetch: true })).error || ""), true);
 
     /* ---- the Arcade Database away (its stand-in not yet listening): the press still fetches */
     const whyIn = (job, title) => ((job.none || []).find((g) => g.title === title) || {}).why || "";
@@ -208,8 +208,7 @@ module.exports = async function (b, check) {
     if (b) {
       await b.goto();
       await b.setView("grid");
-      await b.openBar("media");
-      await b.menuItem(/^Videos from online archives/);
+      await b.getMedia(/^Videos from online archives/);
       check("the window of the one press names the Arcade Database and its maker, as they ask",
         await b.until(`/Arcade games are asked of the Arcade Database \\(adb\\.arcadeitalia\\.net, by motoschifo\\) first/.test((document.querySelector("#editor .group-help") || {}).textContent || "")`, true, 8000), true);
       await b.key("Escape");

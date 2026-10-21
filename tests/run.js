@@ -55,6 +55,7 @@ const GROUPS = {
   achievements: "./t-achievements",
   videopack: "./t-videopack",
   archivevid: "./t-archivevid",
+  archivedoc: "./t-archivedoc",
   arcadevid: "./t-arcadevid",
   cheatlists: "./t-cheatlists",
   runcheck: "./t-runcheck",

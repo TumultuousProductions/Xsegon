@@ -811,7 +811,7 @@ module.exports = async function (b, check) {
   check("sound is a category of its own", typeof before.defaults.sound, "object");
   check("with the app's noises in it", typeof before.settings.sound.soundSet, "string");
   check("and the snap's", typeof before.settings.sound.videoVolume, "number");
-  check("video keeps only what it shows", Object.keys(before.defaults.video).join(","), "enabled,delaySec,inBrowse,inDetails,loop,markMissing");
+  check("video keeps only what it shows", Object.keys(before.defaults.video).join(","), "enabled,delaySec,inBrowse,inDetails,loop,markMissing,ssManuals");
   check("the accent is a setting", before.defaults.feel.accent, "cyan");
   // Not LaunchBox's "Classic": a copy with no LaunchBox has no Classic.
   check("a new copy starts on the sound set that ships with Xsegon", before.defaults.sound.soundSet, "Xsegon");

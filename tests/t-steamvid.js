@@ -1,4 +1,4 @@
-/* Pictures & Videos > Steam trailers (includes\steamvid.php, bin\steamvid.ps1).
+/* Get Media > Steam trailers (includes\steamvid.php, bin\steamvid.ps1).
  *
  * Against stand-ins for Steam's store API and video server that
  * tests\sandbox.js points the test server at: this group writes one answer
@@ -91,10 +91,9 @@ module.exports = async function (b, check) {
     /* ---- the screen ---- */
     await b.goto();
     await b.setView("grid");
-    await b.openBar("media");
-    await b.menuItem(/Steam trailers/);
+    await b.getMedia(/Steam trailers/);
     const title = `(document.querySelector("#editor .panel-title") || {}).textContent || ""`;
-    check("Pictures & Videos > Steam trailers opens the list", await b.until(title, "STEAM TRAILERS"), "STEAM TRAILERS");
+    check("Get Media > Steam trailers opens the list", await b.until(title, "STEAM TRAILERS"), "STEAM TRAILERS");
     const lacking = withOwn.games.filter((g) => !g.has).map((g) => g.id);
     check("only the games with no video are listed", await b.until(`[...document.querySelectorAll("#editor .sv-row input")].map(x => x.value).sort().join(",")`, lacking.slice().sort().join(",")),
       lacking.slice().sort().join(","));

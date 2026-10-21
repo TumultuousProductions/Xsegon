@@ -1,0 +1,23 @@
+sets.json: sets of game manuals on the Internet Archive (archive.org), one console each.
+
+Xsegon carries this list of sets and nothing of what is in them: no manual and no
+file name. At a press (Get Media > Manuals from online archives) it asks
+the Archive for each set's own list of files, finds the manual that is surely a
+game's by its name, and fetches that one file for a game that has none. It is kept
+as the game's Manual.pdf, where its Documents and the booklet reader find it.
+
+Each entry:
+  id         the set's name on the Archive (archive.org/details/<id>)
+  folder     the console, by the short name the name matcher knows (includes\videomatch.php)
+  manuals    how many manuals it held, when the list was made (the Archive's own
+             searchable copies, *_text.pdf, are not counted and never taken)
+  mb         their size
+  title      the set's title on the Archive
+
+Made 2026-10-21 from the Archive's search for manual sets (roadmap BK1, BK2). Kept:
+the sets whose manuals are PDFs named as a console's games are (a title, and its
+region in brackets), or by their titles alone, mostly the North American releases.
+Left out: Xbox 360 (files named by codes, not titles), the Neo Geo Pocket set (its
+manuals are in Japanese), the arcade sets (cabinet service manuals, not the game's
+booklet), a PC Engine set of four, and a second Atari 2600 set that repeats the first.
+No set states a licence. Credit to the Archive is in README.md under Credits.

@@ -74,7 +74,7 @@ export function fillWords(j) {
 /* A picture's kind in words, here and in Get Specific Pictures (js\fill.js). */
 export var FILL_SLOT_WORDS = { box: "box", logo: "logo", shot: "screenshot", fanart: "background" };
 
-var FILL_PLACE = "Pictures & Videos > Get Specific Pictures";
+var FILL_PLACE = "Get Media > Get Specific Pictures";
 
 /* What a whole pass left to a person: the games with a likely match, which a
    message in the mailbox names with the way to them, and the ones nothing was

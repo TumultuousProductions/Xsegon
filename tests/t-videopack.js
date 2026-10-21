@@ -1,5 +1,5 @@
 /* Videos for the games here from a package made on another PC (includes\videopack.php):
- * Pictures & Videos > Export Games with No videos, and Import Xsegon Video Package.
+ * Get Media > Export Games with No videos, and Import Xsegon Video Package.
  *
  * Nothing real is read or written: the games, their files and the videos are
  * stand-ins in the test's own data. The package is written with Xsegon's own

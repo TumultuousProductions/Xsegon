@@ -382,6 +382,23 @@ class Browser {
     await this.clickSel('#mb [data-menu="' + menu + '"]');
     await this.waitFor(`!!document.querySelector(".ctx")`, 3000);
   }
+  /** Get Media (js\getmedia.js): its window, from its button on the bar. */
+  async openGetMedia() {
+    await this.clickSel("#btn-getmedia");
+    await this.waitFor(`(document.querySelector("#editor .panel-title") || {}).textContent === "GET MEDIA"`, 3000);
+    await this.settled();
+  }
+  /** The button of the Get Media row whose name matches: the window goes, and what the row opens or starts follows. */
+  async mediaRow(re) {
+    const ok = await this.ev(`(n => { if (!n) return false; n.querySelector("button").click(); return true; })([...document.querySelectorAll("#editor .gm-inner .opt")].find(n => ${re}.test(n.querySelector("label").textContent)))`);
+    if (!ok) { throw new Error("no Get Media row matching " + re); }
+    await this.waitFor(`(document.querySelector("#editor .panel-title") || {}).textContent !== "GET MEDIA"`, 3000);
+    await this.settled();
+  }
+  async getMedia(re) {
+    await this.openGetMedia();
+    await this.mediaRow(re);
+  }
   /** The Filter by window (js\filterwin.js), from the funnel in the search box. */
   async openFilters() {
     await this.clickSel("#btn-filter");

@@ -11,6 +11,8 @@
  *                               own developer ID when none of the person's own is typed)
  *   POST {"forget": true}       delete the stored logins
  *   POST {"ids": [...]}         fetch snaps for these games, in the background
+ *   POST {..., "manuals": true} and a manual for every game with none that the
+ *                               Internet Archive's sets could not fill (xs_ss_manual_games)
  *   POST {..., "dry": true}     the plan, nothing started
  *
  * A game that has a video from anywhere is never in a job, whatever the page
@@ -20,6 +22,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/import.php';
 require_once __DIR__ . '/../includes/screenscraper.php';
+require_once __DIR__ . '/../includes/archivedoc.php';
 
 $s   = xs_settings();
 $lib = xs_library();
@@ -33,6 +36,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
         'games'   => $rows,
         'missing' => count(array_filter($rows, static fn ($r) => !$r['has'])),
         'dir'     => xs_ss_dir(),
+        // The games a manual may be fetched for, and whether Manuals too is chosen (video.ssManuals).
+        'manuals' => count(xs_ss_manual_games($lib)),
+        'manualsOn' => !empty($s['video']['ssManuals']),
+        'docs'    => xs_docs_dir(),
         'job'     => $job,
     ]);
 }
@@ -75,32 +82,17 @@ if ($use['user'] === '' || $use['password'] === '') {
 if (!xs_ss_ready($use)) {
     xs_fail((string) $devWhy, 409);
 }
-$want = array_flip(array_map('strval', (array) ($body['ids'] ?? [])));
-$pick = array_values(array_filter(xs_ss_games($s, $lib),
-    static fn ($r) => !$r['has'] && $r['system'] > 0 && isset($want[$r['id']])));
-if (!$pick) {
-    xs_fail('none of those is a game without a video on a console ScreenScraper knows', 409);
+$games = xs_ss_plan_games($s, $lib, (array) ($body['ids'] ?? []), !empty($body['manuals']));
+if (!$games) {
+    xs_fail(empty($body['manuals']) ? 'none of those is a game without a video on a console ScreenScraper knows'
+        : 'none of those is a game without a video, and no game is waiting for a manual, on a console ScreenScraper knows', 409);
 }
-$src  = xs_ss_sources();
-$plan = [
-    'state'   => 'running',
-    'started' => time(),
-    'dir'     => xs_ss_dir(),
-    'search'  => $src['search'],
-    'rom'     => $src['rom'],
-    'pause'   => $src['pause'],
-    'games'   => array_map(static fn ($r) => ['id' => $r['id'], 'title' => $r['title'], 'platform' => $r['platform'],
-                                              'system' => $r['system'], 'rom' => $r['rom'], 'state' => 'waiting'], $pick),
-];
+$plan = xs_ss_plan($games, !empty($body['manuals']));
 if (!empty($body['dry'])) {
     xs_json(['ok' => true, 'dry' => true, 'plan' => $plan]);
 }
-xs_write_or_fail(xs_ss_job_path(), $plan);
-$script = XS_ROOT . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'screenscraper.ps1';
-// The fetcher opens the kept copy of Xsegon's own developer ID itself; it is never on a command line.
-$args = ['Job' => xs_ss_job_path(), 'Account' => xs_ss_account_path(), 'Shared' => $use['shared'] ? xs_ss_shared_path() : null];
-if (!xs_spawn_ps(xs_ps_call($script, $args))) {
-    xs_fail('the snap fetcher could not be started', 500);
+if (!xs_ss_start($plan, $use, $why)) {
+    xs_fail((string) $why, 500);
 }
-xs_log('SSCR', 'fetch asked for ' . count($pick) . ' snaps');
-xs_json(['ok' => true, 'started' => true, 'count' => count($pick)]);
+$count = static fn (string $k): int => count(array_filter($games, static fn ($g) => $g[$k]));
+xs_json(['ok' => true, 'started' => true, 'count' => $count('video'), 'manuals' => $count('manual')]);

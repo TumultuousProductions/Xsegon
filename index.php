@@ -234,7 +234,7 @@ if ($customLook['css'] && !$s['feel']['highContrast']) {
            its settings, the backup, and closing it. -->
       <button type="button" data-menu="xsegon" class="mb-orb" title="Xsegon" aria-label="Xsegon"></button>
       <button type="button" data-menu="games">Games</button>
-      <button type="button" data-menu="media">Pictures &amp; Videos</button>
+      <button type="button" id="btn-getmedia">Get Media</button>
       <button type="button" data-menu="emulators">Emulators</button>
       <button type="button" data-menu="view">View</button>
       <button type="button" data-menu="arrange">Arrange By</button>

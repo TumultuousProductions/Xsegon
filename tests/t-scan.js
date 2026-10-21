@@ -713,10 +713,11 @@ module.exports = async function (b, check) {
     await sleep(600);
 
     /* ---- and the pass, on the real screen --------------------------------- */
-    await b.openBar("media");
-    check("Pictures & Videos has Get Pictures and Get Specific Pictures side by side on one row",
-          await b.ev(`(p => !!p && [...p.children].map(n => n.querySelector(".ctx-label").textContent).join("|") === "Get Pictures|Get Specific Pictures..." && Math.abs(p.children[0].getBoundingClientRect().top - p.children[1].getBoundingClientRect().top) < 2 && p.children[1].getBoundingClientRect().left >= p.children[0].getBoundingClientRect().right - 1)(document.querySelector(".ctx .ctx-pair"))`), true);
-    await b.menuItem(/^Get Specific Pictures/);
+    await b.openGetMedia();
+    check("Get Media's Pictures: Get Pictures, then Get Specific Pictures, each with its own button",
+          await b.ev(`(s => !!s && s.querySelector(".sect-name").textContent + ": " + [...s.querySelectorAll(".opt")].map(n => n.querySelector("label").textContent + " [" + n.querySelector("button").textContent + "]").join(", "))([...document.querySelectorAll("#editor .gm-inner .set-sect")].find(s => s.querySelector(".sect-name").textContent === "Pictures"))`),
+          "Pictures: Get Pictures [Start], Get Specific Pictures [Choose...]");
+    await b.mediaRow(/^Get Specific Pictures/);
     check("Get Specific Pictures opens the pass", await b.waitFor(`(document.querySelector("#editor .panel-title") || {}).textContent === "GET SPECIFIC PICTURES"`, 10000));
     /* The first screen lists every scanned game from the library alone, so
        it is up at once; nothing is looked up until its button is pressed.
@@ -884,7 +885,7 @@ module.exports = async function (b, check) {
       check("a picture that fails both times leaves the pass done, counted and named",
             [twice.state, twice.pictures, twice.picsFailed, twice.againAll, twice.againAt, (twice.picsMissing || []).map((p) => p.kind + (/Panzer/.test(p.title) ? "" : " of another game"))], ["done", 0, 1, 1, 1, ["logo"]]);
       check("the ending names it and says how it is asked for again",
-            await b.until(`/1 picture could not be fetched \\(the logo of .+\\): to ask for it again, select the game under Already filled in Pictures & Videos > Get Specific Pictures\\./.test(document.getElementById("strip").textContent)`, true, 8000), true);
+            await b.until(`/1 picture could not be fetched \\(the logo of .+\\): to ask for it again, select the game under Already filled in Get Media > Get Specific Pictures\\./.test(document.getElementById("strip").textContent)`, true, 8000), true);
       const againLog = ((await api("api/log.php?tail=200")).lines || []).filter((l) => / S FILL /.test(l)).join("\n");
       check("the day log has the second ask and what came of it",
             [/1 pictures did not come: each is asked for once more, one at a time/.test(againLog), /: logo asked for once more: failed: /.test(againLog)], [true, true]);
@@ -903,8 +904,7 @@ module.exports = async function (b, check) {
     // The arcade games are real titles, two sure matches that would be fetched from the internet:
     // they leave the library before the pass that is to find nothing it is sure of.
     for (const g of picks.filter((p) => p.platform === "Arcade")) { await api("api/scan.php", { action: "remove", id: g.id }); }
-    await b.openBar("media");
-    await b.menuItem(/^Get Pictures$/);
+    await b.getMedia(/^Get Pictures$/);
     const allRan = await fillEnd();
     check("Get Pictures opens no screen: it looks every game up and fills the ones it is sure of, in the background",
           [await b.ev(`document.getElementById("editor").hidden`), allRan.mode, allRan.state, allRan.total, allRan.left > 0], [true, "all", "done", 0, true]);
@@ -913,7 +913,7 @@ module.exports = async function (b, check) {
        nothing was found for, which get a count and no message. */
     check("what is left is counted in its two kinds", [allRan.check + allRan.none, allRan.check >= 0 && allRan.none >= 0], [allRan.left, true]);
     // Messages is named only while its message is there (told); the place is named for the rest.
-    const place = "Pictures & Videos > Get Specific Pictures";
+    const place = "Get Media > Get Specific Pictures";
     const leftSays = (allRan.check ? " " + allRan.check + (allRan.check === 1 ? " game has" : " games have") + " a likely match left for you to check: " + (allRan.told ? "Messages has " : place + " has ") + (allRan.check === 1 ? "it." : "them.") : "") +
                      (allRan.none ? " " + allRan.none + (allRan.none === 1 ? " game was" : " games were") + " not found by name: " + place + " lets you search for " + (allRan.none === 1 ? "it." : "them.") : "");
     check("and it says what is left for a person to check", await b.until(`document.getElementById("strip").textContent.indexOf(${JSON.stringify(leftSays)}) >= 0`, true, 8000), true);
@@ -934,8 +934,7 @@ module.exports = async function (b, check) {
       await b.until(`document.getElementById("editor").hidden`, true, 4000);
       // Deleted, and the same games left by the next pass: not said a second time.
       await api("api/news.php", { action: "delete", id: told[0].id });
-      await b.openBar("media");
-      await b.menuItem(/^Get Pictures$/);
+      await b.getMedia(/^Get Pictures$/);
       const allAgain = await fillEnd();
       check("the same games left by the next pass are not said a second time", [allAgain.state, allAgain.check, (await checkMsg()).length], ["done", allRan.check, 0]);
       await sleep(800);
@@ -969,8 +968,7 @@ module.exports = async function (b, check) {
         check("a changed list is said, in the old one's place", [tell(two.slice(0, 1)), (await checkMsg()).map((m) => m.title)], [true, ["1 game has a likely match waiting for your yes"]]);
         check("and with none left the message goes", [tell([]), (await checkMsg()).length], [false, 0]);
         // The look above is a job of its own: the pass's rows are put back for the checks below.
-        await b.openBar("media");
-        await b.menuItem(/^Get Pictures$/);
+        await b.getMedia(/^Get Pictures$/);
         await fillEnd();
         await sleep(800);
         await b.settled();
@@ -980,8 +978,7 @@ module.exports = async function (b, check) {
     }
     const looked = (await api("api/fill.php?job=rows")).rows;
     check("a game filled before, with its box, is not offered again", (looked.find((g) => g.id === panzer.id) || {}).state, "done");
-    await b.openBar("media");
-    await b.menuItem(/^Get Specific Pictures/);
+    await b.getMedia(/^Get Specific Pictures/);
     // It has its pictures now, so it is under All games, not Missing a picture.
     await b.waitFor(`document.querySelectorAll("#editor .fl-pick").length > 0`, 10000);
     check("a game with its pictures is left off the first screen until All games is chosen",

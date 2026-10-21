@@ -5,7 +5,6 @@
 
 import { openAbout } from "./about.js";
 import { openAddChooser } from "./add.js";
-import { openArchiveVideos } from "./archivevid.js";
 import { openArtEditor, openVideoEditor } from "./art-editors.js";
 import { openBiosCheck } from "./bios.js";
 import { openCheatPicker } from "./cheats.js";
@@ -21,8 +20,8 @@ import { openEmuPicker } from "./emuset.js";
 import { openExtPage } from "./extensions.js";
 import { openFanPage } from "./fanprojects.js";
 import { openFileCheck } from "./filecheck.js";
-import { openFillTool } from "./fill.js";
 import { openFilterWindow } from "./filterwin.js";
+import { openGetMedia } from "./getmedia.js";
 import { hackAsking, openHackSettle } from "./hacksettle.js";
 import { iconEl } from "./icons.js";
 import { launch, launchNow, openStates, showStrip } from "./launch.js";
@@ -38,21 +37,18 @@ import { showInExplorer } from "./reveal.js";
 import { rowsNode } from "./rows.js";
 import { openRunCheck } from "./runcheck.js";
 import { openScanTool } from "./scan.js";
-import { openScreenScraper } from "./screenscraper.js";
 import { openSettings, toggleContrast } from "./settings-ui.js";
 import { openGuide } from "./setup.js";
 import { stopVideo } from "./snap.js";
 import { sound } from "./sound.js";
 import { $body, $logo, $sort, $viewsel, S, emusInLaunchBox, games, sel, setSel, sysStage, view } from "./state.js";
 import { openSteamTool } from "./steam.js";
-import { openSteamTrailers } from "./steamvid.js";
 import { subClose, subHover, subRow, subWatch } from "./submenu.js";
 import { backToWall } from "./systems.js";
 import { openTagMenu } from "./tags.js";
 import { setTheme, themeId, themeList } from "./themes.js";
 import { openBackupTool, openLogViewer, openReportTool } from "./tools.js";
 import { el } from "./util.js";
-import { exportNoVideos, importVideoPackage } from "./videopack.js";
 import { lockWords, viewWaits, viewsLocked } from "./viewlock.js";
 import { carNodes, flatNodes, render, setView, wheelNodes } from "./views.js";
 import { GRID_IMAGES, badgesOn, badgesShown, gridImage, noVideoMarked, playersShown, setBadge, setGridImage, setShowPlayers, setSort, setViewFlag, toggleHeroPanel, toggleListStripes, toggleNoVideoMark, toggleShowBadges, toggleShowPlayers, toggleSidebar } from "./viewset.js";
@@ -308,16 +304,17 @@ export function openGameMenu(i, x, y) {
    game menu follows. */
 
 var $mb = document.getElementById("mb");
-export var MB_ORDER = ["xsegon", "games", "media", "emulators", "view", "arrange", "images", "badges", "help"];
+// The bar's menus, left to right. Get Media between Games and Emulators is a window, not a menu (js\getmedia.js).
+export var MB_ORDER = ["xsegon", "games", "emulators", "view", "arrange", "images", "badges", "help"];
 
 function mbEntries(which) {
   // The round X: Xsegon itself. Its settings, the controller, the backup and the look.
   // Minimise and close are the window's own buttons, and are not said twice.
   if (which === "xsegon") {
-    // Where the bar is not (a wheel, a carousel, rows), its four menus open from here, each in a box beside its row.
-    var e = barButton("games") ? [] : [["games", "Games", "library"], ["media", "Pictures & Videos", "image"], ["emulators", "Emulators", "disc"], ["help", "Help", "info"]]
-      .map(function (m) { return { icon: m[2], label: m[1], sub: function () { return withAdded(m[0], mbEntries(m[0])); } }; })
-      .concat([{ rule: true }]);
+    // Where the bar is not (a wheel, a carousel, rows), what it holds opens from here: each menu in a box beside its row, Get Media as its window.
+    var menu = function (key, label, icon) { return { icon: icon, label: label, sub: function () { return withAdded(key, mbEntries(key)); } }; };
+    var e = barButton("games") ? [] : [menu("games", "Games", "library"), { icon: "image", label: "Get Media...", tip: TIPS.getMedia, run: openGetMedia },
+      menu("emulators", "Emulators", "disc"), menu("help", "Help", "info"), { rule: true }];
     e = e.concat([
       { icon: "gear", label: "Settings...", run: function () { openSettings(); } },
       { icon: "gamepad", label: "Controller...", tip: TIPS.controller, run: function () { openPadCheck(); } },
@@ -360,23 +357,6 @@ function mbEntries(which) {
       { icon: "wand", label: "Fan projects...", tip: TIPS.fanProjects, run: openFanPage },
       // Programs Xsegon works with, Flashpoint first (js/extensions.js), also a card on the consoles screen.
       { icon: "download", label: "Extensions...", tip: TIPS.extensions, run: openExtPage }
-    ];
-  }
-  if (which === "media") {
-    return [
-      // One row, two ways: every sure match at once, or the list first (api\fill.php).
-      { pair: [{ icon: "wand", label: "Get Pictures", tip: TIPS.fillAll, run: function () { openFillTool(null, true); } },
-               { label: "Get Specific Pictures...", tip: TIPS.fill, run: function () { openFillTool(); } }] },
-      // Steam's trailers as video snaps (js/steamvid.js).
-      { icon: "film", label: "Steam trailers...", tip: TIPS.steamvid, run: openSteamTrailers },
-      // Snaps for every other game with no video (js/screenscraper.js).
-      { icon: "film", label: "ScreenScraper videos...", tip: TIPS.sscraper, run: openScreenScraper },
-      // The same, from the Internet Archive's sets and World of Longplays' recordings, with no account (js/archivevid.js).
-      { icon: "film", label: "Videos from online archives...", tip: TIPS.archivevid, run: openArchiveVideos },
-      { rule: true },
-      // A list of the games with no video out, a package made from it back in (js/videopack.js).
-      { icon: "lines", label: "Export Games with No videos", tip: TIPS.vpExport, run: exportNoVideos },
-      { icon: "download", label: "Import Xsegon Video Package...", tip: TIPS.vpImport, run: importVideoPackage }
     ];
   }
   if (which === "emulators") {
@@ -565,7 +545,13 @@ export function openGameMenuAtSelection() {
 }
 
 export function initMenus() {
-  $mb.querySelectorAll("button").forEach(function (b) {
+  // Get Media is a window, not a menu: a click, so Enter and a controller's press open it too (js\padtop.js).
+  var gm = document.getElementById("btn-getmedia");
+  if (gm) {
+    gm.title = TIPS.getMedia;
+    gm.addEventListener("click", function () { closeGameMenu(); openGetMedia(); });
+  }
+  $mb.querySelectorAll("button[data-menu]").forEach(function (b) {
     // mousedown, not click: the document's own mousedown handler closes any
     // open popup first, and a click would then reopen the one just closed.
     b.addEventListener("mousedown", function (e) {

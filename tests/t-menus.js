@@ -270,10 +270,10 @@ module.exports = async function (b, check) {
   check("Image Group: back to boxes", await b.ev(`document.getElementById("view").className`), "grid grid-box");
 
   /* The bar names each menu for what is in it: the round X is Xsegon's own,
-     then Games, Pictures & Videos, Emulators, the view's four, and Help. */
-  check("the bar: the round X, then menus named for what is in them",
+     then Games, the Get Media window, Emulators, the view's four, and Help. */
+  check("the bar: the round X, then menus named for what is in them, and Get Media",
         await b.ev(`[...document.querySelectorAll("#mb button")].map(x => x.classList.contains("mb-orb") ? "(" + x.title + ")" : x.textContent)`),
-        ["(Xsegon)", "Games", "Pictures & Videos", "Emulators", "View", "Arrange By", "Image Group", "Badges", "Help"]);
+        ["(Xsegon)", "Games", "Get Media", "Emulators", "View", "Arrange By", "Image Group", "Badges", "Help"]);
   check("the X is a round button wearing Xsegon's mark",
         await b.ev(`(o => { const s = getComputedStyle(o), r = o.getBoundingClientRect(); return [s.borderTopLeftRadius, Math.round(r.width) === Math.round(r.height), /xsegon-180\\.png/.test(s.backgroundImage)]; })(document.querySelector("#mb .mb-orb"))`),
         ["50%", true, true]);
@@ -290,17 +290,34 @@ module.exports = async function (b, check) {
     return m;
   };
   const bar = {};
-  for (const key of ["xsegon", "games", "media", "emulators", "view", "arrange", "images", "badges", "help"]) { bar[key] = await barMenu(key); }
+  for (const key of ["xsegon", "games", "emulators", "view", "arrange", "images", "badges", "help"]) { bar[key] = await barMenu(key); }
   check("the X opens on Settings, then the controller and the backup", bar.xsegon.labels.slice(0, 3), ["Settings...", "Controller...", "Back up what you made..."]);
   // Hacks to settle carries how many wait, which is this library's own number.
   check("Games: adding them, a random one, the two lists of what is not there, the hacks that wait for a word, Fan projects and Extensions",
         bar.games.labels.map((l) => l.replace(/^Hacks to settle \(\d+\)\.\.\.$/, "Hacks to settle...")),
         ["Add Games...", "Scan for Games...", "Add Steam games...", "Surprise me", "Missing Games...", "Check game files...", "Hacks to settle...", "Games you do not have...", "Fan projects...", "Extensions..."]);
-  // Find videos from Package is there only where private\ is, which adds it after Export.
+  /* Get Media is a window, not a menu (js\getmedia.js): each source a row with its button, in sections laid out
+     as Settings are, the counts from one look at the library. Find videos from Package is there only where
+     private\ is, which adds it after Export. */
   const ownFind = fs.existsSync(path.join(ROOT, "private", "web", "main.js"));
-  check("Pictures & Videos: the pictures, the three kinds of video, and a video package's list out and package in", bar.media.labels,
-        ["Get Pictures", "Get Specific Pictures...", "Steam trailers...", "ScreenScraper videos...", "Videos from online archives...",
-         "Export Games with No videos"].concat(ownFind ? ["Find videos from Package..."] : [], ["Import Xsegon Video Package..."]));
+  await b.openGetMedia();
+  check("Get Media: everything at once, the pictures, the three kinds of video, manuals, and a video package's list out and package in, each in its section",
+        await b.ev(`[...document.querySelectorAll("#editor .gm-inner .set-sect")].map(s => s.querySelector(".sect-name").textContent + ": " + [...s.querySelectorAll(".opt label")].map(x => x.textContent).join(", "))`),
+        ["All at once: Every missing cover, video and manual, from every source at once",
+         "Pictures: Get Pictures, Get Specific Pictures", "Videos: Steam trailers, ScreenScraper videos, Videos from online archives",
+         "Manuals: Manuals from online archives",
+         "Between your own PCs: Export Games with No videos, " + (ownFind ? "Find videos from Package, " : "") + "Import Xsegon Video Package"]);
+  const gmCounts = await api("api/getmedia.php");
+  const plural = (n, one) => n + " " + one + (n === 1 ? "" : "s");
+  const gmSaid = [gmCounts.noCover ? plural(gmCounts.noCover, "game") + " with no cover" : "every game has a cover",
+                  gmCounts.noVideo ? plural(gmCounts.noVideo, "game") + " with no video" : "every game has a video",
+                  gmCounts.noManual ? plural(gmCounts.noManual, "game") + " with no manual" : "every game has a manual"];
+  check("and its three sections count what the library lacks, as api\\getmedia.php reads it",
+        await b.until(`[...document.querySelectorAll("#editor .gm-inner .sect-count")].map(x => x.textContent)`, gmSaid, 5000), gmSaid);
+  check("the counts are the library list's own: no cover and no video, game by game", [gmCounts.noCover, gmCounts.noVideo],
+        await (async () => { const all = (await api("api/library.php?sort=title&versions=all")).games || []; return [all.filter((g) => !g.hasArt).length, all.filter((g) => !g.hasVideo).length]; })());
+  await b.key("Escape");
+  await b.until(`document.getElementById("editor").hidden`, true, 3000);
   check("Emulators: RetroArch, the two checks, adding one of your own and their settings", bar.emulators.labels,
         ["Open RetroArch", "BIOS check...", "Runs check...", "Add an emulator...", "Emulator settings..."]);
   check("Help: the guide, what changed, the log, a report, the data folder and About", bar.help.labels,
@@ -555,8 +572,8 @@ module.exports = async function (b, check) {
      logoState: is it the X, is it lit, the menu's first three entries, does it hang under it. */
   const logoState = `(() => { const c = document.querySelector(".ctx"), l = document.getElementById("brand-logo"), t = l.getBoundingClientRect(), r = c && c.getBoundingClientRect();
     return [l.classList.contains("as-orb"), l.classList.contains("open"), c ? [...c.querySelectorAll(".ctx-label")].slice(0, 3).map(x => x.textContent).join(", ") : null, !!c && r.top >= t.bottom && Math.abs(r.left - t.left) < 3]; })()`;
-  // Where the bar is not, the logo's menu leads with the bar's four menus (roadmap AL5).
-  const X_MENU = [true, true, "Games, Pictures & Videos, Emulators", true];
+  // Where the bar is not, the logo's menu leads with what the bar holds (roadmap AL5): Games, Get Media, Emulators, Help.
+  const X_MENU = [true, true, "Games, Get Media..., Emulators", true];
   const X_SHUT = [true, false, null, false];
   const shutMenu = async () => { await b.key("Escape"); await b.until(`!document.querySelector(".ctx")`); };
   await b.clickSel("#brand-logo"); await sleep(250);
@@ -588,6 +605,13 @@ module.exports = async function (b, check) {
   await b.key("Escape");
   await b.until(`document.getElementById("settings").hidden`);
   await b.settled();
+  await b.clickSel("#brand-logo");
+  await b.until(logoState, X_MENU, 3000);
+  await b.menuItem(/^Get Media\.\.\.$/);
+  check("and its Get Media... opens the Get Media window", await b.until(`(document.querySelector("#editor .panel-title") || {}).textContent`, "GET MEDIA", 5000), "GET MEDIA");
+  await b.key("Escape");
+  await b.until(`document.getElementById("editor").hidden`, true, 3000);
+  await b.settled();
   await b.setView("rows");
   await b.clickSel("#brand-logo");
   check("the same over rows", await b.until(logoState, X_MENU, 3000), X_MENU);
@@ -605,7 +629,7 @@ module.exports = async function (b, check) {
      tipState: does it name the four menus, stand right of the logo's corner, level with it. */
   const tipState = `(() => { const t = document.querySelector("header .logo-tip"); if (!t || t.hidden) { return null; }
     const r = t.getBoundingClientRect(), l = document.querySelector(".brand").getBoundingClientRect(), g = document.getElementById("brand-logo").getBoundingClientRect();
-    return [/Games, Pictures & Videos, Emulators and Help/.test(t.textContent), r.left > l.right, Math.abs((r.top + r.bottom) / 2 - (g.top + g.bottom) / 2) < 4]; })()`;
+    return [/Games, Get Media, Emulators and Help/.test(t.textContent), r.left > l.right, Math.abs((r.top + r.bottom) / 2 - (g.top + g.bottom) / 2) < 4]; })()`;
   const TIP_UP = [true, true, true];
   const tipBack = async () => {
     await api("api/settings.php", { feel: { tipsGone: { logoMenu: false } } });

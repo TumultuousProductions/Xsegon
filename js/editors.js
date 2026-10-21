@@ -39,7 +39,8 @@ var EDIT_FIELDS = [
 export var editorOnClose = null;
 export function setEditorOnClose(fn) { editorOnClose = fn; }
 
-export function closeEditor() {
+// quiet (true, never a click's event): a window handing over to the next (Get Media's rows) makes no sound of its own.
+export function closeEditor(quiet) {
   if ($editor.hidden) { setPick(null); return; }   // a list left holding the keys with no window to show it
   L("ED", "close " + ((($editor.querySelector(".panel-title") || {}).textContent) || "").toLowerCase());
   // A <video> taken out of the page keeps playing its sound; stop it first.
@@ -48,7 +49,7 @@ export function closeEditor() {
   $editor.textContent = "";
   delete $editor.dataset.tool;           // no tool's timer may bring the panel back
   setPick(null);                       // the state picker, if that is what was up
-  sound("back");
+  if (quiet !== true) { sound("back"); }
   var after = editorOnClose;
   editorOnClose = null;
   if (after) { after(); }

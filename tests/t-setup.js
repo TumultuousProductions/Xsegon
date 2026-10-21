@@ -422,8 +422,8 @@ module.exports = async function (b, check) {
       for (const end = Date.now() + 8000; Date.now() < end && !(readJson(sjF).auto && fs.existsSync(path.join(DATA, "setup-job.json")));) { await sleep(100); }
       check("everything starts, with names and pictures left out as switched", [!!readJson(sjF).auto, fs.existsSync(path.join(DATA, "setup-job.json")), !!readJson(sjF).noPictures], [true, true, true]);
       check("so the Setting up list says they were left out, and no pass starts",
-            [await b.until(`(r => !!r && r.querySelector(".sl-line").textContent)(document.querySelector('.setup-list .sl-row[data-part="fill"]'))`, "left out: Pictures & Videos > Get Pictures any time", 8000),
-             fs.existsSync(fillJobF)], ["left out: Pictures & Videos > Get Pictures any time", false]);
+            [await b.until(`(r => !!r && r.querySelector(".sl-line").textContent)(document.querySelector('.setup-list .sl-row[data-part="fill"]'))`, "left out: Get Media > Get Pictures any time", 8000),
+             fs.existsSync(fillJobF)], ["left out: Get Media > Get Pictures any time", false]);
       await jobEnds(120000);
       check("and still none after RetroArch and its cores came", fs.existsSync(fillJobF), false);
       await api("api/setup.php", { auto: false });
@@ -1118,7 +1118,7 @@ module.exports = async function (b, check) {
     await b.key("Escape");
     await b.until(`document.getElementById("editor").hidden`);
 
-    /* ---- the pictures hint under Pictures & Videos ----
+    /* ---- the pictures hint under Get Media ----
        A note with an arrow at the button, three seconds and gone: only while
        scanned games wait, once a visit, three times in all until a pass has run. */
     const hintUp = `!!document.querySelector(".art-hint")`;
@@ -1126,16 +1126,16 @@ module.exports = async function (b, check) {
     await b.goto();
     await b.setView("grid");
     await sleep(2500);
-    check("with a Fill in pass finished, no hint comes under Pictures & Videos", await b.ev(hintUp), false);
+    check("with a Fill in pass finished, no hint comes under Get Media", await b.ev(hintUp), false);
     if (g5.bare > 0) {
       const forget = (o) => { const j = readJson(sj); delete j.fillLeft; Object.assign(j, o); fs.writeFileSync(sj, JSON.stringify(j)); };
       forget({ hintShown: 0 });
       await b.goto();
       await b.setView("grid");
       check("with games waiting, the hint comes once the menu bar is up", await b.until(hintUp, true, 8000), true);
-      const at = await b.ev(`(() => { const n = document.querySelector(".art-hint"), h = n.getBoundingClientRect(), a = n.querySelector(".art-hint-arrow").getBoundingClientRect(), t = document.querySelector('#mb [data-menu="media"]').getBoundingClientRect(); return { below: h.top >= t.bottom && h.top - t.bottom < 30, arrow: Math.abs((a.left + a.width / 2) - (t.left + t.width / 2)) < 8, text: n.textContent, pointer: getComputedStyle(n).pointerEvents }; })()`);
-      check("just under Pictures & Videos, its arrow on the button, saying where the pictures come from",
-            [at.below, at.arrow, /^Pictures & Videos > Get Pictures adds box art and names to [0-9]+ games?$/.test(at.text)], [true, true, true]);
+      const at = await b.ev(`(() => { const n = document.querySelector(".art-hint"), h = n.getBoundingClientRect(), a = n.querySelector(".art-hint-arrow").getBoundingClientRect(), t = document.getElementById("btn-getmedia").getBoundingClientRect(); return { below: h.top >= t.bottom && h.top - t.bottom < 30, arrow: Math.abs((a.left + a.width / 2) - (t.left + t.width / 2)) < 8, text: n.textContent, pointer: getComputedStyle(n).pointerEvents }; })()`);
+      check("just under Get Media, its arrow on the button, saying where the pictures come from",
+            [at.below, at.arrow, /^Get Media > Get Pictures adds box art and names to [0-9]+ games?$/.test(at.text)], [true, true, true]);
       check("it takes no pointer, so it is never in the way of what is under it", at.pointer, "none");
       check("and it goes by itself in about three seconds", await b.until(hintUp, false, 6000), false);
       await b.setView("list");

@@ -123,7 +123,7 @@ export function render() {
   // view is rebuilt under it. Not while details is open: that snap is its.
   if ($details.hidden) { stopVideo(); }
   $toolbar.classList.toggle("as-menubar", view === "list" || view === "grid" || view === "shelf");
-  artHint();                               // the pictures hint under Pictures & Videos, when it is due (hint.js)
+  artHint();                               // the pictures hint under Get Media, when it is due (hint.js)
   if ((view !== "grid" && view !== "shelf" && view !== "rows" && view !== "list") || !games.length) { closeSizer(); }   // its gear is about to go
   paintSeg();
   var hero = heroOn();

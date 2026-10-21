@@ -17,7 +17,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     xs_local_origin_only();
     $body = xs_body();
     if (empty($body['stop'])) {
-        xs_fail('the Arcade Database is asked as part of Pictures & Videos > Videos from online archives: start it there', 400);
+        xs_fail('the Arcade Database is asked as part of Get Media > Videos from online archives: start it there', 400);
     }
     $running = (xs_ad_job()['state'] ?? '') === 'running';
     if ($running) {

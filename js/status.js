@@ -354,11 +354,17 @@ export function stopGame() {
   });
 }
 
-// Links another part adds at the end of the status line.
+// Links another part adds at the end of the status line. One added after the line is drawn
+// repaints it: only a full status read repaints otherwise, and that can be minutes away.
 var statusLinks = [];
-export function addStatusLink(label, title, run) { statusLinks.push({ label: label, title: title, run: run }); }
+var painted = null;
+export function addStatusLink(label, title, run) {
+  statusLinks.push({ label: label, title: title, run: run });
+  if (painted) { paintStatus(painted); }
+}
 
 export function paintStatus(st) {
+  painted = st;
   var c = st.checks, n = st.counts;
   setThumbsBy(st.thumbsBy || thumbsBy);
   $status.textContent = "";

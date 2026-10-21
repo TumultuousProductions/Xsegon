@@ -8,6 +8,10 @@
     console, else by ROM file name, else by its name as a file name (as ES-DE
     asks), else by the longest word of its name, and taken only when the names
     agree (a wrong snap is worse than none); its video is saved as <dir>\<game id>.mp4.
+    A game the job asks a manual for gets it from the same answer, in English or its own
+    region, as <docs>\<docid>\Manual.pdf; one there for its manual alone has "video" false.
+    A cover asked for (Get everything missing) lands as <boxes>\<game id>.<ext>, and
+    Xsegon stores it as the game's box once the job has ended (xs_ss_keep_boxes).
     A game already saved is skipped, so a stopped job carries on. One question
     at a time with a pause between: a free account is allowed one thread.
     -Shared is Xsegon's own developer ID as includes\screenscraper.php keeps it.
@@ -208,6 +212,93 @@ function Is-Mp4([string] $file) {
     } catch { return $false }
 }
 
+# A PDF says "%PDF-" near its start; an error page does not.
+function Is-Pdf([string] $file) {
+    try {
+        $fs = [IO.File]::OpenRead($file)
+        try { $b = New-Object byte[] 1024; $n = $fs.Read($b, 0, 1024) } finally { $fs.Dispose() }
+        return ($n -gt 0 -and [Text.Encoding]::ASCII.GetString($b, 0, $n).Contains('%PDF-'))
+    } catch { return $false }
+}
+
+# Whether a game has a manual: a document of its own whose name starts with "Manual" (includes\archivedoc.php).
+function Has-Manual([string] $id) {
+    $dir = Join-Path $j.docs $id
+    if (-not (Test-Path -LiteralPath $dir)) { return $false }
+    return [bool] (Get-ChildItem -LiteralPath $dir -File -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -like 'manual*' -and @('.pdf', '.png', '.jpg', '.jpeg', '.webp', '.gif') -contains $_.Extension.ToLowerInvariant() } |
+        Select-Object -First 1)
+}
+
+# ScreenScraper's region words a ROM's name stands for: "(USA, Europe)" is us and eu.
+function Regions-Of([string] $file) {
+    $map = @{ usa = 'us'; europe = 'eu'; world = 'wor'; japan = 'jp'; france = 'fr'; germany = 'de'; spain = 'sp'; italy = 'it';
+              australia = 'au'; brazil = 'br'; korea = 'kr'; uk = 'uk'; canada = 'ca'; netherlands = 'nl'; sweden = 'se'; china = 'cn' }
+    $out = @()
+    foreach ($m in [regex]::Matches($file.ToLowerInvariant(), '\(([^)]*)\)')) {
+        foreach ($w in ($m.Groups[1].Value -split '[,\s]+')) { if ($map.ContainsKey($w)) { $out += $map[$w] } }
+    }
+    return $out
+}
+
+<#  A game's manual: a PDF in English (a US, World, European, British, Australian or Canadian
+    one, in that order), else one of the game's own region. @{ url; md5; region }, or $null.  #>
+function Manual-Of($jeu, [string[]] $own) {
+    $all = @($jeu.medias | Where-Object { $_.type -eq 'manuel' -and $_.url -and (-not $_.format -or $_.format -eq 'pdf') })
+    foreach ($r in (@('us', 'wor', 'eu', 'uk', 'au', 'ca') + $own)) {
+        $m = $all | Where-Object { [string] $_.region -eq $r } | Select-Object -First 1
+        if ($m) { return @{ url = [string] $m.url; md5 = ([string] $m.md5).ToLowerInvariant(); region = $r } }
+    }
+    return $null
+}
+function Any-Manual($jeu) { return (@($jeu.medias | Where-Object { $_.type -eq 'manuel' -and $_.url }).Count -gt 0) }
+
+<#  A game's front cover: of the game's own region first (a box says the region it was sold in), then
+    a US, World, European, British, Australian or Canadian one, then ScreenScraper's own, then any.
+    @{ url; region }, or $null.  #>
+function Box-Of($jeu, [string[]] $own) {
+    $all = @($jeu.medias | Where-Object { $_.type -eq 'box-2D' -and $_.url })
+    foreach ($r in (@($own) + @('us', 'wor', 'eu', 'uk', 'au', 'ca', 'ss'))) {
+        $m = $all | Where-Object { [string] $_.region -eq $r } | Select-Object -First 1
+        if ($m) { return @{ url = [string] $m.url; region = $r } }
+    }
+    $m = $all | Select-Object -First 1
+    if ($m) { return @{ url = [string] $m.url; region = [string] $m.region } }
+    return $null
+}
+
+# A picture's first bytes name its kind; an error page's do not. The ending it is kept under, or ''.
+function Image-Ext([string] $file) {
+    try {
+        $fs = [IO.File]::OpenRead($file)
+        try { $b = New-Object byte[] 12; $n = $fs.Read($b, 0, 12) } finally { $fs.Dispose() }
+        if ($n -ge 8 -and $b[0] -eq 0x89 -and [Text.Encoding]::ASCII.GetString($b, 1, 3) -eq 'PNG') { return 'png' }
+        if ($n -ge 3 -and $b[0] -eq 0xFF -and $b[1] -eq 0xD8 -and $b[2] -eq 0xFF) { return 'jpg' }
+        if ($n -ge 12 -and [Text.Encoding]::ASCII.GetString($b, 0, 4) -eq 'RIFF' -and [Text.Encoding]::ASCII.GetString($b, 8, 4) -eq 'WEBP') { return 'webp' }
+        if ($n -ge 6 -and [Text.Encoding]::ASCII.GetString($b, 0, 4) -eq 'GIF8') { return 'gif' }
+    } catch { }
+    return ''
+}
+
+# A cover this job fetched before (a stopped job carries on), as its path, or ''.
+function Staged-Box([string] $id) {
+    $f = Get-ChildItem -LiteralPath $j.boxes -File -Filter ($id + '.*') -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($f) { return $f.FullName }
+    return ''
+}
+# Whether a game has a cover of its own in data\art now (one stored since the job was made).
+function Has-Own-Box([string] $id) {
+    if (-not $j.art -or -not (Test-Path -LiteralPath $j.art)) { return $false }
+    return [bool] (Get-ChildItem -LiteralPath $j.art -File -Filter ($id + '-box.*') -ErrorAction SilentlyContinue | Select-Object -First 1)
+}
+
+# Two answers of the same name (a hack, a re-release): the one with what this game is asked for.
+function Has-Wanted($x) {
+    if ($script:needV) { return [bool] (Video-Of $x) }
+    if ($script:needM) { return (Any-Manual $x) }
+    return [bool] (Box-Of $x @())
+}
+
 # The first steps inside a try of their own: a job file this cannot read, or
 # a folder that cannot be made, must end as "failed", not "running" for hours.
 $j = $null
@@ -223,6 +314,7 @@ try {
         $Halts.blocked  = "ScreenScraper says Xsegon's own developer ID may not be used any more"
     }
     New-Item -ItemType Directory -Force -Path $j.dir | Out-Null
+    if ($j.boxes) { New-Item -ItemType Directory -Force -Path $j.boxes | Out-Null }
     # A fetch ended by a crash or a shutdown leaves its folder, logins and all. One untouched for an
     # hour is gone; a live fetch writes in its own at every ask, so another copy's is never taken.
     $stale = (Get-Date).AddHours(-1)
@@ -263,17 +355,45 @@ function Fill-As([string] $template, $g, [string] $text) {
 try {
     $answer = Join-Path $tmp 'answer.json'
     # Versions of one game on one console share a name: the first one's snap
-    # is copied to the rest, and ScreenScraper is asked once.
+    # and cover are copied to the rest, and ScreenScraper is asked once.
     $snaps = @{}
+    $covers = @{}
     foreach ($g in $j.games) {
+        # A job made before manuals has no "video": each of its games is there for its video.
+        # A manual is asked for in the same answer, and kept in its card's documents (docid); a cover too.
+        $wantV = ($null -eq $g.video) -or [bool] $g.video
+        $wantM = [bool] $g.manual -and [bool] $j.docs
+        $wantB = [bool] $g.box -and [bool] $j.boxes
+        $docid = if ($g.docid) { [string] $g.docid } else { [string] $g.id }
         $out  = Join-Path $j.dir ($g.id + '.mp4')
         $part = $out + '.part'
         $same = ([string] $g.system) + '-' + (Key ([string] $g.title))
-        if (Test-Path -LiteralPath $out) { $g.state = 'done'; $snaps[$same] = $out; continue }
-        if ($snaps.ContainsKey($same)) {
-            Copy-Item -LiteralPath $snaps[$same] -Destination $out -Force
-            $g.state = 'done'
-            Set-Field $g 'bytes' (Get-Item -LiteralPath $out).Length
+        $needV = $false
+        if ($wantV) {
+            if (Test-Path -LiteralPath $out) { $g.state = 'done'; $snaps[$same] = $out }
+            elseif ($snaps.ContainsKey($same)) {
+                Copy-Item -LiteralPath $snaps[$same] -Destination $out -Force
+                $g.state = 'done'
+                Set-Field $g 'bytes' (Get-Item -LiteralPath $out).Length
+                Save-Job $j
+            } else { $needV = $true }
+        }
+        $needM = $wantM -and -not (Has-Manual $docid)
+        if ($wantM -and -not $needM) { Set-Field $g 'mstate' 'done' }
+        $needB = $false
+        if ($wantB) {
+            $staged = Staged-Box ([string] $g.id)
+            if ($staged) { Set-Field $g 'bstate' 'got'; Set-Field $g 'bfile' (Split-Path -Leaf $staged); $covers[$same] = $staged }
+            elseif (Has-Own-Box ([string] $g.id)) { Set-Field $g 'bstate' 'had' }
+            elseif ($covers.ContainsKey($same)) {
+                $to = Join-Path $j.boxes ([string] $g.id + [IO.Path]::GetExtension($covers[$same]))
+                Copy-Item -LiteralPath $covers[$same] -Destination $to -Force
+                Set-Field $g 'bstate' 'got'; Set-Field $g 'bfile' (Split-Path -Leaf $to)
+            } else { $needB = $true }
+        }
+        if (-not $needV -and -not $needM -and -not $needB) {
+            # "manual": a game there for its manual or its cover alone, through with
+            if (-not $wantV) { $g.state = 'manual' }
             Save-Job $j
             continue
         }
@@ -290,8 +410,8 @@ try {
         if ($script:asked -eq 'failed') { $unreadable = $true }
         if ($json -and $json.response -and $json.response.jeux) {
             $named = @(@($json.response.jeux) | Where-Object { Is-Game $_ $ours })
-            # two of the same name (a hack, a re-release): the one with a video
-            $jeu = @($named | Where-Object { Video-Of $_ }) + $named | Select-Object -First 1
+            # two of the same name (a hack, a re-release): the one with what is asked for
+            $jeu = @($named | Where-Object { Has-Wanted $_ }) + $named | Select-Object -First 1
         }
 
         # 2. by the ROM file's name, believed only when the names agree
@@ -322,7 +442,7 @@ try {
             if ($script:asked -eq 'failed') { $unreadable = $true }
             if ($json -and $json.response -and $json.response.jeux) {
                 $named = @(@($json.response.jeux) | Where-Object { Is-Game $_ $ours $true })
-                $jeu = @($named | Where-Object { Video-Of $_ }) + $named | Select-Object -First 1
+                $jeu = @($named | Where-Object { Has-Wanted $_ }) + $named | Select-Object -First 1
             }
         }
         if ($jeu) { Set-Field $g 'by' $by }
@@ -333,31 +453,105 @@ try {
             Set-Field $j 'allowed' ([int] $json.response.ssuser.maxrequestsperday)
         }
 
-        if (-not $jeu) { $g.state = $(if ($unreadable) { 'failed' } else { 'none' }); Save-Job $j; continue }
-        $url = Video-Of $jeu
-        if (-not $url) { $g.state = 'novideo'; Save-Job $j; continue }
-
-        $g.state = 'fetching'; Save-Job $j
-        # An address that comes back with the member login blank gets it filled
-        # in, so the download counts as this person's and runs at their speed.
-        $url = $url.Replace('ssid=&sspassword=', $mine)
-        $got = Meaning (Get-Url $url $part) $part
-        if ($Halts.ContainsKey($got) -and $got -ne 'busy') {
-            Remove-Item -LiteralPath $part -Force -ErrorAction SilentlyContinue
-            $script:halt = $Halts[$got]; $g.state = 'waiting'; break
-        }
-        if ($got -ne 'ok' -or -not (Is-Mp4 $part)) {
-            Remove-Item -LiteralPath $part -Force -ErrorAction SilentlyContinue
-            $g.state = 'failed'; Save-Job $j
-            if ($script:pause -gt 0) { Start-Sleep -Milliseconds $script:pause }
+        if (-not $jeu) {
+            $miss = $(if ($unreadable) { 'failed' } else { 'none' })
+            if ($needV) { $g.state = $miss } elseif (-not $wantV) { $g.state = 'manual' }
+            if ($needM) { Set-Field $g 'mstate' $miss }
+            if ($needB) { Set-Field $g 'bstate' $miss }
+            Save-Job $j
             continue
         }
-        Move-Item -LiteralPath $part -Destination $out -Force
-        $snaps[$same] = $out
-        $g.state = 'done'
-        Set-Field $g 'bytes' (Get-Item -LiteralPath $out).Length
+
+        if ($needV) {
+            $url = Video-Of $jeu
+            if (-not $url) { $g.state = 'novideo'; Save-Job $j }
+            else {
+                $g.state = 'fetching'; Save-Job $j
+                # An address that comes back with the member login blank gets it filled
+                # in, so the download counts as this person's and runs at their speed.
+                $url = $url.Replace('ssid=&sspassword=', $mine)
+                $got = Meaning (Get-Url $url $part) $part
+                if ($Halts.ContainsKey($got) -and $got -ne 'busy') {
+                    Remove-Item -LiteralPath $part -Force -ErrorAction SilentlyContinue
+                    $script:halt = $Halts[$got]; $g.state = 'waiting'; break
+                }
+                if ($got -ne 'ok' -or -not (Is-Mp4 $part)) {
+                    Remove-Item -LiteralPath $part -Force -ErrorAction SilentlyContinue
+                    $g.state = 'failed'
+                } else {
+                    Move-Item -LiteralPath $part -Destination $out -Force
+                    $snaps[$same] = $out
+                    $g.state = 'done'
+                    Set-Field $g 'bytes' (Get-Item -LiteralPath $out).Length
+                }
+                Save-Job $j
+                if ($script:pause -gt 0) { Start-Sleep -Milliseconds $script:pause }
+            }
+        }
+        if (-not $wantV) { $g.state = 'manual' }
+
+        # The manual: downloaded into the job's own temp folder, so a documents folder is a game's
+        # only once its manual is whole and a PDF, checked against ScreenScraper's checksum.
+        if ($needM) {
+            $man = Manual-Of $jeu (Regions-Of ([string] $g.rom))
+            if (-not $man) {
+                Set-Field $g 'mstate' $(if (Any-Manual $jeu) { 'other' } else { 'nomanual' })
+            } else {
+                $mpart = Join-Path $tmp 'manual.part'
+                $got = Meaning (Get-Url ($man.url.Replace('ssid=&sspassword=', $mine)) $mpart) $mpart
+                if ($Halts.ContainsKey($got) -and $got -ne 'busy') {
+                    Remove-Item -LiteralPath $mpart -Force -ErrorAction SilentlyContinue
+                    $script:halt = $Halts[$got]; Set-Field $g 'mstate' 'waiting'; break
+                }
+                $ok = $got -eq 'ok' -and (Is-Pdf $mpart)
+                if ($ok -and $man.md5 -and (Get-FileHash -LiteralPath $mpart -Algorithm MD5).Hash.ToLowerInvariant() -ne $man.md5) { $ok = $false }
+                if (-not $ok) {
+                    Remove-Item -LiteralPath $mpart -Force -ErrorAction SilentlyContinue
+                    Set-Field $g 'mstate' 'failed'
+                } elseif (Has-Manual $docid) {
+                    # One came meanwhile: it stays.
+                    Remove-Item -LiteralPath $mpart -Force -ErrorAction SilentlyContinue
+                    Set-Field $g 'mstate' 'done'
+                } else {
+                    $dir = Join-Path $j.docs $docid
+                    New-Item -ItemType Directory -Force -Path $dir | Out-Null
+                    $to = Join-Path $dir 'Manual.pdf'
+                    Move-Item -LiteralPath $mpart -Destination $to -Force
+                    Set-Field $g 'mstate' 'done'
+                    Set-Field $g 'mregion' $man.region
+                    Set-Field $g 'mbytes' (Get-Item -LiteralPath $to).Length
+                }
+                if ($script:pause -gt 0) { Start-Sleep -Milliseconds $script:pause }
+            }
+        }
+
+        # The cover: downloaded into the job's own temp folder, and kept as <boxes>\<id>.<ext> once it is a picture.
+        if ($needB) {
+            $box = Box-Of $jeu (Regions-Of ([string] $g.rom))
+            if (-not $box) { Set-Field $g 'bstate' 'nobox' }
+            else {
+                $bpart = Join-Path $tmp 'box.part'
+                $got = Meaning (Get-Url ($box.url.Replace('ssid=&sspassword=', $mine)) $bpart) $bpart
+                if ($Halts.ContainsKey($got) -and $got -ne 'busy') {
+                    Remove-Item -LiteralPath $bpart -Force -ErrorAction SilentlyContinue
+                    $script:halt = $Halts[$got]; Set-Field $g 'bstate' 'waiting'; break
+                }
+                $ext = $(if ($got -eq 'ok') { Image-Ext $bpart } else { '' })
+                if (-not $ext) {
+                    Remove-Item -LiteralPath $bpart -Force -ErrorAction SilentlyContinue
+                    Set-Field $g 'bstate' 'failed'
+                } else {
+                    $to = Join-Path $j.boxes ([string] $g.id + '.' + $ext)
+                    Move-Item -LiteralPath $bpart -Destination $to -Force
+                    $covers[$same] = $to
+                    Set-Field $g 'bstate' 'got'
+                    Set-Field $g 'bfile' (Split-Path -Leaf $to)
+                    Set-Field $g 'bregion' $box.region
+                }
+                if ($script:pause -gt 0) { Start-Sleep -Milliseconds $script:pause }
+            }
+        }
         Save-Job $j
-        if ($script:pause -gt 0) { Start-Sleep -Milliseconds $script:pause }
     }
     if ($script:halt) {
         $j.state = 'failed'

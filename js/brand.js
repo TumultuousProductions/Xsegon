@@ -20,7 +20,7 @@ function picUrl(b) { return "/api/brand.php?img=1&v=" + b.rev; }
 
 /* The tip under the wheel (js\logotip.js) names Xsegon only on Xsegon's own look. */
 export function logoTipWords() {
-  return (brandNow().own ? "Press the logo" : "Press the Xsegon logo") + " for the menus: Games, Pictures & Videos, Emulators and Help";
+  return (brandNow().own ? "Press the logo" : "Press the Xsegon logo") + " for the menus: Games, Get Media, Emulators and Help";
 }
 
 /* The wordmark's place, the title, the tab and taskbar icon and the tip, as index.php draws them. */

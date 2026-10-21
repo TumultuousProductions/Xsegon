@@ -19,12 +19,14 @@ const XS_JOBS_KEPT = 120;
 function xs_jobs_files(): array
 {
     return [
+        'getall'        => xs_data_path('getall-job.json'),
         'steamvid'      => xs_data_path('steamvid-job.json'),
         'screenscraper' => xs_data_path('screenscraper-job.json'),
         'emumove'       => xs_data_path('emumove-job.json'),
         'unpack'        => xs_data_path('unpack-job.json'),
         'videopack'     => xs_data_path('videopack-job.json'),
         'archivevid'    => xs_data_path('archivevid-job.json'),
+        'archivedoc'    => xs_data_path('archivedoc-job.json'),
         'arcadevid'     => xs_data_path('arcadevid-job.json'),
         'cheatlists'    => xs_data_path('cheatlists-job.json'),
         'texpacks'      => xs_data_path('texpacks-job.json'),
@@ -95,6 +97,22 @@ function xs_jobs(): array
         => $state === 'running' || (is_file($path) && time() - (int) @filemtime($path) < XS_JOBS_KEPT);
     $n     = static fn (int $count, string $one, string $many): string => $count . ' ' . ($count === 1 ? $one : $many);
 
+    // Get everything missing: its parts by count, each with a bar of its own below; while ScreenScraper waits, it says so.
+    if (is_file($files['getall'])) {
+        require_once __DIR__ . '/getall.php';
+        $j = xs_ga_job();
+        $state = (string) ($j['state'] ?? '');
+        if (is_array($j) && $told($files['getall'], $state)) {
+            $all     = array_values(array_filter(array_merge($j['parts'] ?? [], $j['ss'] ? [$j['ss']] : []),
+                static fn ($p) => in_array($p['state'], ['started', 'running', 'waiting'], true)));
+            $through = count(array_filter($all, static fn ($p) => $p['state'] !== 'waiting' && !xs_ga_running($p['key'])));
+            $waits   = ($j['ss']['state'] ?? '') === 'waiting';
+            $out[] = xs_jobs_row('getall', 'Get everything missing', $state === 'running' ? 'running' : 'done', (int) ($j['started'] ?? 0),
+                $through . ' of ' . $n(count($all), 'part', 'parts') . ' through' . ($waits ? '; ScreenScraper once the free sources are' : ''),
+                $all ? $through / count($all) : null, true, (string) ($j['said'] ?? ''));
+        }
+    }
+
     // Steam trailers, and ScreenScraper's videos: a list of games, each waiting, at work or over.
     foreach ([['steamvid', 'steamvid.php', 'xs_steamvid_job', 'Steam trailers', 'trailer', 'trailers', 'Steam trailers saved', 'trailers stopped: '],
               ['screenscraper', 'screenscraper.php', 'xs_ss_job', 'ScreenScraper videos', 'video', 'videos', 'snaps saved from ScreenScraper', 'snaps stopped: ']] as $t) {
@@ -108,13 +126,22 @@ function xs_jobs(): array
             continue;
         }
         $games = is_array($j['games'] ?? null) ? $j['games'] : [];
-        $saved = count(array_filter($games, static fn ($g) => ($g['state'] ?? '') === 'done'));
+        // A game there for its manual alone is no video to count (bin\screenscraper.ps1).
+        $saved = count(array_filter($games, static fn ($g) => ($g['state'] ?? '') === 'done' && ($g['video'] ?? true) !== false));
         $over  = count(array_filter($games, static fn ($g) => !in_array($g['state'] ?? '', ['waiting', 'asking', 'fetching'], true)));
+        $mans  = empty($j['manuals']) ? null : count(array_filter($games, static fn ($g) => ($g['mstate'] ?? '') === 'done'));
+        // Covers (Get everything missing): fetched, then stored as boxes when the fetch ends.
+        $covs  = ($j['boxes'] ?? '') === '' ? null : count(array_filter($games, static fn ($g) => in_array($g['bstate'] ?? '', ['got', 'done'], true)));
+        $more  = array_values(array_filter([$mans === null ? '' : $n($mans, 'manual', 'manuals'), $covs === null ? '' : $n($covs, 'cover', 'covers')]));
+        // A pass that asked for no video leads with what it did ask for.
+        $vids  = count(array_filter($games, static fn ($g) => ($g['video'] ?? true) !== false));
         $out[] = xs_jobs_row($t[0], $t[3], $state === 'running' ? 'running' : ($state === 'failed' ? 'failed' : 'done'),
             (int) ($j['started'] ?? 0),
-            $over . ' of ' . $n(count($games), 'game', 'games') . ', ' . $n($saved, $t[4], $t[5]) . ' saved',
+            $over . ' of ' . $n(count($games), 'game', 'games') . ', ' . $n($saved, $t[4], $t[5]) . ' saved' . ($more ? ', ' . implode(', ', $more) : ''),
             $games ? $over / count($games) : 0.0, false,
-            $state === 'failed' ? $t[7] . (string) ($j['error'] ?? '') : $saved . ' ' . $t[6]);
+            $state === 'failed' ? $t[7] . (string) ($j['error'] ?? '')
+                : ($vids === 0 && $more ? implode(' and ', $more) . ' saved from ScreenScraper'
+                : $saved . ' ' . $t[6] . (count($more) === 1 ? ', and ' . $more[0] : (count($more) === 2 ? ', ' . $more[0] . ' and ' . $more[1] : ''))));
     }
 
     // Move out of LaunchBox: a copy measured in bytes.
@@ -200,6 +227,27 @@ function xs_jobs(): array
                    : ($phase === 'matching' && (int) ($j['games'] ?? 0) > 0 ? (int) ($j['at'] ?? 0) / (int) $j['games']
                    : ($phase === 'cutting' && (int) ($j['cuts'] ?? 0) > 0 ? (int) ($j['cutAt'] ?? 0) / (int) $j['cuts'] : null)));
             $out[] = xs_jobs_row('archivevid', 'Videos from online archives', $state === 'running' ? 'running' : ($state === 'done' ? 'done' : 'failed'),
+                (int) ($j['started'] ?? 0), $line, $frac, true,
+                (string) (($j['error'] ?? '') !== '' ? $j['error'] : (($j['said'] ?? '') !== '' ? $j['said'] : 'nothing was fetched')));
+        }
+    }
+
+    // Manuals from the Internet Archive: its sets' lists by count, games matched by count, then manuals fetched by size.
+    if (is_file($files['archivedoc'])) {
+        require_once __DIR__ . '/archivedoc.php';
+        $j = xs_ma_job();
+        $state = (string) ($j['state'] ?? '');
+        if (is_array($j) && $told($files['archivedoc'], $state)) {
+            $phase = (string) ($j['phase'] ?? '');
+            $sized = $phase === 'fetching' && (int) ($j['total'] ?? 0) > 0;
+            $line  = $sized ? 'fetching: ' . (int) ($j['added'] ?? 0) . ' of ' . $n((int) ($j['found'] ?? 0), 'manual', 'manuals') . ', '
+                            . xs_jobs_size((int) ($j['bytes'] ?? 0)) . ' of ' . xs_jobs_size((int) $j['total'])
+                   : ($phase === 'listing' ? 'asking the Archive what it has: ' . (int) ($j['setsAt'] ?? 0) . ' of ' . $n((int) ($j['sets'] ?? 0), 'set', 'sets')
+                   : ($phase === 'matching' ? 'looking for manuals: ' . (int) ($j['at'] ?? 0) . ' of ' . $n((int) ($j['games'] ?? 0), 'game', 'games') : 'starting'));
+            $frac  = $sized ? (int) ($j['bytes'] ?? 0) / (int) $j['total']
+                   : ($phase === 'listing' && (int) ($j['sets'] ?? 0) > 0 ? (int) ($j['setsAt'] ?? 0) / (int) $j['sets']
+                   : ($phase === 'matching' && (int) ($j['games'] ?? 0) > 0 ? (int) ($j['at'] ?? 0) / (int) $j['games'] : null));
+            $out[] = xs_jobs_row('archivedoc', 'Manuals from online archives', $state === 'running' ? 'running' : ($state === 'done' ? 'done' : 'failed'),
                 (int) ($j['started'] ?? 0), $line, $frac, true,
                 (string) (($j['error'] ?? '') !== '' ? $j['error'] : (($j['said'] ?? '') !== '' ? $j['said'] : 'nothing was fetched')));
         }
@@ -344,6 +392,11 @@ function xs_jobs(): array
 /** Asks a job to stop, the way its own window does. False for one that cannot be stopped. */
 function xs_jobs_stop(string $key): bool
 {
+    if ($key === 'getall') {
+        require_once __DIR__ . '/getall.php';
+        xs_ga_stop();
+        return true;
+    }
     if ($key === 'emumove') {
         require_once __DIR__ . '/emumove.php';
         if ((xs_emumove_job()['state'] ?? '') === 'running') {
@@ -371,6 +424,14 @@ function xs_jobs_stop(string $key): bool
         if ((xs_av_job()['state'] ?? '') === 'running') {
             @touch(xs_av_stop_path());
             xs_log('ARCV', 'asked to stop, keeping the videos that have come (the corner bar)');
+        }
+        return true;
+    }
+    if ($key === 'archivedoc') {
+        require_once __DIR__ . '/archivedoc.php';
+        if ((xs_ma_job()['state'] ?? '') === 'running') {
+            @touch(xs_ma_stop_path());
+            xs_log('MANU', 'asked to stop, keeping the manuals that have come (the corner bar)');
         }
         return true;
     }

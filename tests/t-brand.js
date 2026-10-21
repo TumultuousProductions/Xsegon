@@ -51,7 +51,7 @@ module.exports = async function (b, check) {
     await b.goto();
     check("with nothing set: the Xsegon wordmark at the top left, Xsegon on the title, Xsegon's icons",
           await b.ev(`[${TOP_LEFT}, document.title, ${ICONS}]`), [WORDMARK, "Xsegon", XS_ICONS]);
-    check("and the tip under the wheel names Xsegon's logo", await b.ev(TIP_WORDS), "Press the Xsegon logo for the menus: Games, Pictures & Videos, Emulators and Help");
+    check("and the tip under the wheel names Xsegon's logo", await b.ev(TIP_WORDS), "Press the Xsegon logo for the menus: Games, Get Media, Emulators and Help");
 
     await feel();
     check("Settings > Feel has Your name and logo: the name, Choose a picture... and Use Xsegon's",
@@ -91,7 +91,7 @@ module.exports = async function (b, check) {
     check("opened again: your picture, your name on the title, your icon",
           await b.ev(`[${TOP_LEFT}, document.title, ${ICONS}, document.querySelector("#brand-logo img").alt]`),
           [["img", "brand-own", "/api/brand.php"], NAME, ["/api/brand.php"], NAME]);
-    check("and the tip under the wheel says the logo, not Xsegon's", await b.ev(TIP_WORDS), "Press the logo for the menus: Games, Pictures & Videos, Emulators and Help");
+    check("and the tip under the wheel says the logo, not Xsegon's", await b.ev(TIP_WORDS), "Press the logo for the menus: Games, Get Media, Emulators and Help");
 
     // Where there is no menu bar, your picture is still the menu button.
     await b.setView("wheel");

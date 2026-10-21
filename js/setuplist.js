@@ -146,7 +146,7 @@ function coresLine(c) {
 }
 
 function fillLine(f) {
-  if (f.state === "skipped") { paintLine("fill", "skipped", "left out: Pictures & Videos > Get Pictures any time", 0); return; }
+  if (f.state === "skipped") { paintLine("fill", "skipped", "left out: Get Media > Get Pictures any time", 0); return; }
   if (f.state === "waiting") { paintLine("fill", "waiting", "waiting for your games", 0); return; }
   if (f.state === "running") {
     if (f.phase === "starting") { paintLine("fill", "running", "starting...", null); return; }

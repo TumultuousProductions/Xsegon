@@ -1,6 +1,6 @@
 <?php
 /**
- * Xsegon - videos for the games here from a package made on another PC (the Pictures & Videos menu).
+ * Xsegon - videos for the games here from a package made on another PC (the Get Media window).
  *
  *   Export Games with No videos    a small list of the games here that have none, to send
  *   Import Xsegon Video Package    a package made from that list: its videos onto those games
@@ -79,7 +79,7 @@ function xs_vp_list_name(): string
 function xs_vp_list_doc(array $rows): array
 {
     return ['xsegon' => XS_VP_LIST, 'version' => 1, 'made' => date('c'),
-            'note' => 'Games with no video, listed by Xsegon. A video package made from this list goes in with Pictures & Videos > Import Xsegon Video Package.',
+            'note' => 'Games with no video, listed by Xsegon. A video package made from this list goes in with Get Media > Import Xsegon Video Package.',
             'games' => $rows];
 }
 

@@ -191,3 +191,43 @@ function xs_steamvid_job(): ?array
     }
     return $job;
 }
+
+/**
+ * The fetch for these Steam games with no video, as its job file holds it (null: every one no fetch found
+ * none for before), or null when none of them is one.
+ */
+function xs_steamvid_plan(array $s, array $library, ?array $ids): ?array
+{
+    $want = $ids === null ? null : array_flip(array_map('strval', $ids));
+    $pick = array_values(array_filter(xs_steamvid_games($s, $library),
+        static fn ($r) => !$r['has'] && ($want === null ? $r['tried'] === '' : isset($want[$r['id']]))));
+    if (!$pick) {
+        return null;
+    }
+    $src = xs_steamvid_sources();
+    return [
+        'state'   => 'running',
+        'started' => time(),
+        'dir'     => xs_steamvid_dir(),
+        'api'     => $src['api'],
+        'cdn'     => $src['cdn'],
+        'ffmpeg'  => xs_ffmpeg(),
+        'games'   => array_map(static fn ($r) => ['id' => $r['id'], 'title' => $r['title'], 'appid' => $r['appid'], 'state' => 'waiting'], $pick),
+    ];
+}
+
+/** Write the job and start the fetcher. False with $why. */
+function xs_steamvid_start(array $plan, ?string &$why = null): bool
+{
+    $why = null;
+    if (!xs_write_json(xs_steamvid_job_path(), $plan, $why)) {
+        return false;
+    }
+    $script = XS_ROOT . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'steamvid.ps1';
+    if (!xs_spawn_ps(xs_ps_call($script, ['Job' => xs_steamvid_job_path()]))) {
+        $why = 'the trailer fetcher could not be started';
+        return false;
+    }
+    xs_log('STEAMV', 'fetch asked for ' . count($plan['games']) . ' trailers' . ($plan['ffmpeg'] !== '' ? ', ffmpeg for streams' : ', no ffmpeg'));
+    return true;
+}

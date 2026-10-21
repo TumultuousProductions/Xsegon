@@ -1,4 +1,4 @@
-/*  Pictures & Videos > Get Pictures.
+/*  Get Media > Get Pictures.
  *
  *  A scanned game arrives with only a title read off the file name. Fill in
  *  asks the Games Database that ships with Xsegon (gamesdb\) what each game is

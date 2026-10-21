@@ -399,7 +399,7 @@ You do not have to remember any of it: the bar along the bottom of the
 screen always shows what the keys do right now, and with a controller it
 shows that controller's own buttons.
 
-The menus (Games, Pictures & Videos, Emulators, Help) open from the Xsegon
+The menus (Games, Emulators, Help) and Get Media open from the Xsegon
 logo at the top left, on every screen, with Settings, the controller, Connect
 a phone and the themes beneath them.
 
@@ -585,7 +585,7 @@ wants a logo taken out has only to ask: help@tumultuousproductions.site.
   ([includes/arcade/ABOUT.txt](includes/arcade/ABOUT.txt);
   `php tools\get-arcade-names.php` makes it). Xsegon comes with no MAME and
   no arcade games.
-- Videos of arcade games, where a person asks for them (Pictures & Videos >
+- Videos of arcade games, where a person asks for them (Get Media >
   Videos from online archives, which asks here first): scraping using
   [Arcade Database](https://adb.arcadeitalia.net) by motoschifo. The videos
   are its Progetto VideoSnaps, played and recorded by motoschifo, AntoPISA,
@@ -600,6 +600,13 @@ wants a logo taken out has only to ask: help@tumultuousproductions.site.
   set leaves a gap, Xsegon keeps the first 30 seconds of the game's recording
   as its video and writes the player's name in its log. Xsegon carries none
   of the videos ([includes/archivevid/ABOUT.txt](includes/archivevid/ABOUT.txt)).
+- Manuals for the games with none, where a person asks (Get Media >
+  Manuals from online archives): sets of game manuals on the
+  [Internet Archive](https://archive.org), a console each, scanned and put
+  up by the people who kept them. Xsegon carries none of the manuals
+  ([includes/archivedoc/ABOUT.txt](includes/archivedoc/ABOUT.txt)); the rest
+  can come from [ScreenScraper](https://www.screenscraper.fr) with the
+  person's own account, as its videos do.
 - Texture packs listed in a game's details (the Texture packs tab of PS2,
   GameCube, Wii and N64 games): the
   [Texture Packs Archive](https://docs.google.com/spreadsheets/d/1sif8FeRGJRbytK8wFRXgF6Hke9V6GUFs),

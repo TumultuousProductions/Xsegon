@@ -97,7 +97,7 @@ function paint(job, own) {
     if (seenOver[job.key] >= 2 && jobSayOnce(job.key, job.started)) {
       L("JOBS", job.key + " ended: " + job.said);
       showStrip(job.said, job.state === "failed");
-      if (job.key === "archivevid") { mailArrived(); }   // its ending may have left a message for the games with no video
+      if (job.key === "archivevid" || job.key === "archivedoc") { mailArrived(); }   // its ending may have left a message for the games with none
       reloadWanted = true;
     }
   }

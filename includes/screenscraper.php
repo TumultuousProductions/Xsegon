@@ -25,6 +25,9 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/boot.php';
 require_once __DIR__ . '/video.php';
+require_once __DIR__ . '/overrides.php';   // a fetched cover is stored as a replaced picture
+require_once __DIR__ . '/extras.php';      // xs_docs_dir
+require_once __DIR__ . '/versions.php';    // xs_version_key
 
 function xs_ss_dir(): string
 {
@@ -520,6 +523,172 @@ function xs_ss_games(array $s, array $library): array
     return $rows;
 }
 
+/**
+ * The games ScreenScraper may fetch a manual for: no manual yet, a card each as the list rolls versions
+ * (includes\archivedoc.php), on a console ScreenScraper knows, and that the Internet Archive's free sets
+ * cannot serve first: its console has no set there, or the Archive was asked and had none. So the sets
+ * go first and the day's allowance is kept for the rest. Without $archiveFirst (ScreenScraper only, in
+ * Get everything missing) every card with no manual. 'key' is the card, for a video row to join.
+ */
+function xs_ss_manual_games(array $library, bool $archiveFirst = true): array
+{
+    require_once __DIR__ . '/archivedoc.php';
+    $looked = xs_ma_looked();
+    $rows   = [];
+    foreach (xs_ma_need($library) as $c) {
+        $system = xs_ss_system($c['platform']);
+        if ($system <= 0 || ($archiveFirst && xs_ma_sets_for($c['platform']) && !isset($looked[$c['id']]))) {
+            continue;
+        }
+        $rows[] = ['id' => $c['id'], 'title' => $c['title'], 'platform' => $c['platform'], 'system' => $system,
+                   'rom' => xs_ss_rom_name((string) ($c['files'][0] ?? '')), 'key' => xs_version_key($c)];
+    }
+    return $rows;
+}
+
+/** The covers a fetch brings, each the game's <id>.<ext> until it is stored as its box (xs_ss_keep_boxes). */
+function xs_ss_boxes_dir(): string
+{
+    return xs_data_path('screenscraper-boxes');
+}
+
+/**
+ * The games with no cover on a console ScreenScraper knows: none in the library, the media copy or
+ * data\art, and not left empty on purpose (Use no picture).
+ */
+function xs_ss_box_games(array $library): array
+{
+    $hidden = xs_art_hidden();
+    $rows   = [];
+    foreach ($library['games'] ?? [] as $g) {
+        $id     = (string) ($g['id'] ?? '');
+        $system = xs_ss_system((string) ($g['platform'] ?? ''));
+        if (!xs_game_id_ok($id) || $system <= 0 || ($g['art']['box'] ?? null) !== null || in_array('box', (array) ($hidden[$id] ?? []), true)) {
+            continue;
+        }
+        $rows[] = ['id' => $id, 'title' => (string) $g['title'], 'platform' => (string) $g['platform'], 'system' => $system,
+                   'rom' => xs_ss_rom_name((string) ($g['romPath'] ?? ''))];
+    }
+    return $rows;
+}
+
+/**
+ * A fetch's games, one entry a game. Its video when it is one of $ids (null: every game with no video
+ * no fetch found none for before; []: no videos); its card's manual with $manuals ($archiveFirst as
+ * xs_ss_manual_games); its cover with $boxes. 'video', 'manual' and 'box' say what each is asked for,
+ * 'docid' the card a manual is kept under.
+ */
+function xs_ss_plan_games(array $s, array $library, ?array $ids, bool $manuals, bool $archiveFirst = true, bool $boxes = false): array
+{
+    $want = $ids === null ? null : array_flip(array_map('strval', $ids));
+    $pick = $want === [] ? [] : array_values(array_filter(xs_ss_games($s, $library),
+        static fn ($r) => !$r['has'] && $r['system'] > 0 && ($want === null ? $r['tried'] === '' : isset($want[$r['id']]))));
+    // A game asked for its video brings its card's manual in the same answer; the rest are asked for the manual alone.
+    $cards = [];
+    foreach ($manuals ? xs_ss_manual_games($library, $archiveFirst) : [] as $m) {
+        $cards[$m['key']] = $m;
+    }
+    $games = [];
+    $entry = static fn (array $r, bool $video, bool $manual, string $docid, bool $box): array =>
+        ['id' => $r['id'], 'title' => $r['title'], 'platform' => $r['platform'], 'system' => $r['system'], 'rom' => $r['rom'],
+         'state' => 'waiting', 'video' => $video, 'manual' => $manual, 'docid' => $docid, 'box' => $box];
+    foreach ($pick as $r) {
+        $card = $cards[xs_version_key($r)] ?? null;
+        unset($cards[xs_version_key($r)]);
+        $games[$r['id']] = $entry($r, true, $card !== null, (string) ($card['id'] ?? $r['id']), false);
+    }
+    foreach ($cards as $m) {
+        $games[$m['id']] = $entry($m, false, true, (string) $m['id'], false);
+    }
+    // A cover comes in the answer a game is asked about anyway, or is asked for alone.
+    foreach ($boxes ? xs_ss_box_games($library) : [] as $c) {
+        if (isset($games[$c['id']])) {
+            $games[$c['id']]['box'] = true;
+        } else {
+            $games[$c['id']] = $entry($c, false, false, $c['id'], true);
+        }
+    }
+    return array_values($games);
+}
+
+/** The job file bin\screenscraper.ps1 works from. */
+function xs_ss_plan(array $games, bool $manuals, bool $boxes = false): array
+{
+    $src = xs_ss_sources();
+    return [
+        'state'   => 'running',
+        'started' => time(),
+        'dir'     => xs_ss_dir(),
+        'docs'    => xs_docs_dir(),
+        'manuals' => $manuals,
+        'boxes'   => $boxes ? xs_ss_boxes_dir() : '',
+        'art'     => xs_own_art_dir(),
+        'search'  => $src['search'],
+        'rom'     => $src['rom'],
+        'pause'   => $src['pause'],
+        'games'   => $games,
+    ];
+}
+
+/**
+ * Write the job and start the fetcher with these logins (xs_ss_account_in_use). False with $why.
+ * The fetcher opens the kept copy of Xsegon's own developer ID itself; it is never on a command line.
+ */
+function xs_ss_start(array $plan, array $use, ?string &$why = null): bool
+{
+    $why = null;
+    if (!xs_write_json(xs_ss_job_path(), $plan, $why)) {
+        return false;
+    }
+    $script = XS_ROOT . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'screenscraper.ps1';
+    $args   = ['Job' => xs_ss_job_path(), 'Account' => xs_ss_account_path(), 'Shared' => $use['shared'] ? xs_ss_shared_path() : null];
+    if (!xs_spawn_ps(xs_ps_call($script, $args))) {
+        $why = 'the snap fetcher could not be started';
+        return false;
+    }
+    $games = $plan['games'];
+    $n     = static fn (string $k): int => count(array_filter($games, static fn ($g) => !empty($g[$k])));
+    xs_log('SSCR', 'fetch asked for ' . $n('video') . ' snaps' . ($plan['manuals'] ? ' and ' . $n('manual') . ' manuals' : '')
+        . ($plan['boxes'] !== '' ? ' and ' . $n('box') . ' covers' : ''));
+    return true;
+}
+
+/**
+ * The covers an ended fetch brought, each stored as its game's box (xs_own_art_store), once. One that
+ * got a cover or Use no picture meanwhile keeps it; the fetched file goes either way.
+ */
+function xs_ss_keep_boxes(array &$job): void
+{
+    if (($job['boxes'] ?? '') === '' || !empty($job['boxesKept'])) {
+        return;
+    }
+    $kept = $had = $bad = 0;
+    foreach ($job['games'] as &$g) {
+        if (($g['bstate'] ?? '') !== 'got') {
+            continue;
+        }
+        $id   = (string) $g['id'];
+        $file = xs_ss_boxes_dir() . DIRECTORY_SEPARATOR . basename((string) ($g['bfile'] ?? ''));
+        $bytes = is_file($file) ? (string) @file_get_contents($file) : '';
+        if (xs_glob(xs_own_art_dir(), $id . '-box.*') || in_array('box', (array) (xs_art_hidden()[$id] ?? []), true)) {
+            $g['bstate'] = 'had';
+            $had++;
+        } elseif ($bytes !== '' && xs_own_art_store($id, 'box', $bytes, false, $why) !== null) {
+            $g['bstate'] = 'done';
+            $kept++;
+        } else {
+            $g['bstate'] = 'failed';
+            $g['bwhy']   = $bytes === '' ? 'the fetched cover was gone' : (string) $why;
+            $bad++;
+        }
+        @unlink($file);
+    }
+    unset($g);
+    $job['boxesKept'] = true;
+    xs_write_json(xs_ss_job_path(), $job);
+    xs_log('SSCR', 'covers: ' . $kept . ' stored as boxes' . ($had ? ', ' . $had . ' had one meanwhile' : '') . ($bad ? ', ' . $bad . ' could not be stored' : ''));
+}
+
 /** The job as the page sees it. It never holds a login or an address. */
 function xs_ss_job(): ?array
 {
@@ -538,6 +707,21 @@ function xs_ss_job(): ?array
     $count = array_count_values(array_map(static fn ($g) => (string) ($g['state'] ?? ''), $job['games'] ?? []));
     $tally = ($count['done'] ?? 0) . ' saved, ' . ($count['none'] ?? 0) . ' not on ScreenScraper, '
            . ($count['novideo'] ?? 0) . ' there with no video, ' . ($count['failed'] ?? 0) . ' failed';
+    // Manuals, where the fetch asked for them: each game's own word beside its video's (bin\screenscraper.ps1).
+    if (!empty($job['manuals'])) {
+        $m = array_count_values(array_filter(array_map(static fn ($g) => (string) ($g['mstate'] ?? ''), $job['games'] ?? [])));
+        $tally .= '; manuals: ' . ($m['done'] ?? 0) . ' saved, ' . ($m['none'] ?? 0) . ' not on ScreenScraper, ' . ($m['nomanual'] ?? 0) . ' there with no manual, '
+                . ($m['other'] ?? 0) . ' only in another language, ' . ($m['failed'] ?? 0) . ' failed';
+    }
+    // Covers, where Get everything missing asked for them: stored as each game's box once the fetch has ended.
+    if (in_array($job['state'] ?? '', ['done', 'failed'], true)) {
+        xs_ss_keep_boxes($job);
+    }
+    if (($job['boxes'] ?? '') !== '') {
+        $c = array_count_values(array_filter(array_map(static fn ($g) => (string) ($g['bstate'] ?? ''), $job['games'] ?? [])));
+        $tally .= '; covers: ' . (($c['done'] ?? 0) + ($c['got'] ?? 0)) . ' saved, ' . ($c['none'] ?? 0) . ' not on ScreenScraper, ' . ($c['nobox'] ?? 0) . ' there with no cover, '
+                . ($c['failed'] ?? 0) . ' failed';
+    }
     if (($job['state'] ?? '') === 'failed' && empty($job['failLogged'])) {
         $job['failLogged'] = true;
         xs_write_json(xs_ss_job_path(), $job);

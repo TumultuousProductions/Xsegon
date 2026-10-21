@@ -38,7 +38,7 @@
       editors.js       edit metadata, your own games, hiding
       art-editors.js   pictures, a platform's pictures, video, find online
       fill.js          Fill in scanned games, from the Games Database
-      hint.js          the three second note under Pictures & Videos
+      hint.js          the three second note under Get Media
       tools.js         the log viewer and the media tool
       launch.js        launching, save states, the strip
       cores.js         which RetroArch core a game runs on

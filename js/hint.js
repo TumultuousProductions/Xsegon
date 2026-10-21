@@ -1,5 +1,5 @@
 /*  The pictures hint: a three second note with a small arrow at the
-    Pictures & Videos menu, once the games are in and the menu bar shows.
+    Get Media button, once the games are in and the menu bar shows.
 
     Only while there are scanned games no Fill in pass has been through (the count
     that keeps step 5 of Getting started open, api\setup.php?guide=1), once per
@@ -24,7 +24,7 @@ var asking = false;
 var askedAt = null;           // the library's size when the server last said "nothing waiting"
 var $hint = null, timer = 0;
 
-function mediaBtn() { return document.querySelector('#mb [data-menu="media"]'); }
+function mediaBtn() { return document.getElementById("btn-getmedia"); }
 
 // The menu bar is on screen: the toolbar is up and wearing it.
 function barUp() {
@@ -57,12 +57,12 @@ function show(todo) {
   $hint.setAttribute("role", "status");
   $hint.appendChild(el("span", "art-hint-arrow"));
   $hint.appendChild(el("span", "art-hint-words",
-    "Pictures & Videos > Get Pictures adds box art and names to " + (todo === 1 ? "1 game" : todo + " games")));
+    "Get Media > Get Pictures adds box art and names to " + (todo === 1 ? "1 game" : todo + " games")));
   // Under the button, the arrow's point on its middle.
   $hint.style.left = Math.max(8, Math.round(r.left + r.width / 2 - 22)) + "px";
   $hint.style.top = Math.round(r.bottom + 9) + "px";
   document.body.appendChild($hint);
-  L("SETUP", "pictures hint shown under Pictures & Videos: " + todo + " scanned games not filled in yet");
+  L("SETUP", "pictures hint shown under Get Media: " + todo + " scanned games not filled in yet");
   timer = setTimeout(hide, SHOW_MS);
   ["keydown", "mousedown", "wheel"].forEach(function (ev) { document.addEventListener(ev, hide, true); });
   window.addEventListener("resize", hide);

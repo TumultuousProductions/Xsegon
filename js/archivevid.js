@@ -9,7 +9,7 @@ import { $editor } from "./state.js";
 import { el } from "./util.js";
 
 /* ---------- videos for the games with none, from the online archives (includes\archivevid.php) ----------
-   Pictures & Videos > Videos from online archives. The window opens on what Xsegon
+   Get Media > Videos from online archives. The window opens on what Xsegon
    already knows; the Archive is asked only after Start, as a bar in the corner. Where a
    set leaves a gap, the first 30 seconds of a World of Longplays recording are cut on
    the way (bin\ffmpeg.exe), never the whole file. */

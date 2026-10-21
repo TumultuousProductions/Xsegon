@@ -10,6 +10,7 @@
  */
 
 import { openAccSettle } from "./accsettle.js";
+import { openArchiveManuals } from "./archivedoc.js";
 import { openArchiveVideos } from "./archivevid.js";
 import { openBiosCheck } from "./bios.js";
 import { askCheatLists } from "./cheatlists.js";
@@ -145,6 +146,7 @@ var mailShow = "all";                    // what the mailbox lists: all, error o
 var MAIL_GOES = {
   accompanied: ["Look at these files...", function () { openAccSettle(); }],
   archivevid: ["Videos from online archives...", function () { openArchiveVideos(); }],
+  archivedoc: ["Manuals from online archives...", function () { openArchiveManuals(); }],
   cheatlists: ["Get the cheat lists...", function () { askCheatLists(); }],
   fillcheck: ["Check these games...", function (m) { openFillTool(null, false, (m.ids || []).map(String)); }],
   // A newer Xsegon (includes\update.php): asks first, downloads it if need be, then put in place as Xsegon starts again.

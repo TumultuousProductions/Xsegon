@@ -1,5 +1,5 @@
 /*  The logo tip: where the menu bar is not (a wheel, a carousel, rows), a note
- *  beside the Xsegon logo says that its menu holds Games, Pictures & Videos,
+ *  beside the Xsegon logo says that its menu holds Games, Get Media,
  *  Emulators and Help. It stays until its X is pressed or the logo's menu is
  *  first opened, then never comes back: kept in the settings
  *  (feel.tipsGone.logoMenu, which Reset to defaults keeps) and in this browser

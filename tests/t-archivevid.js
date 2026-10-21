@@ -1,5 +1,5 @@
 /* Videos for the games with none, from the online archives (includes\archivevid.php):
- * Pictures & Videos > Videos from online archives.
+ * Get Media > Videos from online archives.
  * Nothing goes online: XSEGON_ARCHIVE (tests\sandbox.js) points at stand-in sets,
  * tiny videos and a World of Longplays list here, XSEGON_FFMPEG at a stand-in
  * cutter that copies, and the sets are the test's own data\archivevid-sets.json.
@@ -138,7 +138,7 @@ module.exports = async function (b, check) {
     check("and ends saying how many games got a video, how many are playthrough cuts, how many got none, and that a list would not come",
       [done.state, done.sets, done.added, /^5 of \d+ games with no video got one from the online archives \(/.test(done.said || ""),
        /; 2 are the first 30 seconds of a World of Longplays playthrough\)/.test(done.said || ""),
-       /got none: Pictures & Videos > Videos from online archives lists them\./.test(done.said || ""), /1 of the Archive's lists would not come/.test(done.said || "")],
+       /got none: Get Media > Videos from online archives lists them\./.test(done.said || ""), /1 of the Archive's lists would not come/.test(done.said || "")],
       ["done", 3, 5, true, true, true, true]);
     const why = (title) => ((done.none || []).find((g) => g.title === title) || {}).why || "";
     check("the games that got none are listed with why, the sets' reason and World of Longplays' side by side",
@@ -153,7 +153,7 @@ module.exports = async function (b, check) {
     const told = await noVideoMail();
     check("one message says how many got none, which console the Archive has nothing for, and the way on with ScreenScraper videos",
       [told.length, /^\d+ games got no video$/.test((told[0] || {}).title || ""), /It has none at all for .*Nintendo 64 \(\d+\)/.test((told[0] || {}).body || ""),
-       /Pictures & Videos > ScreenScraper videos fetches them with a free ScreenScraper account, quick to make, with no phone number asked\.$/.test((told[0] || {}).body || ""),
+       /Get Media > ScreenScraper videos fetches them with a free ScreenScraper account, quick to make, with no phone number asked\.$/.test((told[0] || {}).body || ""),
        (told[0] || {}).opens, /Skraper/.test((told[0] || {}).body || "")],
       [1, true, true, true, ["screenscraper", "archivevid"], false]);
     check("each video lies where a video is found by name, and is the Archive's own file, byte for byte",
@@ -208,8 +208,7 @@ module.exports = async function (b, check) {
       fs.rmSync(place(GAMES[5]), { force: true });
       await b.goto();
       await b.setView("grid");
-      await b.openBar("media");
-      await b.menuItem(/^Videos from online archives/);
+      await b.getMedia(/^Videos from online archives/);
       check("Videos from online archives opens its window", await b.until(`(document.querySelector("#editor .panel-title") || {}).textContent`, "VIDEOS FROM ONLINE ARCHIVES", 8000), "VIDEOS FROM ONLINE ARCHIVES");
       check("with a box of consoles and a box to fetch, every console selected, and no line lit",
         await b.ev(`[[...document.querySelectorAll("#editor .pj-head")].map(x => x.textContent).slice(0, 2), [...new Set([...document.querySelectorAll("#editor .pj-row .pj-set")].map(x => x.textContent))], document.querySelectorAll("#editor .pj-row.at").length]`),
@@ -231,8 +230,7 @@ module.exports = async function (b, check) {
       check("Start closes the window: the job is the corner's from there", await b.until(`document.getElementById("editor").hidden`, true, 8000), true);
       check("and the corner says how it ended", await b.until(`/1 of \\d+ games with no video got one from the online archives/.test(document.getElementById("strip").textContent)`, true, 60000), true);
       check("the video is there again", fs.readFileSync(place(GAMES[2])).equals(from("test-snes-a", "Gamma Quest, The (USA).mp4")), true);
-      await b.openBar("media");
-      await b.menuItem(/^Videos from online archives/);
+      await b.getMedia(/^Videos from online archives/);
       const names = `[...document.querySelectorAll("#editor .cr-row .cr-name")].map(x => x.textContent)`;
       check("opened again, the last fetch lists the game that may still come (its fetch failed), and not the one kept as looked for",
         [await b.until(`${names}.includes("Delta Force")`, true, 8000), await b.ev(`${names}.includes("Epsilon Wars")`)], [true, false]);

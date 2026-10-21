@@ -232,7 +232,7 @@ export function openScanTool(onBack) {
       var inner = shell("SCAN FOR GAMES");
       inner.appendChild(el("p", "group-help",
         "What is on the disk that the library does not know. Titles are read from the file names; " +
-        "Pictures & Videos > Get Pictures asks the Games Database for the rest. Nothing joins the library unless it is " +
+        "Get Media > Get Pictures asks the Games Database for the rest. Nothing joins the library unless it is " +
         "selected here, and nothing found is hidden: what was skipped says why, further down."));
       var walked = (res.folders || []).filter(function (f) { return f.ok; }).length;
       inner.appendChild(el("p", "group-help",

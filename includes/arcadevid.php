@@ -2,7 +2,7 @@
 /**
  * Xsegon - videos for the arcade games that have none, from the Arcade Database.
  *
- * Part of Pictures & Videos > Videos from online archives: with an arcade console
+ * Part of Get Media > Videos from online archives: with an arcade console
  * chosen, this runs first and then starts the rest of that fetch (includes\archivevid.php).
  *
  * The Arcade Database (adb.arcadeitalia.net, by motoschifo) is asked by MAME's name

@@ -76,6 +76,11 @@ function xs_settings_defaults(): array
             'gamesdbUpdates'   => 'auto',
             // New games in the games folders come in at start and when the window comes back (includes\newgames.php).
             'addNewGames'      => true,
+            // Get Media > Get Everything, with a ScreenScraper account: where each kind comes from
+            // (includes\getall.php). free-ss: the free sources, then ScreenScraper for the rest | free | ss.
+            'getPictures'      => 'free-ss',
+            'getVideos'        => 'free-ss',
+            'getManuals'       => 'free-ss',
         ],
 
         'view' => [
@@ -232,6 +237,7 @@ function xs_settings_defaults(): array
             'inDetails'    => true,        // where the cover is, in details
             'loop'         => true,
             'markMissing'  => true,        // a small mark on games that have no snap
+            'ssManuals'    => true,        // ScreenScraper videos fetches manuals too, for games the online archives could not fill
         ],
 
         /* The pad, and the mouse and keyboard. Keyed 'controller' because that
@@ -302,6 +308,7 @@ function xs_settings_defaults(): array
  */
 function xs_settings_schema(): array
 {
+    $ways = ['free-ss' => 'Free sources, then ScreenScraper', 'free' => 'Free sources only', 'ss' => 'ScreenScraper only'];
     return [
         /* 'section' puts a row in a named, foldable box on its page (js/settings-ui.js),
            in the order of their first row or of '_sections'. A row with none goes in an unnamed box. */
@@ -342,6 +349,12 @@ function xs_settings_schema(): array
                                   'help' => 'Automatic: once a day at most, Xsegon checks for a newer copy of the LaunchBox Games Database and fetches it in the background (about 70 MB). Manual: only when you press Check now, below.'],
             'addNewGames'     => ['label' => 'Add new games by themselves', 'section' => 'New games',
                                   'help' => 'When Xsegon starts, and when you come back to it, it looks in your games folders and adds the new games it is sure of, at most once a minute and never while a game is running. The ones it is not sure of wait for Games > Scan for Games.'],
+            'getPictures'     => ['label' => 'Pictures from', 'type' => 'enum', 'section' => 'Get everything missing', 'options' => $ways,
+                                  'help' => 'Get Media > Get Everything, when a ScreenScraper account is signed in. The free sources are where Get Pictures looks (Names, details and pictures from, above). Then ScreenScraper fetches covers only for the games they could not fill, which keeps your daily allowance. Without an account, the free sources alone. Set in that window too.'],
+            'getVideos'       => ['label' => 'Videos from', 'type' => 'enum', 'section' => 'Get everything missing', 'options' => $ways,
+                                  'help' => 'The free sources are Steam trailers and Videos from online archives. Then ScreenScraper fetches videos only for the games they could not fill. Without an account, the free sources alone.'],
+            'getManuals'      => ['label' => 'Manuals from', 'type' => 'enum', 'section' => 'Get everything missing', 'options' => $ways,
+                                  'help' => 'The free source is Manuals from online archives. Then ScreenScraper fetches manuals only for the games it could not fill. Without an account, the free source alone.'],
         ],
         'view' => [
             '_label' => 'View',
@@ -417,7 +430,7 @@ function xs_settings_schema(): array
                                       'help' => 'Box art, rating and play history for the selected game.'],
             'favouritesFirst'     => ['label' => 'Favourites first', 'section' => 'Order and grouping'],
             'showMissingArt'      => ['label' => 'Show games with no art', 'section' => 'What is shown',
-                                      'help' => 'Off leaves a game with no box picture out of every view and every count until it has one. Pictures & Videos > Get Pictures still finds it.'],
+                                      'help' => 'Off leaves a game with no box picture out of every view and every count until it has one. Get Media > Get Pictures still finds it.'],
             'showPlatformInTitle' => ['label' => 'Show the platform beside the title', 'section' => 'What is shown',
                                       'help' => 'The console after each title on the cards of the Grid, the Carousel and the Rows view, where the games on screen are from more than one console: every game, a collection or a search. Not inside a single console.'],
             'pageSize'            => ['label' => 'Games shown at once', 'type' => 'number', 'min' => 25, 'max' => 2000, 'section' => 'What is shown',
@@ -523,6 +536,8 @@ function xs_settings_schema(): array
             'loop'      => ['label' => 'Loop', 'section' => 'Playing snaps', 'help' => 'Off shows the artwork again when the snap ends.'],
             'markMissing' => ['label' => 'Mark games with no video', 'section' => 'Playing snaps',
                               'help' => 'A very small clapperboard on games that have no snap yet.'],
+            'ssManuals'   => ['label' => 'Manuals too, with ScreenScraper videos', 'section' => 'Fetching',
+                              'help' => 'Get Media > ScreenScraper videos also fetches a manual for each game with none that Manuals from online archives could not fill, in English or the game\'s own language. Set in that window too.'],
         ],
         'controller' => [
             '_label' => 'Xsegon Controls',

@@ -1,4 +1,4 @@
-/* Pictures & Videos > ScreenScraper videos (includes\screenscraper.php, bin\screenscraper.ps1).
+/* Get Media > ScreenScraper videos (includes\screenscraper.php, bin\screenscraper.ps1).
  *
  * Against a stand-in for ScreenScraper's API served from this process, on the
  * port tests\sandbox.js told the test server about. It checks logins the way
@@ -125,7 +125,8 @@ module.exports = async function (b, check) {
   const vdir = path.join(DATA, "videos-screenscraper");
   const own = path.join(DATA, "video-own");
   const jobFile = path.join(DATA, "screenscraper-job.json");
-  const guard = new Guard(["screenscraper-job.json", "screenscraper.json", "screenscraper-shared.dat"]);
+  const guard = new Guard(["screenscraper-job.json", "screenscraper.json", "screenscraper-shared.dat", "settings.json",
+                           "scanned-games.json", "local-games.json", "archivedoc-none.json", "art-hidden.json", "getall-job.json"]);
   const ids = [A, B, C, D, E, F].map((g) => g.id);
   let ownMade = null;
   const finished = async () => {
@@ -290,11 +291,20 @@ module.exports = async function (b, check) {
     /* ---- the screen ---- */
     await b.goto();
     await b.setView("grid");
-    await b.openBar("media");
-    await b.menuItem(/ScreenScraper videos/);
+    await b.getMedia(/ScreenScraper videos/);
     const title = `(document.querySelector("#editor .panel-title") || {}).textContent || ""`;
-    check("Pictures & Videos > ScreenScraper videos opens the list", await b.until(title, "SCREENSCRAPER VIDEOS"), "SCREENSCRAPER VIDEOS");
+    check("Get Media > ScreenScraper videos opens the list", await b.until(title, "SCREENSCRAPER VIDEOS"), "SCREENSCRAPER VIDEOS");
     const listNow = await api("api/screenscraper.php");
+    // Manuals too, when any game waits for a manual: selected at first, and kept the moment it is pressed.
+    if (listNow.manuals) {
+      check("Manuals too stands beside Fetch, selected, saying how many games it would bring a manual",
+        await b.until(`(t => !!t && t.querySelector("input").checked && /^ Manuals too: \\d+ games? with no manual that the online archives could not fill$/.test(t.textContent))(document.querySelector("#editor .ss-manuals"))`, true), true);
+      await b.ev(`document.querySelector("#editor .ss-manuals input").click()`);
+      const keptOff = async () => { for (let i = 0; i < 30; i++) { if ((((await api("api/settings.php")).settings || {}).video || {}).ssManuals === false) { return true; } await sleep(100); } return false; };
+      check("pressed, it is kept at once, and Fetch counts snaps alone", [await b.until(`!document.querySelector("#editor .ss-manuals input").checked`, true), await keptOff()], [true, true]);
+    } else {
+      check("(no game waits for a manual here: Manuals too is not looked at)", true);
+    }
     const lacking = listNow.games.filter((g) => !g.has).map((g) => g.id).sort().join(",");
     check("only the games with no video are listed", await b.until(`[...document.querySelectorAll("#editor .sv-row input")].map(x => x.value).sort().join(",")`, lacking), lacking);
     const rowOf = (id) => `[...document.querySelectorAll("#editor .sv-row")].find(r => r.querySelector("input").value === ${JSON.stringify(id)})`;
@@ -340,6 +350,241 @@ module.exports = async function (b, check) {
     await b.key("Escape");
     await b.until(`document.getElementById("editor").hidden`);
 
+    // ---- manuals, with Manuals too: the Internet Archive's sets first, ScreenScraper for the rest (roadmap BK5) ----
+    {
+      const scanFile = path.join(DATA, "scanned-games.json"), ownFile = path.join(DATA, "local-games.json"), noneFile = path.join(DATA, "archivedoc-none.json");
+      const wasScan = fs.readFileSync(scanFile), wasOwn = fs.existsSync(ownFile) ? fs.readFileSync(ownFile) : null;
+      const docs = path.join(DATA, "documents");
+      const X360 = "Microsoft Xbox 360", NES = "Nintendo Entertainment System";
+      const mg = (n, title, platform, rom) => ({ id: "xs-scan-ssman" + n, title, platform, rom: path.join(fx, "roms-man", rom), added: new Date().toISOString() });
+      const M = [mg(1, "Manual Quest One", X360, "Manual Quest One (USA).iso"),     // no set on the Archive: its manual is asked for alone
+                 mg(2, "Manual Quest Two", NES, "Manual Quest Two (USA).nes"),      // the Archive has a set, not asked yet: left to it
+                 mg(3, "Manual Quest Three", NES, "Manual Quest Three (USA).nes"),  // the Archive was asked and had none; here only in French
+                 mg(4, "Manual Quest Four", X360, "Manual Quest Four (USA).iso"),   // what comes is not a PDF
+                 mg(5, "Manual Quest Five", X360, "Manual Quest Five (USA).iso"),   // asked for its video too: one answer, both kept
+                 mg(6, "Manual Quest Six", X360, "Manual Quest Six (USA).iso")];   // has a manual already
+      const pdfOf = (w) => Buffer.from("%PDF-1.4\n% " + w + "\n%%EOF\n");
+      const md5 = (bytes) => require("crypto").createHash("md5").update(bytes).digest("hex");
+      const manualMedia = (name, region, bytes) => Object.assign({ type: "manuel", parent: "jeu", region, format: "pdf", url: media(name).replace("media=video", "media=manuel") },
+        bytes ? { md5: md5(bytes) } : {});
+      const manualOf = (g) => path.join(docs, g.id, "Manual.pdf");
+      try {
+        fs.mkdirSync(path.join(fx, "roms-man"), { recursive: true });
+        for (const g of M) { fs.writeFileSync(g.rom, "not a game, a stand-in"); }
+        fs.writeFileSync(scanFile, JSON.stringify(M));
+        fs.writeFileSync(ownFile, "[]");
+        fs.writeFileSync(noneFile, JSON.stringify({ [M[2].id]: { at: 1, why: "nothing by this name", title: M[2].title, platform: NES } }));
+        fs.mkdirSync(path.dirname(manualOf(M[5])), { recursive: true });
+        fs.writeFileSync(manualOf(M[5]), pdfOf("six, the person's own"));
+        // The screen above may have pressed Manuals too off: it is set as this part assumes.
+        await api("api/settings.php", { video: { ssManuals: true } });
+        const listM = await api("api/screenscraper.php");
+        const sys = (g) => ((listM.games || []).find((x) => x.id === g.id) || {}).system;
+        say.media["m1-us.pdf"] = pdfOf("one, in English");
+        say.media["m1-jp.pdf"] = pdfOf("one, in Japanese");
+        say.media["m3-fr.pdf"] = pdfOf("three, in French");
+        say.media["m4-us.pdf"] = "an error page, not a manual";
+        say.media["m5-us.pdf"] = pdfOf("five, in English");
+        say.media["m5.mp4"] = mp4("five's snap");
+        say.search[sys(M[0]) + "-" + key(M[0].title)] = [named(M[0], [manualMedia("m1-jp.pdf", "jp"), manualMedia("m1-us.pdf", "us", say.media["m1-us.pdf"])])];
+        say.search[sys(M[2]) + "-" + key(M[2].title)] = [named(M[2], [manualMedia("m3-fr.pdf", "fr")])];
+        say.search[sys(M[3]) + "-" + key(M[3].title)] = [named(M[3], [manualMedia("m4-us.pdf", "us")])];
+        say.search[sys(M[4]) + "-" + key(M[4].title)] = [named(M[4], [video("m5.mp4"), manualMedia("m5-us.pdf", "us", say.media["m5-us.pdf"])])];
+        check("the manuals ScreenScraper may fetch: none where the Archive has a set it was not asked of, none where there is one, and Manuals too said as chosen",
+          [listM.manuals, listM.manualsOn], [4, true]);
+        const plan = (await api("api/screenscraper.php", { ids: [M[4].id], manuals: true, dry: true })).plan || { games: [] };
+        check("a game asked for its video brings its manual in the same answer; the rest are asked for the manual alone",
+          plan.games.map((g) => [g.id, g.video, g.manual]).sort(),
+          [[M[0].id, false, true], [M[2].id, false, true], [M[3].id, false, true], [M[4].id, true, true]].sort());
+        check("without Manuals too, no manual is asked for", ((await api("api/screenscraper.php", { ids: [M[4].id], dry: true })).plan || { games: [] }).games.map((g) => [g.id, g.manual]), [[M[4].id, false]]);
+        asked.length = 0;
+        const goM = await api("api/screenscraper.php", { ids: [M[4].id], manuals: true });
+        check("the fetch starts, counting the snap and the manuals", [goM.ok, goM.count, goM.manuals], [true, 1, 4]);
+        const endM = await finished();
+        const rowM = (g) => ((endM.job && endM.job.games) || []).find((x) => x.id === g.id) || {};
+        check("and ends with each game's video and manual said apart",
+          [endM.job.state, [rowM(M[4]).state, rowM(M[4]).mstate], [rowM(M[0]).state, rowM(M[0]).mstate], rowM(M[2]).mstate, rowM(M[3]).mstate],
+          ["done", ["done", "done"], ["manual", "done"], "other", "failed"]);
+        check("the English manual is taken over another language, and each is the game's Manual.pdf, byte for byte",
+          [fs.existsSync(manualOf(M[0])) && fs.readFileSync(manualOf(M[0])).equals(say.media["m1-us.pdf"]),
+           fs.existsSync(manualOf(M[4])) && fs.readFileSync(manualOf(M[4])).equals(say.media["m5-us.pdf"]),
+           fs.existsSync(path.join(vdir, M[4].id + ".mp4")), asked.some((a) => a.path === "/media/m1-jp.pdf")], [true, true, true, false]);
+        check("one only in another language, and one that is not a PDF, leave nothing; a manual the person has is left as it is",
+          [fs.existsSync(path.dirname(manualOf(M[2]))), fs.existsSync(path.dirname(manualOf(M[3]))), fs.readFileSync(manualOf(M[5])).equals(pdfOf("six, the person's own"))],
+          [false, false, true]);
+        const downM = asked.find((a) => a.path === "/media/m1-us.pdf");
+        check("the manual is fetched as the member, and the game left to the Archive is never asked about",
+          [downM && downM.q.ssid, asked.some((a) => a.path === "/jeuRecherche.php" && a.q.recherche === M[1].title)], [LOGIN.user, false]);
+        const logsM = fs.readdirSync(path.join(DATA, "log")).map((f) => fs.readFileSync(path.join(DATA, "log", f), "utf8")).join("\n");
+        check("the log says how the manuals went", /SSCR snaps: 1 saved, .*; manuals: 2 saved, 0 not on ScreenScraper, 0 there with no manual, 1 only in another language, 1 failed/.test(logsM), true);
+        const barM = ((await api("api/jobs.php")).jobs || []).find((j) => j.key === "screenscraper") || {};
+        check("the corner says the manuals too", /^1 snaps saved from ScreenScraper, and 2 manuals$/.test(barM.said || ""), true);
+        check("two are left waiting for a manual", (await api("api/screenscraper.php")).manuals, 2);
+      } finally {
+        fs.writeFileSync(scanFile, wasScan);
+        if (wasOwn === null) { fs.rmSync(ownFile, { force: true }); } else { fs.writeFileSync(ownFile, wasOwn); }
+        fs.rmSync(noneFile, { force: true });
+        for (const g of M) { fs.rmSync(path.join(docs, g.id), { recursive: true, force: true }); }
+        fs.rmSync(path.join(fx, "roms-man"), { recursive: true, force: true });
+      }
+    }
+
+    // ---- Get Media > Get Everything: one ScreenScraper pass for covers, videos and manuals (roadmap BL2) ----
+    {
+      const scanFile = path.join(DATA, "scanned-games.json"), ownFile = path.join(DATA, "local-games.json");
+      const wasScan = fs.readFileSync(scanFile), wasOwn = fs.existsSync(ownFile) ? fs.readFileSync(ownFile) : null;
+      const artDir = path.join(DATA, "art"), boxDir = path.join(DATA, "screenscraper-boxes"), docs = path.join(DATA, "documents");
+      const X360 = "Microsoft Xbox 360", sys = 33;
+      const cg = (n, title, rom) => ({ id: "xs-scan-ssall" + n, title, platform: X360, rom: path.join(fx, "roms-all", rom), added: new Date().toISOString() });
+      const G = [cg(1, "Cover Quest One", "Cover Quest One (USA).iso"),       // a cover, a snap and a manual in one answer
+                 cg(2, "Cover Quest Two", "Cover Quest Two (Japan).iso"),     // covers of two regions: the game's own is taken
+                 cg(3, "Cover Quest Three", "Cover Quest Three (USA).iso"),   // has a cover of its own: not asked for one
+                 cg(4, "Cover Quest Four", "Cover Quest Four (USA).iso"),     // what comes is not a picture
+                 cg(5, "Cover Quest Five", "Cover Quest Five (USA).iso")];    // Use no picture on its cover: never asked for one
+      const png1 = fs.readFileSync(path.join(lib.ROOT, "img", "xsegon-32.png")), png2 = fs.readFileSync(path.join(lib.ROOT, "img", "xsegon-180.png"));
+      const typed = (type, name, region, format) => ({ type, region, format, url: media(name).replace("media=video", "media=" + type) });
+      const boxOf = (g) => fs.readdirSync(artDir).filter((f) => f.startsWith(g.id + "-box."));
+      const ownBox = path.join(artDir, G[2].id + "-box.png");
+      const ga = (body) => api("api/getall.php", body);
+      const setWays = (p, v, m) => api("api/settings.php", { library: { getPictures: p, getVideos: v, getManuals: m } });
+      const gaUntil = async (test, ms) => { let r = null; for (const end = Date.now() + ms; Date.now() < end;) { r = await ga(); if (test(r)) { break; } await sleep(250); } return r; };
+      const fakeRunning = () => fs.writeFileSync(jobFile, JSON.stringify({ state: "running", started: Math.floor(Date.now() / 1000), games: [] }));
+      const fakeDone = () => fs.writeFileSync(jobFile, JSON.stringify({ state: "done", started: Math.floor(Date.now() / 1000), games: [], logged: true }));
+      // A day log the server is writing at that moment can be locked for a moment: read again shortly.
+      const readLog = (f) => {
+        for (let i = 0; ; i++) {
+          try { return fs.readFileSync(path.join(DATA, "log", f), "utf8"); } catch (e) {
+            if (e.code !== "EBUSY" || i >= 20) { throw e; }
+            Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50);
+          }
+        }
+      };
+      const logs = () => fs.readdirSync(path.join(DATA, "log")).map(readLog).join("\n");
+      try {
+        fs.mkdirSync(path.join(fx, "roms-all"), { recursive: true });
+        for (const g of G) { fs.writeFileSync(g.rom, "not a game, a stand-in"); }
+        fs.writeFileSync(scanFile, JSON.stringify(G));
+        fs.writeFileSync(ownFile, "[]");
+        fs.writeFileSync(path.join(DATA, "art-hidden.json"), JSON.stringify({ [G[4].id]: ["box"] }));
+        fs.mkdirSync(artDir, { recursive: true });
+        fs.writeFileSync(ownBox, png2);
+        Object.assign(say.media, { "c1-us.png": png1, "c2-us.png": png1, "c2-jp.png": png2, "c3-us.png": png1, "c4-us.png": "an error page, not a picture",
+                                   "c5-us.png": png1, "c1.mp4": mp4("one's snap"), "c1-us.pdf": Buffer.from("%PDF-1.4\n% one\n%%EOF\n") });
+        say.search[sys + "-" + key(G[0].title)] = [named(G[0], [typed("box-2D", "c1-us.png", "us", "png"), video("c1.mp4"), typed("manuel", "c1-us.pdf", "us", "pdf")])];
+        say.search[sys + "-" + key(G[1].title)] = [named(G[1], [typed("box-2D", "c2-us.png", "us", "png"), typed("box-2D", "c2-jp.png", "jp", "png")])];
+        say.search[sys + "-" + key(G[2].title)] = [named(G[2], [typed("box-2D", "c3-us.png", "us", "png")])];
+        say.search[sys + "-" + key(G[3].title)] = [named(G[3], [typed("box-2D", "c4-us.png", "us", "png")])];
+        say.search[sys + "-" + key(G[4].title)] = [named(G[4], [typed("box-2D", "c5-us.png", "us", "png")])];
+
+        await setWays("free-ss", "free-ss", "free-ss");
+        const first = await ga();
+        check("Get everything missing knows the account by name, and each kind starts as the free sources, then ScreenScraper",
+          [first.ok, first.account, first.user, first.ways], [true, true, LOGIN.user, { pictures: "free-ss", videos: "free-ss", manuals: "free-ss" }]);
+        if (b) {
+          await b.getMedia(/^Every missing cover/);
+          check("Get Media opens it from its first row, a choice beside each kind and the account by name",
+            await b.until(`[document.querySelector("#editor .panel-title").textContent, [...document.querySelectorAll("#editor .gm-inner select")].map(s => s.value),
+                            [...document.querySelectorAll("#editor .gm-inner .opt label")].map(l => l.textContent).join("|")]`,
+              ["GET EVERYTHING MISSING", ["free-ss", "free-ss", "free-ss"], "Pictures|Videos|Manuals|Signed in as " + LOGIN.user + "|Fetch everything missing"], 5000),
+            ["GET EVERYTHING MISSING", ["free-ss", "free-ss", "free-ss"], "Pictures|Videos|Manuals|Signed in as " + LOGIN.user + "|Fetch everything missing"]);
+          await b.ev(`(s => { s.value = "ss"; s.dispatchEvent(new Event("change")); })(document.querySelectorAll("#editor .gm-inner select")[1])`);
+          const keptSs = async () => { for (let i = 0; i < 30; i++) { if ((((await api("api/settings.php")).settings || {}).library || {}).getVideos === "ss") { return true; } await sleep(100); } return false; };
+          check("a choice is kept the moment it is made", await keptSs(), true);
+          await b.key("Escape");
+        }
+
+        await setWays("ss", "ss", "ss");
+        const allSs = await ga({ start: true, dry: true });
+        check("ScreenScraper alone: no free source, one pass at once for every kind, a cover asked for only where there is none and none was left empty",
+          [allSs.ok, allSs.job.parts.length, allSs.job.ss.state, allSs.job.ss.waitOn, allSs.job.ss.kinds, allSs.job.ss.games], [true, 0, "started", [], { box: true, video: true, manual: true }, 5]);
+        await setWays("free-ss", "free", "free-ss");
+        const after = await ga({ start: true, dry: true });
+        const fillPart = (after.job.parts || []).find((p) => p.key === "fill") || {};
+        check("free sources first: Get Pictures starts, and ScreenScraper waits for it, for covers and manuals only",
+          [fillPart.state, after.job.ss.state, after.job.ss.waitOn, after.job.ss.kinds], ["started", "waiting", ["fill"], { box: true, video: false, manual: true }]);
+        await setWays("free", "free", "free");
+        check("the free sources only: no ScreenScraper", (await ga({ start: true, dry: true })).job.ss, null);
+
+        // A real pass, ScreenScraper alone.
+        await setWays("ss", "ss", "ss");
+        asked.length = 0;
+        const go = await ga({ start: true });
+        check("Start begins the pass at once", [go.ok, go.job.ss.state], [true, "started"]);
+        const end = await finished();
+        const row = (g) => ((end.job && end.job.games) || []).find((x) => x.id === g.id) || {};
+        check("each cover is said apart: the game's own region taken, one that is not a picture failed",
+          [end.job.state, row(G[0]).bstate, row(G[1]).bstate, row(G[1]).bregion, row(G[2]).box, row(G[3]).bstate, row(G[4]).box],
+          ["done", "done", "done", "jp", false, "failed", false]);
+        check("and stored as each game's box byte for byte; a cover of its own, or one left empty, is never touched; nothing waits in the holding folder",
+          [fs.readFileSync(path.join(artDir, G[0].id + "-box.png")).equals(png1), fs.readFileSync(path.join(artDir, G[1].id + "-box.png")).equals(png2),
+           fs.readFileSync(ownBox).equals(png2), boxOf(G[3]), boxOf(G[4]), fs.existsSync(boxDir) ? fs.readdirSync(boxDir) : []],
+          [true, true, true, [], [], []]);
+        check("the covers of the game with one, and of the one left empty, are never fetched",
+          [asked.some((a) => a.path === "/media/c3-us.png"), asked.some((a) => a.path === "/media/c5-us.png"), asked.some((a) => a.path === "/media/c2-us.png")], [false, false, false]);
+        check("the same answer brought the first game's snap and manual",
+          [fs.existsSync(path.join(vdir, G[0].id + ".mp4")), fs.existsSync(path.join(docs, G[0].id, "Manual.pdf"))], [true, true]);
+        check("and the library shows the covers", ((await api("api/library.php")).games || []).filter((g) => g.id === G[0].id || g.id === G[1].id).map((g) => g.hasArt), [true, true]);
+        const doneGa = await gaUntil((r) => r.job && r.job.state === "done", 5000);
+        check("Get everything missing then ends, its bar naming what ran", [doneGa.job.state, doneGa.job.said], ["done", "ScreenScraper is through, and each bar says what came"]);
+        const barSs = ((await api("api/jobs.php")).jobs || []).find((j) => j.key === "screenscraper") || {};
+        check("ScreenScraper's bar counts the covers", /, 1 manual and 2 covers$/.test(barSs.said || ""), true);
+        check("the log says how it went",
+          [/SSCR covers: 2 stored as boxes/.test(logs()), /GALL started no free source; ScreenScraper for covers, videos and manuals: started/.test(logs()),
+           /GALL ended: ScreenScraper is through/.test(logs())], [true, true, true]);
+
+        // A fetch of its own at work already: the pass waits for it, then reads what is left.
+        fakeRunning();
+        const w = await ga({ start: true });
+        check("with ScreenScraper fetching already, the pass waits for it", [w.ok, w.job.ss.state, w.job.ss.waitOn], [true, "waiting", ["screenscraper"]]);
+        const barGa = ((await api("api/jobs.php")).jobs || []).find((j) => j.key === "getall") || {};
+        check("and its bar says ScreenScraper comes after", [barGa.state, /ScreenScraper once the free sources are$/.test(barGa.line || "")], ["running", true]);
+        const waiting = await gaUntil((r) => r.job && r.job.pid > 0, 8000);
+        check("a worker of its own waits", [waiting.job.ss.state, waiting.job.pid > 0], ["waiting", true]);
+        fakeDone();
+        const goneOn = await gaUntil((r) => r.job && r.job.ss.state !== "waiting", 15000);
+        check("once that fetch is through, the pass starts", goneOn.job.ss.state, "started");
+        await finished();
+        check("and the log says so", /GALL the free sources are through; ScreenScraper: started/.test(logs()), true);
+
+        // Stop while it waits: ScreenScraper is never asked.
+        await gaUntil((r) => r.job && r.job.state === "done", 5000);
+        fakeRunning();
+        const s1 = await ga({ start: true });
+        const stopped = await ga({ stop: true });
+        check("Stop while it waits ends it, nothing asked of ScreenScraper",
+          [s1.job.ss.state, stopped.job.state, stopped.job.ss.state, stopped.job.said], ["waiting", "done", "failed", "Stopped: what came is kept"]);
+        await sleep(2500);
+        check("and the fetch at work is left alone", JSON.parse(fs.readFileSync(jobFile, "utf8")).games.length, 0);
+        fakeDone();
+
+        // Without an account: the free sources alone, and no choice to make.
+        const accFile = path.join(DATA, "screenscraper.json"), accAway = accFile + ".away";
+        fs.renameSync(accFile, accAway);
+        try {
+          check("with no ScreenScraper account, every kind comes from the free sources", [(await ga()).account, (await ga()).ways], [false, { pictures: "free", videos: "free", manuals: "free" }]);
+          if (b) {
+            await b.getMedia(/^Every missing cover/);
+            check("and the window has no choice to make, and offers the sign-in",
+              await b.until(`[document.querySelectorAll("#editor .gm-inner select").length, [...document.querySelectorAll("#editor .gm-inner .su-note")].filter(n => n.textContent === "free sources").length,
+                              [...document.querySelectorAll("#editor .gm-inner button")].some(x => x.textContent === "Sign in...")]`, [0, 3, true], 5000), [0, 3, true]);
+            await b.key("Escape");
+          }
+        } finally {
+          fs.renameSync(accAway, accFile);
+        }
+      } finally {
+        fs.writeFileSync(path.join(DATA, "getall-stop"), "");     // a wait left by a check that failed ends here
+        fs.writeFileSync(scanFile, wasScan);
+        if (wasOwn === null) { fs.rmSync(ownFile, { force: true }); } else { fs.writeFileSync(ownFile, wasOwn); }
+        for (const g of G) {
+          for (const f of fs.existsSync(artDir) ? boxOf(g) : []) { fs.rmSync(path.join(artDir, f), { force: true }); }
+          fs.rmSync(path.join(docs, g.id), { recursive: true, force: true });
+        }
+        fs.rmSync(boxDir, { recursive: true, force: true });
+        fs.rmSync(path.join(fx, "roms-all"), { recursive: true, force: true });
+      }
+    }
+
     // ---- Xsegon's own developer ID, from the website ----
     check("with a developer ID of your own, the website is never asked", siteAsked, 0);
     const phpExe = ((await api("api/status.php")).build || {}).phpExe;
@@ -374,7 +619,8 @@ module.exports = async function (b, check) {
     asked.length = 0;
     await api("api/screenscraper.php", { ids: [C.id] });
     const viaShared = await finished();
-    check("a fetch with Xsegon's own developer ID saves the snap", [viaShared.job.state, viaShared.job.games.map((g) => g.state), fs.existsSync(path.join(vdir, C.id + ".mp4"))], ["done", ["done"], true]);
+    check("a fetch with Xsegon's own developer ID saves the snap",
+      [viaShared.job.state, viaShared.job.games.map((g) => g.state), fs.existsSync(path.join(vdir, C.id + ".mp4")), viaShared.job.error || ""], ["done", ["done"], true, ""]);
     const searched = asked.filter((a) => a.path === "/jeuRecherche.php");
     check("its questions carry the kept one, exactly", searched.length > 0 && searched.every((a) => a.q.devid === SHARED2.devid && a.q.devpassword === SHARED2.devpassword), true);
     const logsNow = fs.readdirSync(path.join(DATA, "log")).map((f) => fs.readFileSync(path.join(DATA, "log", f), "utf8")).join("\n");
@@ -396,8 +642,7 @@ module.exports = async function (b, check) {
 
     await b.goto();
     await b.setView("grid");
-    await b.openBar("media");
-    await b.menuItem(/ScreenScraper videos/);
+    await b.getMedia(/ScreenScraper videos/);
     await b.until(title, "SCREENSCRAPER VIDEOS");
     check("with Xsegon's own developer ID the window names only the member, never the ID",
       await b.until(`(document.querySelector("#editor .ss-who") || {}).textContent === "ScreenScraper login stored: member " + ${JSON.stringify(LOGIN.user)} + "."`) &&

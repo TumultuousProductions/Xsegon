@@ -1,4 +1,4 @@
-/*  Pictures & Videos > ScreenScraper videos (includes\screenscraper.php).
+/*  Get Media > ScreenScraper videos (includes\screenscraper.php).
  *
  *  Every game with no video, by console, and the logins ScreenScraper wants
  *  (kept on this computer, never shown back). Fetch asks first, then the snaps
@@ -13,6 +13,7 @@ import { closeEditor, reloadKeeping, setEditorOnClose } from "./editors.js";
 import { jobSayOnce, jobsWatch } from "./jobbars.js";
 import { showStrip } from "./launch.js";
 import { L, api, logWarn, postJson } from "./log.js";
+import { saveSetting } from "./savednote.js";
 import { stopVideo } from "./snap.js";
 import { sound } from "./sound.js";
 import { $editor, games, sel } from "./state.js";
@@ -203,16 +204,21 @@ export function openScreenScraper() {
     last = r;
     if (first) { paintAccount(r.account, null); }
     var job = r.job, running = isRunning(r);
+    // A game in the job for its manual alone has no snap to show (bin\screenscraper.ps1).
+    var snapsOf = ((job && job.games) || []).filter(function (g) { return g.video !== false; });
     var states = {};
-    ((job && job.games) || []).forEach(function (g) { states[g.id] = g.state; });
-    var got = ((job && job.games) || []).filter(function (g) { return g.state === "done"; }).length;
+    snapsOf.forEach(function (g) { states[g.id] = g.state; });
+    var got = snapsOf.filter(function (g) { return g.state === "done"; }).length;
+    var gotM = ((job && job.games) || []).filter(function (g) { return g.mstate === "done"; }).length;
     var quota = job && job.allowed ? " ScreenScraper counts " + job.used + " of " + job.allowed + " requests used today." : "";
     var nTried = r.games.filter(function (g) { return !g.has && g.tried; }).length;
     var one = nTried === 1;
     if (running) {
-      intro.textContent = "Fetching " + job.games.length + " snaps in the background: " + got + " saved so far. You can close this; they carry on." + quota;
+      intro.textContent = "Fetching " + snapsOf.length + " snaps" + (job.manuals ? " and manuals" : "") + " in the background: " + got + " saved so far" +
+        (job.manuals ? ", and " + gotM + (gotM === 1 ? " manual" : " manuals") : "") + ". You can close this; they carry on." + quota;
     } else if (!r.missing) {
-      intro.textContent = "Every game has a video. Nothing to fetch.";
+      intro.textContent = "Every game has a video." + (r.manuals ? " " + r.manuals + (r.manuals === 1 ? " game with no manual" : " games with no manual") +
+        " could get one from ScreenScraper: Manuals too, below." : " Nothing to fetch.");
     } else if (job && job.state === "failed") {
       intro.textContent = "The last fetch stopped: " + (job.error || "no reason written") + ". " + got + " saved before that." + quota;
     } else if (nTried === r.missing) {
@@ -280,18 +286,44 @@ export function openScreenScraper() {
     if (running && !watching) { watch(); }
   }
 
+  // The manuals a Fetch would bring: those waiting, when Manuals too is selected.
+  function manualsAsked() { return last && last.manualsOn ? last.manuals || 0 : 0; }
+
+  // "3 snaps and 12 manuals", "3 snaps", "12 manuals".
+  function fetchWords(n, m) {
+    return (n || !m ? n + (n === 1 ? " snap" : " snaps") : "") + (n && m ? " and " : "") + (m ? m + (m === 1 ? " manual" : " manuals") : "");
+  }
+
   function paintGo() {
     if (!go) { return; }
-    var n = ticked().length, ready = last && last.account && last.account.ready;
-    go.textContent = "Fetch " + n + (n === 1 ? " snap..." : " snaps...");
-    go.disabled = !n || !ready;
+    var n = ticked().length, m = manualsAsked(), ready = last && last.account && last.account.ready;
+    go.textContent = "Fetch " + fetchWords(n, m) + "...";
+    go.disabled = !(n || m) || !ready;
     go.title = ready ? "" : "Fill in the ScreenScraper logins above first";
+  }
+
+  /* Manuals too: a manual for each game with none that the online archives could not fill.
+     A real box, kept the moment it is pressed (video.ssManuals). */
+  function manualsBox() {
+    var box = el("label", "ss-manuals"), tick = el("input");
+    tick.type = "checkbox";
+    tick.checked = !!last.manualsOn;
+    tick.addEventListener("change", function () {
+      last.manualsOn = tick.checked;
+      sound("select");
+      saveSetting({ video: { ssManuals: tick.checked } }, "Manuals too");
+      paintGo();
+    });
+    box.appendChild(tick);
+    box.appendChild(document.createTextNode(" Manuals too: " + last.manuals + (last.manuals === 1 ? " game" : " games") + " with no manual that the online archives could not fill"));
+    box.title = "In English, or the game's own language. Manuals from online archives asks the Internet Archive first, with no account; these are the games it left.";
+    return box;
   }
 
   function paintBar() {
     bar.textContent = "";
     go = null;
-    if (!last || isRunning(last) || !ticks.length) { return; }
+    if (!last || isRunning(last) || (!ticks.length && !last.manuals)) { return; }
     // One console at a time is the gentle way to start: select just that one. The games apart are selected by hand.
     var main = ticks.filter(function (t) { return !t.dataset.tried; });
     var counts = {};
@@ -318,25 +350,31 @@ export function openScreenScraper() {
     go.addEventListener("click", ask);
     bar.appendChild(go);
     if (main.length) { bar.appendChild(chooser); }
+    if (last.manuals) { bar.appendChild(manualsBox()); }
     paintGo();
   }
 
   function ask() {
-    var ids = ticked().map(function (t) { return t.value; });
-    if (!ids.length || !last) { return; }
+    var ids = ticked().map(function (t) { return t.value; }), m = manualsAsked();
+    if ((!ids.length && !m) || !last) { return; }
     var r = last;
-    confirmWindow("Fetch " + ids.length + (ids.length === 1 ? " snap?" : " snaps?"), function (box) {
-      box.appendChild(el("p", null, "Each game's video snap from ScreenScraper, found by the game's name and console. A few megabytes each."));
+    confirmWindow("Fetch " + fetchWords(ids.length, m) + "?", function (box) {
+      if (ids.length) { box.appendChild(el("p", null, "Each game's video snap from ScreenScraper, found by the game's name and console. A few megabytes each.")); }
+      if (m) {
+        box.appendChild(el("p", null, "A manual for each of " + m + (m === 1 ? " game" : " games") + " with no manual that the online archives could not fill, " +
+          "in English or the game's own language. A few megabytes each."));
+      }
       // A look by name and the video; a game not found that way is looked for three more ways (bin\screenscraper.ps1).
-      box.appendChild(el("p", "confirm-game", "Two requests for a game found by its name, up to five for one that takes looking for, so up to " + (ids.length * 5) + " of today's allowance, one at a time"));
+      box.appendChild(el("p", "confirm-game", "Two requests for a game found by its name, up to five for one that takes looking for, so up to " + ((ids.length + m) * 5) + " of today's allowance, one at a time"));
       box.appendChild(el("p", "confirm-note", "From: ScreenScraper (screenscraper.fr), as " + r.account.user));
-      box.appendChild(el("p", "confirm-note", "Into: " + r.dir));
-      box.appendChild(el("p", "confirm-safe", "A game that already has a video keeps it, and nothing outside that folder is written. Backups leave these out; they can be fetched again."));
+      box.appendChild(el("p", "confirm-note", "Into: " + (ids.length ? r.dir : "") + (ids.length && m ? ", and manuals into " : "") + (m ? r.docs : "")));
+      box.appendChild(el("p", "confirm-safe", "A game that already has a video or a manual keeps it, and nothing outside " + (ids.length && m ? "those folders" : "that folder") +
+        " is written. Backups leave these out; they can be fetched again."));
     }, { label: "Fetch", run: function () {
-      L("SSCR", "fetch " + ids.length);
-      post({ ids: ids }).then(function (res) {
+      L("SSCR", "fetch " + ids.length + (m ? " and " + m + " manuals" : ""));
+      post({ ids: ids, manuals: !!m }).then(function (res) {
         if (!res.ok) { showStrip("snaps not fetched: " + (res.error || ""), true); return; }
-        showStrip("fetching " + res.count + " snaps in the background: the bar in the corner shows how far it is", false);
+        showStrip("fetching " + fetchWords(res.count, res.manuals || 0) + " in the background: the bar in the corner shows how far it is", false);
         closeEditor();                  // nothing more to do here: Done would be an extra press
         jobsWatch("screenscraper");
       });
@@ -363,13 +401,15 @@ export function openScreenScraper() {
         if (running) { setTimeout(tick, 1500); return; }
         watching = false;
         if (r.job) {
-          var saved = r.job.games.filter(function (g) { return g.state === "done"; }).length;
+          var saved = r.job.games.filter(function (g) { return g.video !== false && g.state === "done"; }).length;
+          var mans = r.job.games.filter(function (g) { return g.mstate === "done"; }).length;
           // The library is read again so the new snaps play without a reload,
           // keeping the game that is chosen now.
-          if (saved) { reloadKeeping(games[sel] ? games[sel].id : null); }
+          if (saved || mans) { reloadKeeping(games[sel] ? games[sel].id : null); }
           if (jobSayOnce("screenscraper", r.job.started)) {     // once, whoever sees the end first (js/jobbars.js)
             sound("ok");
-            showStrip(r.job.state === "failed" ? "snaps stopped: " + (r.job.error || "") : saved + " snaps saved from ScreenScraper", r.job.state === "failed");
+            showStrip(r.job.state === "failed" ? "snaps stopped: " + (r.job.error || "")
+              : saved + " snaps saved from ScreenScraper" + (r.job.manuals ? ", and " + mans + (mans === 1 ? " manual" : " manuals") : ""), r.job.state === "failed");
           }
         }
       });

@@ -45,8 +45,9 @@ export var TIPS = {
   removeLocal: "Takes this game off the list, after asking. Its pictures and play history stay on the disk.",
   hide: "Takes it out of sight. Settings > Library shows it again.",
   del: "Takes it out of your library, after asking. No file on the disk is deleted, and Settings > Library can put it back.",
-  // The bar: Xsegon, Games, Pictures & Videos, Emulators, Help
-  random: "Jumps to a game picked at random.",
+  // The bar: Xsegon, Games, Get Media, Emulators, Help
+  getMedia: "Every way to get pictures, videos and more for many games at once, in one window: Get Pictures, Steam trailers, ScreenScraper, online archives and video packages.",
+  random:"Jumps to a game picked at random.",
   guide: "The first steps for a new library, in order: an emulator, your games, their names and pictures.",
   lbImport: "Asks for your LaunchBox folder and brings in its list of games and your play data. Nothing of LaunchBox's pictures, videos or sounds comes with it.",
   scan: "Looks through your game folders and offers what the library does not have. Nothing is added until you select it.",
@@ -56,6 +57,8 @@ export var TIPS = {
   steamvid: "Fetches Steam's trailer for each Steam game that has no video.",
   sscraper: "Fetches a short video for each game that has none. Needs a ScreenScraper login.",
   archivevid: "Fetches a short video for each game that has none, from the Internet Archive's sets and World of Longplays playthroughs. No account. You choose the consoles first.",
+  archivedoc: "Fetches the manual for each game that has none, from the Internet Archive's sets of manuals. No account. You choose the consoles first.",
+  getall: "Fetches every missing cover, video and manual in one press, every source at once. With a ScreenScraper account you choose where each comes from first.",
   vpExport: "Writes a list of the games here that have no video, for a video package to be made from.",
   vpImport: "Puts the videos of a package onto the games here that have none.",
   missing: "Lists the games whose files are gone from the disk, to take out of the library together.",
