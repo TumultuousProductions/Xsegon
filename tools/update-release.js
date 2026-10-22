@@ -40,7 +40,7 @@ const NOTE_TEXT = [
   "",
   "No Start Xsegon.bat there? Then you have Xsegon's update files, which Xsegon",
   "downloads by itself to update. They are not the program and cannot run on",
-  "their own. Get the whole program here, the file marked DOWNLOAD THIS ONE:",
+  "their own. Get the whole program here, the file marked Windows install:",
   "",
   "https://github.com/TumultuousProductions/Xsegon/releases/latest",
   "",
