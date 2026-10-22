@@ -2,6 +2,10 @@
 
 Newest first: what changed for the person at the screen.
 
+## 2026-10-22
+
+- **The update download says what it is.** Opened by mistake in place of the whole program, Xsegon's update zip has a note in it, READ ME - how to start Xsegon.txt: it is only for Xsegon to update itself, and the whole program is the file marked DOWNLOAD THIS ONE on the Releases page, with the link. Its start file says the same, as does the source code's, in place of how to install PHP. In a copy of Xsegon the note says to double-click Start Xsegon.bat in the folder above.
+
 ## 2026-10-21
 
 - **Xsegon runs on PHP 8.5.12.** PHP's release of 21 October fixes two faults that could let anyone who reaches a PHP server run their own programs on that PC. Xsegon's server answers only this PC, but while Connect a phone... is on, the phone's page answers your home network too, so the download now carries the fixed PHP.
