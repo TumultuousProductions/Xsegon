@@ -22,11 +22,6 @@ RetroArch (runtime\RetroArch\RetroArch.7z)
 7-Zip's 7zr.exe (bin\7zr.exe)
     Igor Pavlov, 7-zip.org. GNU LGPL: bin\7zr-LICENSE.txt. Unpacks RetroArch.
 
-ffmpeg.exe (bin\ffmpeg.exe)
-    The FFmpeg project, ffmpeg.org; the Windows build by Gyan Doshi, gyan.dev.
-    GNU GPL v3, with where its source is: bin\ffmpeg-LICENSE.txt. Keeps the
-    first 30 seconds of a game's recording as its video.
-
 pdf.js 6.4.299 (js\vendor\pdf-6.4.299)
     Mozilla and the pdf.js contributors, mozilla.github.io/pdf.js. Apache
     License 2.0: js\vendor\pdf-6.4.299\LICENSE. With its picture decoders,

@@ -5,7 +5,7 @@
  * Xsegon ships only the list of the Archive's video sets (includes\archivevid\sets.json); each
  * set's file list is asked for at a press, matched (includes\videomatch.php) and not kept.
  * A video is filed as data\videos\<Console>\<Title>. Gaps are tried against World of Longplays
- * (longplays.org): ffmpeg cuts the first 30 seconds, so the whole recording is never fetched.
+ * (longplays.org): Xsegon's own cutter keeps the first 30 seconds, so the whole recording is never fetched.
  */
 declare(strict_types=1);
 
@@ -103,35 +103,15 @@ function xs_av_sets_for(string $platform): array
 }
 
 /**
- * ffmpeg as the command's first words, or []. The release carries bin\ffmpeg.exe;
- * a checkout looks on PATH. A test's stand-in (XSEGON_FFMPEG, a .php) runs under PHP.
+ * The cut: the first $seconds of the recording at $url written to $to by Xsegon's own cutter
+ * (bin\videocut.php), no re-encoding, nothing else fetched. A test's stand-in (XSEGON_CUTTER,
+ * a .php given the same words) takes its place on a test copy.
  */
-function xs_av_ffmpeg(): array
-{
-    $test = getenv('XSEGON_FFMPEG');
-    if (is_string($test) && $test !== '' && xs_test_copy()) {
-        return str_ends_with(strtolower($test), '.php') ? [xs_php_exe(), $test] : [$test];
-    }
-    $tries = [XS_ROOT . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'ffmpeg.exe'];
-    foreach (explode(';', (string) getenv('PATH')) as $dir) {
-        if (trim($dir) !== '') {
-            $tries[] = rtrim($dir, '\\/') . DIRECTORY_SEPARATOR . 'ffmpeg.exe';
-        }
-    }
-    $tries[] = 'C:\\ffmpeg\\bin\\ffmpeg.exe';
-    foreach ($tries as $exe) {
-        if (is_file($exe)) {
-            return [$exe];
-        }
-    }
-    return [];
-}
-
-/** The cut: the first $seconds of the recording at $url written to $to, no re-encoding, nothing else fetched. */
 function xs_av_cut_cmd(string $url, string $to, int $seconds = 30): array
 {
-    return array_merge(xs_av_ffmpeg(), ['-v', 'error', '-nostdin', '-y', '-ss', '0', '-t', (string) $seconds,
-        '-rw_timeout', '20000000', '-i', $url, '-c', 'copy', '-f', 'mp4', $to]);
+    $test   = getenv('XSEGON_CUTTER');
+    $script = is_string($test) && $test !== '' && xs_test_copy() ? $test : XS_ROOT . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'videocut.php';
+    return [xs_php_exe(), '-d', 'display_errors=0', $script, $url, $to, (string) $seconds];
 }
 
 /** Whether World of Longplays holds recordings for a console. */

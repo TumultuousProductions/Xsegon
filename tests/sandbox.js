@@ -175,8 +175,7 @@ function fixtures(ssPort, adbPort) {
   fs.writeFileSync(path.join(roms, "snes", "Stand-in Quest (USA).sfc"), "not a game\r\n");
   /* Stand-ins for Steam's store API and video server (includes\steamvid.php):
      empty folders the steamvid tests fill with an answer per app and a small
-     "trailer" per movie. ffmpeg is switched off here, so a stream-only
-     trailer is reported as needing it rather than fetched. */
+     "trailer" per movie; a stream-only one is tests\media's test stream. */
   const steam = path.join(fx, "steam");
   fs.mkdirSync(path.join(steam, "api"), { recursive: true });
   fs.mkdirSync(path.join(steam, "cdn"), { recursive: true });
@@ -245,7 +244,7 @@ function fixtures(ssPort, adbPort) {
     XSEGON_GAMESDB_IMAGES: url(gdbPic),
     XSEGON_STEAMVID_API: url(path.join(steam, "api")) + "/{appid}.json",
     XSEGON_STEAMVID_CDN: url(path.join(steam, "cdn")) + "/{movie}.mp4",
-    XSEGON_FFMPEG: path.join(fx, "archive", "cutter.php"),   // the cutter's stand-in: t-archivevid.js writes it
+    XSEGON_CUTTER: path.join(fx, "archive", "cutter.php"),   // the cutter's stand-in: t-archivevid.js writes it
     XSEGON_ARCHIVE: url(path.join(fx, "archive")),      // the Internet Archive's stand-in: t-archivevid.js fills it
     XSEGON_ARCADEDB: "http://127.0.0.1:" + adbPort,     // the Arcade Database's stand-in: t-arcadevid.js serves it
     XSEGON_CHEATLISTS: url(cheatsZip),                  // libretro's cheat lists, as the stand-in above

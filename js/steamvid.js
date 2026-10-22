@@ -20,7 +20,7 @@ import { el } from "./util.js";
 
 var WORDS = {
   waiting: "waiting", asking: "asking Steam...", fetching: "downloading...", done: "saved",
-  none: "no trailer on Steam", stream: "Steam only streams this one: needs ffmpeg", failed: "could not be fetched"
+  none: "no trailer on Steam", stream: "Steam only streams this one", failed: "could not be fetched"
 };
 var showTried = false;      // the games with no trailer before are shown, while the page is up
 
@@ -147,9 +147,7 @@ export function openSteamTrailers() {
       box.appendChild(el("p", "confirm-game", "About 50 MB each, so up to about " + (Math.round(ids.length * 50 / 102.4) / 10) + " GB"));
       box.appendChild(el("p", "confirm-note", "From: Steam's store (store.steampowered.com)"));
       box.appendChild(el("p", "confirm-note", "Into: " + r.dir));
-      box.appendChild(el("p", "confirm-note", r.ffmpeg
-        ? "The few that Steam only streams are saved with ffmpeg, which is on this computer."
-        : "The few that Steam only streams need ffmpeg, which is not on this computer, so those are skipped."));
+      box.appendChild(el("p", "confirm-note", "A trailer Steam only streams is saved as one file, its pieces joined on this PC."));
       box.appendChild(el("p", "confirm-safe", "A game that already has a video keeps it. Backups leave these out; they can be fetched again."));
     }, { label: "Fetch", run: function () {
       L("STEAMV", "fetch " + ids.length);

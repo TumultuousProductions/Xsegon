@@ -18,7 +18,8 @@
     It first writes NOTE into app, so a person who opens the update zip by
     mistake reads what it is and where the whole program is.
     The big parts are left out, each pinned by its own tool and updated apart:
-    PHP and RetroArch (runtime\), 7zr, ffmpeg and the Games Database.          */
+    PHP and RetroArch (runtime\), 7zr and the Games Database (and an ffmpeg a
+    checkout may still hold from before Xsegon cut videos itself).            */
 "use strict";
 const fs = require("fs");
 const os = require("os");

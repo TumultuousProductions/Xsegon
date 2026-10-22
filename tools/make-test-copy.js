@@ -14,8 +14,7 @@
                                        no data\ beyond the one setting below,
                                        no .git, no tests\, of doc\ only the
                                        changelog, and nothing named in LEAVE.
-                                       bin\ carries 7zr.exe and ffmpeg.exe
-                                       with their licences
+                                       bin\ carries 7zr.exe with its licence
         Xsegon\runtime\php\            the PHP this PC runs, where start.ps1
                                        looks first; its php.ini without the
                                        lines that name a folder on this PC
@@ -92,7 +91,9 @@ const BUILTIN_SOUNDS = {
 const SOUND_DIRS = Object.keys(BUILTIN_SOUNDS).map((n) => path.join("sounds", n));
 const TAKE = ["api", "bin", "css", path.join("doc", "CHANGELOG.md"), "gamesdb", "img", "includes", "js", "phone", ...SOUND_DIRS, "themes", "index.php", "play.php", "router.php", "router-fast.php", "router-phone.php", "start.ps1", "LICENSE", "THIRD-PARTY.txt", "CONTRIBUTING.md"];
 // The display guard lives in private\, which no package takes; by its name it is refused anywhere.
-const LEAVE = [path.join("bin", "display-guard.ps1")];
+// ffmpeg is not shipped since Xsegon cuts and joins videos itself (includes\mp4.php); a
+// checkout may still hold the one tools\get-ffmpeg.js fetched before.
+const LEAVE = [path.join("bin", "display-guard.ps1"), path.join("bin", "ffmpeg.exe"), path.join("bin", "ffmpeg-LICENSE.txt")];
 // Of gamesdb\, these three and nothing else that may be lying there (a
 // half-built file, an older packing).
 const GAMESDB = ["README.md", "gamesdb.json", "gamesdb.sqlite.bz2"].map((n) => path.join("gamesdb", n));
@@ -128,10 +129,6 @@ for (const f of ["gamesdb.sqlite.bz2", "gamesdb.json"]) {
 let sevenZip;
 try { sevenZip = require("./get-7zr").ensure(); console.log("7zr " + sevenZip.version + ": " + sevenZip.did); }
 catch (e) { console.log("STOP: " + e.message + "; not making a package without bin\\7zr.exe"); process.exit(1); }
-// ffmpeg goes in bin\ the same way (tools\get-ffmpeg.js says why it is shipped):
-// Videos from online archives cuts World of Longplays recordings with it.
-try { const ff = require("./get-ffmpeg").ensure(); console.log("ffmpeg " + ff.version + ": " + ff.did); }
-catch (e) { console.log("STOP: " + e.message + "; not making a package without bin\\ffmpeg.exe"); process.exit(1); }
 // RetroArch goes in runtime\RetroArch the same way (tools\get-retroarch.js): setup unpacks it, nothing downloaded.
 let retroArch;
 try { retroArch = require("./get-retroarch").ensure(); console.log("RetroArch " + retroArch.version + ": " + retroArch.did); }

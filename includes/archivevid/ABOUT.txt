@@ -9,7 +9,7 @@ A game the sets leave without is tried against World of Longplays
 (longplays.org): recordings of whole games played by its members, each on the
 Archive under the collection worldoflongplays and naming its player. Xsegon
 keeps the first 30 seconds of the recording's smaller copy as the game's video
-(bin\ffmpeg.exe reads only that much, never the whole file) and writes the
+(bin\videocut.php reads only that much, never the whole file) and writes the
 player's name in the log. Credit to both is in README.md under Credits.
 
 Each entry:

@@ -753,9 +753,8 @@ function xs_setup_run_videos(): array
     unset($asked['videosWanted']);              // owed once: a start that fails is said, not tried at every look
     xs_write_json(xs_data_path('setup.json'), $asked);
     $platforms = [];
-    $cutter = xs_av_ffmpeg() !== [];            // a console playthroughs alone serve needs the cutter, as in the fetch's own window
     foreach (xs_av_need(xs_settings(), xs_library()) as $row) {
-        if (($row['sets'] > 0 || ($row['wol'] && $cutter)) && $row['need'] > 0) {
+        if (($row['sets'] > 0 || $row['wol']) && $row['need'] > 0) {
             $platforms[] = $row['platform'];
         }
     }

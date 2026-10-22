@@ -12,7 +12,7 @@ import { el } from "./util.js";
    Get Media > Videos from online archives. The window opens on what Xsegon
    already knows; the Archive is asked only after Start, as a bar in the corner. Where a
    set leaves a gap, the first 30 seconds of a World of Longplays recording are cut on
-   the way (bin\ffmpeg.exe), never the whole file. */
+   the way (bin\videocut.php), never the whole file. */
 
 var av = null;        // the window while it is up: what the server said, the consoles left out, its lines, whether the looked-for list is shown
 
@@ -63,9 +63,9 @@ function avBar(i) {
   av.lines[av.at].scrollIntoView({ block: "nearest" });
 }
 
-// Whether a console can be served: a set, or playthroughs with the cutter here to cut them.
+// Whether a console can be served: a set, or playthroughs to cut.
 function avServed(c) {
-  return !!(c.sets || (c.wol && av.res.ffmpeg));
+  return !!(c.sets || c.wol);
 }
 
 // The consoles the online archives have videos for and that are still selected.
@@ -176,7 +176,7 @@ function avPaint() {
       have.forEach(function (c) {
         var off = !!av.out[c.platform];
         var from = c.sets
-          ? "the Archive has " + c.videos + (c.videos === 1 ? " video" : " videos") + " in sets" + (c.wol && res.ffmpeg ? ", and playthrough cuts fill the gaps" : "")
+          ? "the Archive has " + c.videos + (c.videos === 1 ? " video" : " videos") + " in sets" + (c.wol ? ", and playthrough cuts fill the gaps" : "")
           : "the first 30 seconds of a World of Longplays playthrough, cut on the way";
         avLine(what, "film", c.platform, nGames(c.need) + " with no video  ·  " + from,
           off ? "Not selected" : "✓ Selected", function () {
@@ -192,11 +192,8 @@ function avPaint() {
           + "Only a video that is surely the game's is taken; the rest are listed here afterwards. It runs in the background.", "Start", avStart);
     }
     if (lack.length) {
-      var could = lack.filter(function (c) { return c.wol && !res.ffmpeg; });
       inner.appendChild(el("p", "mt-note", (have.length ? "The online archives have nothing for: " : "The online archives have nothing for any console with games that lack a video: ")
-        + lack.map(function (c) { return c.platform + " (" + c.need + ")"; }).join(", ") + "."
-        + (could.length ? " World of Longplays playthroughs could serve " + could.map(function (c) { return c.platform; }).join(", ")
-          + ", but the video cutter (bin\\ffmpeg.exe) is not on this PC." : "")));
+        + lack.map(function (c) { return c.platform + " (" + c.need + ")"; }).join(", ") + "."));
     }
   }
   if (!atWork && job) { avLast(inner, job); }
