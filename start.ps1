@@ -101,6 +101,18 @@ $searched = @(
 $phpPath = ($searched | Where-Object { $_.path -and (Test-Path -LiteralPath $_.path) } | Select-Object -First 1).path
 
 if (-not $phpPath) {
+    # Neither a download (runtime\) nor a checkout (.git): the update zip or the source code, opened by mistake.
+    if (-not (Test-Path -LiteralPath "$root\runtime") -and -not (Test-Path -LiteralPath "$root\.git")) {
+        Write-Host 'This folder is only part of Xsegon (its update files, or its source code), and it cannot run on its own.' -ForegroundColor Red
+        Write-Host ''
+        Write-Host 'Get the whole program here, the file marked DOWNLOAD THIS ONE:' -ForegroundColor Yellow
+        Write-Host '  https://github.com/TumultuousProductions/Xsegon/releases/latest' -ForegroundColor Cyan
+        Write-Host ''
+        Write-Host 'To run the source code instead, install PHP and put it on PATH.' -ForegroundColor DarkGray
+        Show-Self
+        pause
+        exit 1
+    }
     Write-Host 'PHP could not be located. Looked in:' -ForegroundColor Red
     foreach ($c in $searched) {
         $status = if ($c.path) { "not found: $($c.path)" } else { 'not set' }

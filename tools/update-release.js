@@ -15,6 +15,8 @@
         Xsegon-update-<v>.zip     Xsegon's own files, for bin\update.php
         Xsegon-update-<v>.json    the list, with the zip's size and SHA-256
         Xsegon-update-<v>.sig     the list's signature (ECDSA P-256, SHA-256)
+    It first writes NOTE into app, so a person who opens the update zip by
+    mistake reads what it is and where the whole program is.
     The big parts are left out, each pinned by its own tool and updated apart:
     PHP and RetroArch (runtime\), 7zr, ffmpeg and the Games Database.          */
 "use strict";
@@ -30,6 +32,19 @@ const PUBLIC_KEY = path.join(ROOT, "includes", "update-key.pem");
 const TAR = path.join(process.env.SystemRoot || "C:\\Windows", "System32", "tar.exe");
 
 const sha = (file) => crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex");
+
+// On the signed list, so every copy carries it too: its words are true in a copy and in the update zip alike.
+const NOTE = "READ ME - how to start Xsegon.txt";
+const NOTE_TEXT = [
+  "To start Xsegon, double-click Start Xsegon.bat in the folder above this one.",
+  "",
+  "No Start Xsegon.bat there? Then you have Xsegon's update files, which Xsegon",
+  "downloads by itself to update. They are not the program and cannot run on",
+  "their own. Get the whole program here, the file marked DOWNLOAD THIS ONE:",
+  "",
+  "https://github.com/TumultuousProductions/Xsegon/releases/latest",
+  "",
+].join("\r\n");
 
 /** Xsegon's own files in a package folder, by path with forward slashes: what an update replaces. */
 function ownFiles(app) {
@@ -59,6 +74,7 @@ function makeUpdate({ app, version, key, out }) {
   if (!same) {
     throw new Error("includes\\update-key.pem in the package is not the public half of " + key);
   }
+  fs.writeFileSync(path.join(app, NOTE), NOTE_TEXT);
   const files = ownFiles(app);
   fs.mkdirSync(out, { recursive: true });
   // Staged apart, so the zip holds exactly the listed files and nothing of runtime\ or data\.
@@ -98,7 +114,7 @@ function newKey(privFile, pubFile) {
   fs.writeFileSync(pubFile, pair.publicKey);
 }
 
-module.exports = { ownFiles, makeUpdate, newKey, PRIVATE_KEY, PUBLIC_KEY };
+module.exports = { ownFiles, makeUpdate, newKey, PRIVATE_KEY, PUBLIC_KEY, NOTE };
 
 if (require.main === module) {
   if (!process.argv.includes("--new-key")) { console.log("node tools\\update-release.js --new-key   (see the top of this file)"); process.exit(2); }

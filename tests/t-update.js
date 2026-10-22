@@ -12,8 +12,9 @@
     as start.ps1 would. Then Go back, and on copies where new versions download
     by themselves: the power going halfway, a file another program holds open,
     a waiting copy changed on the disk, and releases that are damaged,
-    signed by another key, or will not start. start.ps1 itself is not run here:
-    a fresh copy's first start makes a Games folder on the PC. Last, the Update
+    signed by another key, or will not start. start.ps1 runs only in the
+    update zip opened by mistake, where it stops before any server (a fresh
+    copy's first start makes a Games folder on the PC). Last, the Update
     now window on the run's page, against a stand-in answer.                   */
 "use strict";
 const fs = require("fs");
@@ -77,6 +78,31 @@ module.exports = async function (b, check) {
     [good.files > 400, /"version": "0\.16"/.test(fs.readFileSync(path.join(good.app, "RELEASE.json"), "utf8")),
      Object.keys(JSON.parse(fs.readFileSync(path.join(good.app, "RELEASE.json"), "utf8")).files).some((p) => /^(runtime|gamesdb|data)\//.test(p))],
     [true, true, false]);
+
+  /* ---- the update zip opened by mistake says what it is ------------------ */
+  const mistaken = path.join(home, "mistaken");
+  fs.mkdirSync(mistaken, { recursive: true });
+  await run(path.join(process.env.SystemRoot, "System32", "tar.exe"), ["-xf", path.join(home, "dl", "good", "Xsegon-update-0.16.zip"), "-C", mistaken]);
+  const note = path.join(mistaken, ur.NOTE);
+  check("the update zip carries a note on its signed list: where Start Xsegon.bat is, and where the whole program is when it is not there",
+    [fs.existsSync(note), ur.NOTE in JSON.parse(fs.readFileSync(path.join(good.app, "RELEASE.json"), "utf8")).files,
+     /double-click Start Xsegon\.bat in the folder above/.test(fs.existsSync(note) ? fs.readFileSync(note, "utf8") : ""),
+     /releases\/latest/.test(fs.existsSync(note) ? fs.readFileSync(note, "utf8") : "")],
+    [true, true, true, true]);
+  // No PHP anywhere it looks: PATH is Windows' own folder, and nothing beside the mistaken folder holds one.
+  const bare = {};
+  for (const k of Object.keys(process.env)) { if (!/^path$/i.test(k)) { bare[k] = process.env[k]; } }
+  bare.Path = path.join(process.env.SystemRoot, "System32");
+  const started = await new Promise((done) => {
+    const p = execFile(path.join(process.env.SystemRoot, "System32", "WindowsPowerShell", "v1.0", "powershell.exe"),
+      ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", path.join(mistaken, "start.ps1"), "-NoBrowser", "-Port", "8291"],
+      { env: bare, cwd: mistaken, windowsHide: true, encoding: "utf8", timeout: 60000 },
+      (e, out) => done({ code: e ? (e.code || 1) : 0, out: String(out || "") }));
+    p.stdin.end();   // its pause reads the end at once
+  });
+  check("and its start.ps1 says it is only part of Xsegon and where the whole program is, not how to install PHP",
+    [started.code, /only part of Xsegon/.test(started.out), /releases\/latest/.test(started.out), /could not be located/.test(started.out), fs.existsSync(path.join(mistaken, "data"))],
+    [1, true, true, false, false]);
 
   // The stand-in GitHub: the releases list names whichever release the test serves now.
   let serving = "good";
