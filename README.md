@@ -36,7 +36,10 @@
 > not with the green Code button on this page.** The release zip has
 > everything inside: Xsegon, the PHP it runs on, RetroArch and the games
 > database. The code here on its own is for people who work on Xsegon, and
-> does not run without the parts the zip adds.
+> does not run without the parts the zip adds. Take the file marked
+> **Windows install** (or **Linux install**): the others there are for Xsegon
+> itself, and so is everything on
+> [Xsegon-helper-files](https://github.com/TumultuousProductions/Xsegon-helper-files).
 
 Xsegon does not come with any games, BIOS files or keys. You bring your own.
 
@@ -329,7 +332,9 @@ Something here out of date? Open an issue and it is put right.</sub>
 Nothing is installed into Windows: Xsegon runs from the folder you unzip it to.
 
 1. Open the [latest release](https://github.com/TumultuousProductions/Xsegon/releases/latest)
-   and, under **Assets**, download **Xsegon-*version*.zip** (about 350 MB).
+   and, under **Assets**, download the file marked **Windows install**,
+   **Xsegon-*version*.zip** (about 350 MB). The other files there are for
+   Xsegon itself, which downloads them when it updates.
 2. Right-click the zip, choose **Properties**, select **Unblock** at the
    bottom if it is there, and press OK. Then right-click it again, choose
    **Extract All...**, and put it somewhere simple, like Documents. Not in
@@ -516,6 +521,17 @@ and are fetched by a tool, each pinned to one checked version:
   anything that belongs to the PC it was written on; `tools\hooks\pre-push`
   runs it before every push (`git config core.hooksPath tools/hooks`).
 
+### Where release files go
+
+A release page is for people, so it carries only what a person downloads:
+the **Windows install** and the **Linux install**. Everything else goes on
+[Xsegon-helper-files](https://github.com/TumultuousProductions/Xsegon-helper-files),
+each kind on a release of its own: files Xsegon fetches by itself (its update
+files, from v0.18), and source code a licence asks to be offered. Until v0.18
+the update files are on Xsegon's release page too, because copies before it
+look for them only there. The Games Database keeps its own `gamesdb` release
+here, where every copy looks for it.
+
 ## License
 
 MIT (see [LICENSE](LICENSE)). The games database Xsegon downloads is
@@ -526,7 +542,9 @@ nor the console icons in [img/consoles](img/consoles/ABOUT.txt), which are
 RetroArch's (CC-BY 4.0), nor the console name logos in
 [img/console-logos](img/console-logos/ABOUT.txt), which are their owners'
 trademarks (see Trademarks). [THIRD-PARTY.txt](THIRD-PARTY.txt) lists every
-part that is not Xsegon's own. The sounds in
+part that is not Xsegon's own. Source code those licences ask to be offered,
+such as PHP's, is kept unchanged on
+[Xsegon-helper-files](https://github.com/TumultuousProductions/Xsegon-helper-files). The sounds in
 [sounds/Xsegon 2](sounds/Xsegon%202/ABOUT.txt), and Hover.wav in
 [sounds/Xsegon](sounds/Xsegon/ABOUT.txt), are Xsegon's own.
 

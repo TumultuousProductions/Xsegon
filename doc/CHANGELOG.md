@@ -4,6 +4,7 @@ Newest first: what changed for the person at the screen.
 
 ## 2026-10-22
 
+- **Files that are not for you have their own place.** The README says which file on the Releases page to take (Windows install or Linux install), and that the rest are for Xsegon itself, as is everything on the new Xsegon-helper-files. That is where Xsegon's update files go from 0.18, and where the source code of PHP is kept, which the licence of PHP's mbstring part asks to be offered; THIRD-PARTY.txt says so.
 - **The update download says what it is.** Opened by mistake in place of the whole program, Xsegon's update zip has a note in it, READ ME - how to start Xsegon.txt: it is only for Xsegon to update itself, and the whole program is the file marked Windows install on the Releases page, with the link. Its start file says the same, as does the source code's, in place of how to install PHP. In a copy of Xsegon the note says to double-click Start Xsegon.bat in the folder above.
 
 ## 2026-10-21

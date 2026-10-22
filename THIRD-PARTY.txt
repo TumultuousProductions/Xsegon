@@ -9,7 +9,9 @@ Programs carried in the download, unchanged
 -------------------------------------------
 PHP (runtime\php)
     The PHP Group, php.net. The PHP License v3.01: runtime\php\license.txt.
-    Xsegon is a set of PHP pages; this is the PHP that runs them.
+    Xsegon is a set of PHP pages; this is the PHP that runs them. Its
+    mbstring part (libmbfl) is under the GNU LGPL 2.1, so PHP's source is
+    kept, unchanged, on github.com/TumultuousProductions/Xsegon-helper-files.
 
 RetroArch (runtime\RetroArch\RetroArch.7z)
     libretro, retroarch.com. GNU GPL v3. The licence, the pinned version and
