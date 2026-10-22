@@ -4,9 +4,9 @@
  * tests\sandbox.js points the test server at: this group writes one answer
  * per app and one small "trailer" per movie, so each way a game can end is
  * walked for real through the background fetcher: saved, no trailer on
- * Steam, stream only (ffmpeg is switched off on the test server), a failed
- * ask, and a failed download. Nothing is fetched from Steam. Against --live only the
- * read-only first check runs.
+ * Steam, stream only (joined by bin\streamsave.php from the test stream in
+ * tests\media), a failed ask, and a failed download. Nothing is fetched from
+ * Steam. Against --live only the read-only first check runs.
  */
 "use strict";
 const fs = require("fs");
@@ -24,7 +24,6 @@ module.exports = async function (b, check) {
     return;
   }
   check("every game without a video counted", first.missing, first.games.filter((g) => !g.has).length);
-  check("the test server has no ffmpeg, as told", first.ffmpeg, false);
 
   const vdir = path.join(DATA, "videos-steam");
   const own = path.join(DATA, "video-own");
@@ -38,7 +37,9 @@ module.exports = async function (b, check) {
     fs.writeFileSync(path.join(steamFx, "cdn", "900002.mp4"), "stand-in trailer bytes\r\n");
     fs.writeFileSync(path.join(steamFx, "cdn", "900001.mp4"), "the wrong trailer\r\n");
     write(B.appid, { success: true, data: {} });
-    write(C.appid, { success: true, data: { movies: [{ id: 900003, highlight: true, hls_h264: "http://127.0.0.1:9/none.m3u8" }] } });
+    // Only a stream, no file: the test stream, picture and sound in pieces apart as Steam's are.
+    const stream = "file:///" + path.join(lib.ROOT, "tests", "media", "stream", "master.m3u8").replace(/\\/g, "/");
+    write(C.appid, { success: true, data: { movies: [{ id: 900003, highlight: true, hls_h264: stream }] } });
     // D has no answer at all: the ask fails.
 
     const dry = await api("api/steamvid.php", { ids: [A.id, B.id, C.id, D.id, "not-a-steam-game"], dry: true });
@@ -57,14 +58,17 @@ module.exports = async function (b, check) {
     check("a game with a trailer gets it saved", states[A.id], "done");
     check("the highlighted trailer, not just the first", fs.existsSync(path.join(vdir, A.id + ".mp4")) && fs.readFileSync(path.join(vdir, A.id + ".mp4"), "utf8").startsWith("stand-in trailer"), true);
     check("a game with none on Steam is said, not failed", states[B.id], "none");
-    check("one Steam only streams is marked as needing ffmpeg", states[C.id], "stream");
+    const joined = path.join(vdir, C.id + ".mp4");
+    const head = fs.existsSync(joined) ? fs.readFileSync(joined) : Buffer.alloc(0);
+    check("one Steam only streams is saved too, its pieces joined into one video file",
+      [states[C.id], head.toString("latin1", 4, 8), head.toString("latin1", 36, 40), head.length > 20000], ["done", "ftyp", "moov", true]);   // the index right after the 32-byte ftyp; the test stream holds about 21 KB
     check("a failed ask is its own answer", states[D.id], "failed");
     check("nothing half-downloaded is left", fs.readdirSync(vdir).filter((f) => !f.endsWith(".mp4")), []);
     const rowA = st.games.find((g) => g.id === A.id);
     check("the saved trailer is now that game's video", [rowA.has, rowA.trailer], [true, true]);
-    check("and one fewer is missing", st.missing, first.missing - 1);
+    check("and two fewer are missing", st.missing, first.missing - 2);
     const tried = (id) => (st.games.find((g) => g.id === id) || {}).tried;
-    check("one with no trailer on Steam, or only a stream, is kept apart; a failed ask is not", [tried(B.id), tried(C.id), tried(D.id)], ["none", "stream", ""]);
+    check("one with no trailer on Steam is kept apart; a failed ask is not", [tried(B.id), tried(C.id), tried(D.id)], ["none", "", ""]);
     const kept = await api("api/steamvid.php", { ids: [B.id], dry: true });
     check("one kept apart can still be asked for again", kept.ok && kept.plan.games.map((g) => g.id), [B.id]);
     const served = await fetch(BASE + "/api/video.php?id=" + encodeURIComponent(A.id));
@@ -98,13 +102,13 @@ module.exports = async function (b, check) {
     check("only the games with no video are listed", await b.until(`[...document.querySelectorAll("#editor .sv-row input")].map(x => x.value).sort().join(",")`, lacking.slice().sort().join(",")),
       lacking.slice().sort().join(","));
     const rowOf = (id) => `[...document.querySelectorAll("#editor .sv-row")].find(r => r.querySelector("input").value === ${JSON.stringify(id)})`;
-    check("a game with its trailer saved is not offered", await b.ev(`!${rowOf(A.id)}`), true);
+    check("a game with its trailer saved is not offered", await b.ev(`[!${rowOf(A.id)}, !${rowOf(C.id)}]`), [true, true]);
     const dayB = await b.ev(`new Date(${(st.games.find((g) => g.id === B.id) || {}).triedAt || 0} * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric" })`);
     check("the last run's answers are shown on the rest, one kept apart with the day it was asked",
       await b.ev(`[${rowOf(B.id)}, ${rowOf(D.id)}].map(r => r.querySelector(".sv-state").textContent)`), ["no trailer on Steam, asked " + dayB, "could not be fetched"]);
     const where = (id) => `(r => (t => !t ? "main" : t.hidden ? "apart, folded" : "apart")(r.closest(".st-tried")))(${rowOf(id)})`;
-    check("those with no trailer are listed apart, folded away and not selected", await b.ev(`[${where(B.id)}, ${where(C.id)}, ${where(D.id)}, ${rowOf(B.id)}.querySelector("input").checked]`),
-      ["apart, folded", "apart, folded", "main", false]);
+    check("those with no trailer are listed apart, folded away and not selected", await b.ev(`[${where(B.id)}, ${where(D.id)}, ${rowOf(B.id)}.querySelector("input").checked]`),
+      ["apart, folded", "main", false]);
     await b.ev(`document.querySelector("#editor .st-apart-head button").click()`);
     check("Show unfolds them", await b.ev(where(B.id)), "apart");
     check("the window fits the screen and its lists scroll inside it", await b.ev(`(() => { const s = document.querySelector("#editor .st-scroll"), w = document.querySelector("#editor .panel-inner");
@@ -135,6 +139,7 @@ module.exports = async function (b, check) {
 
     /* A second fetch where nothing comes: a page that is not Steam's answer, and a trailer Steam names
        whose download is refused, with a stream beside it and without. Each is a failed fetch, asked again. */
+    fs.rmSync(joined, { force: true });         // C is without a video again, for its stream that will not come
     fs.writeFileSync(path.join(steamFx, "api", B.appid + ".json"), "<html><body>Sign in to use this Wi-Fi</body></html>");
     write(C.appid, { success: true, data: { movies: [{ id: 900005, highlight: true, mp4: { max: "http://127.0.0.1:9/movie_max.mp4" }, hls_h264: "http://127.0.0.1:9/none.m3u8" }] } });
     write(D.appid, { success: true, data: { movies: [{ id: 900006, highlight: true, mp4: { max: "http://127.0.0.1:9/movie_max.mp4" } }] } });
@@ -146,10 +151,10 @@ module.exports = async function (b, check) {
       await sleep(200);
     }
     const states2 = Object.fromEntries(((st2 && st2.job && st2.job.games) || []).map((g) => [g.id, g.state]));
-    check("a page that is not Steam's answer, or a trailer whose download fails, is \"could not be fetched\", never no trailer or needs ffmpeg",
+    check("a page that is not Steam's answer, or a trailer or stream whose download fails, is \"could not be fetched\", never no trailer",
       [go2.ok, st2 && st2.job && st2.job.state, states2[B.id], states2[C.id], states2[D.id]], [true, "done", "failed", "failed", "failed"]);
     const tried2 = (id) => ((st2 && st2.games) || []).find((g) => g.id === id) || {};
-    check("and a failed fetch changes nothing kept apart before", [tried2(B.id).tried, tried2(C.id).tried, tried2(D.id).tried], ["none", "stream", ""]);
+    check("and a failed fetch changes nothing kept apart before", [tried2(B.id).tried, tried2(C.id).tried, tried2(D.id).tried], ["none", "", ""]);
   } finally {
     if (ownMade) { fs.rmSync(ownMade, { force: true }); }
     fs.rmSync(vdir, { recursive: true, force: true });

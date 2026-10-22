@@ -9,7 +9,7 @@
  * video are matched to each set's file list and the sure matches fetched;
  * a video is checked against the Archive's checksum before it gets its name.
  * A game the sets leave without gets the first 30 seconds of a World of
- * Longplays recording, cut by ffmpeg without fetching the whole file.
+ * Longplays recording, cut by bin\videocut.php without fetching the whole file.
  */
 declare(strict_types=1);
 
@@ -356,17 +356,12 @@ foreach (array_merge($bad, $none) as $g) {
 }
 $cuts    = 0;
 $gotToo  = 0;       // served by a twin version's file written in this run
-$ff      = xs_av_ffmpeg();
 $wolSaid = '';
 $look    = static function () use ($save, $stopped): bool {
     $save(false);
     return !$stopped();
 };
-if ($wol && !$ff) {
-    $wolSaid = ' World of Longplays could fill some of the gaps, but the video cutter (bin\\ffmpeg.exe) is not on this PC.';
-    xs_log('ARCV', count($wol) . ' games could be tried on World of Longplays, but there is no ffmpeg.exe to cut with');
-    $still = array_merge($still, $wol);
-} elseif ($wol) {
+if ($wol) {
     $job['phase'] = 'playthroughs';
     $save();
     $t2    = microtime(true);
@@ -482,7 +477,7 @@ if ($wol && !$ff) {
         }
     }
 
-    // The cuts themselves, three at a time: ffmpeg reads the first 30 seconds and stops.
+    // The cuts themselves, three at a time: each reads the recording's index and its first 30 seconds.
     if ($plan2) {
         $job['phase'] = 'cutting';
         $job['cuts']  = count($plan2);
@@ -509,6 +504,7 @@ if ($wol && !$ff) {
                 proc_close($run['proc']);
                 @unlink($run['part']);
                 @unlink($run['part'] . '.err');
+                @unlink($run['part'] . '.bytes');       // the cutter's fetched stretches, left when it is stopped
             }
             $going = [];
         };
@@ -545,6 +541,7 @@ if ($wol && !$ff) {
                     $job['cutAt']++;
                     @unlink($run['part']);
                     @unlink($run['part'] . '.err');
+                    @unlink($run['part'] . '.bytes');
                     $fail($run['p'], 'it took longer than four minutes');
                     continue;
                 }
@@ -558,7 +555,7 @@ if ($wol && !$ff) {
                 @unlink($part . '.err');
                 clearstatcache(true, $part);
                 $ok  = (int) $st['exitcode'] === 0 && is_file($part) && (int) filesize($part) > 4096 && xs_vp_is_video($part);
-                $why = $said !== '' ? $said : 'ffmpeg ended with ' . (int) $st['exitcode'];
+                $why = $said !== '' ? $said : 'the cutter ended with ' . (int) $st['exitcode'];
                 $dest = $p['dest'];
                 // Looked at again just before it is named: a video that came meanwhile stays, and so does another game's.
                 if ($ok) {

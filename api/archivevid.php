@@ -45,4 +45,4 @@ $lib  = xs_library();
 $rows = xs_av_need($s, $lib);
 xs_json(['ok' => true, 'consoles' => $rows, 'need' => (int) array_sum(array_column($rows, 'need')),
          'looked' => xs_av_looked_list($s, $lib),
-         'curl' => xs_curl_exe() !== '', 'ffmpeg' => xs_av_ffmpeg() !== [], 'job' => xs_av_job()]);
+         'curl' => xs_curl_exe() !== '', 'job' => xs_av_job()]);

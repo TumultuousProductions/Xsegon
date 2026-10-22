@@ -1,8 +1,8 @@
 <?php
 /**
- * Xsegon - Steam trailers as video snaps, from each game's store page. Most
- * are a plain mp4 on Steam's video server; some only a stream (HLS), which
- * ffmpeg can save when it is on the computer.
+ * Xsegon - Steam trailers as video snaps, from each game's store page. Some
+ * are a plain mp4 on Steam's video server; newer ones only a stream (HLS),
+ * whose pieces Xsegon joins into one file itself (bin\streamsave.php).
  *
  * Each trailer is saved as data\videos-steam\<game id>.mp4 and found after a
  * video you chose and after the copy in data\media, so it only fills a gap. Left out of
@@ -55,32 +55,10 @@ function xs_steamvid_sources(): array
     ];
 }
 
-/** ffmpeg, for the trailers Steam only streams. '' when there is none. */
-function xs_ffmpeg(): string
+/** What joins a trailer Steam only streams into one file: this PHP and bin\streamsave.php. */
+function xs_steamvid_saver(): array
 {
-    $test = getenv('XSEGON_FFMPEG');
-    if (is_string($test) && getenv('XSEGON_DATA')) {
-        return $test !== '' && is_file($test) ? $test : '';
-    }
-    // The one a download carries first, as the playthrough cutter looks (xs_av_ffmpeg).
-    $own = XS_ROOT . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'ffmpeg.exe';
-    if (is_file($own)) {
-        return $own;
-    }
-    $out = @shell_exec('where ffmpeg 2>NUL');
-    if (is_string($out)) {
-        foreach (preg_split('/\r?\n/', trim($out)) as $line) {
-            if ($line !== '' && is_file($line)) {
-                return $line;
-            }
-        }
-    }
-    foreach (['C:\\ffmpeg\\bin\\ffmpeg.exe', 'C:\\Program Files\\ffmpeg\\bin\\ffmpeg.exe'] as $p) {
-        if (is_file($p)) {
-            return $p;
-        }
-    }
-    return '';
+    return [xs_php_exe(), XS_ROOT . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'streamsave.php'];
 }
 
 /** The games a fetch found no trailer for: {"from": that fetch's start, "games": {id: {at, why}}}. */
@@ -89,15 +67,17 @@ function xs_steamvid_none_path(): string
     return xs_data_path('steamvid-none.json');
 }
 
+/** The games Steam had no trailer for. One kept as "stream only" by a copy that had no way to save streams is asked again. */
 function xs_steamvid_none(): array
 {
-    $none = xs_read_json(xs_steamvid_none_path(), []);
-    return is_array($none) && is_array($none['games'] ?? null) ? $none['games'] : [];
+    $none  = xs_read_json(xs_steamvid_none_path(), []);
+    $games = is_array($none) && is_array($none['games'] ?? null) ? $none['games'] : [];
+    return array_filter($games, static fn ($g): bool => !is_array($g) || ($g['why'] ?? '') !== 'stream');
 }
 
 /**
- * Keeps, once per ended fetch, the games Steam had no trailer for or only
- * streams, so the list shows them apart. One saved since is let go; a failed ask changes nothing.
+ * Keeps, once per ended fetch, the games Steam had no trailer for, so the list
+ * shows them apart. One saved since is let go; a failed ask changes nothing.
  */
 function xs_steamvid_keep_none(array $job): void
 {
@@ -111,7 +91,7 @@ function xs_steamvid_keep_none(array $job): void
     foreach ($job['games'] ?? [] as $g) {
         $id    = (string) ($g['id'] ?? '');
         $state = (string) ($g['state'] ?? '');
-        if ($id !== '' && ($state === 'none' || $state === 'stream')) {
+        if ($id !== '' && $state === 'none') {
             $games[$id] = ['at' => (int) ($job['ended'] ?? time()), 'why' => $state];
             $kept++;
         } elseif ($id !== '' && $state === 'done') {
@@ -182,7 +162,7 @@ function xs_steamvid_job(): ?array
     if (($job['state'] ?? '') === 'done' && empty($job['logged'])) {
         $count = array_count_values(array_map(static fn ($g) => (string) ($g['state'] ?? ''), $job['games'] ?? []));
         xs_log('STEAMV', 'trailers: ' . ($count['done'] ?? 0) . ' saved, ' . ($count['none'] ?? 0) . ' with none on Steam, '
-            . ($count['stream'] ?? 0) . ' stream only, ' . ($count['failed'] ?? 0) . ' failed');
+            . ($count['failed'] ?? 0) . ' failed');
         $job['logged'] = true;
         xs_write_json(xs_steamvid_job_path(), $job);
     }
@@ -211,7 +191,7 @@ function xs_steamvid_plan(array $s, array $library, ?array $ids): ?array
         'dir'     => xs_steamvid_dir(),
         'api'     => $src['api'],
         'cdn'     => $src['cdn'],
-        'ffmpeg'  => xs_ffmpeg(),
+        'saver'   => xs_steamvid_saver(),
         'games'   => array_map(static fn ($r) => ['id' => $r['id'], 'title' => $r['title'], 'appid' => $r['appid'], 'state' => 'waiting'], $pick),
     ];
 }
@@ -228,6 +208,6 @@ function xs_steamvid_start(array $plan, ?string &$why = null): bool
         $why = 'the trailer fetcher could not be started';
         return false;
     }
-    xs_log('STEAMV', 'fetch asked for ' . count($plan['games']) . ' trailers' . ($plan['ffmpeg'] !== '' ? ', ffmpeg for streams' : ', no ffmpeg'));
+    xs_log('STEAMV', 'fetch asked for ' . count($plan['games']) . ' trailers');
     return true;
 }

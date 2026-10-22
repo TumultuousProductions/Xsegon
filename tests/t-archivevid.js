@@ -1,8 +1,9 @@
 /* Videos for the games with none, from the online archives (includes\archivevid.php):
  * Get Media > Videos from online archives.
  * Nothing goes online: XSEGON_ARCHIVE (tests\sandbox.js) points at stand-in sets,
- * tiny videos and a World of Longplays list here, XSEGON_FFMPEG at a stand-in
- * cutter that copies, and the sets are the test's own data\archivevid-sets.json.
+ * tiny videos and a World of Longplays list here, XSEGON_CUTTER at a stand-in
+ * cutter that copies (the real one is tests\t-mp4.js's), and the sets are the
+ * test's own data\archivevid-sets.json.
  * What lands is compared byte for byte with its stand-in.
  */
 "use strict";
@@ -83,13 +84,11 @@ function makeAll() {
       fs.writeFileSync(path.join(FX, "download", w.id, w.file), Buffer.concat([video(w.words), Buffer.alloc(8192)]));
     }
   }
-  // The cutter's stand-in (XSEGON_FFMPEG): "cuts" by copying the whole tiny recording.
+  // The cutter's stand-in (XSEGON_CUTTER), given bin\videocut.php's words: "cuts" by copying the whole tiny recording.
   fs.writeFileSync(path.join(FX, "cutter.php"), [
     "<?php",
-    "$url = '';",
-    "$args = array_slice($argv, 1);",
-    "foreach ($args as $i => $a) { if ($a === '-i') { $url = (string) ($args[$i + 1] ?? ''); } }",
-    "$to = $args === [] ? '' : (string) end($args);",
+    "$url = (string) ($argv[1] ?? '');",
+    "$to = (string) ($argv[2] ?? '');",
     "$path = preg_match('~^file:///(.+)$~', $url, $m) ? rawurldecode($m[1]) : $url;",
     "$body = $path === '' ? false : @file_get_contents($path);",
     "if ($body === false || $to === '') { fwrite(STDERR, 'the recording could not be read' . PHP_EOL); exit(1); }",
@@ -122,9 +121,9 @@ module.exports = async function (b, check) {
     const first = await get();
     const con = (name) => (first.consoles || []).find((c) => c.platform === name) || {};
     check("the consoles with games that have no video are counted, with what the online archives have for each",
-      [first.ok, first.curl, first.ffmpeg, first.job, con(PSX).need >= 3, con(PSX).sets, con(PSX).videos, con(SNES).sets, con(SNES).videos,
+      [first.ok, first.curl, first.job, con(PSX).need >= 3, con(PSX).sets, con(PSX).videos, con(SNES).sets, con(SNES).videos,
        con("Nintendo Switch").sets, con("Nintendo Switch").wol, con("Philips CD-i").wol],
-      [true, true, true, null, true, 1, 3, 1, 3, 0, true, false]);
+      [true, true, null, true, 1, 3, 1, 3, 0, true, false]);
     check("the consoles the online archives have videos for come first",
       (first.consoles || []).map((c) => c.sets > 0 || c.wol).join().replace(/^(true,?)+(false,?)*$/, "in order"), "in order");
     check("a start with no console is refused in words, and so is one for a console the archives have nothing for",

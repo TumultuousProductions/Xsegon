@@ -51,6 +51,7 @@ const GROUPS = {
   screens: "./t-screens",
   setup: "./t-setup",
   steamvid: "./t-steamvid",
+  mp4: "./t-mp4",
   screenscraper: "./t-screenscraper",
   achievements: "./t-achievements",
   videopack: "./t-videopack",

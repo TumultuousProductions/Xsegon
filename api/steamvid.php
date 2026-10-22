@@ -3,8 +3,7 @@
  * /api/steamvid.php - Steam trailers as video snaps (includes\steamvid.php).
  *
  *   GET                      every Steam game, whether it has a video or got
- *                            no trailer before, the job if one is running,
- *                            and whether ffmpeg is here
+ *                            no trailer before, and the job if one is running
  *   POST {"ids": [...]}      fetch trailers for these games, in the background
  *   POST {..., "dry": true}  the plan, nothing started
  *
@@ -26,7 +25,6 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
         'ok'      => true,
         'games'   => $rows,
         'missing' => count(array_filter($rows, static fn ($r) => !$r['has'])),
-        'ffmpeg'  => xs_ffmpeg() !== '',
         'dir'     => xs_steamvid_dir(),
         'job'     => $job,
     ]);

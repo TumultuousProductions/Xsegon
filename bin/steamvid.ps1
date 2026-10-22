@@ -5,10 +5,10 @@
 
     Started by api\steamvid.php. Each game's highlighted trailer (else the
     first) is saved as <dir>\<game id>.mp4: the plain mp4 where Steam still
-    serves it, else the HLS stream through ffmpeg when the job names one.
-    "none" and "stream" (needs ffmpeg) are only ever Steam's own answer; an
-    answer that cannot be read or a file that would not come is "failed",
-    which is asked again at the next fetch.
+    serves it, else the HLS stream's pieces joined by the job's saver
+    (bin\streamsave.php). "none" is only ever Steam's own answer; an answer
+    that cannot be read or a file that would not come is "failed", which is
+    asked again at the next fetch.
 
     A game already saved is skipped, so a stopped job carries on. One Steam
     API call about every half second, well inside what the store allows.
@@ -101,15 +101,10 @@ try {
         # Steam named no file and its usual address has none: 22 is a server's no, 37 no file at the tests' file:// stand-in.
         $noFile = -not ($movie.mp4 -and $movie.mp4.max) -and ($script:fetchCode -eq 22 -or $script:fetchCode -eq 37)
         if (-not $got -and $movie.hls_h264) {
-            if ($j.ffmpeg) {
-                # -rw_timeout: 30 s with nothing from the stream ends it (microseconds)
-                $code = Run-Native $j.ffmpeg @('-y', '-loglevel', 'error', '-rw_timeout', '30000000', '-i', $movie.hls_h264, '-map', '0:v:0', '-map', '0:a:0?',
-                                                '-c', 'copy', '-movflags', '+faststart', '-f', 'mp4', $part)
-                $got = ($code -eq 0 -and (Test-Path -LiteralPath $part))
-                if (-not $got) { $g.state = 'failed'; Save-Job $j; continue }
-            } elseif ($noFile) {
-                $g.state = 'stream'; Save-Job $j; continue
-            }
+            # Its pieces fetched into this job's own folder, which goes when the job ends.
+            $code = Run-Native $j.saver[0] @('-d', 'display_errors=0', $j.saver[1], $movie.hls_h264, $part, (Join-Path $tmp 'pieces'))
+            $got = ($code -eq 0 -and (Test-Path -LiteralPath $part))
+            if (-not $got) { $g.state = 'failed'; Save-Job $j; continue }
         }
         if (-not $got -and $noFile) { $g.state = 'none'; Save-Job $j; continue }
         # A file that would not come down is a failed fetch, never "no trailer".

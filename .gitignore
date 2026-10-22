@@ -16,8 +16,8 @@ bin/7zr.exe
 bin/7zr.exe.part
 bin/7zr-LICENSE.txt
 
-# ffmpeg, the video cutter for World of Longplays recordings, the same way
-# (tools\get-ffmpeg.js): the pinned official build, carried by every package
+# ffmpeg, which packages carried before Xsegon cut and joined videos itself
+# (includes\mp4.php): a checkout may still hold it, and never commits it
 bin/ffmpeg.exe
 bin/ffmpeg-LICENSE.txt
 

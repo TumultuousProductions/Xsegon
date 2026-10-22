@@ -293,7 +293,7 @@ function askRuns(n) {
     var cl = got[0], av = got[1];
     var lists = cl && cl.ok && !cl.have && !(cl.job && cl.job.state === "running") ? cl.get : null;
     var vids = av && av.ok && av.curl && !(av.job && av.job.state === "running")
-      ? (av.consoles || []).reduce(function (sum, c) { return sum + (c.sets || (c.wol && av.ffmpeg) ? c.need : 0); }, 0) : 0;
+      ? (av.consoles || []).reduce(function (sum, c) { return sum + (c.sets || c.wol ? c.need : 0); }, 0) : 0;
     openAsk(n, lists, vids);
   }, function () { askLooking = false; });
 }

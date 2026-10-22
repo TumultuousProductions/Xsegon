@@ -511,7 +511,6 @@ and are fetched by a tool, each pinned to one checked version:
 |---|---|
 | The games database (about 70 MB) | Xsegon itself, the first time it starts ([gamesdb/README.md](gamesdb/README.md)) |
 | 7-Zip's `7zr.exe` | `node tools\get-7zr.js` |
-| `ffmpeg.exe` | `node tools\get-ffmpeg.js` |
 | RetroArch's archive | `node tools\get-retroarch.js` |
 
 - `node tests\run.js` runs the tests (`node tests\lanes.js` runs them in two
@@ -537,7 +536,7 @@ here, where every copy looks for it.
 MIT (see [LICENSE](LICENSE)). The games database Xsegon downloads is
 LaunchBox's, not covered by it; see Credits. Nor are the programs the download carries
 unchanged, each under its own licence with that licence beside it: 7-Zip's
-`7zr.exe` (GNU LGPL), `ffmpeg.exe` (GNU GPL v3) and RetroArch (GNU GPL v3),
+`7zr.exe` (GNU LGPL) and RetroArch (GNU GPL v3),
 nor the console icons in [img/consoles](img/consoles/ABOUT.txt), which are
 RetroArch's (CC-BY 4.0), nor the console name logos in
 [img/console-logos](img/console-logos/ABOUT.txt), which are their owners'
@@ -637,11 +636,6 @@ wants a logo taken out has only to ask: help@tumultuousproductions.site.
   `node tools\build-texpacks.js` makes the list). A few packs the Archive
   does not list are added by hand (`tools\texpacks-more.json`), marked so on
   their rows.
-- Cutting those recordings: `ffmpeg.exe` from the
-  [FFmpeg project](https://ffmpeg.org), the release essentials build for
-  Windows by [Gyan Doshi](https://www.gyan.dev/ffmpeg/builds/), shipped
-  unchanged in the download under the GNU GPL v3 with its licence beside it
-  (`node tools\get-ffmpeg.js` fetches it into a checkout).
 - The list of controllers read for a controller the browser does not know:
   [SDL_GameControllerDB](https://github.com/mdqinc/SDL_GameControllerDB), under
   the zlib licence, unchanged, with its licence beside it in
