@@ -105,7 +105,7 @@ if (-not $phpPath) {
     if (-not (Test-Path -LiteralPath "$root\runtime") -and -not (Test-Path -LiteralPath "$root\.git")) {
         Write-Host 'This folder is only part of Xsegon (its update files, or its source code), and it cannot run on its own.' -ForegroundColor Red
         Write-Host ''
-        Write-Host 'Get the whole program here, the file marked DOWNLOAD THIS ONE:' -ForegroundColor Yellow
+        Write-Host 'Get the whole program here, the file marked Windows install:' -ForegroundColor Yellow
         Write-Host '  https://github.com/TumultuousProductions/Xsegon/releases/latest' -ForegroundColor Cyan
         Write-Host ''
         Write-Host 'To run the source code instead, install PHP and put it on PATH.' -ForegroundColor DarkGray
