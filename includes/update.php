@@ -19,16 +19,19 @@
  *     data\update\skipped.json  a version gone back from: not got ready again by itself
  *     data\update\failed.json   the last switch that did not work: its version and why, for Settings
  *
- * The download is a release's Xsegon-update-<v>.zip, .json and .sig
- * (tools\update-release.js): the list must be signed with the key whose public
- * half this copy carries (includes\update-key.pem), and every file must match it.
+ * The download is Xsegon-update-<v>.zip, .json and .sig (tools\update-release.js),
+ * from that version's own release on Xsegon-helper-files, tagged update-<v>: Xsegon's
+ * release page carries only what people download. The list must be signed with the
+ * key whose public half this copy carries (includes\update-key.pem), and every file
+ * must match it.
  */
 declare(strict_types=1);
 
 require_once __DIR__ . '/settings.php';
 require_once __DIR__ . '/version.php';
 
-const XS_UPDATE_FROM = 'https://github.com/TumultuousProductions/Xsegon/releases/download/';
+const XS_UPDATE_ASK  = 'https://api.github.com/repos/TumultuousProductions/Xsegon-helper-files/releases/tags/update-';
+const XS_UPDATE_FROM = 'https://github.com/TumultuousProductions/Xsegon-helper-files/releases/download/update-';
 const XS_UPDATE_MAX  = 200 * 1048576;
 const XS_UPDATE_MSG  = 'msg-newversion';   // the one message about a new version: "is out", then "is ready"
 
@@ -70,7 +73,7 @@ function xs_update_tar(): string
     return (getenv('SystemRoot') ?: 'C:\\Windows') . '\\System32\\tar.exe';
 }
 
-/** Where a release's update files may come from: its GitHub release; on a test copy, its stand-in on this PC. */
+/** Where a release's update files may come from: their release on Xsegon-helper-files; on a test copy, its stand-in on this PC. */
 function xs_update_allowed(string $url): bool
 {
     if (str_starts_with($url, XS_UPDATE_FROM)) {
@@ -85,12 +88,55 @@ function xs_update_assets(string $version, array $assets): ?array
     $out = [];
     foreach (['zip' => '.zip', 'list' => '.json', 'sig' => '.sig'] as $k => $ext) {
         $url = (string) ($assets['Xsegon-update-' . $version . $ext] ?? '');
-        if (!xs_update_allowed($url)) {
+        if (!xs_update_allowed($url) || (!xs_test_copy() && !str_starts_with($url, XS_UPDATE_FROM . $version . '/'))) {
             return null;
         }
         $out[$k] = $url;
     }
     return $out;
+}
+
+/** Where a version's update files are asked for. XSEGON_UPDATE_URL: the tests' stand-in, on a test copy only. */
+function xs_update_ask_url(string $version): ?string
+{
+    if (xs_test_copy()) {
+        $test = getenv('XSEGON_UPDATE_URL');
+        return is_string($test) && $test !== '' ? $test . rawurlencode($version) : null;
+    }
+    return XS_UPDATE_ASK . rawurlencode($version);
+}
+
+/**
+ * A version's update files, asked of their own release on Xsegon-helper-files: the three
+ * addresses, and the zip's size in $bytes; null with $why when that version has none.
+ */
+function xs_update_find(string $version, ?int &$bytes = null, ?string &$why = null): ?array
+{
+    $bytes = 0;
+    $url   = xs_update_ask_url($version);
+    if ($url === null) {
+        $why = 'a test copy, which never asks GitHub by itself';
+        return null;
+    }
+    require_once __DIR__ . '/newversion.php';
+    $rel = xs_newversion_fetch($url, $why);
+    if ($rel === null) {
+        return null;
+    }
+    $assets = $sizes = [];
+    foreach ((array) ($rel['assets'] ?? []) as $a) {
+        if (is_array($a)) {
+            $assets[(string) ($a['name'] ?? '')] = (string) ($a['browser_download_url'] ?? '');
+            $sizes[(string) ($a['name'] ?? '')]  = (int) ($a['size'] ?? 0);
+        }
+    }
+    $urls = xs_update_assets($version, $assets);
+    if ($urls === null) {
+        $why = 'its release holds no update files for this copy';
+        return null;
+    }
+    $bytes = $sizes['Xsegon-update-' . $version . '.zip'] ?? 0;
+    return $urls;
 }
 
 /** True while bin\update.php is at work: it beats at each step and as the download comes. */

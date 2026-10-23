@@ -87,7 +87,8 @@ function xs_newversion_maybe(): void
 /**
  * The newest release with a version number for a tag (v0.15), leaving out
  * drafts, pre-releases and the Games Database's own release: its version,
- * its page and its first lines of notes. Null when there is none.
+ * its page and its first lines of notes. Null when there is none. Its update
+ * files are not on that page but on Xsegon-helper-files (xs_update_find).
  */
 function xs_newversion_pick(array $releases): ?array
 {
@@ -101,15 +102,8 @@ function xs_newversion_pick(array $releases): ?array
             continue;
         }
         $page = (string) ($r['html_url'] ?? '');
-        $assets = $sizes = [];
-        foreach ((array) ($r['assets'] ?? []) as $a) {
-            if (is_array($a)) {
-                $assets[(string) ($a['name'] ?? '')] = (string) ($a['browser_download_url'] ?? '');
-                $sizes[(string) ($a['name'] ?? '')]  = (int) ($a['size'] ?? 0);
-            }
-        }
         $best = ['version' => $v, 'page' => str_starts_with($page, XS_NEWVERSION_PAGE) ? $page : XS_NEWVERSION_PAGE . 'latest',
-                 'notes' => xs_newversion_notes((string) ($r['body'] ?? '')), 'assets' => $assets, 'sizes' => $sizes];
+                 'notes' => xs_newversion_notes((string) ($r['body'] ?? ''))];
     }
     return $best;
 }
@@ -190,14 +184,18 @@ function xs_newversion_check(): array
     $out['newest'] = $best['version'];
     $out['page']   = $best['page'];
     $out['newer']  = version_compare($best['version'], $have, '>');
-    // A release that carries an update, for a copy that can take one: kept for Update now (includes\update.php).
+    // Its update files, from their own release on Xsegon-helper-files, for a copy that can take one: kept for Update now (includes\update.php).
     $urls = null;
     if ($out['newer']) {
         require_once __DIR__ . '/update.php';
-        $urls = xs_update_cannot() === null ? xs_update_assets($best['version'], $best['assets']) : null;
+        $can  = xs_update_cannot() === null;
+        $urls = $can ? xs_update_find($best['version'], $bytes, $noUpdate) : null;
         if ($urls !== null) {
             $out['urls'] = $urls;
-            $out['mb']   = round((int) ($best['sizes']['Xsegon-update-' . $best['version'] . '.zip'] ?? 0) / 1048576, 1);
+            $out['mb']   = round($bytes / 1048576, 1);
+        } elseif ($can) {
+            $out['noUpdate'] = (string) $noUpdate;
+            xs_log('NEWV', $best['version'] . ' has no update files this copy can take (' . $noUpdate . '): it says to update by hand');
         }
     }
     $said = false;

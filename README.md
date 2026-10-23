@@ -525,10 +525,11 @@ and are fetched by a tool, each pinned to one checked version:
 A release page is for people, so it carries only what a person downloads:
 the **Windows install** and the **Linux install**. Everything else goes on
 [Xsegon-helper-files](https://github.com/TumultuousProductions/Xsegon-helper-files),
-each kind on a release of its own: files Xsegon fetches by itself (its update
-files, from v0.19), and source code a licence asks to be offered. Until v0.19
-the update files are on Xsegon's release page too, because copies before it
-look for them only there. The Games Database keeps its own `gamesdb` release
+each kind on a release of its own: files Xsegon fetches by itself (each
+version's update files on a release named `update-<version>`, where copies
+from v0.18.1 look for them), and source code a licence asks to be offered. A
+copy of v0.18 or older looked for update files only on Xsegon's own page, so it
+says to update by hand once. The Games Database keeps its own `gamesdb` release
 here, where every copy looks for it.
 
 ## License
