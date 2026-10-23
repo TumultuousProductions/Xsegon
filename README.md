@@ -526,7 +526,7 @@ A release page is for people, so it carries only what a person downloads:
 the **Windows install** and the **Linux install**. Everything else goes on
 [Xsegon-helper-files](https://github.com/TumultuousProductions/Xsegon-helper-files),
 each kind on a release of its own: files Xsegon fetches by itself (its update
-files, from v0.18), and source code a licence asks to be offered. Until v0.18
+files, from v0.19), and source code a licence asks to be offered. Until v0.19
 the update files are on Xsegon's release page too, because copies before it
 look for them only there. The Games Database keeps its own `gamesdb` release
 here, where every copy looks for it.
