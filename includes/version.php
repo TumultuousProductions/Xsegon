@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 /** A checkout's or a tester's copy's version. A release names its own in RELEASE.json (xs_release).
  *  It moves in each release's pull request: tools\make-test-copy.js --release refuses any other number. */
-const XS_VERSION = '0.18';
+const XS_VERSION = '0.18.1';
 
 /**
  * The release this copy is, or null in a checkout or a tester's copy. Its number
