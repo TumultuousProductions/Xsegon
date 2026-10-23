@@ -11,7 +11,8 @@
     makeUpdate({ app, version, key, out }) lists Xsegon's own files in the
     package folder app (size and SHA-256), zips them, signs the list, writes
     RELEASE.json and RELEASE.sig beside app's index.php, and writes the three
-    files to upload beside the big zip into out:
+    files into out, beside the big zip, for Xsegon-helper-files' release
+    update-<v> (copies look for them there, never on Xsegon's own page):
         Xsegon-update-<v>.zip     Xsegon's own files, for bin\update.php
         Xsegon-update-<v>.json    the list, with the zip's size and SHA-256
         Xsegon-update-<v>.sig     the list's signature (ECDSA P-256, SHA-256)

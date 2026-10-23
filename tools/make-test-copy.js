@@ -206,14 +206,14 @@ if (build) {
 // A release names its version and each of Xsegon's own files with its size and
 // SHA-256 in a signed list (RELEASE.json and .sig, read by includes\version.php
 // xs_release and bin\update.php), and makes the update the copies before it take:
-// Xsegon-update-<v>.zip, .json and .sig beside the big zip, uploaded with it
-// (tools\update-release.js). A tester's copy has none, so it never asks for a newer one.
+// Xsegon-update-<v>.zip, .json and .sig beside the big zip, uploaded to Xsegon-helper-files
+// as release update-<v> (tools\update-release.js). A tester's copy has none, so it never asks for a newer one.
 if (release) {
   const ur = require("./update-release");
   if (!fs.existsSync(ur.PRIVATE_KEY)) { console.log("STOP: a release is signed, and there is no key yet: node tools\\update-release.js --new-key, once"); process.exit(1); }
   const made = ur.makeUpdate({ app, version: build.slice(1), key: ur.PRIVATE_KEY, out: path.dirname(path.resolve(out)) });
   console.log("release " + build.slice(1) + ": " + made.files + " of Xsegon's own files in the signed list; the update, "
-    + (made.zipBytes / 1048576).toFixed(1) + " MB, and its list and signature beside the zip: upload all four");
+    + (made.zipBytes / 1048576).toFixed(1) + " MB, and its list and signature beside the zip: the zip on Xsegon's release, the three update files on Xsegon-helper-files as release update-" + build.slice(1));
 }
 
 // php.ini: the certificate lines name a folder on this PC; start.ps1 gives

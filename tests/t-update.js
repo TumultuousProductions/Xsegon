@@ -104,16 +104,24 @@ module.exports = async function (b, check) {
     [started.code, /only part of Xsegon/.test(started.out), /releases\/latest/.test(started.out), /could not be located/.test(started.out), fs.existsSync(path.join(mistaken, "data"))],
     [1, true, true, false, false]);
 
-  // The stand-in GitHub: the releases list names whichever release the test serves now.
-  let serving = "good";
+  // The stand-in GitHub: Xsegon's releases list names 0.16, and the update files of whichever
+  // release the test serves now are on 0.16's own release on Xsegon-helper-files (/update/0.16).
+  // Update files left on Xsegon's own page point at the damaged ones: a copy must never take them.
+  let serving = "good", helperHas = true;
+  const assetsOf = (dir) => ["zip", "json", "sig"].map((x) => ({ name: "Xsegon-update-0.16." + x,
+    browser_download_url: "http://127.0.0.1:" + server.address().port + "/dl/" + dir + "/Xsegon-update-0.16." + x,
+    size: fs.statSync(path.join(home, "dl", dir, "Xsegon-update-0.16." + x)).size }));
   const server = http.createServer((req, res) => {
     const u = decodeURIComponent(req.url);
     if (u === "/releases") {
-      const base = "http://127.0.0.1:" + server.address().port + "/dl/" + serving + "/";
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify([{ tag_name: "v0.16", html_url: "https://github.com/TumultuousProductions/Xsegon/releases/tag/v0.16", draft: false, prerelease: false,
-        body: "Faster lists", assets: ["zip", "json", "sig"].map((x) => ({ name: "Xsegon-update-0.16." + x, browser_download_url: base + "Xsegon-update-0.16." + x,
-          size: fs.statSync(path.join(home, "dl", serving, "Xsegon-update-0.16." + x)).size })) }]));
+        body: "Faster lists", assets: assetsOf("damaged") }]));
+      return;
+    }
+    if (u === "/update/0.16" && helperHas) {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ tag_name: "update-0.16", draft: false, prerelease: false, assets: assetsOf(serving) }));
       return;
     }
     const f = path.join(home, u.replace(/^\/+/, ""));
@@ -122,6 +130,7 @@ module.exports = async function (b, check) {
   });
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
   const releases = "http://127.0.0.1:" + server.address().port + "/releases";
+  const helper = "http://127.0.0.1:" + server.address().port + "/update/";
 
   /** A copy of 0.15 as a person has it after a while. auto: new versions download by themselves. */
   const install = (name, auto) => {
@@ -136,7 +145,7 @@ module.exports = async function (b, check) {
     fs.appendFileSync(path.join(copy, "css", "xsegon.css"), "\n/* my own change */\n");
     return copy;
   };
-  const env = (copy) => ({ XSEGON_DATA: path.join(copy, "data"), XSEGON_NEWVERSION_URL: releases });
+  const env = (copy) => ({ XSEGON_DATA: path.join(copy, "data"), XSEGON_NEWVERSION_URL: releases, XSEGON_UPDATE_URL: helper });
   const upFile = (copy, n) => path.join(copy, "data", "update", n);
   const readJson = (f) => { try { return JSON.parse(fs.readFileSync(f, "utf8")); } catch (e) { return null; } };
   const message = (copy) => (readJson(path.join(copy, "data", "messages.json")) || []).find((m) => m.id === "msg-newversion") || null;
@@ -167,11 +176,23 @@ module.exports = async function (b, check) {
   });
 
   try {
-    /* ---- a good update -------------------------------------------------- */
-    let c = install("good");
-    const before = prints(c), data0 = mine(c);
+    /* ---- update files come only from Xsegon-helper-files ---------------- */
+    helperHas = false;
+    let c = install("nohelper");
     await look(c);
     let m = message(c);
+    const seen = readJson(path.join(c, "data", "newversion.json")) || {};
+    check("with no update files on Xsegon-helper-files, 0.16 is said with how to update by hand; the ones on Xsegon's own page are never taken",
+      [m && m.title, m && m.opens, /Replace the files/.test((m || {}).body || ""), "urls" in seen, typeof seen.noUpdate === "string" && seen.noUpdate !== "",
+       /NEWV .*0\.16 has no update files this copy can take/.test(logOf(c))],
+      ["Xsegon 0.16 is out", ["newversion"], true, false, true, true]);
+    helperHas = true;
+
+    /* ---- a good update -------------------------------------------------- */
+    c = install("good");
+    const before = prints(c), data0 = mine(c);
+    await look(c);
+    m = message(c);
     const zipMb = Math.round(fs.statSync(path.join(home, "dl", "good", "Xsegon-update-0.16.zip")).size / 1048576 * 10) / 10;
     check("the daily look says 0.16 is out, once, with Update now and its page, and downloads nothing by itself",
       [m && m.title, m && m.opens, ((m || {}).body || "").indexOf("Update now asks first, then downloads it (" + zipMb + " MB)") >= 0, fs.existsSync(path.join(c, "data", "update"))],
