@@ -9,6 +9,7 @@ data/*
 # never in the repo, where each refresh would add 70 MB to the history.
 gamesdb/gamesdb.sqlite.bz2*
 gamesdb/gamesdb.json
+gamesdb/gamesdb.sig
 
 # 7-Zip's small extractor and its licence: fetched by version and checked
 # against its hash (tools\get-7zr.js), carried by every package, not kept here
