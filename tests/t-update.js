@@ -53,7 +53,7 @@ module.exports = async function (b, check) {
   const key = keyOf("ours"), other = keyOf("someone-else");
 
   /* ---- two releases of the files here, and three that go wrong --------- */
-  const pkg = (name, version, signWith, change) => {
+  const pkg = (name, version, signWith, change, urgent) => {
     const app = path.join(home, "pkg", name, "Xsegon");
     for (const t of TAKE) { if (fs.existsSync(path.join(ROOT, t))) { fs.cpSync(path.join(ROOT, t), path.join(app, t), { recursive: true }); } }
     fs.copyFileSync(key + ".pub", path.join(app, "includes", "update-key.pem"));   // every copy trusts our key
@@ -61,16 +61,18 @@ module.exports = async function (b, check) {
     if (signWith !== key) {
       // Another's key: the package must carry its public half to be made at all, then gets ours back.
       fs.copyFileSync(signWith + ".pub", path.join(app, "includes", "update-key.pem"));
-      const made = ur.makeUpdate({ app, version, key: signWith, out: path.join(home, "dl", name) });
+      const made = ur.makeUpdate({ app, version, key: signWith, out: path.join(home, "dl", name), urgent });
       fs.copyFileSync(key + ".pub", path.join(app, "includes", "update-key.pem"));
       return Object.assign({ app }, made);
     }
-    return Object.assign({ app }, ur.makeUpdate({ app, version, key, out: path.join(home, "dl", name) }));
+    return Object.assign({ app }, ur.makeUpdate({ app, version, key, out: path.join(home, "dl", name), urgent }));
   };
   const old = pkg("old", "0.15", key, (app) => fs.writeFileSync(path.join(app, "img", "only-in-0.15.txt"), "gone in 0.16\n"));
   const good = pkg("good", "0.16", key, (app) => fs.writeFileSync(path.join(app, "img", "new-in-0.16.txt"), "new\n"));
   const broken = pkg("broken", "0.16", key, (app) => fs.writeFileSync(path.join(app, "api", "status.php"), "<?php\nthis_release_is_broken_on_purpose();\n"));
   const forged = pkg("forged", "0.16", other, null);
+  pkg("urgent", "0.16", key, null, true);
+  pkg("forged-urgent", "0.16", other, null, true);
   fs.cpSync(path.join(home, "dl", "good"), path.join(home, "dl", "damaged"), { recursive: true });
   const dz = path.join(home, "dl", "damaged", "Xsegon-update-0.16.zip");
   const bytes = fs.readFileSync(dz); bytes[bytes.length >> 1] ^= 0xff; fs.writeFileSync(dz, bytes);
@@ -107,7 +109,7 @@ module.exports = async function (b, check) {
   // The stand-in GitHub: Xsegon's releases list names 0.16, and the update files of whichever
   // release the test serves now are on 0.16's own release on Xsegon-helper-files (/update/0.16).
   // Update files left on Xsegon's own page point at the damaged ones: a copy must never take them.
-  let serving = "good", helperHas = true;
+  let serving = "good", helperHas = true, published = "2026-01-01T00:00:00Z";
   const assetsOf = (dir) => ["zip", "json", "sig"].map((x) => ({ name: "Xsegon-update-0.16." + x,
     browser_download_url: "http://127.0.0.1:" + server.address().port + "/dl/" + dir + "/Xsegon-update-0.16." + x,
     size: fs.statSync(path.join(home, "dl", dir, "Xsegon-update-0.16." + x)).size }));
@@ -116,7 +118,7 @@ module.exports = async function (b, check) {
     if (u === "/releases") {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify([{ tag_name: "v0.16", html_url: "https://github.com/TumultuousProductions/Xsegon/releases/tag/v0.16", draft: false, prerelease: false,
-        body: "Faster lists", assets: assetsOf("damaged") }]));
+        published_at: published, body: "Faster lists", assets: assetsOf("damaged") }]));
       return;
     }
     if (u === "/update/0.16" && helperHas) {
@@ -187,6 +189,31 @@ module.exports = async function (b, check) {
        /NEWV .*0\.16 has no update files this copy can take/.test(logOf(c))],
       ["Xsegon 0.16 is out", ["newversion"], true, false, true, true]);
     helperHas = true;
+
+    /* ---- three days' wait, and urgent releases ---------------------------- */
+    published = new Date(Date.now() - 600000).toISOString();
+    c = install("waiting");
+    await look(c);
+    let seen2 = readJson(path.join(c, "data", "newversion.json")) || {};
+    check("a release out for ten minutes is not said or fetched yet: three days after it came out",
+      [message(c), "urls" in seen2, typeof seen2.waitUntil === "string", fs.existsSync(path.join(c, "data", "update")), /NEWV .*said from .*three days after it came out/.test(logOf(c))],
+      [null, false, true, false, true]);
+    serving = "urgent";
+    c = install("urgent");
+    await look(c);
+    m = message(c);
+    seen2 = readJson(path.join(c, "data", "newversion.json")) || {};
+    check("one its maker signed as urgent is said at once, with Update now",
+      [m && m.title, m && m.opens, seen2.urgent, "waitUntil" in seen2, /NEWV .*said in the mailbox at once, as its maker marked it urgent/.test(logOf(c))],
+      ["Xsegon 0.16 is out", ["updatenow", "newversion"], true, false, true]);
+    serving = "forged-urgent";
+    c = install("forged-urgent");
+    await look(c);
+    seen2 = readJson(path.join(c, "data", "newversion.json")) || {};
+    check("an urgent mark under another key is not believed: that release waits like any other",
+      [message(c), seen2.urgent || false, typeof seen2.waitUntil === "string"], [null, false, true]);
+    serving = "good";
+    published = "2026-01-01T00:00:00Z";
 
     /* ---- a good update -------------------------------------------------- */
     c = install("good");

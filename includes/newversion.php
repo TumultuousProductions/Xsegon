@@ -13,6 +13,10 @@
  * (RELEASE.json, written by tools\make-test-copy.js --release): a checkout and
  * a tester's copy never do. Settings > Window > New versions switches it off,
  * and then nothing is asked.
+ *
+ * A new version is offered three days after it is published, so a bad one can
+ * be pulled from the page before any copy takes it; one its maker signed as
+ * urgent (a security fix) is offered at once.
  */
 declare(strict_types=1);
 
@@ -22,6 +26,7 @@ require_once __DIR__ . '/version.php';
 const XS_NEWVERSION_ASK  = 'https://api.github.com/repos/TumultuousProductions/Xsegon/releases?per_page=30';
 const XS_NEWVERSION_PAGE = 'https://github.com/TumultuousProductions/Xsegon/releases/';
 const XS_NEWVERSION_MSG  = 'msg-newversion';   // one message, replaced by the next version's
+const XS_NEWVERSION_WAIT = 3 * 86400;          // how long a published release waits before copies are told
 
 function xs_newversion_path(): string
 {
@@ -103,7 +108,7 @@ function xs_newversion_pick(array $releases): ?array
         }
         $page = (string) ($r['html_url'] ?? '');
         $best = ['version' => $v, 'page' => str_starts_with($page, XS_NEWVERSION_PAGE) ? $page : XS_NEWVERSION_PAGE . 'latest',
-                 'notes' => xs_newversion_notes((string) ($r['body'] ?? ''))];
+                 'notes' => xs_newversion_notes((string) ($r['body'] ?? '')), 'published' => (string) ($r['published_at'] ?? '')];
     }
     return $best;
 }
@@ -184,6 +189,12 @@ function xs_newversion_check(): array
     $out['newest'] = $best['version'];
     $out['page']   = $best['page'];
     $out['newer']  = version_compare($best['version'], $have, '>');
+    // Three days after GitHub says it was published. A release with no such date (never one of GitHub's) does not wait.
+    $waitUntil = null;
+    $outAt     = $best['published'] !== '' ? strtotime($best['published']) : false;
+    if ($out['newer'] && $outAt !== false && time() - $outAt < XS_NEWVERSION_WAIT) {
+        $waitUntil = $outAt + XS_NEWVERSION_WAIT;
+    }
     // Its update files, from their own release on Xsegon-helper-files, for a copy that can take one: kept for Update now (includes\update.php).
     $urls = null;
     if ($out['newer']) {
@@ -198,8 +209,18 @@ function xs_newversion_check(): array
             xs_log('NEWV', $best['version'] . ' has no update files this copy can take (' . $noUpdate . '): it says to update by hand');
         }
     }
+    // An urgent one (a security fix, so marked in its signed list) skips the wait; any other is not said or fetched yet.
+    if ($waitUntil !== null && $urls !== null && xs_update_urgent($best['version'], $urls)) {
+        $waitUntil     = null;
+        $out['urgent'] = true;
+    }
+    if ($waitUntil !== null) {
+        $out['waitUntil'] = date('c', $waitUntil);
+        unset($out['urls'], $out['mb']);
+        $urls = null;
+    }
     $said = false;
-    if ($out['newer'] && $told !== $best['version']) {
+    if ($out['newer'] && $waitUntil === null && $told !== $best['version']) {
         $size = !empty($out['mb']) ? $out['mb'] . ' MB' : 'a few MB';
         $said = xs_messages_add([
             'id'    => XS_NEWVERSION_MSG,
@@ -229,7 +250,10 @@ function xs_newversion_check(): array
     }
     xs_write_json(xs_newversion_path(), $out);
     xs_log('NEWV', 'this is ' . $have . ', the newest is ' . $best['version']
-        . ($out['newer'] ? ($said ? ': said in the mailbox' : ($told === $best['version'] ? ': said before' : ': the mailbox would not take it')) : ': up to date')
+        . (!$out['newer'] ? ': up to date'
+          : ($waitUntil !== null ? ': said from ' . date('Y-m-d H:i', $waitUntil) . ', three days after it came out'
+          : (($said ? ': said in the mailbox' : ($told === $best['version'] ? ': said before' : ': the mailbox would not take it'))
+             . (!empty($out['urgent']) ? ' at once, as its maker marked it urgent' : ''))))
         . ', in ' . (int) round((microtime(true) - $t0) * 1000) . 'ms');
     return $out;
 }

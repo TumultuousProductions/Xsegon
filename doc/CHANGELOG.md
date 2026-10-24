@@ -4,6 +4,7 @@ Newest first: what changed for the person at the screen.
 
 ## 2026-10-23
 
+- **A new version waits three days before Xsegon offers it.** Messages says a new version is out once it has been on the Releases page for three days, so one that turns out bad can be taken down before any copy takes it; Download new versions by themselves waits the same. A security fix its maker signs as urgent is offered at once. You can always download a new version by hand from its page sooner.
 - **Xsegon 0.18.1.** The change below, as a download. A copy of 0.18 or older is told 0.18.1 is out and how to update by hand, as its Update now looks only where the update files no longer are.
 - **Update files are no longer on the Releases page.** Xsegon now finds each new version's update files on Xsegon-helper-files, on a release of that version's own, so the Releases page carries only the Windows install and the Linux install. Update now works as before. A copy of 0.18 or older looks for them only on the Releases page, so for the next version it says to update by hand, once.
 
