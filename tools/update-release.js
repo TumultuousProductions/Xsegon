@@ -64,7 +64,9 @@ function ownFiles(app) {
   return files;
 }
 
-function makeUpdate({ app, version, key, out }) {
+// urgent: a security fix, which copies take at once; any other release waits three days after
+// it is published (includes\newversion.php), so a bad one can be pulled before copies take it.
+function makeUpdate({ app, version, key, out, urgent }) {
   if (!/^\d+(\.\d+){1,3}$/.test(version)) { throw new Error("a version is numbers and dots, like 0.15"); }
   const priv = fs.readFileSync(key, "utf8");
   // The copy must trust this key, or no copy of this release could take the next one.
@@ -94,8 +96,8 @@ function makeUpdate({ app, version, key, out }) {
   } finally {
     fs.rmSync(stage, { recursive: true, force: true });
   }
-  const list = JSON.stringify({ app: "Xsegon", version, made: new Date().toISOString(),
-    zip: { name: zipName, size: fs.statSync(zip).size, sha256: sha(zip) }, files }, null, 1) + "\n";
+  const list = JSON.stringify(Object.assign({ app: "Xsegon", version, made: new Date().toISOString() }, urgent ? { urgent: true } : {},
+    { zip: { name: zipName, size: fs.statSync(zip).size, sha256: sha(zip) }, files }), null, 1) + "\n";
   const sig = crypto.sign("sha256", Buffer.from(list, "utf8"), priv).toString("base64") + "\n";
   fs.writeFileSync(path.join(out, "Xsegon-update-" + version + ".json"), list);
   fs.writeFileSync(path.join(out, "Xsegon-update-" + version + ".sig"), sig);

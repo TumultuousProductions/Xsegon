@@ -139,6 +139,21 @@ function xs_update_find(string $version, ?int &$bytes = null, ?string &$why = nu
     return $urls;
 }
 
+/**
+ * Whether a release is marked urgent (a security fix, taken without the three days' wait):
+ * read from its signed list, and believed only when the signature is the key this copy carries.
+ */
+function xs_update_urgent(string $version, array $urls): bool
+{
+    $list = xs_update_get((string) ($urls['list'] ?? ''), null, 8 * 1048576);
+    $sig  = xs_update_get((string) ($urls['sig'] ?? ''), null, 65536);
+    if (!is_string($list) || !is_string($sig) || !xs_update_signed($list, $sig)) {
+        return false;
+    }
+    $got = json_decode($list, true);
+    return xs_update_list_problem($got, $version) === null && ($got['urgent'] ?? false) === true;
+}
+
 /** True while bin\update.php is at work: it beats at each step and as the download comes. */
 function xs_update_fetching(mixed $job): bool
 {

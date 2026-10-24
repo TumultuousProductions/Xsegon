@@ -2,6 +2,8 @@
     bin\newversion.php), and the version a release names (RELEASE.json, which
     tools\make-test-copy.js --release writes; includes\version.php xs_release).
 
+    A release is said three days after GitHub says it was published.
+
     GitHub is never asked. The look runs against a stand-in served from this
     process, in a data folder of its own under tests\out (XSEGON_DATA), with
     XSEGON_TEST_RELEASE standing in for a release's own copy. The mailbox's
@@ -80,6 +82,20 @@ module.exports = async function (b, check) {
     await look("0.15");
     m = JSON.parse(fs.readFileSync(path.join(data, "messages.json"), "utf8")).filter((x) => x.id === "msg-newversion");
     check("one message at a time: a newer one takes the place of the last", [m.length, (m[0] || {}).title], [1, "Xsegon 0.18 is out"]);
+
+    /* ---- three days' wait after a release comes out --------------------- */
+    fs.writeFileSync(path.join(data, "messages.json"), "[]");
+    const hoursAgo = (h) => new Date(Date.now() - h * 3600000).toISOString();
+    answer = [rel("v0.21", { body: "Fresh", published_at: hoursAgo(2) })];
+    r = await look("0.18");
+    check("a release out for two hours is found, but not said until three days after it came out",
+      [r.newest, r.newer, mail().length, Math.abs(Date.parse(r.waitUntil || "") - (Date.now() - 2 * 3600000 + 3 * 86400000)) < 120000],
+      ["0.21", true, 0, true]);
+    check("and the log says from when", /NEWV .*the newest is 0\.21: said from .*three days after it came out/.test(logText()));
+    answer = [rel("v0.21", { body: "Fresh", published_at: hoursAgo(73) })];
+    r = await look("0.18");
+    check("three days on, it is said", [r.newer, r.waitUntil || null, (mail()[0] || {}).title], [true, null, "Xsegon 0.21 is out"]);
+    answer = [rel("v0.18", { body: "Newest" })];
 
     /* ---- nothing to say ------------------------------------------------- */
     fs.writeFileSync(path.join(data, "messages.json"), "[]");

@@ -3,6 +3,7 @@
 
         node tools\make-test-copy.js <folder to make it in> [guide.html] [--with-launchbox] [--build v0.01]
         node tools\make-test-copy.js <folder> --release     the public download
+        ... --release --urgent                              a security fix, which copies take at once
 
     --build v0.01 names the package: it goes into Xsegon\BUILD with the commit
     and the day, and from there into each day's log and every report
@@ -44,6 +45,9 @@ const PHP = path.join(ROOT, "..", "php-8.5.12-nts-Win32-vs17-x64");
 // --release: the public download (a GitHub Release). LaunchBox is left on,
 // for whoever has it, as --with-launchbox does.
 const release = process.argv.includes("--release");
+// --urgent: a security fix. Copies offer any other release three days after it is published.
+const urgent = process.argv.includes("--urgent");
+if (urgent && !release) { console.log("--urgent marks a release: it goes with --release"); process.exit(2); }
 const withLb = release || process.argv.includes("--with-launchbox");
 const buildAt = process.argv.indexOf("--build");
 const build = buildAt > 0 ? String(process.argv[buildAt + 1] || "") : "";
@@ -56,7 +60,7 @@ if (release && typed !== build.slice(1)) {
   console.log("--build " + build + ", but includes\\version.php says " + (typed || "no version") + ": set XS_VERSION to '" + build.slice(1) + "' in the release's pull request first");
   process.exit(2);
 }
-const args = process.argv.slice(2).filter((a, i) => a !== "--with-launchbox" && a !== "--release" && a !== "--build" && i + 2 !== buildAt + 1);
+const args = process.argv.slice(2).filter((a, i) => a !== "--with-launchbox" && a !== "--release" && a !== "--urgent" && a !== "--build" && i + 2 !== buildAt + 1);
 const out = args[0];
 if (!out) { console.log("say where: node tools\\make-test-copy.js <folder>"); process.exit(2); }
 if (fs.existsSync(out) && fs.readdirSync(out).length) { console.log(out + " is not empty: choose a new folder"); process.exit(2); }
@@ -211,7 +215,8 @@ if (build) {
 if (release) {
   const ur = require("./update-release");
   if (!fs.existsSync(ur.PRIVATE_KEY)) { console.log("STOP: a release is signed, and there is no key yet: node tools\\update-release.js --new-key, once"); process.exit(1); }
-  const made = ur.makeUpdate({ app, version: build.slice(1), key: ur.PRIVATE_KEY, out: path.dirname(path.resolve(out)) });
+  const made = ur.makeUpdate({ app, version: build.slice(1), key: ur.PRIVATE_KEY, out: path.dirname(path.resolve(out)), urgent });
+  if (urgent) { console.log("urgent: copies take this release at once, without the three days' wait"); }
   console.log("release " + build.slice(1) + ": " + made.files + " of Xsegon's own files in the signed list; the update, "
     + (made.zipBytes / 1048576).toFixed(1) + " MB, and its list and signature beside the zip: the zip on Xsegon's release, the three update files on Xsegon-helper-files as release update-" + build.slice(1));
 }
