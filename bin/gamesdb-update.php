@@ -205,6 +205,15 @@ if ($status === 404) {
 if ($status !== 0 && ($status < 200 || $status > 299)) {
     done('could not check: HTTP ' . $status);
 }
+// Signed by Xsegon's key, or not taken: a release page anyone got into cannot swap the database.
+$sigText = @file_get_contents($url . XS_GDB_SIG, false, http_context(20));
+$status  = last_status(function_exists('http_get_last_response_headers') ? http_get_last_response_headers() : ($http_response_header ?? null));
+if ($sigText === false || ($status !== 0 && ($status < 200 || $status > 299))) {
+    done('the published Games Database is not signed');
+}
+if (!xs_gdb_signed($text, $sigText)) {
+    done("the published Games Database is not signed by Xsegon's key");
+}
 $remote = json_decode($text, true);
 if (!is_array($remote) || empty($remote['built']) || preg_match('/^[0-9a-f]{64}$/', (string) ($remote['sha256'] ?? '')) !== 1
     || !((int) ($remote['size'] ?? 0) > 0)) {

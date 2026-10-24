@@ -20,8 +20,11 @@ would add the whole file to the history again. Instead:
 
 - The ready-to-run download has a copy here, so Xsegon works straight away,
   offline too.
-- The newest copy is on the **gamesdb** release of this repository, replaced
-  at each refresh. Xsegon fetches a newer one in the background into
+- The newest copy is on the **gamesdb** release of
+  [Xsegon-helper-files](https://github.com/TumultuousProductions/Xsegon-helper-files),
+  replaced at each refresh, with `gamesdb.sig` beside it: `gamesdb.json`
+  signed with Xsegon's update key. Xsegon takes no copy that key did not
+  sign, and fetches a newer one in the background into
   `data\gamesdb-update\`. Settings > Library > "Games Database updates"
   chooses how: **Automatic** checks once a day at most, **Manual** only when
   you press **Check now** on the same page, which also says which copy is in
@@ -49,5 +52,8 @@ latest and publish it:
     php tools\build-gamesdb.php --publish
 
 (`php` being the PHP Xsegon runs on.) It downloads about 110 MB, keeps only
-what Xsegon reads, packs it into this folder, and replaces the files on the gamesdb release (GitHub CLI, logged
-in). Nothing is committed. Every week or so is plenty.
+what Xsegon reads, packs it into this folder, signs `gamesdb.json` with the
+update key in `private\update-key.pem`, and replaces the files on the gamesdb
+release of Xsegon-helper-files (GitHub CLI, logged in). It publishes nothing
+it could not sign. `--publish-only` signs and publishes the copy already in
+this folder without building. Nothing is committed. Every week or so is plenty.

@@ -7,14 +7,17 @@
  *   php tools\build-gamesdb.php <Metadata.zip>    build from one already here
  *   php tools\build-gamesdb.php <Metadata.xml>    the same, already unzipped
  *   ... --publish                                 and replace the one on GitHub
+ *   php tools\build-gamesdb.php --publish-only    sign and publish the one built already
  *
  * "php" is the PHP Xsegon runs on; give its whole path where it is not on the PATH.
  *
  * LaunchBox publishes its Games Database as Metadata.zip, rebuilt daily; this
  * packs it into gamesdb\gamesdb.sqlite.bz2 and gamesdb.json (see
- * bin\gamesdb-shared.php). --publish replaces the file on the "gamesdb"
- * GitHub release (gh logged in), and every Xsegon fetches it within a day.
- * The built files are git-ignored. Credit to LaunchBox is in gamesdb\README.md.
+ * bin\gamesdb-shared.php), and signs gamesdb.json into gamesdb.sig with the
+ * update key (private\update-key.pem), which copies check before they take it.
+ * --publish replaces the files on the "gamesdb" release of Xsegon-helper-files
+ * (gh logged in), and every Xsegon fetches it within a day. The built files
+ * are git-ignored. Credit to LaunchBox is in gamesdb\README.md.
  *
  * The same tables and column names as LaunchBox's, so bin\gamesdb.php cannot
  * tell them apart; left out are the indexes (built on unpack), picture types
@@ -67,14 +70,19 @@ if ($lacking) {
 require __DIR__ . '/../bin/gamesdb-shared.php';
 
 const URL_ZIP = 'https://gamesdb.launchbox-app.com/Metadata.zip';
-const REPO = 'TumultuousProductions/Xsegon';
+const REPO = 'TumultuousProductions/Xsegon-helper-files';
 const TAG = 'gamesdb';
 
-// XSEGON_GAMESDB_OUT: the test (tests\t-gamesdb.js) builds a small one elsewhere.
+// XSEGON_GAMESDB_OUT: the test (tests\t-gamesdb.js) builds a small one elsewhere,
+// signed only with XSEGON_GAMESDB_SIGN_KEY: a test's database never carries the real key's signature.
 $outEnv  = getenv('XSEGON_GAMESDB_OUT');
 $outDir  = is_string($outEnv) && $outEnv !== '' ? $outEnv : dirname(__DIR__) . DIRECTORY_SEPARATOR . 'gamesdb';
-$publish = in_array('--publish', $argv, true);
-$given   = array_values(array_filter(array_slice($argv, 1), static fn ($a) => $a !== '--publish'))[0] ?? null;
+$keyEnv  = getenv('XSEGON_GAMESDB_SIGN_KEY');
+$keyFile = is_string($keyEnv) && $keyEnv !== '' ? $keyEnv
+         : (is_string($outEnv) && $outEnv !== '' ? '' : dirname(__DIR__) . DIRECTORY_SEPARATOR . 'private' . DIRECTORY_SEPARATOR . 'update-key.pem');
+$publishOnly = in_array('--publish-only', $argv, true);
+$publish = $publishOnly || in_array('--publish', $argv, true);
+$given   = array_values(array_filter(array_slice($argv, 1), static fn ($a) => !str_starts_with($a, '--publish')))[0] ?? null;
 $keep    = array_fill_keys(array_merge(...array_values(XS_GDB_TYPES)), true);
 
 $work = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'xs-gamesdb-' . bin2hex(random_bytes(4));
@@ -248,29 +256,71 @@ function gh(string ...$a): bool
     return run(array_merge(['gh'], $a), $said) === 0;
 }
 
+/** gamesdb.json signed into gamesdb.sig with the key at $keyFile; false, with no .sig left, when there is no key. */
+function sign_it(string $outDir, string $keyFile): bool
+{
+    $sigFile = $outDir . DIRECTORY_SEPARATOR . XS_GDB_SIG;
+    @unlink($sigFile);
+    $pem  = $keyFile !== '' ? @file_get_contents($keyFile) : false;
+    $priv = is_string($pem) ? openssl_pkey_get_private($pem) : false;
+    if ($priv === false) {
+        say('not signed: no signing key' . ($keyFile !== '' ? ' at ' . $keyFile : ''));
+        return false;
+    }
+    if (!openssl_sign((string) file_get_contents($outDir . DIRECTORY_SEPARATOR . XS_GDB_MANIFEST), $sig, $priv, OPENSSL_ALGO_SHA256)) {
+        throw new RuntimeException('could not sign ' . XS_GDB_MANIFEST);
+    }
+    file_put_contents($sigFile, base64_encode($sig) . "\n");
+    say('signed ' . XS_GDB_MANIFEST . ' into ' . XS_GDB_SIG);
+    return true;
+}
+
 /**
- * Replace the published copy: the packed file first, the manifest last, so a
- * new manifest always has its file behind it (an old manifest read meanwhile
- * fails its checksum and is tried again the next day).
+ * Replace the published copy: the packed file first, then the manifest, then
+ * its signature, so a new manifest always has its file behind it (a manifest
+ * and a signature that do not match, read meanwhile, are refused and tried
+ * again the next day).
  */
 function publish_it(string $outDir): void
 {
+    if (!is_file($outDir . DIRECTORY_SEPARATOR . XS_GDB_SIG)) {
+        throw new RuntimeException('not published: ' . XS_GDB_MANIFEST . ' is not signed, and copies take no unsigned one');
+    }
     if (!gh('release', 'view', TAG, '-R', REPO)) {
         say('creating the ' . TAG . ' release on ' . REPO);
         if (!gh('release', 'create', TAG, '-R', REPO, '--title', 'Games Database',
-            '--notes', 'The LaunchBox Games Database, packed for Xsegon, which fetches it by itself. Built from '
+            '--latest=false', '--notes', 'Not the Xsegon program, and nothing here is for you to download: Xsegon fetches it by itself. '
+            . 'The LaunchBox Games Database, packed for Xsegon, built from '
             . "LaunchBox's public download (gamesdb.launchbox-app.com); all credit for the data to LaunchBox and its community. "
-            . 'Replaced at each refresh. Not a version of Xsegon: download Xsegon from the latest release.')) {
+            . 'Replaced at each refresh; gamesdb.sig is gamesdb.json signed with the key Xsegon checks. '
+            . 'To get Xsegon: https://github.com/TumultuousProductions/Xsegon/releases/latest')) {
             throw new RuntimeException('could not create the release (is gh installed and logged in?)');
         }
     }
-    foreach ([XS_GDB_PACKED, XS_GDB_MANIFEST] as $f) {
+    foreach ([XS_GDB_PACKED, XS_GDB_MANIFEST, XS_GDB_SIG] as $f) {
         say('uploading ' . $f);
         if (run(['gh', 'release', 'upload', TAG, $outDir . DIRECTORY_SEPARATOR . $f, '--clobber', '-R', REPO], $said) !== 0) {
             throw new RuntimeException('could not upload ' . $f . ': ' . trim((string) $said));
         }
     }
     say('published to https://github.com/' . REPO . '/releases/tag/' . TAG);
+}
+
+// --publish-only: the packed copy in $outDir as it is, signed and published, nothing built.
+if ($publishOnly) {
+    try {
+        foreach ([XS_GDB_PACKED, XS_GDB_MANIFEST] as $f) {
+            if (!is_file($outDir . DIRECTORY_SEPARATOR . $f)) {
+                throw new RuntimeException('nothing built to publish: ' . $outDir . DIRECTORY_SEPARATOR . $f . ' is missing');
+            }
+        }
+        sign_it($outDir, $keyFile);
+        publish_it($outDir);
+        exit(0);
+    } catch (Throwable $e) {
+        say('FAILED: ' . $e->getMessage());
+        exit(1);
+    }
 }
 
 try {
@@ -331,6 +381,7 @@ try {
     say("done: {$n['Game']} games, {$n['GameAlternateName']} other names, {$n['GameImage']} pictures ({$n['skipped']} left out)");
     say('      ' . $mb($unpacked) . ' unpacked, ' . $mb((int) $m['size']) . ' packed, in ' . $outDir);
     tidy($work);
+    sign_it($outDir, $keyFile);
     if ($publish) {
         publish_it($outDir);
     }
