@@ -31,14 +31,15 @@ $job  = xs_read_json(xs_update_file('fetch.json'), []);
 $ver  = is_array($job) ? (string) ($job['version'] ?? '') : '';
 $urls = is_array($job) ? (array) ($job['urls'] ?? []) : [];
 $next = xs_update_file('next');
+$nphp = xs_update_file('next-php');
 $in   = xs_update_file('incoming');
 if (($job['state'] ?? '') !== 'running' || $ver === '' || !isset($urls['zip'], $urls['list'], $urls['sig'])) {
     fwrite(STDERR, "nothing waiting in data\\update\\fetch.json\n");
     exit(1);
 }
 
-$clear = static function () use ($next, $in): void {
-    foreach ([$in, $next, xs_update_file('trial-data')] as $d) {
+$clear = static function () use ($next, $nphp, $in): void {
+    foreach ([$in, $next, $nphp, xs_update_file('trial-data')] as $d) {
         xs_update_rmtree($d);
     }
     @unlink(xs_update_file('ready.json'));
@@ -112,10 +113,43 @@ if ($bad !== null) {
 }
 file_put_contents($next . DIRECTORY_SEPARATOR . 'RELEASE.json', $listText);
 file_put_contents($next . DIRECTORY_SEPARATOR . 'RELEASE.sig', $sigText);
+
+// The PHP it runs on, when this copy's is another version and the person ticked it in the Update now
+// window (never by itself): checked against the signed list, unpacked into data\update\next-php with this
+// copy's own php.ini, and the new copy is tried on it.
+$php      = !empty($job['php']) ? xs_update_php_wanted($list) : null;
+$trialPhp = null;
+if ($php !== null) {
+    $phpZip = $in . DIRECTORY_SEPARATOR . 'php.zip';
+    $step('download', 0, (int) $php['size']);
+    if (xs_update_get(xs_update_php_url($urls, (string) $php['name']), $phpZip, XS_UPDATE_MAX, $why,
+                      static fn (int $got, int $size) => $step('download', $got, $size ?: (int) $php['size'])) !== true) {
+        $fail('its PHP ' . $php['version'] . ' did not come (' . $why . ')');
+    }
+    if (filesize($phpZip) !== (int) $php['size'] || hash_file('sha256', $phpZip) !== $php['sha256']) {
+        $fail('its PHP arrived damaged: its size or checksum is not the one on its signed list');
+    }
+    $step('check');
+    @mkdir($nphp, 0777, true);
+    $p = @proc_open([xs_update_tar(), '-xf', $phpZip, '-C', $nphp], [0 => ['file', 'NUL', 'r'], 1 => ['file', 'NUL', 'w'], 2 => ['file', 'NUL', 'w']],
+                    $pipes, null, null, ['bypass_shell' => true]);
+    if (!is_resource($p) || proc_close($p) !== 0) {
+        $fail("Windows' tar could not unpack its PHP");
+    }
+    $bad = xs_update_tree_problem($nphp, $php['files']);
+    if ($bad !== null) {
+        $fail('its PHP is not the one on its list: ' . $bad);
+    }
+    $ini = XS_ROOT . DIRECTORY_SEPARATOR . 'runtime' . DIRECTORY_SEPARATOR . 'php' . DIRECTORY_SEPARATOR . 'php.ini';
+    if (is_file($ini) && !@copy($ini, $nphp . DIRECTORY_SEPARATOR . 'php.ini')) {
+        $fail("could not carry this copy's php.ini over to its PHP");
+    }
+    $trialPhp = $nphp . DIRECTORY_SEPARATOR . 'php.exe';
+}
 xs_update_rmtree($in);
 
 $step('try');
-$why = xs_update_trial($next, $ver);
+$why = xs_update_trial($next, $ver, $trialPhp, $php['version'] ?? null);
 if ($why !== null) {
     $fail('the new copy did not start when tried on its own: ' . $why);
 }
@@ -125,7 +159,9 @@ if (!@copy(XS_ROOT . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'update
 }
 $have = xs_version()['version'];
 xs_write_json(xs_update_file('ready.json'), ['version' => $ver, 'from' => $have, 'files' => count($list['files']),
-    'zipBytes' => (int) $list['zip']['size'], 'zone' => date_default_timezone_get(), 'at' => date('c')]);
+    'zipBytes' => (int) $list['zip']['size'], 'php' => $php['version'] ?? null, 'phpFrom' => $php !== null ? xs_update_php_have() : null,
+    'zone' => date_default_timezone_get(), 'at' => date('c')]);
+$withPhp = $php !== null ? ', with PHP ' . $php['version'] . ' in place of ' . xs_update_php_have() : '';
 
 // The message about this version becomes "ready", read or not as it was: said once. One deleted stays deleted; Settings still has Update now.
 $was = null;
@@ -135,14 +171,15 @@ foreach (xs_messages() as $m) {
     }
 }
 if ($was === null) {
-    $end('done', $ver . ' is ready: ' . count($list['files']) . ' files, ' . round((int) $list['zip']['size'] / 1048576, 1) . ' MB, checked and tried; its message was deleted, so nothing is said');
+    $end('done', $ver . ' is ready: ' . count($list['files']) . ' files, ' . round((int) $list['zip']['size'] / 1048576, 1) . ' MB' . $withPhp . ', checked and tried; its message was deleted, so nothing is said');
 }
 xs_messages_add([
     'id'    => XS_UPDATE_MSG,
     'at'    => date('c'),
     'kind'  => 'info',
     'title' => 'Xsegon ' . $ver . ' is ready',
-    'body'  => 'This is ' . $have . '. ' . $ver . ' has been downloaded, checked against its signed list and tried once on its own; nothing of this copy '
+    'body'  => 'This is ' . $have . '. ' . $ver . ' has been downloaded' . ($php !== null ? ' with the newer PHP it runs on (' . $php['version'] . ')' : '')
+             . ', checked against its signed list and tried once on its own; nothing of this copy '
              . 'has changed. Update now asks first, then takes a backup of your data, closes Xsegon, puts ' . $ver . ' in place and opens it again. Your games, settings '
              . 'and pictures stay as they are, and a file of Xsegon\'s you changed is kept aside and named. Settings > Window > New versions can go back to '
              . $have . ' afterwards, and stops these messages.',
@@ -151,4 +188,4 @@ xs_messages_add([
     'opens' => ['updatenow', 'newversion'],
     'read'  => !empty($was['read']),
 ]);
-$end('done', $ver . ' is ready: ' . count($list['files']) . ' files, ' . round((int) $list['zip']['size'] / 1048576, 1) . ' MB, checked and tried; said in the mailbox');
+$end('done', $ver . ' is ready: ' . count($list['files']) . ' files, ' . round((int) $list['zip']['size'] / 1048576, 1) . ' MB' . $withPhp . ', checked and tried; said in the mailbox');

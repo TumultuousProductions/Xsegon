@@ -4,6 +4,7 @@ Newest first: what changed for the person at the screen.
 
 ## 2026-10-23
 
+- **Update now can bring a newer PHP, when you say so.** PHP is the program Xsegon runs on, and its new versions carry its own fixes, some for security. When a new version of Xsegon comes with a newer PHP, the Update now window asks, with a box left unticked: Also update PHP. Ticked, the new PHP is downloaded too, checked against the list its maker signed and tried with the new version before anything changes; your PHP settings stay, and going back puts the PHP before back as well. Unticked, or when new versions download by themselves, PHP is never touched.
 - **The Games Database comes from Xsegon-helper-files, and only signed.** Xsegon fetches newer copies of the Games Database from Xsegon-helper-files, and takes one only when its list is signed with the same key as Xsegon's updates, so nobody who got into the release page could swap it for another.
 - **A new version waits three days before Xsegon offers it.** Messages says a new version is out once it has been on the Releases page for three days, so one that turns out bad can be taken down before any copy takes it; Download new versions by themselves waits the same. A security fix its maker signs as urgent is offered at once. You can always download a new version by hand from its page sooner.
 - **Xsegon 0.18.1.** The change below, as a download. A copy of 0.18 or older is told 0.18.1 is out and how to update by hand, as its Update now looks only where the update files no longer are.

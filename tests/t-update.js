@@ -53,7 +53,7 @@ module.exports = async function (b, check) {
   const key = keyOf("ours"), other = keyOf("someone-else");
 
   /* ---- two releases of the files here, and three that go wrong --------- */
-  const pkg = (name, version, signWith, change, urgent) => {
+  const pkg = (name, version, signWith, change, urgent, php) => {
     const app = path.join(home, "pkg", name, "Xsegon");
     for (const t of TAKE) { if (fs.existsSync(path.join(ROOT, t))) { fs.cpSync(path.join(ROOT, t), path.join(app, t), { recursive: true }); } }
     fs.copyFileSync(key + ".pub", path.join(app, "includes", "update-key.pem"));   // every copy trusts our key
@@ -65,7 +65,7 @@ module.exports = async function (b, check) {
       fs.copyFileSync(key + ".pub", path.join(app, "includes", "update-key.pem"));
       return Object.assign({ app }, made);
     }
-    return Object.assign({ app }, ur.makeUpdate({ app, version, key, out: path.join(home, "dl", name), urgent }));
+    return Object.assign({ app }, ur.makeUpdate({ app, version, key, out: path.join(home, "dl", name), urgent, php }));
   };
   const old = pkg("old", "0.15", key, (app) => fs.writeFileSync(path.join(app, "img", "only-in-0.15.txt"), "gone in 0.16\n"));
   const good = pkg("good", "0.16", key, (app) => fs.writeFileSync(path.join(app, "img", "new-in-0.16.txt"), "new\n"));
@@ -73,6 +73,9 @@ module.exports = async function (b, check) {
   const forged = pkg("forged", "0.16", other, null);
   pkg("urgent", "0.16", key, null, true);
   pkg("forged-urgent", "0.16", other, null, true);
+  // 0.16 with the PHP these tests run on as its newer PHP; the copies say they run on 8.5.1 (XSEGON_TEST_PHP_HAVE).
+  const phpVer = (await run(phpExe, ["-n", "-r", "echo PHP_VERSION;"])).out.trim();
+  const withPhp = pkg("withphp", "0.16", key, null, false, { dir: path.dirname(phpExe), version: phpVer, os: "windows" });
   fs.cpSync(path.join(home, "dl", "good"), path.join(home, "dl", "damaged"), { recursive: true });
   const dz = path.join(home, "dl", "damaged", "Xsegon-update-0.16.zip");
   const bytes = fs.readFileSync(dz); bytes[bytes.length >> 1] ^= 0xff; fs.writeFileSync(dz, bytes);
@@ -147,7 +150,9 @@ module.exports = async function (b, check) {
     fs.appendFileSync(path.join(copy, "css", "xsegon.css"), "\n/* my own change */\n");
     return copy;
   };
-  const env = (copy) => ({ XSEGON_DATA: path.join(copy, "data"), XSEGON_NEWVERSION_URL: releases, XSEGON_UPDATE_URL: helper });
+  // More for a part of the test, such as the PHP a copy says it runs on (XSEGON_TEST_PHP_HAVE).
+  let extraEnv = {};
+  const env = (copy) => Object.assign({ XSEGON_DATA: path.join(copy, "data"), XSEGON_NEWVERSION_URL: releases, XSEGON_UPDATE_URL: helper }, extraEnv);
   const upFile = (copy, n) => path.join(copy, "data", "update", n);
   const readJson = (f) => { try { return JSON.parse(fs.readFileSync(f, "utf8")); } catch (e) { return null; } };
   const message = (copy) => (readJson(path.join(copy, "data", "messages.json")) || []).find((m) => m.id === "msg-newversion") || null;
@@ -165,7 +170,7 @@ module.exports = async function (b, check) {
   const lookAndWait = async (copy) => { await look(copy); return waitFetch(copy); };
   const ps = (copy, call) => run("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command",
     ". '" + path.join(copy, "bin", "update-start.ps1") + "'; " + call + " '" + copy + "' '" + phpExe + "'"], {}, copy);
-  const php = (copy, code) => run(phpExe, ["-r", "require 'includes/boot.php'; require 'includes/update.php'; " + code], { XSEGON_DATA: path.join(copy, "data") }, copy);
+  const php = (copy, code) => run(phpExe, ["-r", "require 'includes/boot.php'; require 'includes/update.php'; " + code], Object.assign({ XSEGON_DATA: path.join(copy, "data") }, extraEnv), copy);
   const logOf = (copy) => walk(path.join(copy, "data", "log"), "", []).map((f) => fs.readFileSync(path.join(copy, "data", "log", f), "utf8")).join("");
   const failMsg = (copy) => (readJson(path.join(copy, "data", "messages.json")) || []).find((x) => x.id === "msg-update-failed") || null;
   const versionOf = async (copy) => JSON.parse((await run(phpExe, ["-r", "require 'includes/version.php'; echo json_encode(xs_release());"], {}, copy)).out);
@@ -334,6 +339,46 @@ module.exports = async function (b, check) {
     check("  Update now downloads it again, checks it and puts it in place",
       [job && job.state, r.out.trim(), failMsg(c), await versionOf(c)], ["done", "switched", null, "0.16"]);
 
+    /* ---- a newer PHP, only ever when ticked (roadmap BR3) ---------------- */
+    serving = "withphp";
+    extraEnv = { XSEGON_TEST_PHP_HAVE: "8.5.1" };
+    c = install("php", true);   // the next versions download by themselves: even so, never the PHP
+    const rtPhp = path.join(c, "runtime", "php");
+    // A copy's own php.ini, as a real one turns extensions on, with a line of its own to know it by.
+    const iniText = fs.readFileSync(path.join(path.dirname(phpExe), "php.ini"), "utf8") + "\n; this copy's own settings\n";
+    fs.mkdirSync(rtPhp, { recursive: true });
+    fs.writeFileSync(path.join(rtPhp, "php.ini"), iniText);
+    fs.writeFileSync(path.join(rtPhp, "the-old-php.txt"), "old\n");
+    job = await lookAndWait(c);
+    let seen3 = readJson(path.join(c, "data", "newversion.json")) || {};
+    st2 = JSON.parse((await php(c, "echo json_encode(xs_update_state());")).out || "{}");
+    check("a release that brings a newer PHP: the look says so, and a download by itself never takes it",
+      [(seen3.php || {}).version, (seen3.php || {}).mb > 0, job && job.by, job && job.php, fs.existsSync(upFile(c, "next-php")), (readJson(upFile(c, "ready.json")) || {}).php],
+      [withPhp.php.version, true, "look", false, false, null]);
+    check("  Settings and the Update now window are told of it, from this copy's PHP to the new one, not yet taken",
+      [st2.ready, (st2.php || {}).version, (st2.php || {}).have, st2.readyPhp], ["0.16", phpVer, "8.5.1", null]);
+    await php(c, "xs_update_get_now(true);");
+    job = await waitFetch(c);
+    check("ticked: it is got again with the PHP, which is checked, given this copy's own php.ini, and tried with it",
+      [job && job.state, job && job.why, job && job.php, fs.existsSync(path.join(upFile(c, "next-php"), "php.exe")),
+       fs.readFileSync(path.join(upFile(c, "next-php"), "php.ini"), "utf8"), (readJson(upFile(c, "ready.json")) || {}).php,
+       new RegExp("UPD .*0\\.16 is ready: .*with PHP " + phpVer.replace(/\./g, "\\.") + " in place of 8\\.5\\.1").test(logOf(c))],
+      ["done", "", true, true, iniText, phpVer, true]);
+    await php(c, "xs_update_press('update');");
+    r = await ps(c, "Invoke-XsegonUpdate");
+    check("Update now puts the new PHP in place with this copy's php.ini, the old one kept for Go back",
+      [r.out.trim(), fs.existsSync(path.join(rtPhp, "php.exe")), fs.readFileSync(path.join(rtPhp, "php.ini"), "utf8"), fs.existsSync(path.join(rtPhp, "the-old-php.txt")),
+       fs.existsSync(path.join(upFile(c, "previous-php"), "the-old-php.txt")), (readJson(upFile(c, "php-switch.json")) || {}).state, /UPD  PHP .* put in place of/.test(logOf(c))],
+      ["switched", true, iniText, false, true, "done", true]);
+    await php(c, "xs_update_press('back');");
+    r = await ps(c, "Invoke-XsegonUpdate");
+    check("Go back puts the PHP before back too",
+      [r.out.trim(), fs.existsSync(path.join(rtPhp, "the-old-php.txt")), fs.existsSync(path.join(rtPhp, "php.exe")), fs.existsSync(upFile(c, "previous-php")),
+       fs.existsSync(upFile(c, "php-switch.json")), /UPD  PHP .* back in place of .*: as asked/.test(logOf(c))],
+      ["back", true, false, false, false, true]);
+    extraEnv = {};
+    serving = "good";
+
     /* ---- releases that must never be put in place ------------------------ */
     for (const [name, why] of [["damaged", /arrived damaged/], ["forged", /not signed with Xsegon's key/], ["broken", /did not start when tried on its own: it answered with an error/]]) {
       serving = name;
@@ -425,6 +470,36 @@ module.exports = async function (b, check) {
       check("and once it is ready, Update now is pressed for them: a backup, then the switch at the next start",
         [await b.until(strip, true, 8000), await b.ev(`window.__upd.posts`), await b.ev(line)], [true, ["get", "update"], "Xsegon 0.16: done"]);
       await b.ev(`window.fetch = window.__upd.real`);
+
+      // A version that brings a newer PHP: a box of its own, never ticked for them; ticked, Update now asks for it.
+      await b.ev(`(() => {
+        const real = window.fetch;
+        window.__upd2 = { real: real, posts: [], reads: 0 };
+        const answer = (o) => Promise.resolve(new Response(JSON.stringify(Object.assign({ ok: true, have: "0.15", release: true, on: true, get: false, cannot: null,
+          going: null, back: null, kept: [], restarts: false, readyPhp: null, php: { version: "8.5.13", mb: 30.2, have: "8.5.12" } }, o)), { headers: { "Content-Type": "application/json" } }));
+        const out = { version: "0.16", mb: 7.1 };
+        window.fetch = (u, o) => {
+          if (String(u).indexOf("api/update.php") < 0) { return real(u, o); }
+          if (o && o.method === "POST") {
+            const body = JSON.parse(o.body);
+            window.__upd2.posts.push(body.action + (body.php ? "+php" : ""));
+            return answer(body.action === "get" ? { out: out, ready: null, fetch: { alive: true, state: "running", version: "0.16", step: "list" } } : { ready: "0.16", out: null, readyPhp: "8.5.13" });
+          }
+          const n = ++window.__upd2.reads;
+          if (n === 1) { return answer({ out: out, ready: null, fetch: null }); }
+          return answer({ ready: "0.16", out: null, readyPhp: "8.5.13", fetch: { alive: false, state: "done", version: "0.16" } });
+        };
+      })()`);
+      await b.ev(`import("/js/updaterow.js").then((m) => { m.pressUpdate("update"); })`);
+      await b.until(`!!document.querySelector(".confirm h2")`, true, 5000);
+      const boxes = `[...document.querySelectorAll(".confirm label.confirm-pick")]`;
+      check("a version with a newer PHP: the window asks about it in a box of its own, not ticked, saying from which to which",
+        await b.ev(`(() => { const l = ${boxes}; return [l.length, l[0] && l[0].textContent.trim(), !!l[0] && l[0].querySelector("input").checked]; })()`),
+        [2, "Also update PHP, the program Xsegon runs on, from 8.5.12 to 8.5.13 (30.2 MB more)", false]);
+      await b.ev(`${boxes}[0].querySelector("input").click()`);
+      await b.ev(`[...document.querySelectorAll(".confirm-bar button")].find((x) => x.textContent === "Update now").click()`);
+      check("ticked, Update now asks for the version with its PHP, then presses", await b.until(`window.__upd2.posts.join(",")`, "get+php,update", 8000), "get+php,update");
+      await b.ev(`window.fetch = window.__upd2.real`);
 
       // Settings > Window > New versions after a try that did not work.
       await b.ev(`(() => {

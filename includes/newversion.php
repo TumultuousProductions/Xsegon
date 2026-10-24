@@ -209,14 +209,20 @@ function xs_newversion_check(): array
             xs_log('NEWV', $best['version'] . ' has no update files this copy can take (' . $noUpdate . '): it says to update by hand');
         }
     }
-    // An urgent one (a security fix, so marked in its signed list) skips the wait; any other is not said or fetched yet.
-    if ($waitUntil !== null && $urls !== null && xs_update_urgent($best['version'], $urls)) {
+    // Its signed list (small, and believed only under Xsegon's key): an urgent one (a security fix) skips the
+    // wait, and a newer PHP it brings is asked about in the Update now window, never taken by itself.
+    $signed = $urls !== null ? xs_update_signed_list($best['version'], $urls) : null;
+    $offer  = $signed !== null ? xs_update_php_wanted($signed) : null;
+    if ($offer !== null) {
+        $out['php'] = ['version' => (string) $offer['version'], 'mb' => round((int) $offer['size'] / 1048576, 1)];
+    }
+    if ($waitUntil !== null && ($signed['urgent'] ?? false) === true) {
         $waitUntil     = null;
         $out['urgent'] = true;
     }
     if ($waitUntil !== null) {
         $out['waitUntil'] = date('c', $waitUntil);
-        unset($out['urls'], $out['mb']);
+        unset($out['urls'], $out['mb'], $out['php']);
         $urls = null;
     }
     $said = false;
