@@ -3,8 +3,10 @@
  *  the row on that page saying what this copy is and what is waiting.
  *
  *  Update now asks first, in a window that also asks whether the next new
- *  versions download by themselves, and, when the version brings a newer PHP,
- *  whether to take that too (unticked: it never comes otherwise). One not downloaded yet is got ready in the
+ *  versions download by themselves, and, when the version brings a newer PHP and
+ *  Settings still offers it, whether to take that too (unticked: it never comes
+ *  otherwise; left unticked, what that means is said, with the way to the
+ *  switch). One not downloaded yet is got ready in the
  *  background with a bar in the corner, then put in place. A press takes a
  *  backup of the data and writes itself down; start.ps1 makes the switch with
  *  no server running. Where Xsegon was opened from Start Xsegon.bat the window
@@ -24,6 +26,9 @@ import { el } from "./util.js";
 
 var STEP = { list: "getting its signed list", download: "downloading", check: "checking every file", try: "trying it once on its own" };
 var following = null;
+var openSetting = null;   // Settings at one setting; js\settings-ui.js imports this file, so it hands its opener over
+
+export function setSettingOpener(fn) { openSetting = fn; }
 
 // what: "update" or "back". Update now asks first; Go back goes at once.
 export function pressUpdate(what) {
@@ -111,11 +116,38 @@ function askUpdate() {
     }, { label: "Update now", run: function () {
       var php = !!(phpTick && phpTick.checked);
       L("UPD", "Update now pressed for " + v + (phpTick ? ", the newer PHP " + (php ? "ticked" : "left out") : ""));
-      // Got ready already without the PHP that was then ticked: got again, with it.
-      if (here && !php) { press("update"); } else { getThenPress(v, php); }
+      // Left unticked: what keeping this PHP means is said first, with the way to the switch that stops the offer.
+      if (phpTick && !php) { keepPhp(v, here, r.php); return; }
+      updateTo(v, here, php);
     } }, "Not now",
        function () { L("UPD", "update to " + v + " put off"); });
   });
+}
+
+function updateTo(v, here, php) {
+  // Got ready already without the PHP that was then ticked: got again, with it.
+  if (here && !php) { press("update"); } else { getThenPress(v, php); }
+}
+
+/* The newer PHP left unticked: the update without it, Back to the Update now window, or the switch in Settings that stops the offer. */
+function keepPhp(v, here, php) {
+  L("UPD", "warned: " + v + " without PHP " + php.version + " keeps PHP " + php.have);
+  var w = confirmWindow("Update without the newer PHP?", function (box) {
+    box.appendChild(el("p", null, "Xsegon " + v + " runs on PHP " + php.have + " too, so nothing stops working. But PHP " + php.version
+      + " has fixes that " + php.have + " does not, some of them for security."));
+    box.appendChild(el("p", "confirm-safe", "You can take it at a later update by ticking it. Not wanting it offered at all? Switch off Offer a newer PHP "
+      + "with new versions, in Settings > Window > New versions."));
+  }, { label: "Update, keep PHP " + php.have, run: function () {
+    L("UPD", "Update now: " + v + " keeping PHP " + php.have + ", as chosen after the warning");
+    updateTo(v, here, false);
+  } }, "Back", function () { askUpdate(); });
+  var open = el("button", null, "Open that setting");
+  open.addEventListener("click", function () {
+    L("UPD", "warned: the PHP offer's setting opened, nothing updated");
+    w.close();
+    if (openSetting) { openSetting("window", "offerNewPhp"); }
+  });
+  w.box.querySelector(".confirm-bar").insertBefore(open, w.yes);
 }
 
 function getThenPress(v, php) {

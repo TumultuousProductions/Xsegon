@@ -256,7 +256,7 @@ function xs_update_state(): array
     // A newer PHP the version on offer brings, asked about in the Update now window and taken only when ticked.
     $look  = xs_read_json(xs_data_path('newversion.json'), []);
     $offer = $out['version'] ?? $wait;
-    $php   = is_array($look) && $offer !== null && ($look['newest'] ?? null) === $offer && is_array($look['php'] ?? null) ? $look['php'] : null;
+    $php   = xs_update_php_offered() && is_array($look) && $offer !== null && ($look['newest'] ?? null) === $offer && is_array($look['php'] ?? null) ? $look['php'] : null;
     return [
         'have'     => $have,
         'cannot'   => xs_update_cannot(),
@@ -370,6 +370,12 @@ function xs_update_php_have(): string
 {
     $test = getenv('XSEGON_TEST_PHP_HAVE');
     return xs_test_copy() && is_string($test) && $test !== '' ? $test : PHP_VERSION;
+}
+
+/** Offer a newer PHP with new versions (Settings > Window > New versions): on unless the person switched it off. */
+function xs_update_php_offered(): bool
+{
+    return (xs_settings()['window']['offerNewPhp'] ?? true) !== false;
 }
 
 /** The PHP a release's list names, when this copy runs on another version of it; null when its own will do. */
