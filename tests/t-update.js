@@ -357,6 +357,19 @@ module.exports = async function (b, check) {
       [withPhp.php.version, true, "look", false, false, null]);
     check("  Settings and the Update now window are told of it, from this copy's PHP to the new one, not yet taken",
       [st2.ready, (st2.php || {}).version, (st2.php || {}).have, st2.readyPhp], ["0.16", phpVer, "8.5.1", null]);
+    // Offer a newer PHP switched off in Settings: no box, and not even a request that asks for it brings it.
+    const setFile = path.join(c, "data", "settings.json");
+    const setBefore = fs.readFileSync(setFile, "utf8");
+    const setOff = JSON.parse(setBefore);
+    setOff.window = Object.assign({}, setOff.window, { offerNewPhp: false });
+    fs.writeFileSync(setFile, JSON.stringify(setOff));
+    st2 = JSON.parse((await php(c, "echo json_encode(xs_update_state());")).out || "{}");
+    await php(c, "xs_update_fetch_start('0.16', (array) (xs_read_json(xs_data_path('newversion.json'), [])['urls'] ?? []), 'press', true);");
+    job = await waitFetch(c);
+    check("Offer a newer PHP switched off: the window is told of none, and a request asking for it gets 0.16 without it",
+      [st2.php, job && job.state, job && job.php, fs.existsSync(upFile(c, "next-php")), (readJson(upFile(c, "ready.json")) || {}).php],
+      [null, "done", true, false, null]);
+    fs.writeFileSync(setFile, setBefore);
     await php(c, "xs_update_get_now(true);");
     job = await waitFetch(c);
     check("ticked: it is got again with the PHP, which is checked, given this copy's own php.ini, and tried with it",
@@ -500,6 +513,53 @@ module.exports = async function (b, check) {
       await b.ev(`[...document.querySelectorAll(".confirm-bar button")].find((x) => x.textContent === "Update now").click()`);
       check("ticked, Update now asks for the version with its PHP, then presses", await b.until(`window.__upd2.posts.join(",")`, "get+php,update", 8000), "get+php,update");
       await b.ev(`window.fetch = window.__upd2.real`);
+
+      // Left unticked: a warning first, with Back, the way to the switch that stops the offer, and the update without it.
+      await b.ev(`(() => {
+        const real = window.fetch;
+        window.__upd3 = { real: real, posts: [] };
+        const answer = (o) => Promise.resolve(new Response(JSON.stringify(Object.assign({ ok: true, have: "0.15", release: true, on: true, get: false, cannot: null,
+          going: null, back: null, kept: [], restarts: false, readyPhp: null, php: { version: "8.5.13", mb: 30.2, have: "8.5.12" } }, o)), { headers: { "Content-Type": "application/json" } }));
+        window.fetch = (u, o) => {
+          if (String(u).indexOf("api/update.php") < 0) { return real(u, o); }
+          if (o && o.method === "POST") {
+            const body = JSON.parse(o.body);
+            window.__upd3.posts.push(body.action + (body.php ? "+php" : ""));
+            return answer({ ready: "0.16", out: null, fetch: { alive: false, state: "done", version: "0.16" } });
+          }
+          return answer({ out: { version: "0.16", mb: 7.1 }, ready: null, fetch: null });
+        };
+      })()`);
+      const title = `(document.querySelector(".confirm h2") || {}).textContent || ""`;
+      const barBtn = (t) => `[...document.querySelectorAll(".confirm-bar button")].find((x) => x.textContent === ${JSON.stringify(t)}).click()`;
+      const askUnticked = async () => {
+        await b.ev(`import("/js/updaterow.js").then((m) => { m.pressUpdate("update"); })`);
+        await b.until(title, "Update to Xsegon 0.16?", 5000);
+        await b.ev(barBtn("Update now"));
+        return b.until(title, "Update without the newer PHP?", 5000);
+      };
+      check("left unticked, Update now first says what keeping PHP 8.5.12 means, with Back, the way to the setting, and the update without it",
+        [await askUnticked(), await b.ev(`[...document.querySelectorAll(".confirm-bar button")].map((x) => x.textContent)`),
+         await b.ev(`/fixes that 8\\.5\\.12 does not, some of them for security/.test(document.querySelector(".confirm").textContent)`), await b.ev(`window.__upd3.posts`)],
+        ["Update without the newer PHP?", ["Back", "Open that setting", "Update, keep PHP 8.5.12"], true, []]);
+      await b.ev(barBtn("Back"));
+      check("  Back is the Update now window again, the PHP still not ticked, nothing asked for",
+        [await b.until(title, "Update to Xsegon 0.16?", 5000), await b.ev(`${boxes}[0].querySelector("input").checked`), await b.ev(`window.__upd3.posts`)],
+        ["Update to Xsegon 0.16?", false, []]);
+      await b.ev(barBtn("Not now"));
+      await askUnticked();
+      await b.ev(barBtn("Open that setting"));
+      check("  Open that setting: Settings, on Offer a newer PHP with new versions, and nothing updated",
+        [await b.until(`!document.getElementById("settings").hidden && !!document.querySelector('#settings .opt.at [data-key="offerNewPhp"]')`, true, 5000),
+         await b.ev(`!!document.querySelector(".confirm")`), await b.ev(`window.__upd3.posts`)],
+        [true, false, []]);
+      await b.ev(`import("/js/settings-ui.js").then((m) => m.closeSettings())`);
+      await b.until(`document.getElementById("settings").hidden`, true, 3000);
+      await askUnticked();
+      await b.ev(barBtn("Update, keep PHP 8.5.12"));
+      check("  Update, keep PHP 8.5.12: the version alone is asked for, then pressed",
+        await b.until(`window.__upd3.posts.join(",")`, "get,update", 8000), "get,update");
+      await b.ev(`window.fetch = window.__upd3.real`);
 
       // Settings > Window > New versions after a try that did not work.
       await b.ev(`(() => {

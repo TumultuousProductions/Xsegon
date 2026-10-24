@@ -2,9 +2,13 @@
 
 Newest first: what changed for the person at the screen.
 
+## 2026-10-24
+
+- **Xsegon 0.19.** The five changes below, as a download and as an update for copies of 0.18.1.
+- **A newer PHP stays your choice: a switch to stop the offer, and a word before you say no.** Settings > Window > New versions has Offer a newer PHP with new versions. Off, the Update now window never shows the PHP box and no PHP is downloaded. On, leaving the box unticked and pressing Update now first says what keeping your PHP means (it misses the newer one's fixes, some of them for security), with Back, Open that setting, and the update without it.
+
 ## 2026-10-23
 
-- **Xsegon 0.19.** The four changes below, as a download and as an update for copies of 0.18.1.
 - **On Linux, a start no longer fetches a newer PHP by itself.** `start.sh` used to get the PHP its runtime script names whenever the copy's own was another version. It now keeps the PHP the copy has, says when a newer one exists, and leaves it to the Update now window, where it comes only when you tick it, as on Windows. The PHP that came before is kept, and Go back puts it back.
 - **Update now can bring a newer PHP, when you say so.** PHP is the program Xsegon runs on, and its new versions carry its own fixes, some for security. When a new version of Xsegon comes with a newer PHP, the Update now window asks, with a box left unticked: Also update PHP. Ticked, the new PHP is downloaded too, checked against the list its maker signed and tried with the new version before anything changes; your PHP settings stay, and going back puts the PHP before back as well. Unticked, or when new versions download by themselves, PHP is never touched.
 - **The Games Database comes from Xsegon-helper-files, and only signed.** Xsegon fetches newer copies of the Games Database from Xsegon-helper-files, and takes one only when its list is signed with the same key as Xsegon's updates, so nobody who got into the release page could swap it for another.

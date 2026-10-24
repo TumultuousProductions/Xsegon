@@ -115,9 +115,9 @@ file_put_contents($next . DIRECTORY_SEPARATOR . 'RELEASE.json', $listText);
 file_put_contents($next . DIRECTORY_SEPARATOR . 'RELEASE.sig', $sigText);
 
 // The PHP it runs on, when this copy's is another version and the person ticked it in the Update now
-// window (never by itself): checked against the signed list, unpacked into data\update\next-php with this
+// window (never by itself), with Offer a newer PHP still on in Settings: checked against the signed list, unpacked into data\update\next-php with this
 // copy's own php.ini, and the new copy is tried on it.
-$php      = !empty($job['php']) ? xs_update_php_wanted($list) : null;
+$php      = !empty($job['php']) && xs_update_php_offered() ? xs_update_php_wanted($list) : null;
 $trialPhp = null;
 if ($php !== null) {
     $phpZip = $in . DIRECTORY_SEPARATOR . 'php.zip';

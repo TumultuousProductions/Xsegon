@@ -24,10 +24,13 @@ import { armBrowse, stopVideo } from "./snap.js";
 import { SND, hearHoverRate, setVolume, sound } from "./sound.js";
 import { $body, $settings, S, hasLaunchBox, launchBoxOff, setSel } from "./state.js";
 import { openBackupTool, openLogViewer, openReportTool } from "./tools.js";
-import { updateRow } from "./updaterow.js";
+import { setSettingOpener, updateRow } from "./updaterow.js";
 import { el } from "./util.js";
 import { row } from "./views.js";
 import { gridImage, smallCopies, thumbsBy } from "./viewset.js";
+
+// Update now's warning on keeping an older PHP leads to its switch here.
+setSettingOpener(openSettingAt);
 
 // ---------- settings ----------
 // Rendered from the API's defaults, so a toggle added in

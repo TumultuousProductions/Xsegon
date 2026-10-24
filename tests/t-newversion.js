@@ -145,6 +145,8 @@ module.exports = async function (b, check) {
       check("the switch in Settings is kept", (s.settings || {}).window && s.settings.window.tellNewVersions, false);
       const defaults = ((await api("api/settings.php")).defaults || {}).window || {};
       check("and is on for a new copy, while downloading new versions by themselves is off until chosen", [defaults.tellNewVersions, defaults.getNewVersions], [true, false]);
+      check("a newer PHP is offered for a new copy (unticked, in the Update now window), and Settings can stop the offer",
+        [defaults.offerNewPhp, !!(((await api("api/settings.php")).schema || {}).window || {}).offerNewPhp], [true, true]);
       fs.writeFileSync(path.join(DATA, "messages.json"), JSON.stringify([{ id: "msg-newversion", at: new Date().toISOString(), kind: "info",
         title: "Xsegon 9.9 is out", body: "This is 0.15.", items: ["One"], url: PAGE + "v9.9", opens: ["newversion"], read: false }]));
       await b.goto();

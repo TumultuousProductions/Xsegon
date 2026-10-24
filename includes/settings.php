@@ -281,6 +281,7 @@ function xs_settings_defaults(): array
             'fillBigScreen' => true,       // read when the window is started (bin\xsbrowser.ps1); the page only asks when its screen changes
             'tellNewVersions' => true,     // a daily look for a newer release, said once in the mailbox (includes\newversion.php)
             'getNewVersions'  => false,    // a newer one downloaded and checked as soon as it is out; off, only when Update now is pressed
+            'offerNewPhp'     => true,     // a newer PHP a version brings is offered, unticked, in the Update now window; off, never offered or downloaded
         ],
 
         // What the screen does when nobody touches it.
@@ -600,6 +601,8 @@ function xs_settings_schema(): array
                                   'help' => 'Once a day, when this PC is online, Xsegon asks its page on GitHub which version is the newest, and Messages says once when a newer one is out, with Update now. Nothing of this copy changes until you press it. Off, Xsegon never asks.'],
             'getNewVersions'  => ['label' => 'Download new versions by themselves', 'section' => 'New versions',
                                   'help' => 'A newer version is downloaded in the background as soon as Xsegon hears of it (about 7 MB), checked against the list its maker signed and tried once on its own, so Update now takes only a moment. Off, nothing is downloaded until you press Update now. Either way nothing of this copy changes until you press it. Update now asks this too.'],
+            'offerNewPhp'     => ['label' => 'Offer a newer PHP with new versions', 'section' => 'New versions',
+                                  'help' => 'PHP is the program Xsegon runs on, and its new versions carry fixes, some of them for security. When a new version of Xsegon comes with a newer PHP, the Update now window offers it in a box left unticked, and only a ticked box brings it; new versions that download by themselves never do. Off, the box is never shown and no PHP is downloaded: this copy stays on the PHP it has.'],
             'phoneStays'   => ['label' => 'Phone page stays open', 'type' => 'enum', 'section' => 'Connecting a phone',
                                'options' => ['on' => 'Until I switch it off', 'close' => 'Until Xsegon closes', 'idle' => 'Off by itself when no phone uses it'],
                                'help' => 'The phone page lets a phone on the home Wi-Fi browse your games and start one on this PC. It is closed until you switch it on in the round X\'s menu, under Connect a phone... This says how long it then stays open: until you switch it off, also after Xsegon is closed and opened again; until Xsegon closes; or until no phone has asked anything for 30 minutes. Closed, nothing on this PC is open to the home network.'],
