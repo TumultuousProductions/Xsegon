@@ -140,18 +140,19 @@ function xs_update_find(string $version, ?int &$bytes = null, ?string &$why = nu
 }
 
 /**
- * Whether a release is marked urgent (a security fix, taken without the three days' wait):
- * read from its signed list, and believed only when the signature is the key this copy carries.
+ * A release's signed list, fetched and believed only when the signature is the key this copy
+ * carries: whether it is urgent (a security fix, taken without the three days' wait) and which
+ * PHP it runs on. Null when it did not come or is not ours.
  */
-function xs_update_urgent(string $version, array $urls): bool
+function xs_update_signed_list(string $version, array $urls): ?array
 {
     $list = xs_update_get((string) ($urls['list'] ?? ''), null, 8 * 1048576);
     $sig  = xs_update_get((string) ($urls['sig'] ?? ''), null, 65536);
     if (!is_string($list) || !is_string($sig) || !xs_update_signed($list, $sig)) {
-        return false;
+        return null;
     }
     $got = json_decode($list, true);
-    return xs_update_list_problem($got, $version) === null && ($got['urgent'] ?? false) === true;
+    return xs_update_list_problem($got, $version) === null ? $got : null;
 }
 
 /** True while bin\update.php is at work: it beats at each step and as the download comes. */
@@ -162,17 +163,18 @@ function xs_update_fetching(mixed $job): bool
 
 /**
  * Starts getting a version ready in the background (bin\update.php). $by: "look"
- * (new versions download by themselves) or "press" (Update now). False when one
- * is under way or will not start.
+ * (new versions download by themselves) or "press" (Update now). $php: the newer
+ * PHP comes too, only ever when the person ticked it in the Update now window.
+ * False when one is under way or will not start.
  */
-function xs_update_fetch_start(string $version, array $urls, string $by = 'look'): bool
+function xs_update_fetch_start(string $version, array $urls, string $by = 'look', bool $php = false): bool
 {
     if (xs_update_fetching(xs_read_json(xs_update_file('fetch.json'), []))) {
         return false;
     }
     @mkdir(xs_update_dir(), 0777, true);
-    xs_write_json(xs_update_file('fetch.json'), ['state' => 'running', 'version' => $version, 'urls' => $urls, 'by' => $by, 'step' => 'list',
-                                                 'beat' => time(), 'at' => date('c')]);
+    xs_write_json(xs_update_file('fetch.json'), ['state' => 'running', 'version' => $version, 'urls' => $urls, 'by' => $by, 'php' => $php && $by === 'press',
+                                                 'step' => 'list', 'beat' => time(), 'at' => date('c')]);
     require_once __DIR__ . '/gamesdb.php';
     $cmd = array_merge(xs_gamesdb_php_cmd(true), [XS_ROOT . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'update.php']);
     $h = @popen('start /B "" ' . implode(' ', array_map(static fn ($a) => '"' . $a . '"', $cmd)) . ' > NUL 2>&1', 'r');
@@ -181,7 +183,7 @@ function xs_update_fetch_start(string $version, array $urls, string $by = 'look'
         return false;
     }
     pclose($h);
-    xs_log('UPD', 'getting ' . $version . ' ready ' . ($by === 'press' ? 'as Update now was pressed' : 'in the background, as new versions download by themselves'));
+    xs_log('UPD', 'getting ' . $version . ' ready ' . ($by === 'press' ? 'as Update now was pressed' . ($php ? ', with the newer PHP as ticked' : '') : 'in the background, as new versions download by themselves'));
     return true;
 }
 
@@ -201,24 +203,29 @@ function xs_update_fetch_auto(string $version, array $urls): bool
 
 /**
  * Update now with nothing downloaded yet: the newer version the look found is
- * got ready now, and the page presses Update now when it is. Null when started
- * or under way, else why not.
+ * got ready now, and the page presses Update now when it is. $php: the person
+ * ticked the newer PHP too; one got ready without it is got again with it.
+ * Null when started or under way, else why not.
  */
-function xs_update_get_now(): ?string
+function xs_update_get_now(bool $php = false): ?string
 {
     $st = xs_update_state();
     if ($st['cannot'] !== null) {
         return 'this copy cannot update itself: ' . $st['cannot'];
-    }
-    if ($st['out'] === null) {
-        return $st['ready'] !== null ? null : 'no newer version is known yet';
     }
     if (xs_update_fetching(xs_read_json(xs_update_file('fetch.json'), []))) {
         return null;
     }
     require_once __DIR__ . '/newversion.php';
     $look = xs_read_json(xs_newversion_path(), []);
-    return xs_update_fetch_start($st['out']['version'], (array) ($look['urls'] ?? []), 'press') ? null : 'the download could not be started';
+    $php  = $php && $st['php'] !== null;
+    if ($st['out'] === null) {
+        if ($st['ready'] !== null && $php && $st['readyPhp'] === null && is_array($look['urls'] ?? null)) {
+            return xs_update_fetch_start($st['ready'], (array) $look['urls'], 'press', true) ? null : 'the download could not be started';
+        }
+        return $st['ready'] !== null ? null : 'no newer version is known yet';
+    }
+    return xs_update_fetch_start($st['out']['version'], (array) ($look['urls'] ?? []), 'press', $php) ? null : 'the download could not be started';
 }
 
 /** The newer version the last look found that this copy can download, newer than any waiting: [version, mb], or null. */
@@ -246,11 +253,17 @@ function xs_update_state(): array
     $fto   = is_array($fail) ? (string) ($fail['to'] ?? '') : '';
     $failed = $fto !== '' && (($fto === $wait && empty($fail['thrownAway'])) || ($wait === null && $fto === ($out['version'] ?? null)))
         ? array_intersect_key($fail, array_flip(['to', 'from', 'why', 'at'])) : null;
+    // A newer PHP the version on offer brings, asked about in the Update now window and taken only when ticked.
+    $look  = xs_read_json(xs_data_path('newversion.json'), []);
+    $offer = $out['version'] ?? $wait;
+    $php   = is_array($look) && $offer !== null && ($look['newest'] ?? null) === $offer && is_array($look['php'] ?? null) ? $look['php'] : null;
     return [
         'have'     => $have,
         'cannot'   => xs_update_cannot(),
         'ready'    => $wait,
         'out'      => $out,
+        'php'      => $php !== null ? ['version' => (string) ($php['version'] ?? ''), 'mb' => (float) ($php['mb'] ?? 0), 'have' => xs_update_php_have()] : null,
+        'readyPhp' => $wait !== null && is_array($ready) ? ($ready['php'] ?? null) : null,
         'failed'   => $failed,
         // Getting one ready: its step and bytes for the corner bar; how it ended, with why.
         'fetch'    => is_array($job) ? array_intersect_key($job, array_flip(['state', 'version', 'by', 'step', 'got', 'size', 'why', 'at', 'ended']))
@@ -335,7 +348,45 @@ function xs_update_list_problem(mixed $list, string $version): ?string
             return 'the file list names a file an update may not write: ' . $p;
         }
     }
+    // The PHP it runs on, when it names one: its own zip, and only plain paths inside PHP's folder.
+    if (isset($list['php'])) {
+        $php = $list['php'];
+        if (!is_array($php) || !preg_match('/^\d+\.\d+\.\d+$/', (string) ($php['version'] ?? '')) || !in_array($php['os'] ?? '', ['windows', 'linux'], true)
+            || ($php['name'] ?? '') !== 'Xsegon-php-' . $php['version'] . '-' . $php['os'] . '.zip'
+            || !preg_match('/^[0-9a-f]{64}$/', (string) ($php['sha256'] ?? '')) || (int) ($php['size'] ?? 0) <= 0 || !is_array($php['files'] ?? null)) {
+            return 'the file list does not say what its PHP is';
+        }
+        foreach ($php['files'] as $p => $f) {
+            if (!xs_update_safe('php/' . $p) || strtolower((string) $p) === 'php.ini' || !preg_match('/^[0-9a-f]{64}$/', (string) ($f['sha256'] ?? ''))) {
+                return 'the file list names a PHP file an update may not write: ' . $p;
+            }
+        }
+    }
     return null;
+}
+
+/** The PHP this copy runs on. XSEGON_TEST_PHP_HAVE: the tests' stand-in, on a test copy only. */
+function xs_update_php_have(): string
+{
+    $test = getenv('XSEGON_TEST_PHP_HAVE');
+    return xs_test_copy() && is_string($test) && $test !== '' ? $test : PHP_VERSION;
+}
+
+/** The PHP a release's list names, when this copy runs on another version of it; null when its own will do. */
+function xs_update_php_wanted(array $list): ?array
+{
+    $php = $list['php'] ?? null;
+    if (!is_array($php) || ($php['os'] ?? '') !== (DIRECTORY_SEPARATOR === '\\' ? 'windows' : 'linux')) {
+        return null;
+    }
+    return ($php['version'] ?? '') !== xs_update_php_have() ? $php : null;
+}
+
+/** Where a release's PHP zip is: beside its update zip, on the same release. */
+function xs_update_php_url(array $urls, string $name): string
+{
+    $zip = (string) ($urls['zip'] ?? '');
+    return substr($zip, 0, (int) strrpos($zip, '/') + 1) . rawurlencode($name);
 }
 
 /** What differs between a folder and a list (a file missing, one extra, one with other bytes), or null. */
@@ -422,9 +473,10 @@ function xs_update_page(string $url, ?int &$code = null): ?string
 /**
  * The new copy started by itself on a free port, with a data folder of its own
  * (a test copy, which never goes online by itself), and asked its version and
- * its page. Null when both answer right, else why not.
+ * its page. Null when both answer right, else why not. With a new PHP ($php,
+ * the program; $wantPhp, its version) it is tried on that PHP, which must say so.
  */
-function xs_update_trial(string $dir, string $want): ?string
+function xs_update_trial(string $dir, string $want, ?string $php = null, ?string $wantPhp = null): ?string
 {
     $s = @stream_socket_server('tcp://127.0.0.1:0', $no, $str);
     $port = $s !== false ? (int) substr((string) strrchr((string) stream_socket_get_name($s, false), ':'), 1) : 0;
@@ -440,7 +492,7 @@ function xs_update_trial(string $dir, string $want): ?string
     $env = getenv();
     $env['XSEGON_DATA'] = $data;
     // Its own code cache, as start.ps1 gives each folder: a second PHP on a shared one stops at once.
-    $cmd = [PHP_BINARY, '-d', 'opcache.cache_id=xsegon-try-' . substr(md5($dir . microtime()), 0, 10),
+    $cmd = [$php ?? PHP_BINARY, '-d', 'opcache.cache_id=xsegon-try-' . substr(md5($dir . microtime()), 0, 10),
             '-S', '127.0.0.1:' . $port, '-t', $dir, $dir . DIRECTORY_SEPARATOR . 'router.php'];
     $p = @proc_open($cmd, [0 => ['file', 'NUL', 'r'], 1 => ['file', 'NUL', 'w'], 2 => ['file', 'NUL', 'w']], $pipes, $dir, $env, ['bypass_shell' => true]);
     if (!is_resource($p)) {
@@ -455,9 +507,14 @@ function xs_update_trial(string $dir, string $want): ?string
             break;
         }
         if ($st !== null) {
-            $got = json_decode($st, true)['build']['version'] ?? null;
+            $build = json_decode($st, true)['build'] ?? [];
+            $got   = $build['version'] ?? null;
             if ($got !== $want) {
                 $why = 'it says it is ' . var_export($got, true) . ', not ' . $want;
+                break;
+            }
+            if ($wantPhp !== null && ($build['php'] ?? null) !== $wantPhp) {
+                $why = 'it runs on PHP ' . var_export($build['php'] ?? null, true) . ', not the new ' . $wantPhp;
                 break;
             }
             $page = xs_update_page("http://127.0.0.1:$port/");

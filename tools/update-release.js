@@ -16,11 +16,14 @@
         Xsegon-update-<v>.zip     Xsegon's own files, for bin\update.php
         Xsegon-update-<v>.json    the list, with the zip's size and SHA-256
         Xsegon-update-<v>.sig     the list's signature (ECDSA P-256, SHA-256)
+        Xsegon-php-<php>-<os>.zip given php: the PHP it runs on, which a copy
+                                  takes only when its own is another version
     It first writes NOTE into app, so a person who opens the update zip by
     mistake reads what it is and where the whole program is.
-    The big parts are left out, each pinned by its own tool and updated apart:
-    PHP and RetroArch (runtime\), 7zr and the Games Database (and an ffmpeg a
-    checkout may still hold from before Xsegon cut videos itself).            */
+    The big parts are left out of the zip, each pinned by its own tool and
+    updated apart: PHP (its own zip, above) and RetroArch (runtime\), 7zr and
+    the Games Database (and an ffmpeg a checkout may still hold from before
+    Xsegon cut videos itself).                                                 */
 "use strict";
 const fs = require("fs");
 const os = require("os");
@@ -64,9 +67,28 @@ function ownFiles(app) {
   return files;
 }
 
+/** A folder zipped by Windows' own tar from a staged copy of $files ([path => ...]), so the zip holds exactly those. */
+function zipOf(dir, files, zip) {
+  const stage = fs.mkdtempSync(path.join(os.tmpdir(), "xsegon-update-"));
+  try {
+    for (const r of Object.keys(files)) {
+      fs.mkdirSync(path.dirname(path.join(stage, r)), { recursive: true });
+      fs.copyFileSync(path.join(dir, r), path.join(stage, r));
+    }
+    fs.rmSync(zip, { force: true });
+    // Windows' own tar writes a .zip by its name (-a), as Xsegon reads one (includes\unpack.php).
+    execFileSync(TAR, ["-a", "-c", "-f", zip, "-C", stage].concat(fs.readdirSync(stage)), { stdio: "ignore" });
+  } finally {
+    fs.rmSync(stage, { recursive: true, force: true });
+  }
+}
+
 // urgent: a security fix, which copies take at once; any other release waits three days after
 // it is published (includes\newversion.php), so a bad one can be pulled before copies take it.
-function makeUpdate({ app, version, key, out, urgent }) {
+// php: { dir, version, os } the PHP the release runs on, zipped apart as Xsegon-php-<version>-<os>.zip
+// and named on the signed list: a copy downloads it only when its own PHP is another version. Its
+// php.ini is left out, as a copy keeps its own.
+function makeUpdate({ app, version, key, out, urgent, php }) {
   if (!/^\d+(\.\d+){1,3}$/.test(version)) { throw new Error("a version is numbers and dots, like 0.15"); }
   const priv = fs.readFileSync(key, "utf8");
   // The copy must trust this key, or no copy of this release could take the next one.
@@ -82,28 +104,32 @@ function makeUpdate({ app, version, key, out, urgent }) {
   const files = ownFiles(app);
   fs.mkdirSync(out, { recursive: true });
   // Staged apart, so the zip holds exactly the listed files and nothing of runtime\ or data\.
-  const stage = fs.mkdtempSync(path.join(os.tmpdir(), "xsegon-update-"));
   const zipName = "Xsegon-update-" + version + ".zip";
   const zip = path.join(out, zipName);
-  try {
-    for (const r of Object.keys(files)) {
-      fs.mkdirSync(path.dirname(path.join(stage, r)), { recursive: true });
-      fs.copyFileSync(path.join(app, r), path.join(stage, r));
-    }
-    fs.rmSync(zip, { force: true });
-    // Windows' own tar writes a .zip by its name (-a), as Xsegon reads one (includes\unpack.php).
-    execFileSync(TAR, ["-a", "-c", "-f", zip, "-C", stage].concat(fs.readdirSync(stage)), { stdio: "ignore" });
-  } finally {
-    fs.rmSync(stage, { recursive: true, force: true });
+  zipOf(app, files, zip);
+  let phpEntry = {};
+  if (php) {
+    if (!/^\d+\.\d+\.\d+$/.test(php.version || "") || !["windows", "linux"].includes(php.os)) { throw new Error("php wants a version like 8.5.12 and an os, windows or linux"); }
+    const pfiles = {};
+    (function walk(d, rel) {
+      for (const n of fs.readdirSync(d).sort()) {
+        const p = path.join(d, n), r = rel ? rel + "/" + n : n;
+        if (fs.statSync(p).isDirectory()) { walk(p, r); } else if (r !== "php.ini") { pfiles[r] = { size: fs.statSync(p).size, sha256: sha(p) }; }
+      }
+    })(php.dir, "");
+    const phpName = "Xsegon-php-" + php.version + "-" + php.os + ".zip";
+    const phpZip = path.join(out, phpName);
+    zipOf(php.dir, pfiles, phpZip);
+    phpEntry = { php: { version: php.version, os: php.os, name: phpName, size: fs.statSync(phpZip).size, sha256: sha(phpZip), files: pfiles } };
   }
   const list = JSON.stringify(Object.assign({ app: "Xsegon", version, made: new Date().toISOString() }, urgent ? { urgent: true } : {},
-    { zip: { name: zipName, size: fs.statSync(zip).size, sha256: sha(zip) }, files }), null, 1) + "\n";
+    { zip: { name: zipName, size: fs.statSync(zip).size, sha256: sha(zip) } }, phpEntry, { files }), null, 1) + "\n";
   const sig = crypto.sign("sha256", Buffer.from(list, "utf8"), priv).toString("base64") + "\n";
   fs.writeFileSync(path.join(out, "Xsegon-update-" + version + ".json"), list);
   fs.writeFileSync(path.join(out, "Xsegon-update-" + version + ".sig"), sig);
   fs.writeFileSync(path.join(app, "RELEASE.json"), list);
   fs.writeFileSync(path.join(app, "RELEASE.sig"), sig);
-  return { files: Object.keys(files).length, zip, zipBytes: fs.statSync(zip).size };
+  return { files: Object.keys(files).length, zip, zipBytes: fs.statSync(zip).size, php: phpEntry.php || null };
 }
 
 /** A new key pair: the private half where asked (never in git), the public half where the copies read it. */

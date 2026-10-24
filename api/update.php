@@ -10,7 +10,9 @@
  *                             (includes\update.php xs_update_state)
  *   POST {"action":"get"}     Update now with nothing downloaded yet: the newer
  *                             version is got ready in the background; the page
- *                             follows it and presses update when it is
+ *                             follows it and presses update when it is.
+ *        "php": true          and the newer PHP it brings, as the person ticked
+ *                             it in the Update now window (never otherwise)
  *   POST {"action":"update"}  Update now: a backup of the data, then the press
  *                             written down; start.ps1 puts it in place with no
  *                             server running, at once when it opened Xsegon out of
@@ -31,7 +33,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     if ($what !== 'update' && $what !== 'back' && $what !== 'get') {
         xs_fail('unknown action', 400);
     }
-    $why = $what === 'get' ? xs_update_get_now() : xs_update_press($what);
+    $why = $what === 'get' ? xs_update_get_now((xs_body()['php'] ?? false) === true) : xs_update_press($what);
     if ($why !== null) {
         xs_fail($why, 409);
     }

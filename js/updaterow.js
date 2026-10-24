@@ -3,7 +3,8 @@
  *  the row on that page saying what this copy is and what is waiting.
  *
  *  Update now asks first, in a window that also asks whether the next new
- *  versions download by themselves. One not downloaded yet is got ready in the
+ *  versions download by themselves, and, when the version brings a newer PHP,
+ *  whether to take that too (unticked: it never comes otherwise). One not downloaded yet is got ready in the
  *  background with a bar in the corner, then put in place. A press takes a
  *  backup of the data and writes itself down; start.ps1 makes the switch with
  *  no server running. Where Xsegon was opened from Start Xsegon.bat the window
@@ -71,6 +72,7 @@ function askUpdate() {
       return;
     }
     var here = !r.out;     // downloaded, checked and tried already
+    var phpTick = null;    // the newer PHP's box, drawn below when this version brings one; read when Update now is pressed
     L("UPD", "asked: update to " + v + (here ? ", ready" : ", not downloaded yet"));
     confirmWindow("Update to Xsegon " + v + "?", function (box) {
       box.appendChild(el("p", null, here
@@ -80,6 +82,20 @@ function askUpdate() {
         ? "closes, puts " + v + " in place and opens again."
         : "and " + v + " goes in place the next time Xsegon starts.") + (here ? "" : " A game you are playing is left to finish first.")));
       box.appendChild(el("p", "confirm-safe", "Your games, settings and pictures stay as they are. Settings > Window > New versions can go back to " + r.have + " afterwards."));
+      // A newer PHP comes only when ticked here: never by itself, and never with the next versions that download by themselves.
+      if (r.php && r.php.version && r.readyPhp !== r.php.version) {
+        var plab = el("label", "confirm-pick");
+        phpTick = el("input");
+        phpTick.type = "checkbox";
+        phpTick.checked = false;
+        plab.appendChild(phpTick);
+        plab.appendChild(document.createTextNode(" Also update PHP, the program Xsegon runs on, from " + r.php.have + " to " + r.php.version + " (" + mb(r.php.mb) + " more)"));
+        box.appendChild(plab);
+        box.appendChild(el("p", "confirm-note", "PHP's new versions carry its own fixes, some of them for security. It is checked and tried with "
+          + v + " before anything changes, your PHP settings stay, and going back puts " + r.php.have + " back too."));
+      } else if (here && r.readyPhp) {
+        box.appendChild(el("p", "confirm-note", "PHP, the program Xsegon runs on, goes from " + (r.php ? r.php.have : "this one") + " to " + r.readyPhp + " with it, as you chose."));
+      }
       var lab = el("label", "confirm-pick");
       var tick = el("input");
       tick.type = "checkbox";
@@ -92,16 +108,21 @@ function askUpdate() {
       lab.appendChild(document.createTextNode(" Download the next new versions by themselves, so Update now takes only a moment"));
       box.appendChild(lab);
       box.appendChild(el("p", "confirm-note", "Either way, nothing of Xsegon changes until you press Update now. Settings > Window > New versions has this choice too."));
-    }, { label: "Update now", run: function () { if (here) { press("update"); } else { getThenPress(v); } } }, "Not now",
+    }, { label: "Update now", run: function () {
+      var php = !!(phpTick && phpTick.checked);
+      L("UPD", "Update now pressed for " + v + (phpTick ? ", the newer PHP " + (php ? "ticked" : "left out") : ""));
+      // Got ready already without the PHP that was then ticked: got again, with it.
+      if (here && !php) { press("update"); } else { getThenPress(v, php); }
+    } }, "Not now",
        function () { L("UPD", "update to " + v + " put off"); });
   });
 }
 
-function getThenPress(v) {
-  postJson("api/update.php", { action: "get" }).then(function (r) {
+function getThenPress(v, php) {
+  postJson("api/update.php", { action: "get", php: !!php }).then(function (r) {
     if (!r || !r.ok) { showStrip("Xsegon " + v + " was not downloaded: " + ((r && r.error) || "no answer") + ". Nothing changed.", true); return; }
-    if (r.ready === v && !r.out) { press("update"); return; }
-    L("UPD", "Update now: getting " + v + " ready first");
+    if (r.ready === v && !r.out && !(r.fetch && r.fetch.alive) && (!php || r.readyPhp)) { press("update"); return; }
+    L("UPD", "Update now: getting " + v + " ready first" + (php ? ", with the newer PHP" : ""));
     showStrip("Downloading Xsegon " + v + ": the bar in the corner shows how far it is, and Xsegon updates when it is ready.");
     follow(v);
   });
