@@ -529,8 +529,9 @@ each kind on a release of its own: files Xsegon fetches by itself (each
 version's update files on a release named `update-<version>`, where copies
 from v0.18.1 look for them), and source code a licence asks to be offered. A
 copy of v0.18 or older looked for update files only on Xsegon's own page, so it
-says to update by hand once. The Games Database keeps its own `gamesdb` release
-here, where every copy looks for it.
+says to update by hand once. The Games Database is there too, on a release
+named `gamesdb`, its list signed with the same key as the updates (from v0.19;
+copies before it look for it on Xsegon's own page and keep the one they have).
 
 ## License
 

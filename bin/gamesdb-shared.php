@@ -10,9 +10,11 @@
  *     {"built": "<ISO time>", "size": <bytes of the .bz2>,
  *      "sha256": "<of the .bz2>", "games": <count>}
  * It is not kept in git, where every refresh would add the whole file to the
- * history. The download carries one in gamesdb\, and a GitHub release (tag
- * "gamesdb") holds the newest, fetched into data\gamesdb-update\ by
- * bin\gamesdb-update.php. Whichever was built last is used.
+ * history. The download carries one in gamesdb\, and the "gamesdb" release on
+ * Xsegon-helper-files holds the newest, fetched into data\gamesdb-update\ by
+ * bin\gamesdb-update.php. Whichever was built last is used. The published
+ * gamesdb.json has gamesdb.sig beside it, signed with Xsegon's update key: a
+ * copy takes no published database whose manifest that key did not sign.
  *
  * bzip2, because PHP unpacks it with nothing else: PHP cannot open Brotli,
  * and 7-Zip's extractor is a second program.
@@ -35,6 +37,7 @@ const XS_GDB_TYPES = [
 
 const XS_GDB_PACKED   = 'gamesdb.sqlite.bz2';
 const XS_GDB_MANIFEST = 'gamesdb.json';
+const XS_GDB_SIG      = 'gamesdb.sig';
 
 // The tables, as LaunchBox's own file has them, less the columns nothing here
 // reads; and the indexes, left out of the packed copy to keep it small and
@@ -64,7 +67,24 @@ function xs_gdb_release_url(): string
 {
     $test = getenv('XSEGON_GAMESDB_URL');
     return is_string($test) && $test !== '' ? $test
-         : 'https://github.com/TumultuousProductions/Xsegon/releases/download/gamesdb/';
+         : 'https://github.com/TumultuousProductions/Xsegon-helper-files/releases/download/gamesdb/';
+}
+
+/**
+ * Whether a published manifest's signature is by Xsegon's update key, the one
+ * every copy carries (includes\update-key.pem). XSEGON_GAMESDB_KEY: the test's
+ * own public key, on a test copy (XSEGON_DATA) only.
+ */
+function xs_gdb_signed(string $manifest, string $sigText): bool
+{
+    $test = getenv('XSEGON_GAMESDB_KEY');
+    $data = getenv('XSEGON_DATA');
+    $file = is_string($test) && $test !== '' && is_string($data) && $data !== '' ? $test
+          : dirname(__DIR__) . DIRECTORY_SEPARATOR . 'includes' . DIRECTORY_SEPARATOR . 'update-key.pem';
+    $pem = @file_get_contents($file);
+    $key = is_string($pem) ? @openssl_pkey_get_public($pem) : false;
+    $sig = base64_decode(trim($sigText), true);
+    return $key !== false && is_string($sig) && openssl_verify($manifest, $sig, $key, OPENSSL_ALGO_SHA256) === 1;
 }
 
 /** JavaScript's truthiness, for the values a database row or a JSON file holds. */

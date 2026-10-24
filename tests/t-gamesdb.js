@@ -5,7 +5,8 @@
     LaunchBox's Metadata.xml, four games long, is built and packed in the
     test server's own folder, the reader unpacks it there (XSEGON_GAMESDB_DIR
     and _COPY), and the updater is pointed at a stand-in for the GitHub
-    release served from this process (XSEGON_GAMESDB_URL). Then the server is
+    release served from this process (XSEGON_GAMESDB_URL), its manifest signed
+    with a key of the test's own (XSEGON_GAMESDB_KEY). Then the server is
     asked which source it would fill from, with LaunchBox off.
 
     THE ANSWERS ON RECORD (tests\gamesdb-answers.json): the server and the
@@ -184,9 +185,16 @@ module.exports = async function (b, check) {
   }
 
   /* ---- the build ------------------------------------------------------- */
+  // Keys of the test's own: the build signs with one, the updater trusts it; the other stands in for anyone else's.
+  const { generateKeyPairSync, sign: signBy, verify } = require("crypto");
+  const keyPair = () => generateKeyPairSync("ec", { namedCurve: "prime256v1",
+    publicKeyEncoding: { type: "spki", format: "pem" }, privateKeyEncoding: { type: "pkcs8", format: "pem" } });
+  const ours = keyPair(), theirs = keyPair();
+  fs.writeFileSync(path.join(dir, "ours.pem"), ours.privateKey);
+  fs.writeFileSync(path.join(dir, "ours.pub.pem"), ours.publicKey);
   // Started plainly, as it is run by hand: it loads the extensions it lacks itself.
   const said = execFileSync(phpExe, [path.join(ROOT, "tools", "build-gamesdb.php"), xml],
-    { env: Object.assign({}, process.env, { XSEGON_GAMESDB_OUT: out }), windowsHide: true }).toString();
+    { env: Object.assign({}, process.env, { XSEGON_GAMESDB_OUT: out, XSEGON_GAMESDB_SIGN_KEY: path.join(dir, "ours.pem") }), windowsHide: true }).toString();
   check("gamesdb: the builder reads the download's games, other names and pictures, leaving out types Xsegon never shows",
     /done: 4 games, 1 other names, 1 pictures \(1 left out\)/.test(said), true);
   const m0 = manifest(out);
@@ -195,6 +203,10 @@ module.exports = async function (b, check) {
     [fs.existsSync(bz), m0.games, m0.size === (fs.existsSync(bz) ? fs.statSync(bz).size : -1),
      m0.sha256 === (fs.existsSync(bz) ? require("crypto").createHash("sha256").update(fs.readFileSync(bz)).digest("hex") : ""),
      /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(m0.built), Object.keys(m0)], [true, 4, true, true, true, ["built", "size", "sha256", "games"]]);
+  const sigOut = path.join(out, "gamesdb.sig");
+  check("and signs the manifest with the key it is given, into gamesdb.sig",
+    [/signed gamesdb\.json into gamesdb\.sig/.test(said), fs.existsSync(sigOut) && verify("sha256", fs.readFileSync(path.join(out, "gamesdb.json")), ours.publicKey,
+      Buffer.from(fs.readFileSync(sigOut, "utf8").trim(), "base64"))], [true, true]);
 
   const home = path.join(dir, "home");
   const data = path.join(home, "data"), lb = path.join(home, "LaunchBox");
@@ -204,7 +216,7 @@ module.exports = async function (b, check) {
   const setLb = (p) => fs.writeFileSync(path.join(data, "settings.json"), JSON.stringify({ paths: { launchbox: p } }));
   let port = 0;
   const env = (more) => Object.assign({}, process.env, { XSEGON_DATA: data, XSEGON_GAMESDB_DIR: out, XSEGON_GAMESDB_COPY: copy,
-    XSEGON_GAMESDB_URL: "http://127.0.0.1:" + port + "/" }, more || {});
+    XSEGON_GAMESDB_URL: "http://127.0.0.1:" + port + "/", XSEGON_GAMESDB_KEY: path.join(dir, "ours.pub.pem") }, more || {});
   const command = (script, args) => [phpExe, [...phpFlags, path.join(ROOT, "bin", script + ".php"), ...args]];
   const raw = (args, e) => { const c = command("gamesdb", args); return execFileSync(c[0], c[1], { env: e || env(), windowsHide: true }).toString(); };
   const reader = (...args) => JSON.parse(raw(args));
@@ -283,9 +295,14 @@ module.exports = async function (b, check) {
   });
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
   port = server.address().port;
-  const publishAs = (built, sha) => {
+  /** A copy on the stand-in release, its manifest signed by ours, by another key (theirs), or not at all (null). */
+  const publishAs = (built, sha, by) => {
     fs.copyFileSync(path.join(out, PACKED), path.join(pub, PACKED));
-    fs.writeFileSync(path.join(pub, "gamesdb.json"), JSON.stringify(Object.assign({}, m0, { built, sha256: sha || m0.sha256 })));
+    const text = JSON.stringify(Object.assign({}, m0, { built, sha256: sha || m0.sha256 }));
+    fs.writeFileSync(path.join(pub, "gamesdb.json"), text);
+    const signer = by === undefined ? ours : by;
+    if (signer) { fs.writeFileSync(path.join(pub, "gamesdb.sig"), signBy("sha256", Buffer.from(text), signer.privateKey).toString("base64") + "\n"); }
+    else { fs.rmSync(path.join(pub, "gamesdb.sig"), { force: true }); }
   };
   const update = (...a) => new Promise((resolve) => {
     const c = command("gamesdb-update", a);
@@ -301,6 +318,14 @@ module.exports = async function (b, check) {
     const bad = await update();
     check("a download that does not match its checksum is refused, and nothing is put in place",
       [bad.result, fs.existsSync(path.join(fetched, PACKED))], ["the download does not match its checksum", false]);
+    publishAs("2099-01-01T00:00:00.000Z", null, null);
+    const unsigned = await update();
+    check("a newer one with no signature beside it is refused before anything is downloaded",
+      [unsigned.result, fs.existsSync(path.join(fetched, PACKED))], ["the published Games Database is not signed", false]);
+    publishAs("2099-01-01T00:00:00.000Z", null, theirs);
+    const forged = await update();
+    check("and one signed by any other key than Xsegon's",
+      [forged.result, fs.existsSync(path.join(fetched, PACKED))], ["the published Games Database is not signed by Xsegon's key", false]);
     publishAs("2099-01-01T00:00:00.000Z");
     const got = await update();
     check("a newer one is fetched, checked, and put in data\\gamesdb-update", [got.result, got.built, manifest(fetched).built, fs.existsSync(path.join(fetched, PACKED))],
