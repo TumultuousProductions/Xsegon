@@ -1,0 +1,71 @@
+{
+  "name": "Tumultuous Productions",
+  "mail": "help@tumultuousproductions.site",
+  "reply": "within a couple of days",
+  "help": {
+    "eyebrow": "Help · Asking is always free",
+    "title": ["Help with ", "Xsegon"],
+    "lead": "Stuck on something, or would you rather someone set it up for you? Ask me. Asking costs nothing and promises nothing.",
+    "fix": [
+      { "id": "guide", "icon": "✨", "tone": "", "title": "Getting started", "button": "Open Getting started",
+        "points": ["Point it at your games folder", "RetroArch, the cores and the pictures come by themselves"] },
+      { "id": "report", "icon": "⚠️", "tone": "violet", "title": "Something is wrong", "button": "Report a problem",
+        "points": ["Runs every check Xsegon knows, worst first", "Puts the log in one small zip you can send me"] },
+      { "id": "pad", "icon": "🎮", "tone": "teal", "title": "A controller does nothing", "button": "Check a controller",
+        "points": ["See every button and stick as Xsegon reads them", "Tells a dead pad from a wrong layout"] },
+      { "id": "bios", "icon": "💾", "tone": "gold", "title": "A game will not start", "button": "Open the BIOS check",
+        "points": ["Usually a missing BIOS file or emulator core", "The game's own page says which"] }
+    ],
+    "helpme": [
+      "What you were doing, and what you expected",
+      "What happened instead (a photo of the screen helps)",
+      "The report zip, from Something is wrong above",
+      "Your Xsegon version: Write to me puts it in for you"
+    ],
+    "rate": "$35 an hour",
+    "paid": [
+      { "title": "Set it up for you", "from": "Starting at", "amount": "$35", "per": "/hr",
+        "about": "Over a remote session you start: your games folder, emulators, controllers and TV, then a tour. Most take one to two hours." },
+      { "title": "Tune your emulators", "from": "Starting at", "amount": "$35", "per": "/hr",
+        "about": "Looks, speed, controller layouts and saves, for the consoles you play most." },
+      { "title": "A look of your own", "from": "Starting at", "amount": "$35", "per": "/hr",
+        "about": "Your name, logo, colours and sounds on Xsegon. Yours through every update." },
+      { "title": "A cabinet or mini PC", "from": "Ask for", "amount": "A quote", "per": "",
+        "about": "A small PC or an arcade cabinet that starts straight into Xsegon, built to order. Parts at what they cost." }
+    ],
+    "steps": [
+      ["Email me", "what you need, from Write to me or your own email."],
+      ["I reply with a plan and a price.", "Free, and no obligation. You get the total before any work."],
+      ["You decide.", "Yes, no, or not now: all fine. Nothing is owed until you say yes."],
+      ["We do it.", "How you pay depends on the job: we agree on it in writing before we start, and you get a receipt."]
+    ],
+    "safe": [
+      { "title": "One address", "text": "I only ever write from help@tumultuousproductions.site. A message from anywhere else is not me." },
+      { "title": "I only write back", "text": "I only ever write back to messages you sent me. Xsegon never opens this page by itself." },
+      { "title": "No passwords, no payment in Xsegon", "text": "I never ask for a password, and Xsegon never takes payment or card numbers." },
+      { "title": "You hold the keys", "text": "A remote session only starts when you start it. You see everything, and you can end it any time." },
+      { "title": "No games, BIOS files or keys", "text": "I never sell, send or link to them, and nobody who does works with me. You bring your own; I help with everything else.", "gold": true },
+      { "title": "Price first", "text": "You get the price in writing before any work, and you only pay for what you said yes to." }
+    ]
+  },
+  "games": {
+    "eyebrow": "Yami 2026 · Arena of Might 2027",
+    "lead": "What I'm building, with my team and on my own. Nothing to buy yet.",
+    "list": [
+      { "id": "yami", "name": "Yami", "icon": "🌙", "year": "2026", "when": "Coming 2026 · team project", "tone": "violet", "out": false,
+        "about": "Pixel-art 2D co-op Metroidvania. Two brothers, opposite magic, one cure to find.",
+        "spec": ["PC", "Local + online co-op"],
+        "picture": "img/tumultuous/yami.jpg", "watch": "Official Yami trailer", "watchSub": "Opens Yami's website in your browser",
+        "watchUrl": "https://tumultuousproductions.site", "site": "Yami's website", "siteUrl": "https://tumultuousproductions.site" },
+      { "id": "aom", "name": "Arena of Might", "icon": "⚔️", "year": "2027", "when": "Coming 2027 · solo project", "tone": "gold", "out": false,
+        "about": "Chess, but every piece is a fighter. Knights, power, armor and block stats: every capture turns into a battle.",
+        "spec": ["Unity", "Work in progress"],
+        "picture": "img/tumultuous/arena-of-might.jpg", "watch": "Arena of Might (work in progress)", "watchSub": "Opens YouTube in your browser",
+        "watchUrl": "https://www.youtube.com/watch?v=4W8Za8CRveM" }
+    ],
+    "links": [
+      { "icon": "🌙", "name": "Yami's website", "sub": "tumultuousproductions.site", "url": "https://tumultuousproductions.site" },
+      { "icon": "💬", "name": "Yami community", "sub": "Discord", "url": "https://discord.gg/E5uBYzEasu" }
+    ]
+  }
+}

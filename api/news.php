@@ -41,6 +41,9 @@ if ($method !== 'POST') {
             xs_tips_tell('the startup look');
             // Files whose names say they go with a game: named once, nothing changed (includes\accompanied.php).
             xs_acc_tell('the startup look');
+            // A game asked of on Tumultuous Productions' page that this release marks out: said once (includes\tumultuous.php).
+            require_once __DIR__ . '/../includes/tumultuous.php';
+            xs_tp_tell();
         }
         $msgs  = xs_messages();
         xs_json(['ok' => true, 'unread' => xs_messages_unread($msgs)] + $found);

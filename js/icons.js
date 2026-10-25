@@ -45,6 +45,8 @@ var ICONS = {
   gamepad: '<path d="M7.2 8h9.6a4.4 4.4 0 0 1 4.3 5.3l-.7 3.1a2.5 2.5 0 0 1-4.4 1L14.5 16h-5l-1.5 1.4a2.5 2.5 0 0 1-4.4-1l-.7-3.1A4.4 4.4 0 0 1 7.2 8z"/><path d="M8.6 10.8v3.2M7 12.4h3.2"/><circle fill="currentColor" stroke="none" cx="15.4" cy="11.5" r=".95"/><circle fill="currentColor" stroke="none" cx="17.4" cy="13.3" r=".95"/>',
   pointer: '<path d="M6.5 4.5l11 6.6-4.9 1.3 2.7 5.2-2.2 1.1-2.7-5.2-3.9 3.2z"/>',
   phone:   '<rect x="7.5" y="3.5" width="9" height="17" rx="1.8"/><path d="M10.8 17.4h2.4"/>',
+  // a speech bubble: help from a person (js\tppage.js)
+  chat:    '<path d="M5.5 5.5h13a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5H11l-4.5 3.5v-3.5h-1A1.5 1.5 0 0 1 4 15V7a1.5 1.5 0 0 1 1.5-1.5z"/>',
   window:  '<rect x="4" y="5" width="16" height="14" rx="1.5"/><path d="M4 9h16"/>',
   moon:    '<path d="M19 14.7A7.6 7.6 0 0 1 9.3 5 7.6 7.6 0 1 0 19 14.7z"/>',
   bug:     '<circle cx="12" cy="13.2" r="4.4"/><path d="M12 8.8V6.6M8.9 9.6L7.4 7.4M15.1 9.6l1.5-2.2M7.6 13.2H5.2M18.8 13.2h-2.4M8.9 16.6l-1.5 2.2M15.1 16.6l1.5 2.2"/>',

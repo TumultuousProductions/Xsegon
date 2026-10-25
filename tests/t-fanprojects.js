@@ -168,7 +168,7 @@ function fanRawDisc(sectors, seed) {
 
 module.exports = async function (b, check) {
   const kept = new Guard(["fanprojects.json", "wanted.json", "local-games.json", "scanned-games.json", "filecheck.json", "hack-of.json",
-                          "fan-made.json", "fanmake-job.json",
+                          "fan-made.json", "fanmake-job.json", "settings.json",
                           "fixtures/libretro/meta/no-intro/Nintendo - Nintendo 64.dat", "libretro/Nintendo - Nintendo 64.releases.json"]);
   const fix = path.join(DATA, "fan-fixtures");
   try {
@@ -274,6 +274,8 @@ module.exports = async function (b, check) {
     check("an address from the request is never opened", (await api("api/fanprojects.php", { open: "https://example.org", which: "page" })).ok, false);
 
     /* ---- the page ---------------------------------------------------------- */
+    // End lands on the last card: this one, with Tumultuous Productions' card put away (kept puts it back).
+    await api("api/settings.php", { view: { showTumultuous: false } });
     await b.goto(BASE + "/");
     await b.waitFor(`!document.getElementById("syswall").hidden && document.querySelectorAll("#syswall .sel").length > 0`, 10000);
     await b.key("End");

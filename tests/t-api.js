@@ -528,7 +528,7 @@ module.exports = async function (b, check) {
                      "tests/lib.js", "tools/make-test-copy.js", "start.ps1", "router.php", "README.md"]) {
     check("not served: /" + bad, await rawStatus("/" + bad), 404);
   }
-  for (const good of ["js/main.js", "css/xsegon.css", "api/status.php", "index.php", "img/xsegon-32.png", "img/xsegon-192.png"]) {
+  for (const good of ["js/main.js", "css/xsegon.css", "api/status.php", "index.php", "img/xsegon-32.png", "img/xsegon-192.png", "img/tumultuous/yami.jpg"]) {
     check("served: /" + good, await rawStatus("/" + good), 200);
   }
   const favicon = await fetch(BASE + "/favicon.ico");

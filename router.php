@@ -74,6 +74,8 @@ if ($path !== '/' && is_file($file)) {
     $rel  = $real === false ? '' : str_replace('\\', '/', substr($real, strlen(__DIR__) + 1));
     if ($real !== false && strncasecmp($real, __DIR__ . DIRECTORY_SEPARATOR, strlen(__DIR__) + 1) === 0
         && preg_match('#^(index\.php|play\.php|api/[a-z0-9\-]+\.php|js/[a-z0-9\-]+\.js|css/[a-z0-9\-]+\.css|img/[a-z0-9\-]+\.(png|ico)'
+            // the game pictures on Tumultuous Productions' page (includes\tumultuous\page.json)
+            . '|img/tumultuous/[a-z0-9\-]+\.jpg'
             // private\, where it exists: its pages and scripts, nothing else in it
             . '|private/api/[a-z0-9\-]+\.php|private/web/[a-z0-9\-]+\.js'
             // custom\, a person's own look (includes\custom.php): stylesheets and the pictures they name, never a script

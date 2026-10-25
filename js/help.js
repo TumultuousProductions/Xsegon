@@ -30,7 +30,9 @@ var HELP = {
   // the Fan projects page (js\fanprojects.js)
   fanprojects: [["↑↓←→", "choose"], ["Enter", "the panel's first button"], ["Type", "find a project"], ["Esc", "back"]],
   // the Extensions page (js\extensions.js)
-  extensions: [["↑↓", "choose"], ["Enter", "the panel's first button"], ["Esc", "back"]]
+  extensions: [["↑↓", "choose"], ["Enter", "the panel's first button"], ["Esc", "back"]],
+  // Tumultuous Productions' page (js\tppage.js)
+  tppage: [["↑↓←→", "choose"], ["Enter", "press"], ["Q E", "Help, My games"], ["Esc", "back"]]
 };
 
 /* The same legend in the pad's words. The moment a pad is used
@@ -47,7 +49,8 @@ var HELP_PAD = {
   tabrows:  [["✥", "move"], ["A", "select"], ["B", "back to the tabs"]],
   settings: [["✥", "move"], ["◂▸", "change"], ["A", "open"], ["B", "back"]],
   fanprojects: [["✥", "choose"], ["A", "the panel's first button"], ["X", "their page"], ["B", "back"]],
-  extensions: [["✥", "choose"], ["A", "the panel's first button"], ["X", "its website"], ["B", "back"]]
+  extensions: [["✥", "choose"], ["A", "the panel's first button"], ["X", "its website"], ["B", "back"]],
+  tppage: [["✥", "choose"], ["A", "press"], ["LB RB", "Help, My games"], ["B", "back"]]
 };
 export var padMode = false;
 var helpCtx = "browse";

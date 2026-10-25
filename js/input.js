@@ -32,6 +32,7 @@ import { saverUp, touch } from "./status.js";
 import { subBack, subSide } from "./submenu.js";
 import { backToWall, chooseSystem, moveSys, openSysMenu, setSysSel, sysList, sysSel, sysStyle, updateSystems } from "./systems.js";
 import { openLogViewer } from "./tools.js";
+import { tpKeys, tpOpen, tpPad } from "./tppage.js";
 import { nextView } from "./viewlock.js";
 import { ctl, move, navRows, render, rowStep, setView, viewPending } from "./views.js";
 
@@ -277,6 +278,7 @@ function onKey(e) {
 
   if (fanKeys(e)) { return; }            // the Fan projects page, while it is up (js\fanprojects.js)
   if (extKeys(e)) { return; }            // the Extensions page, while it is up (js\extensions.js)
+  if (tpKeys(e)) { return; }             // Tumultuous Productions' page, while it is up (js\tppage.js)
   // A dropdown at the top left with the keys after a click: Xsegon's key acts, once, never its letter jump or arrow as well
   // (g went to Shelf and the dropdown's G back to Grid). Space, F4 and Alt still open it; Tab still leaves it.
   if (e.target && /^(viewsel|platform|added|sort)$/.test(e.target.id) && !/^(Tab| |F4)$/.test(e.key) && !e.altKey) { e.target.blur(); e.preventDefault(); }
@@ -624,6 +626,7 @@ export function pollPad() {
 
     if (fanOpen()) { padPrev[i] = fanPad({ up: up, down: down, left: left, right: right, a: a, b: b, x: x, y: y }, prev); repeatDir = 0; continue; }
     if (extOpen()) { padPrev[i] = extPad({ up: up, down: down, left: left, right: right, a: a, b: b, x: x, y: y }, prev); repeatDir = 0; continue; }
+    if (tpOpen()) { padPrev[i] = tpPad({ up: up, down: down, left: left, right: right, a: a, b: b, lb: lbHit, rb: rbHit }, prev); repeatDir = 0; continue; }
 
     // The bar up among the menus and buttons at the top: its own walk until it comes back down.
     var tp = padTopPoll({ up: up, down: down, left: left, right: right, a: a, b: b, x: x, y: y, hit: tbHit }, prev);

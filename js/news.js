@@ -25,6 +25,7 @@ import { sound } from "./sound.js";
 import { setViewMode } from "./state.js";
 import { chooseSystem } from "./systems.js";
 import { openReportTool } from "./tools.js";
+import { openTpPage } from "./tppage.js";
 import { pressUpdate } from "./updaterow.js";
 import { closeOnBackdrop, el } from "./util.js";
 
@@ -166,7 +167,9 @@ var MAIL_GOES = {
   scan: ["Scan for Games...", function () { openScanTool(); }],
   screenscraper: ["ScreenScraper videos...", function () { openScreenScraper(); }],
   // A message kept from before 2026-10-17 still names the Skraper steps, which are gone: it gets the same press.
-  skraper: ["ScreenScraper videos...", function () { openScreenScraper(); }]
+  skraper: ["ScreenScraper videos...", function () { openScreenScraper(); }],
+  // A game asked of on Tumultuous Productions' page is out (includes\tumultuous.php).
+  tumultuous: ["Tumultuous Productions...", function () { openTpPage(); }]
 };
 
 function mailPost(body) {

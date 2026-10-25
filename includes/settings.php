@@ -91,6 +91,7 @@ function xs_settings_defaults(): array
             'default'             => 'list',   // list | grid | shelf | wheel | carousel | rows; a new copy opens on List, its menu bar in sight
             'systemsFirst'        => true,     // pick a system before seeing games
             'systemsStyle'        => 'wheel',  // wheel | carousel
+            'showTumultuous'      => true,     // Tumultuous Productions' card, last on the consoles screen (js\tppage.js); the Help menu keeps it either way
             'sort'                => 'title',  // title | developer | ... | random, and one per list column: the schema below has them all
             'sortReverse'         => false,    // flip whichever way that sort naturally runs
             'groupHeaders'        => false,    // list and grid: a header wherever the sorted value changes
@@ -373,6 +374,8 @@ function xs_settings_schema(): array
             'systemsStyle' => ['label' => 'Systems screen style', 'type' => 'enum', 'section' => 'Views',
                                'options' => ['wheel' => 'Wheel of banners', 'carousel' => 'Console gallery'],
                                'help' => 'Wheel: platform banners on the rim. Gallery: the console itself over its scenery.'],
+            'showTumultuous' => ['label' => 'Tumultuous Productions on the consoles screen', 'section' => 'Views',
+                                 'help' => 'A card at the end of the consoles screen: help from the person who makes Xsegon (free, and paid if you want it) and the games they are making. Off, the card goes; Help > Help from Tumultuous Productions... still opens it.'],
             'sort'    => ['label' => 'Sort by', 'type' => 'enum', 'section' => 'Order and grouping',
                           'options' => ['title' => 'Title', 'developer' => 'Developer',
                                         'publisher' => 'Publisher', 'genre' => 'Genre',
