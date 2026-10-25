@@ -1,4 +1,4 @@
-import { gameRunning } from "./snap.js";
+import { gameRunning, onGameOver } from "./snap.js";
 import { $body } from "./state.js";
 
 /*  The snow (a theme's texture "snow", includes\themes.php): soft flakes
@@ -82,7 +82,6 @@ function snowFrame(t) {
   if (!$snow || !snowMayFall() || gameRunning) {
     snowFalling = false;
     if ($snow) { delete $snow.dataset.falling; }
-    if ($snow && gameRunning) { setTimeout(snowRun, 2000); }     // it starts again by itself once the game is over
     return;
   }
   requestAnimationFrame(snowFrame);
@@ -126,5 +125,6 @@ export function initSnow() {
   window.addEventListener("resize", snowFit);
   // Animations and High contrast are classes on the body: when one is switched back, the snow falls again.
   new MutationObserver(snowRun).observe($body, { attributes: true, attributeFilter: ["class"] });
+  onGameOver(snowRun);                 // it rested while the game ran
   snowWear();
 }
