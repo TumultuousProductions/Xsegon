@@ -27,7 +27,7 @@ import { padWinPoll } from "./padwin.js";
 import { setAdjust, setBack, setEnter, setIntoPage, setMove } from "./settings-nav.js";
 import { closeSettings, setUI, toggleContrast } from "./settings-ui.js";
 import { peekVolume, setVolume, sound, toggleMute, volume } from "./sound.js";
-import { $body, $details, $editor, $platform, $q, $settings, $toolbar, S, games, sel, setSel, sysStage, view } from "./state.js";
+import { $body, $details, $editor, $offline, $platform, $q, $settings, $toolbar, S, games, sel, setSel, sysStage, view } from "./state.js";
 import { saverUp, touch } from "./status.js";
 import { subBack, subSide } from "./submenu.js";
 import { backToWall, chooseSystem, moveSys, openSysMenu, setSysSel, sysList, sysSel, sysStyle, updateSystems } from "./systems.js";
@@ -80,12 +80,12 @@ function platformListOpen() {
   try { return $platform.matches(":open"); } catch (err) { return false; }
 }
 
-/* What a press may reach. An asking window is over everything and its
+/* What a press may reach. An asking window, or the offline screen, is over everything and its
    buttons keep the keys and the pad; a list that says loading has nothing on
    screen to walk or play; and a press to play made while the list is being
    read waits for it, and holds only if the same game is still under the bar
    (from the search box: the first of the results). */
-function asking() { return document.querySelector(".confirm-wrap"); }
+function asking() { return !$offline.hidden ? $offline : document.querySelector(".confirm-wrap"); }
 function listLoading() { return sysStage !== "wall" && viewPending(); }
 function onList() {
   return sysStage !== "wall" && $details.hidden && $editor.hidden && $settings.hidden && !$ctx && !pick && !mailOpen() && !asking();
@@ -106,7 +106,7 @@ function play(fromBox) {
 }
 // The pad in an asking window: sideways walks its buttons, A presses the one in focus, B is its no.
 function askPad(wrap, step, a, b) {
-  var btns = [].slice.call(wrap.querySelectorAll(".confirm-bar button:not(:disabled)"));
+  var btns = [].slice.call(wrap.querySelectorAll(".confirm-bar button:not(:disabled), .off-btns button"));
   var at = btns.indexOf(document.activeElement);
   if (step && btns.length) { btns[Math.max(0, Math.min(btns.length - 1, at < 0 ? 0 : at + step))].focus(); sound("move"); }
   if (a && at >= 0) { L("PAD", "a in an asking window: " + btns[at].textContent); btns[at].click(); }

@@ -5,6 +5,7 @@ Newest first: what changed for the person at the screen.
 ## 2026-10-25
 
 - **Tumultuous Productions: help from the person who makes Xsegon, and the games coming.** A card at the end of the consoles screen, and Help > Help from Tumultuous Productions..., open a page in the look of their website. Help: fix it yourself with Xsegon's own tools; ask, free (Write to me puts your Xsegon version in the email, and a code for your phone shows only when you ask for it, saying it holds nothing but the address); paid help at $35 an hour, with the total before any work; and Staying safe, how to tell it is really them. My games: Yami and Arena of Might, with Tell me when it's out, which Xsegon says in Messages the day one is out, with no account and no email list. Settings > View can put the card away; the Help menu keeps it. Nothing on the page asks a server until a button is pressed.
+- **A way out when Xsegon cannot reach its own server.** That screen has Close Xsegon beside Try again now, and it closes the window without the server. The arrow keys and the controller reach both buttons, and nothing behind the screen hears a press. If the window will not close itself, the screen says to press Alt+F4.
 
 ## 2026-10-24
 
