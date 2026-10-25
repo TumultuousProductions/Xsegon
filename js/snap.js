@@ -15,7 +15,14 @@ import { carNodes, flatNodes } from "./views.js";
 
 export var snap = { timer: null, video: null, art: null };
 export var gameRunning = false;
-export function setGameRunning(v) { gameRunning = v; }
+// What rests while a game runs (the rain, the snow, the looks that move) is told when it is over.
+var afterGame = [];
+export function onGameOver(fn) { afterGame.push(fn); }
+export function setGameRunning(v) {
+  var was = gameRunning;
+  gameRunning = v;
+  if (was && !v) { afterGame.forEach(function (fn) { fn(); }); }
+}
 
 // snapHeard: the small button on a snap asked for sound this session, which
 // outranks Settings > Video > Snap sound being off until the page reloads.

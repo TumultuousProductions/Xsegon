@@ -4,7 +4,7 @@ import { emberMotion } from "./motion-embers.js";
 import { floorMotion } from "./motion-floor.js";
 import { starMotion } from "./motion-stars.js";
 import { stormMotion } from "./motion-storm.js";
-import { gameRunning } from "./snap.js";
+import { gameRunning, onGameOver } from "./snap.js";
 import { $body } from "./state.js";
 
 /*  What moves by itself besides the rain and the snow (js\rain.js,
@@ -96,7 +96,6 @@ function motionFrame(t) {
       s.lot.forEach(function (d) { if (d.rest) { d.rest(); } });       // what would hang in the air is taken away
       motionPaint(s);
     });
-    if (sheets.length && gameRunning) { setTimeout(motionRun, 2000); }     // it starts again by itself once the game is over
     return;
   }
   requestAnimationFrame(motionFrame);
@@ -139,5 +138,6 @@ export function initMotion() {
   window.addEventListener("resize", function () { if (motionUp.length) { motionFit(); } });
   // Animations and High contrast are classes on the body: when one is switched back, it all moves again.
   new MutationObserver(motionRun).observe($body, { attributes: true, attributeFilter: ["class"] });
+  onGameOver(motionRun);               // they rested while the game ran
   motionWear();
 }

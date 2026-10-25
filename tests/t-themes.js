@@ -334,6 +334,23 @@ module.exports = async function (b, check) {
     const RAIN_PIC = `(() => { const u = document.querySelector("canvas.rain").toDataURL(); let x = 0;
       for (let i = 0; i < u.length; i += 7) { x = (x * 31 + u.charCodeAt(i)) | 0; } return u.length + ":" + x; })()`;
     const FALLING = `(document.querySelector("canvas.rain") || { dataset: {} }).dataset.falling === "1"`;
+    /* A game playing: a stand-in in running.json, as api\launch.php writes it at a
+       press, which the page's poll (every 4 s) reads as a game for up to 30 s. It
+       rests while the game runs, longer than the 2 s after which it once looked
+       again only the once, and goes again by itself when the game is over. */
+    const runFile = path.join(lib.DATA, "running.json");
+    const restsForAGame = async (going) => {
+      fs.writeFileSync(runFile, JSON.stringify({ title: "A stand-in game", pending: true, startedAt: new Date().toISOString() }));
+      try {
+        const rested = await b.waitFor(`!(${going})`, 10000);
+        await lib.sleep(5000);
+        const still = !(await b.ev(going));
+        fs.rmSync(runFile, { force: true });
+        return [rested, still, await b.waitFor(going, 10000)];
+      } finally {
+        fs.rmSync(runFile, { force: true });
+      }
+    };
     // How solid the list and a game's details are: the last number of their background, 1 when it has none.
     const THICK = `[".list", ".details"].map((sel) => { const p = (/rgba?\\(([^)]+)\\)/.exec(getComputedStyle(document.querySelector(sel)).backgroundColor) || ["", ""])[1].split(",");
       return p.length === 4 ? +p[3] : 1; })`;
@@ -376,6 +393,7 @@ module.exports = async function (b, check) {
     await b.key("c");
     await b.waitFor(`!document.body.classList.contains("high-contrast")`, 3000);
     check("and it falls again when High contrast goes", await b.waitFor(FALLING, 3000), true);
+    check("a game playing rests it the whole game, and it falls again by itself when the game is over", await restsForAGame(FALLING), [true, true, true]);
     // Where games are read, a shade of black stands between the rain and them: four places and no other.
     // How dark the shade is belongs to the stylesheet (--rain-shade): what is checked is that these places wear that one.
     const SHADED = (sel, prop, pseudo) => `(() => { const n = document.querySelector(${JSON.stringify(sel)});
@@ -452,6 +470,7 @@ module.exports = async function (b, check) {
     await b.key("c");
     await b.waitFor(`!document.body.classList.contains("high-contrast")`, 3000);
     check("and it falls again when High contrast goes", await b.waitFor(SNOWING, 3000), true);
+    check("a game playing rests it the whole game, and it falls again by itself when the game is over", await restsForAGame(SNOWING), [true, true, true]);
     const winPage = await (await fetch(lib.BASE + "/", { headers: { Origin: lib.BASE } })).text();
     check("opened again, the page arrives with the snow, the panes and the round corners named",
           winPage.indexOf('<html lang="en" data-theme="nature/winter" data-texture="snow" data-surface="gloss" data-corner="round" style="') !== -1, true);
@@ -515,6 +534,7 @@ module.exports = async function (b, check) {
     check("High contrast takes the canvas off and stops it", (({ shown, moving }) => [shown, moving])(await b.ev(MOTION("behind", 500))), [false, false]);
     await b.ev(`document.body.classList.remove("high-contrast"), true`);
     check("and it moves again when High contrast goes", await b.waitFor(MOVING("behind"), 3000), true);
+    check("a game playing rests it the whole game, and it rolls again by itself when the game is over", await restsForAGame(MOVING("behind")), [true, true, true]);
     await wearNow("carbon/red");
     await b.waitFor(MOVING("behind"), 4000);
     check("a Carbon look has its embers behind the panels, not weakened with the weave, and the floor's word is gone",

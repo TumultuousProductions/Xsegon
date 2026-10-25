@@ -1,4 +1,4 @@
-import { gameRunning } from "./snap.js";
+import { gameRunning, onGameOver } from "./snap.js";
 import { $body } from "./state.js";
 
 /*  The rain (a theme's texture "rain", includes\themes.php): digits falling
@@ -77,7 +77,6 @@ function rainFrame(t) {
   if (!$rain || !rainMayFall() || gameRunning) {
     falling = false;
     if ($rain) { delete $rain.dataset.falling; }
-    if ($rain && gameRunning) { setTimeout(rainRun, 2000); }     // it starts again by itself once the game is over
     return;
   }
   requestAnimationFrame(rainFrame);
@@ -123,5 +122,6 @@ export function initRain() {
   window.addEventListener("resize", rainFit);
   // Animations and High contrast are classes on the body: when one is switched back, the rain starts again.
   new MutationObserver(rainRun).observe($body, { attributes: true, attributeFilter: ["class"] });
+  onGameOver(rainRun);                 // it rested while the game ran
   rainWear();
 }
