@@ -10,6 +10,9 @@
  *  The screen keeps trying on its own, since the server usually comes back. It
  *  never offers to reload the page: a reload against a dead server lands on the
  *  browser's own error page, and from a kiosk window there is no way back.
+ *  Close Xsegon is the way out: the page closes its own window, since the usual
+ *  close asks the server (api\window.php). Keys and the pad treat the screen as
+ *  an asking window (js\input.js), so nothing behind it hears a press.
  */
 import { L, flushLog } from "./log.js";
 import { $offline } from "./state.js";
@@ -66,11 +69,38 @@ function build() {
   var now = el("button", "primary", "Try again now");
   now.addEventListener("click", function () { retry(true); });
   btns.appendChild(now);
+  var shut = el("button", null, "Close Xsegon");
+  shut.addEventListener("click", closeWindow);
+  btns.appendChild(shut);
   box.appendChild(btns);
+  var stayed = el("p", "off-stayed", "This window did not close itself. Press Alt+F4 to close it.");
+  stayed.hidden = true;
+  box.appendChild(stayed);
 
   box.appendChild(el("p", "off-note",
     "This screen goes on its own the moment the server answers. Nothing here needs to be pressed."));
   $offline.appendChild(box);
+}
+
+/* A browser lets a page close only a window opened straight onto it, as Xsegon's
+   own window is; one that stays open says how to close it by hand. */
+function closeWindow() {
+  L("SRV", "Close Xsegon pressed while the server is not answering");
+  window.close();
+  setTimeout(function () {
+    var stayed = $offline.querySelector(".off-stayed");
+    if (stayed && stayed.hidden) { L("SRV", "the window did not close itself: Alt+F4 shown"); stayed.hidden = false; }
+  }, 500);
+}
+
+// The arrows walk the buttons, as the pad's cross does; Enter presses the one in focus.
+function arrows(e) {
+  var step = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 0;
+  var btns = [].slice.call($offline.querySelectorAll(".off-btns button"));
+  if (!step || !btns.length) { return; }
+  var at = btns.indexOf(document.activeElement);
+  btns[Math.max(0, Math.min(btns.length - 1, at < 0 ? 0 : at + step))].focus();
+  e.preventDefault();
 }
 
 function retry(byHand) {
@@ -93,6 +123,7 @@ export function serverAnswered(ok, poll) {
       timer = null;
       $offline.hidden = true;
       document.body.classList.remove("offline-now");
+      document.removeEventListener("keydown", arrows, true);
       L("SRV", "back after " + tries + (tries === 1 ? " try" : " tries"));
       flushLog();                     // the lines that piled up while it was gone
     }
@@ -107,6 +138,7 @@ export function serverAnswered(ok, poll) {
   build();
   $offline.hidden = false;
   document.body.classList.add("offline-now");
+  document.addEventListener("keydown", arrows, true);
   paint();
   // One ticker doing both jobs: count down on screen, and fire the retry.
   timer = setInterval(function () {
