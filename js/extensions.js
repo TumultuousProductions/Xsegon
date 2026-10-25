@@ -19,6 +19,7 @@ import { armBrowse, stopVideo } from "./snap.js";
 import { sound } from "./sound.js";
 import { $body, $main, $syswall, $toolbar, S, sysStage } from "./state.js";
 import { backToWall, chooseSystem } from "./systems.js";
+import { dropTpPage } from "./tppage.js";
 import { el } from "./util.js";
 
 // The card's name on the consoles screen: a collection's shape, opened here instead of as games.
@@ -71,7 +72,8 @@ export function openExtPage() {
   if (!XP) { extBuild(); }
   if (XP.open) { return; }
   dropDetails();
-  dropFanPage();                         // the two pages never stand one over the other
+  dropFanPage();                         // the pages never stand one over another
+  dropTpPage();
   stopVideo();
   // The consoles screen only when it is the one showing: with Systems first off the games show with no stage yet.
   XP.from = sysStage === "wall" ? "wall" : "inside";

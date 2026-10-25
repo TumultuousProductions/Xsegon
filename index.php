@@ -116,6 +116,8 @@ $jsV = $jsV ?: time();
 $pageAt['scripts'] = microtime(true);
 ?>
 <link rel="stylesheet" href="css/xsegon.css?v=<?= $cssV ?>">
+<!-- Tumultuous Productions' page wears its website's look, every rule under #tppage (js\tppage.js). -->
+<link rel="stylesheet" href="css/tppage.css?v=<?= (int) (@filemtime(__DIR__ . '/css/tppage.css') ?: time()) ?>">
 <?php
 // A stylesheet of the person's own, read after the house one so it wins (includes\custom.php); High contrast leaves it out.
 require_once __DIR__ . '/includes/custom.php';

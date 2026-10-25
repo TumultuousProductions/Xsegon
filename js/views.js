@@ -31,6 +31,7 @@ import { armBrowse, stopVideo } from "./snap.js";
 import { sound } from "./sound.js";
 import { $bdA, $bdB, $body, $clock, $details, $hero, $logo, $main, $toolbar, $view, $viewsel, S, games, sel, setSel, setViewMode, sysStage, view } from "./state.js";
 import { backToWall, chooseSystem, renderSystems, sysStyle } from "./systems.js";
+import { dropTpPage } from "./tppage.js";
 import { artUrl, badgeClasses, badgesEl, el, fixMark, platformBeside, playersIcon, titleText } from "./util.js";
 import { lockRefuses, viewWaits } from "./viewlock.js";
 import { gridImage, sortHeader, tileKind } from "./viewset.js";
@@ -607,6 +608,7 @@ export function setView(next) {
   dropDetails();                         // a new view is never drawn under details
   dropFanPage();                         // nor under the Fan projects page: the screen it covered comes back to change
   dropExtPage();                         // nor under the Extensions page
+  dropTpPage();                          // nor under Tumultuous Productions' page
   setViewMode(next);
   var payload = { "default": next };
 

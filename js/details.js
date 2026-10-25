@@ -16,6 +16,7 @@ import { sound } from "./sound.js";
 import { $body, $details, $main, $toolbar, games, sel, sysStage } from "./state.js";
 import { startOnAllGames } from "./systems.js";
 import { texPackFact } from "./texpacktab.js";
+import { dropTpPage } from "./tppage.js";
 import { artUrl, discWords, el, fixMark, fixWords, hhmm, stars, titleText, versionInUse, versionsFact } from "./util.js";
 import { render, setCarNodes, setWheelNodes } from "./views.js";
 
@@ -471,7 +472,7 @@ export function openDetails() {
   var g = games[sel];
   if (!g) { return; }
   // Surprise me from over the Fan projects page: the details stand over every game, never over the page or the consoles.
-  if ((dropFanPage() || dropExtPage()) && sysStage === "wall") { startOnAllGames(); }
+  if ((dropFanPage() || dropExtPage() || dropTpPage()) && sysStage === "wall") { startOnAllGames(); }
   sound("select");
 
   buildDetails(g, null);

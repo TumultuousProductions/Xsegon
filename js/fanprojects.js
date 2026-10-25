@@ -16,6 +16,7 @@ import { armBrowse, stopVideo } from "./snap.js";
 import { sound } from "./sound.js";
 import { $body, $main, $syswall, $toolbar, S, sysStage } from "./state.js";
 import { backToWall } from "./systems.js";
+import { dropTpPage } from "./tppage.js";
 import { el } from "./util.js";
 
 // The card's name on the consoles screen: a collection's shape, opened here instead of as games.
@@ -81,6 +82,7 @@ export function openFanPage() {
   if (FP.open) { return; }
   dropDetails();                         // a game's details never stay over the page
   dropExtPage();                         // nor the Extensions page
+  dropTpPage();                          // nor Tumultuous Productions' page
   stopVideo();                           // nor a snap playing behind it
   // The consoles screen only when it is the one showing: with Systems first off the games show with no stage yet.
   FP.from = sysStage === "wall" ? "wall" : "inside";

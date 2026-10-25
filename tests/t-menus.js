@@ -320,8 +320,8 @@ module.exports = async function (b, check) {
   await b.until(`document.getElementById("editor").hidden`, true, 3000);
   check("Emulators: RetroArch, the two checks, adding one of your own and their settings", bar.emulators.labels,
         ["Open RetroArch", "BIOS check...", "Runs check...", "Add an emulator...", "Emulator settings..."]);
-  check("Help: the guide, what changed, the log, a report, the data folder and About", bar.help.labels,
-        ["Getting started...", "What's new", "Show the log", "Report a problem...", "Open the data folder", "About Xsegon..."]);
+  check("Help: the guide, what changed, the log, a report, the data folder, help from a person and About", bar.help.labels,
+        ["Getting started...", "What's new", "Show the log", "Report a problem...", "Open the data folder", "Help from Tumultuous Productions...", "About Xsegon..."]);
   check("every menu opens under its own button, whole, with nothing to scroll",
         Object.keys(bar).filter(k => !bar[k].under || !bar[k].whole), []);
   await b.openBar("emulators");

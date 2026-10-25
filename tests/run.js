@@ -88,6 +88,7 @@ const GROUPS = {
   more: "./t-more",
   fanprojects: "./t-fanprojects",
   extensions: "./t-extensions",
+  tumultuous: "./t-tppage",
   newversion: "./t-newversion",
   update: "./t-update",
   big: "./t-big",    // a library of 40,000 made-up games: asked for by name, never part of a full run (t-big.js)
@@ -103,7 +104,7 @@ const GROUPS = {
   Object.assign(GROUPS, last);
 }
 // data files a run may write; all put back afterwards
-const PROTECTED = ["favourites.json", "my-ratings.json", "tags.json", "fix-marks.json", "overrides.json", "hidden.json", "art-hidden.json", "accompanied.json", "accompanied-told.json", "local-games.json", "scanned-games.json", "sessions.jsonl", "settings.json", "ra-append.cfg", "cores.json", "emulators.json", "cheats.json", "cheats-used.json", "pad-remaps.json", "player-remaps.json", "game-remaps.json", "ra-hotkeys.json", "game-hotkeys.json", "library-seen.json", "messages.json", "deleted.json", "setup-job.json", "setup.json", "pick-folder.json", "steamvid-job.json", "steamvid-none.json", "screenscraper-job.json", "screenscraper-none.json", "damaged.json", "launch-results.json", "launch-log.jsonl", "running.json", "last-error.json", "wanted.json", "manual-places.json", "filecheck.json", "unpacked.json", "unpack-job.json", "emumove.json", "emumove-job.json", "media-copy.json", "videopack.json", "videopack-job.json", "thumbs-job-box.json", "thumbs-job-logo.json", "texpacks-job.json", "texpacks.json", "extensions.json", "extensions-job.json"];
+const PROTECTED = ["favourites.json", "my-ratings.json", "tags.json", "fix-marks.json", "overrides.json", "hidden.json", "art-hidden.json", "accompanied.json", "accompanied-told.json", "local-games.json", "scanned-games.json", "sessions.jsonl", "settings.json", "ra-append.cfg", "cores.json", "emulators.json", "cheats.json", "cheats-used.json", "pad-remaps.json", "player-remaps.json", "game-remaps.json", "ra-hotkeys.json", "game-hotkeys.json", "library-seen.json", "messages.json", "deleted.json", "setup-job.json", "setup.json", "pick-folder.json", "steamvid-job.json", "steamvid-none.json", "screenscraper-job.json", "screenscraper-none.json", "damaged.json", "launch-results.json", "launch-log.jsonl", "running.json", "last-error.json", "wanted.json", "manual-places.json", "filecheck.json", "unpacked.json", "unpack-job.json", "emumove.json", "emumove-job.json", "media-copy.json", "videopack.json", "videopack-job.json", "thumbs-job-box.json", "thumbs-job-logo.json", "texpacks-job.json", "texpacks.json", "extensions.json", "extensions-job.json", "tumultuous.json"];
 
 (async () => {
   const LIVE = process.argv.includes("--live");

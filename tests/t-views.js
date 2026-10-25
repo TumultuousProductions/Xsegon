@@ -30,9 +30,9 @@ module.exports = async function (b, check) {
   // However many the server sent: the full four when something is recently
   // added (or that one greyed), three only if a fresh library had an empty
   // Favourites too. Count against the API, not against a number, and the
-  // page's own two entries after them: Extensions and Fan projects.
+  // page's own entries after them: Extensions, Fan projects and Tumultuous Productions.
   check("collections ride the rim", await b.ev(`document.querySelectorAll("#syswall .coll").length`),
-        ((await api("api/library.php")).collections || []).length + 2);
+        ((await api("api/library.php")).collections || []).length + 3);
   check("header at the top", await b.ev(`Math.round(document.querySelector("header.top").getBoundingClientRect().top)`), 0);
   // and edge to edge, like the legend at the foot, while the games below it
   // stay in the centred column
@@ -1500,9 +1500,9 @@ module.exports = async function (b, check) {
     const s2 = await b.ev(shown);
     check("Esc goes to the consoles", s2.wall, true);
     // The list of consoles must be built on this road too, which never went in.
-    // Extensions and Fan projects are the two entries the server does not send.
+    // Extensions, Fan projects and Tumultuous Productions are the three entries the server does not send.
     check("with every console on it, though it was never entered",
-          await b.ev(`document.querySelectorAll("#syswall .syscard").length`), (await api("api/library.php")).collections.length + Object.keys((await api("api/library.php")).platforms).length + 2);
+          await b.ev(`document.querySelectorAll("#syswall .syscard").length`), (await api("api/library.php")).collections.length + Object.keys((await api("api/library.php")).platforms).length + 3);
     check("and the dropdown names the consoles' shape, not the list", s2.dropdown, "carousel");
     check("while the legend says what a console opens into",
           await b.ev(`[...document.querySelectorAll("#help .hl")].map(x => x.textContent).join("|")`).then((t) => /open in list/.test(t)));

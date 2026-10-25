@@ -1,0 +1,205 @@
+/* Tumultuous Productions' page (js/tppage.js): the website's own look, Aero glass
+   over a dark aurora, as tumultuousproductions.site has it. Every class is tp-, and every rule
+   under #tppage, so Xsegon's own rules (.panel, .sidebar, .hero...) never reach in
+   and nothing of these reaches out. It stands between the masthead and the legend,
+   over the screens it hides, under the windows (30) and the legend (24).
+   body.no-anim (Settings > Feel > Animations off) stills the rain and the drift
+   and drops the blur. */
+
+#tppage {
+  --text: #e8eefb; --muted: #9aa9c6; --faint: #6d7c9a;
+  --cyan: #22d3ee; --teal: #14b8a6; --gold: #fbbf24;
+  --glass: linear-gradient(180deg, rgba(21, 34, 60, .64), rgba(8, 15, 31, .76));
+  --glass-solid: linear-gradient(180deg, #0f192c, #08101f);
+  --edge: rgba(125, 200, 255, .20); --edge-strong: rgba(125, 215, 255, .38); --shine: rgba(255, 255, 255, .10);
+  --drop: 0 1px 1px rgba(0, 0, 0, .5), 0 8px 16px -6px rgba(0, 0, 0, .7), 0 30px 60px -18px rgba(0, 0, 0, .95), 0 0 0 1px rgba(0, 0, 0, .4);
+  --drop-soft: 0 1px 1px rgba(0, 0, 0, .45), 0 14px 28px -12px rgba(0, 0, 0, .9), 0 0 0 1px rgba(0, 0, 0, .3);
+  --bevel: inset 0 1px 0 rgba(255, 255, 255, .11), inset 0 -2px 0 rgba(0, 0, 0, .45);
+  --radius: 16px; --ease: cubic-bezier(.2, .7, .2, 1);
+  position: fixed; left: 0; right: 0; top: var(--top-h, 58px); bottom: var(--foot-h, var(--help-h, 42px)); z-index: 20;
+  background: #000; color: var(--text); text-align: left; text-transform: none; letter-spacing: normal;
+  font: 15px/1.6 "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+#tppage[hidden] { display: none; }
+#tppage * { box-sizing: border-box; }
+
+/* Xsegon's own looks for every heading and button, put back to plain here */
+#tppage h1, #tppage h2, #tppage h3 { position: static; line-height: 1.2; margin: 0 0 .5em; color: #fff; font-family: inherit; font-weight: 700; text-transform: none; letter-spacing: normal;
+  text-shadow: 0 4px 14px rgba(0, 0, 0, .75), 0 1px 2px rgba(0, 0, 0, .6); animation: none; }
+#tppage h1::before, #tppage h1::after, #tppage button::after { content: none; }
+#tppage h2 { font-size: 24px; } #tppage h3 { font-size: 17px; }
+#tppage p { margin: 0 0 1em; }
+#tppage .tp-muted { color: var(--muted); } #tppage .tp-small { font-size: 13px; }
+#tppage .tp-scroll { position: absolute; inset: 0; overflow-y: auto; scroll-behavior: smooth; scrollbar-width: thin; scrollbar-color: var(--edge-strong) transparent; }
+#tppage .tp-wrap { width: min(1180px, 100% - 32px); margin-inline: auto; padding: 0; }
+
+/* the background: drifting aurora and faint grain, standing still behind the scroll */
+#tppage .tp-aurora { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+#tppage .tp-aurora span { position: absolute; width: 50vmax; height: 50vmax; border-radius: 50%; filter: blur(90px); opacity: .07; animation: tp-drift 40s ease-in-out infinite alternate; }
+#tppage .tp-aurora span:nth-child(1) { background: #1d4ed8; left: -14vmax; top: -16vmax; }
+#tppage .tp-aurora span:nth-child(2) { background: #0f766e; right: -16vmax; top: -8vmax; animation-duration: 48s; animation-delay: -12s; }
+#tppage .tp-aurora span:nth-child(3) { background: #6d28d9; right: -8vmax; bottom: -22vmax; animation-duration: 54s; animation-delay: -20s; }
+#tppage .tp-aurora span:nth-child(4) { background: #0e7490; left: -10vmax; bottom: -26vmax; animation-duration: 44s; animation-delay: -6s; }
+@keyframes tp-drift { 0% { transform: translate3d(0, 0, 0) scale(1); } 50% { transform: translate3d(7vmax, 5vmax, 0) scale(1.15); } 100% { transform: translate3d(-5vmax, 8vmax, 0) scale(.92); } }
+#tppage .tp-grain { position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: .06; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+/* the top bar: who, and the two tabs */
+#tppage .tp-topbar { position: sticky; top: 0; z-index: 5; background: linear-gradient(180deg, rgba(18, 36, 66, .82), rgba(5, 11, 26, .88));
+  backdrop-filter: blur(16px) saturate(1.4); border-bottom: 1px solid var(--edge); box-shadow: 0 10px 30px -8px rgba(0, 0, 0, .7), inset 0 1px 0 var(--shine); }
+#tppage .tp-topbar .tp-wrap { display: flex; align-items: center; gap: 18px; min-height: 60px; }
+#tppage .tp-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 19px; letter-spacing: .3px; white-space: nowrap; color: var(--text); }
+#tppage .tp-brand b { color: var(--cyan); text-shadow: 0 0 10px rgba(34, 211, 238, .35); }
+#tppage .tp-logo { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; font: 800 15px/1 Consolas, monospace; color: #fff; position: relative; overflow: hidden;
+  background: linear-gradient(180deg, #38bdf8, #0e7490); box-shadow: 0 6px 14px -4px rgba(14, 116, 144, .9), inset 0 1px 0 rgba(255, 255, 255, .5); }
+#tppage .tp-logo::before { content: ''; position: absolute; inset: 0 0 52% 0; background: linear-gradient(180deg, rgba(255, 255, 255, .55), rgba(255, 255, 255, .08)); }
+#tppage .tp-nav { display: flex; gap: 4px; margin-left: auto; }
+#tppage .tp-nav button { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; color: #cfdbf2; padding: 8px 13px; border-radius: 10px; font: 600 14px/1.2 "Segoe UI", system-ui, sans-serif;
+  border: 1px solid transparent; position: relative; transition: background .2s, border-color .2s, color .2s; }
+#tppage .tp-nav button:hover { color: #fff; background: rgba(255, 255, 255, .06); border-color: var(--edge); }
+#tppage .tp-nav button.tp-on { color: #fff; border-color: var(--edge-strong); background: linear-gradient(180deg, rgba(56, 189, 248, .28), rgba(14, 116, 144, .22));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), 0 6px 16px -8px rgba(34, 211, 238, .8); }
+#tppage .tp-nav button.tp-on::after { content: ''; position: absolute; left: 50%; bottom: -9px; width: 26px; height: 3px; border-radius: 3px; transform: translateX(-50%); background: var(--cyan); box-shadow: 0 0 6px rgba(34, 211, 238, .6); }
+#tppage .tp-key { font: 700 11px/1 "Segoe UI", sans-serif; padding: 3px 6px; border-radius: 6px; color: var(--muted); background: rgba(0, 0, 0, .35); border: 1px solid var(--edge); }
+
+/* the banner, with the rain behind its words */
+#tppage .tp-banner { position: relative; isolation: isolate; margin: 24px auto 22px; border-radius: 20px; overflow: hidden; min-height: 190px; display: flex; align-items: flex-end;
+  background: #050b18; border: 1px solid var(--edge-strong); box-shadow: 0 1px 1px rgba(0, 0, 0, .5), 0 34px 70px -20px rgba(0, 0, 0, .95), 0 0 30px -14px rgba(34, 211, 238, .22); }
+#tppage .tp-banner::before { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0, 0, 0, .93) 0%, rgba(0, 0, 0, .66) 55%, rgba(0, 0, 0, .45)); }
+#tppage .tp-banner::after { content: ''; position: absolute; inset: 0 0 60% 0; background: linear-gradient(180deg, rgba(255, 255, 255, .10), transparent); pointer-events: none; }
+#tppage .tp-banner canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; display: block; background: #000; }
+#tppage .tp-banner canvas.tp-heads { background: transparent; }
+#tppage .tp-inner { position: relative; z-index: 1; padding: 30px 40px; max-width: 760px; }
+#tppage .tp-eyebrow { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: 2.2px; text-transform: uppercase; color: var(--cyan); margin-bottom: 8px; text-shadow: 0 0 8px rgba(34, 211, 238, .3); }
+#tppage .tp-banner h1 { font-size: 44px; margin: 0 0 8px; letter-spacing: .5px; background: linear-gradient(180deg, #fff 30%, #b8d4f5); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none;
+  filter: drop-shadow(0 1px 0 #16324f) drop-shadow(0 2px 0 #0c1f36) drop-shadow(0 3px 0 #07142a) drop-shadow(0 10px 16px rgba(0, 0, 0, .95)); }
+#tppage .tp-banner h1 b { background: linear-gradient(90deg, #22d3ee, #7dd3fc 50%, #a78bfa); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 12px rgba(34, 211, 238, .28)); }
+#tppage .tp-banner p { font-size: 17px; color: #dbe6f7; margin: 0; text-shadow: 0 2px 8px rgba(0, 0, 0, .9); }
+
+/* sidebar and panels */
+#tppage .tp-layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 22px; align-items: start; padding-bottom: 30px; }
+#tppage .tp-content { display: grid; gap: 22px; min-width: 0; }
+#tppage .tp-panel { display: block; position: relative; margin: 0; border: 1px solid var(--edge); border-radius: var(--radius); padding: 24px 26px; backdrop-filter: blur(14px) saturate(1.3);
+  background: repeating-linear-gradient(135deg, rgba(255, 255, 255, .018) 0 2px, transparent 2px 7px), radial-gradient(120% 80% at 0% 0%, rgba(56, 189, 248, .08), transparent 55%), var(--glass);
+  box-shadow: var(--drop), var(--bevel); }
+#tppage .tp-panel::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 46px; border-radius: var(--radius) var(--radius) 0 0; background: linear-gradient(180deg, rgba(255, 255, 255, .06), transparent); pointer-events: none; }
+#tppage .tp-panel > * { position: relative; z-index: 1; }
+#tppage .tp-head { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; flex-wrap: wrap; }
+#tppage .tp-head h2 { margin: 0; position: relative; padding-bottom: 6px; }
+#tppage .tp-head h2::after { content: ''; position: absolute; left: 0; bottom: 0; width: 44px; height: 3px; border-radius: 3px; background: linear-gradient(90deg, var(--cyan), #a78bfa); box-shadow: 0 0 6px rgba(34, 211, 238, .35); }
+#tppage .tp-sub { color: var(--muted); font-size: 14px; }
+#tppage .tp-badge { width: 44px; height: 44px; flex: none; border-radius: 12px; display: grid; place-items: center; font-size: 21px; position: relative; overflow: hidden; color: #38bdf8;
+  background: linear-gradient(180deg, #38bdf8, #1d4ed8); box-shadow: 0 12px 22px -8px rgba(0, 0, 0, .9), 0 0 12px -6px currentColor, inset 0 1px 0 rgba(255, 255, 255, .5), inset 0 -3px 0 rgba(0, 0, 0, .25); }
+#tppage .tp-badge::before { content: ''; position: absolute; inset: 0 0 52% 0; background: linear-gradient(180deg, rgba(255, 255, 255, .45), rgba(255, 255, 255, .05)); }
+#tppage .tp-badge.tp-teal { background: linear-gradient(180deg, #2dd4bf, #0f766e); color: #2dd4bf; }
+#tppage .tp-badge.tp-violet { background: linear-gradient(180deg, #a78bfa, #6d28d9); color: #a78bfa; }
+#tppage .tp-badge.tp-gold { background: linear-gradient(180deg, #fcd34d, #b45309); color: #fbbf24; }
+#tppage hr.tp-glow { border: 0; height: 1px; margin: 22px 0; background: linear-gradient(90deg, transparent, var(--edge-strong), transparent); }
+#tppage .tp-side { display: grid; gap: 18px; position: sticky; top: 84px; }
+#tppage .tp-side .tp-panel { padding: 18px; }
+#tppage .tp-side h3 { font-size: 13px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; text-shadow: none; }
+#tppage .tp-menu { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+#tppage .tp-menu button { all: unset; cursor: pointer; display: flex; align-items: center; gap: 10px; color: #d6e1f5; padding: 8px 10px; border-radius: 9px; font: 400 14px/1.4 "Segoe UI", system-ui, sans-serif; }
+#tppage .tp-menu button:hover { background: rgba(255, 255, 255, .06); color: #fff; }
+#tppage .tp-ico { width: 20px; text-align: center; opacity: .9; }
+#tppage .tp-sides { display: grid; gap: 6px; margin-bottom: 12px; font-size: 14px; }
+#tppage .tp-sides div { display: flex; justify-content: space-between; gap: 8px; }
+#tppage .tp-sides b { color: var(--cyan); white-space: nowrap; } #tppage .tp-sides .tp-free b { color: #34d399; }
+
+/* buttons: glossy Aero */
+#tppage .tp-btn { --b1: #4fb3ff; --b2: #1d6fe0; all: unset; box-sizing: border-box; display: inline-flex; align-items: center; gap: 8px; position: relative; overflow: hidden; cursor: pointer;
+  padding: 10px 18px; border-radius: 11px; border: 1px solid rgba(255, 255, 255, .22); font: 600 14px/1.2 "Segoe UI", system-ui, sans-serif; color: #fff;
+  background: linear-gradient(180deg, var(--b1), var(--b2)); transition: transform .15s var(--ease), box-shadow .2s, filter .2s;
+  box-shadow: 0 3px 0 rgba(8, 40, 96, .95), 0 12px 20px -8px rgba(0, 0, 0, .8), inset 0 1px 0 rgba(255, 255, 255, .45); }
+#tppage .tp-btn::before { content: ''; position: absolute; inset: 0 0 50% 0; background: linear-gradient(180deg, rgba(255, 255, 255, .42), rgba(255, 255, 255, .06)); pointer-events: none; }
+#tppage .tp-btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
+#tppage .tp-btn:active { transform: translateY(2px); }
+#tppage .tp-btn.tp-teal { --b1: #2dd4bf; --b2: #0f766e; box-shadow: 0 3px 0 rgba(4, 60, 55, .95), 0 12px 20px -8px rgba(0, 0, 0, .8), inset 0 1px 0 rgba(255, 255, 255, .45); }
+#tppage .tp-btn.tp-told { --b1: #34d399; --b2: #047857; }
+#tppage .tp-btn.tp-ghost { background: rgba(255, 255, 255, .05); border-color: var(--edge-strong); box-shadow: 0 3px 0 rgba(0, 0, 0, .55), 0 12px 20px -10px rgba(0, 0, 0, .8), inset 0 1px 0 rgba(255, 255, 255, .1); }
+#tppage .tp-btn.tp-ghost::before { background: linear-gradient(180deg, rgba(255, 255, 255, .10), transparent); }
+#tppage .tp-btn.tp-small { padding: 7px 13px; font-size: 13px; border-radius: 9px; }
+/* a section or a button brought into view stops clear of the sticky bar */
+#tppage .tp-panel, #tppage [data-do] { scroll-margin: 80px 0 20px; }
+/* the one a controller or the arrows are on */
+#tppage .tp-at { outline: 3px solid var(--cyan); outline-offset: 3px; box-shadow: 0 0 0 6px rgba(34, 211, 238, .18), 0 0 26px rgba(34, 211, 238, .45); }
+
+/* fix it yourself, ask, prices, steps, safety */
+#tppage .tp-process { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+#tppage .tp-proc { padding: 18px; border-radius: 14px; background: rgba(255, 255, 255, .03); border: 1px solid var(--edge); box-shadow: var(--drop-soft), var(--bevel); }
+#tppage .tp-top { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+#tppage .tp-top h3 { margin: 0; }
+#tppage .tp-proc .tp-badge { width: 38px; height: 38px; font-size: 18px; border-radius: 10px; }
+#tppage .tp-proc ul { margin: 0 0 12px; padding-left: 18px; color: #d6e1f5; font-size: 14px; }
+#tppage .tp-proc li { margin: 4px 0; }
+#tppage .tp-email { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 16px 18px; border-radius: 12px; background: rgba(3, 8, 20, .5); border: 1px solid var(--edge-strong); box-shadow: inset 0 2px 8px rgba(0, 0, 0, .4); }
+#tppage .tp-email code { font: 600 17px Consolas, monospace; color: #fff; flex: 1; min-width: 220px; background: none; border: 0; padding: 0; }
+#tppage ul.tp-ticks { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+#tppage .tp-ticks li { padding-left: 28px; position: relative; }
+#tppage .tp-ticks li::before { content: '\2713'; position: absolute; left: 0; top: 2px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #04201c; background: var(--teal); box-shadow: 0 0 10px rgba(20, 184, 166, .6); }
+#tppage .tp-qr { display: flex; gap: 18px; align-items: center; margin-top: 14px; padding: 16px 18px; border-radius: 14px; background: rgba(255, 255, 255, .04); border: 1px solid var(--edge); }
+#tppage .tp-qr[hidden] { display: none; }
+#tppage .tp-qr svg { flex: none; width: 148px; height: 148px; border-radius: 8px; }
+#tppage .tp-qr p { margin: 6px 0 0; color: #d6e1f5; font-size: 14px; }
+#tppage .tp-freebar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; padding: 14px 16px; border-radius: 14px;
+  background: linear-gradient(90deg, rgba(52, 211, 153, .14), rgba(52, 211, 153, .03)); border: 1px solid rgba(52, 211, 153, .35); box-shadow: var(--drop-soft), var(--bevel); }
+#tppage .tp-freebar > div { flex: 1; min-width: 220px; }
+#tppage .tp-freebar b { display: block; color: #fff; font-size: 17px; }
+#tppage .tp-freebar span { color: #cfe3da; font-size: 14px; }
+#tppage .tp-rates { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+#tppage .tp-rate { text-align: center; padding: 22px 18px; border-radius: 14px; background: var(--glass-solid); border: 1px solid var(--edge-strong); box-shadow: var(--drop-soft), var(--bevel); }
+#tppage .tp-rate h3 { margin-bottom: 4px; }
+#tppage .tp-amount { font-size: 38px; font-weight: 800; color: #fff; line-height: 1.1; margin: 8px 0 2px; text-shadow: 0 0 14px rgba(34, 211, 238, .28), 0 4px 10px rgba(0, 0, 0, .8); }
+#tppage .tp-amount small { font-size: 15px; font-weight: 600; color: var(--muted); }
+#tppage .tp-from { font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--cyan); }
+#tppage .tp-rate p { color: var(--muted); font-size: 14px; margin: 8px 0 0; }
+#tppage .tp-steps { list-style: none; margin: 0; padding: 0; counter-reset: tp-step; display: grid; gap: 12px; }
+#tppage .tp-steps li { counter-increment: tp-step; position: relative; padding: 12px 16px 12px 58px; border-radius: 12px; background: rgba(255, 255, 255, .03); border: 1px solid var(--edge); }
+#tppage .tp-steps li::before { content: counter(tp-step); position: absolute; left: 14px; top: 11px; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 14px; color: #fff;
+  background: linear-gradient(180deg, #38bdf8, #0e7490); box-shadow: 0 4px 10px -2px rgba(14, 116, 144, .9), inset 0 1px 0 rgba(255, 255, 255, .45); }
+#tppage .tp-steps li b { color: #fff; }
+#tppage .tp-safes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+#tppage .tp-callout { border-radius: 12px; padding: 14px 16px; background: linear-gradient(90deg, rgba(34, 211, 238, .12), rgba(34, 211, 238, .02)); border: 1px solid rgba(34, 211, 238, .28); box-shadow: inset 3px 0 0 var(--cyan); }
+#tppage .tp-callout.tp-gold { background: linear-gradient(90deg, rgba(251, 191, 36, .12), rgba(251, 191, 36, .02)); border-color: rgba(251, 191, 36, .3); box-shadow: inset 3px 0 0 var(--gold); }
+#tppage .tp-callout b { color: #fff; }
+
+/* the games */
+#tppage .tp-game { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 22px; align-items: center; }
+#tppage .tp-info { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+#tppage .tp-info h2 { margin: 0; }
+#tppage .tp-info p { margin: 0; color: #d6e1f5; }
+#tppage .tp-acts { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+#tppage .tp-spec { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: #fff; font-weight: 600; }
+#tppage .tp-tagline { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; padding: 3px 10px; border-radius: 999px; color: #04201c; background: var(--teal); }
+#tppage .tp-tagline.tp-gold { background: var(--gold); color: #2a1a00; box-shadow: 0 0 12px rgba(251, 191, 36, .5); }
+#tppage .tp-tagline.tp-violet { background: #a78bfa; color: #1b0b3a; box-shadow: 0 0 12px rgba(167, 139, 250, .5); }
+#tppage .tp-video { all: unset; box-sizing: border-box; position: relative; display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden; cursor: pointer;
+  border: 1px solid var(--edge-strong); background: #020611 center / cover no-repeat; box-shadow: 0 24px 48px -16px rgba(0, 0, 0, .85); }
+#tppage .tp-video::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, rgba(2, 6, 17, .85)); transform: none; }
+#tppage .tp-play { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 1; width: 78px; height: 78px; border-radius: 50%; display: grid; place-items: center; font-size: 30px; color: #fff; padding-left: 5px;
+  background: linear-gradient(180deg, rgba(79, 179, 255, .95), rgba(29, 111, 224, .95)); border: 1px solid rgba(255, 255, 255, .35); box-shadow: 0 12px 30px -6px rgba(29, 111, 224, .9), inset 0 1px 0 rgba(255, 255, 255, .5); }
+#tppage .tp-label { position: absolute; left: 16px; bottom: 14px; z-index: 1; color: #fff; font-weight: 700; text-shadow: 0 2px 8px #000; }
+#tppage .tp-label small { display: block; font-weight: 400; color: #cfdbf2; }
+#tppage .tp-links { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+#tppage .tp-link { all: unset; box-sizing: border-box; cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; color: var(--text); background: rgba(255, 255, 255, .04);
+  font: 400 15px/1.4 "Segoe UI", system-ui, sans-serif; border: 1px solid var(--edge); box-shadow: var(--drop-soft), var(--bevel); }
+#tppage .tp-link:hover { border-color: var(--cyan); }
+#tppage .tp-link .tp-ico { font-size: 22px; width: auto; }
+#tppage .tp-link small { display: block; color: var(--muted); font-size: 12px; }
+#tppage .tp-tell { font-size: 13px; color: var(--muted); margin: 0; }
+
+/* the foot of the page */
+#tppage .tp-foot { border-top: 1px solid var(--edge); background: linear-gradient(180deg, rgba(5, 11, 26, .4), rgba(2, 5, 14, .9)); }
+#tppage .tp-foot .tp-wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between; padding: 18px 0; color: var(--faint); font-size: 13px; }
+
+/* Animations off: still rain, no drift, no live blur */
+body.no-anim #tppage .tp-aurora span { animation: none; }
+body.no-anim #tppage .tp-panel, body.no-anim #tppage .tp-topbar { backdrop-filter: none; }
+body.no-anim #tppage .tp-grain { display: none; }
+body.no-anim #tppage .tp-btn, body.no-anim #tppage .tp-scroll { transition: none; scroll-behavior: auto; }
+
+@media (max-width: 1000px) {
+  #tppage .tp-layout { grid-template-columns: 1fr; }
+  #tppage .tp-side { position: static; order: 2; }
+  #tppage .tp-process, #tppage .tp-rates, #tppage .tp-game, #tppage .tp-safes { grid-template-columns: 1fr; }
+}

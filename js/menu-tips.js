@@ -82,6 +82,7 @@ export var TIPS = {
   log: "What Xsegon has been doing, line by line. The place to look when something went wrong.",
   report: "Checks for the usual problems first. It can also make a zip to send, and says what is in it.",
   about: "Xsegon's version, its licence and who makes it, whatever name and logo this copy wears.",
+  tumultuous: "The person who makes Xsegon: free help, paid help if you want it, how to tell it is really them, and the games they are making.",
   // View
   list: "One line per game, in columns you can sort and choose.",
   grid: "A wall of pictures.",

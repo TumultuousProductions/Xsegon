@@ -48,6 +48,7 @@ import { backToWall } from "./systems.js";
 import { openTagMenu } from "./tags.js";
 import { setTheme, themeId, themeList } from "./themes.js";
 import { openBackupTool, openLogViewer, openReportTool } from "./tools.js";
+import { openTpPage } from "./tppage.js";
 import { el } from "./util.js";
 import { lockWords, viewWaits, viewsLocked } from "./viewlock.js";
 import { carNodes, flatNodes, render, setView, wheelNodes } from "./views.js";
@@ -380,6 +381,8 @@ function mbEntries(which) {
       { icon: "shield", label: "Report a problem...", tip: TIPS.report, run: openReportTool },
       { icon: "folder", label: "Open the data folder", tip: TIPS.data, run: openDataFolder },
       { rule: true },
+      // Also a card on the consoles screen, unless Settings > View put it away (js\tppage.js).
+      { icon: "chat", label: "Help from Tumultuous Productions...", tip: TIPS.tumultuous, run: openTpPage },
       { icon: "info", label: "About Xsegon...", tip: TIPS.about, run: openAbout }
     ];
   }

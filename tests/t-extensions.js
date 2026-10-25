@@ -245,6 +245,8 @@ module.exports = async function (b, check) {
     fs.writeFileSync(bestFile, JSON.stringify({ id: "z", title: "Flashpoint Super Hall of Fame", games: [GAME_A, GAME_E, GAME_F].map((gameId) => ({ gameId })) }));
     fp = ((await api("api/extensions.php")).extensions || []).find((x) => x.id === "flashpoint") || {};
     check("with no favourites to bring in, Flashpoint's own Super Hall of Fame is offered first", [fp.next, fp.starter], ["bring", "FlashpointSuperHallOfFame.json"]);
+    // End lands on the last card: Fan projects, with Tumultuous Productions' card put away (kept puts it back).
+    await api("api/settings.php", { view: { showTumultuous: false } });
     await b.goto(BASE + "/");
     await b.waitFor(`!document.getElementById("syswall").hidden && document.querySelectorAll("#syswall .sel").length > 0`, 10000);
     await b.key("End");

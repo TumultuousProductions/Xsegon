@@ -12,6 +12,7 @@ import { ROW_ICONS } from "./settings-ui.js";
 import { armBrowse, stopVideo } from "./snap.js";
 import { sound } from "./sound.js";
 import { $btnSystems, $details, $editor, $main, $platform, $syswall, $toolbar, games, hasGamesDb, hasLaunchBox, sel, setSel, setSysStage } from "./state.js";
+import { dropTpPage } from "./tppage.js";
 import { el } from "./util.js";
 import { render, row, setCarNodes, setWheelNodes } from "./views.js";
 
@@ -446,6 +447,7 @@ export function openLocalEditor(g, onBack) {
               // inside the new game's platform; the Back button applies.
               dropFanPage();             // the + pressed over the Fan projects page: what it covered is where it lands
               dropExtPage();             // or over the Extensions page
+              dropTpPage();              // or over Tumultuous Productions' page
               if ($syswall && !$syswall.hidden) {
                 setSysStage("inside");
                 $syswall.hidden = true;

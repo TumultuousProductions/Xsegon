@@ -16,6 +16,7 @@ import { openGuide } from "./setup.js";
 import { stopVideo } from "./snap.js";
 import { sound } from "./sound.js";
 import { $body, $btnSystems, $main, $platform, $syswall, $toolbar, S, setSysStage, view } from "./state.js";
+import { TP_KEY, dropTpPage, openTpPage } from "./tppage.js";
 import { artUrl, el } from "./util.js";
 import { lockRefuses } from "./viewlock.js";
 import { clearView, ctl, paintBackdropUrl, paintSeg, settle } from "./views.js";
@@ -55,6 +56,10 @@ function buildSysList() {
   // Extensions just before it: programs Xsegon works with, a page of its own too (js\extensions.js).
   sysList.push({ name: EXT_KEY, label: "Extensions", count: 0, show: null, collection: true, ext: true, note: null });
   sysList.push({ name: FAN_KEY, label: "Fan projects", count: 0, show: null, collection: true, fan: true, note: null });
+  // Tumultuous Productions' page last (js\tppage.js), unless Settings > View put the card away; the Help menu keeps it.
+  if ((S.view || {}).showTumultuous !== false) {
+    sysList.push({ name: TP_KEY, label: "Tumultuous Productions", count: 0, show: null, collection: true, tp: true, note: null });
+  }
   if (sysSel >= sysList.length) { sysSel = 0; }
 }
 
@@ -75,6 +80,7 @@ export function repaintWall() {
 function countLabel(p) {
   if (p.fan) { return "Hacks, mods and PC versions"; }
   if (p.ext) { return "Programs Xsegon works with"; }
+  if (p.tp) { return "Help, and the games coming"; }
   if (p.note) { return p.note; }         // an empty collection says why instead of "0 games"
   var words = filterWords();
   return p.count + (p.count === 1 ? " game" : " games") + (words ? " · " + words : "");
@@ -91,6 +97,7 @@ export function enterSystems() {
   dropDetails();                         // nothing of a game's stays over the consoles
   dropFanPage();                         // nor the Fan projects page
   dropExtPage();                         // nor the Extensions page
+  dropTpPage();                          // nor Tumultuous Productions' page
   stopVideo();
   setSysStage("wall");
   buildSysList();
@@ -111,6 +118,7 @@ export function backToWall() {
   dropDetails();
   dropFanPage();
   dropExtPage();
+  dropTpPage();
   stopVideo();
   // Built here too, not only on the way in: the wall can be reached without
   // ever having been entered (opening on every game in List or Grid, or the
@@ -141,6 +149,7 @@ export function backToWall() {
 export function chooseSystem(name) {
   if (name === FAN_KEY) { openFanPage(); return; }
   if (name === EXT_KEY) { openExtPage(); return; }
+  if (name === TP_KEY) { openTpPage(); return; }
   // An empty collection stays on the rim, greyed, so it can explain its
   // rule instead of vanishing and reading as broken. Opening it would show
   // nothing; the answer is the rule, from every door that leads here.
@@ -179,6 +188,7 @@ export function chooseSystem(name) {
 function showInside(name) {
   dropFanPage();                         // a console or every game, chosen from over the Fan projects page
   dropExtPage();                         // or over the Extensions page
+  dropTpPage();                          // or over Tumultuous Productions' page
   setSysStage("inside");
   // The game view is whatever the dropdown says: systems first is a toggle,
   // so the systems wheel can open into the game wheel.
@@ -388,7 +398,7 @@ function paintSysArt(p) {
   if (!sysInfoEl || !p) { return; }
   if (!SI || SI.host !== sysInfoEl) { buildSysInfo(); }
   SI.p = p;
-  SI.mark.textContent = p.fan ? "✦" : p.ext ? "⬇" : "★";
+  SI.mark.textContent = p.fan ? "✦" : p.ext ? "⬇" : p.tp ? "TP" : "★";
   var url = platformArtUrl(p.name, "device");
   if (SI.img.getAttribute("src") !== url) {
     SI.img.hidden = false;
