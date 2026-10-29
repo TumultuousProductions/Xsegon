@@ -4,6 +4,7 @@ Newest first: what changed for the person at the screen.
 
 ## 2026-10-29
 
+- **F-Zero GX: seven mods in Fan projects, two more texture packs, and the recomp's true word.** Fan projects lists F-ZERO GLINUX, F-Zero GX Unleashed, Legends Unleashed, Climax Edition, F-Zero AX+, G-XTREME and the XTREME Texture Pack, each with who made it, its page and its licence; their page has them, as Xsegon does not make disc mods yet. F-Zero GX Recomp no longer reads as unfinished: its team calls it complete and fully playable, and it comes as source you build yourself. The Texture packs tab has two more F-Zero GX packs, and one for Star Wars: Episode III - Revenge of the Sith on PlayStation 2.
 - **A hack's own page, like a game's.** In a game's Hacks tab, a press on a hack opens its page: its box, logo and name, who made it and when, what it is about, up to three pictures, and Play. The words and pictures are the Games Database's when the hack is in it, or your own, written in `data\hack-about.json`, which Backup keeps. Back goes to the list of hacks.
 
 ## 2026-10-25

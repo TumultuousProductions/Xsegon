@@ -1,5 +1,5 @@
 {
- "made": "2026-10-17",
+ "made": "2026-10-28",
  "from": "Texture Packs Archive, kept by Sad Origami: https://docs.google.com/spreadsheets/d/1sif8FeRGJRbytK8wFRXgF6Hke9V6GUFs",
  "also": "a few packs the Archive lacks, marked from: xsegon, kept in tools\\texpacks-more.json",
  "consoles": {
@@ -11030,6 +11030,21 @@
     "get": null
    },
    {
+    "k": "4d39eef61a3d",
+    "t": "Star Wars: Episode III - Revenge of the Sith",
+    "name": "",
+    "by": "The128ReBits",
+    "kind": "ai",
+    "st": "Complete",
+    "r": "PAL",
+    "bytes": 0,
+    "pay": "free",
+    "page": "https://gbatemp.net/threads/star-wars-episode-iii-revenge-of-the-sith-hd-texture-pack-pcsx2-pal-usa.684858/",
+    "where": "gbatemp.net",
+    "tip": "https://www.patreon.com/cw/The128ReBits",
+    "get": null
+   },
+   {
     "k": "52776011f7c8",
     "t": "Star Wars: Jedi Starfighter",
     "name": "",
@@ -13910,6 +13925,40 @@
     "where": "patreon.com",
     "tip": "https://ko-fi.com/bl4ckh4nd",
     "get": null
+   },
+   {
+    "k": "28d8bdf0a38d",
+    "t": "F-Zero GX",
+    "name": "An F-Zero GX HD pack on MEGA",
+    "by": "WIP finding author",
+    "kind": "ai",
+    "st": "",
+    "r": "",
+    "bytes": 614257690,
+    "pay": "free",
+    "page": "https://mega.nz/file/VJUCCSqa#O85Cd5dK2yK-TmNB8qSaWUUa1fT1QH_V5qbiazErHRU",
+    "where": "mega.nz",
+    "tip": "",
+    "get": null,
+    "from": "xsegon",
+    "says": "more than 6,000 textures, from 2019"
+   },
+   {
+    "k": "c5eec9ca4dfa",
+    "t": "F-Zero GX",
+    "name": "F-Zero GX HD (2022)",
+    "by": "WIP finding author",
+    "kind": "mixed",
+    "st": "",
+    "r": "",
+    "bytes": 0,
+    "pay": "free",
+    "page": "https://forums.dolphin-emu.org/Thread-f-zero-gx-hd-05-01-2022",
+    "where": "forums.dolphin-emu.org",
+    "tip": "",
+    "get": null,
+    "from": "xsegon",
+    "says": "the menus, the gliders and many tracks"
    },
    {
     "k": "b45314a08a2c",

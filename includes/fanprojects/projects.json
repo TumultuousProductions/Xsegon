@@ -1,5 +1,5 @@
 {
-  "about": "Fan projects made from games a person owns (roadmap AQ, doc/ideas/49-fan-projects.md). Each entry was read from the team's own page on 2026-10-15, 2026-10-16 or 2026-10-17: 'page' is their website, 'repo' their GitHub (a project or its owner's page), each checked against GitHub's own answer; at least one is given. A base names the releases it takes by their No-Intro name (cartridges, with the release's 'size' and 'crc' from libretro's No-Intro list, put in by tools/fan-sums.js, so a copy whose title is not the game's is still found), disc ID (discs; an Xbox disc by its title ID, with 'code' the SHA-1 its default.xbe keeps of its .text, which tells one release from another of the same ID), an arcade game's MAME set ('set', its file's name), or every disc ID of a set ('discs': all must be in the library, in one .pbp or .m3u or as separate discs); a PS4 dump and a Switch game's extracted files are named by their title ID and cannot be read yet: fit 'fits' is what the team asks for, 'works' is taken with a note. 'make' says how Xsegon makes it (includes/fanmake.php). A patch: the team's own list of releases ('list', newest first, each with 'version' and 'files'), which file of a release to take ('take'), where those files are ('from'), the kind of patch, the base's byte order and MD5, the made file's ending; every address on the team's website or GitHub, the patch checked against the CRC32 the team's GitHub release lists for it. 'how': 'release': the Windows download ('asset', a pattern) of the team's latest GitHub release or of 'tag', unpacked into 'folder' in the console's Ports folder; 'run' (with 'args', '{folder}' for where it went) joins the 'list' (Windows unless named); 'game' says where your game goes: 'to' (a copy, '{release}' for its release name, its 'format' and the 'md5' or 'sha1' the team takes), 'discs' (every disc of the set, a .pbp's written out as .bin and .cue), 'xiso' (an Xbox disc's files written out into this folder), 'ini' (the port's own emulator pointed at your disc where it is), or 'args' (your disc where it is, named to the port as it starts by '{disc}' in its 'args'); 'need' files the download must hold, 'write' empty files a port reads as a switch, 'first' what its first start asks. 'how': 'build': the team's source at the newest commit of 'branch', the 'tools' their build guide names (GitHub release downloads of the size given), and their 'compile' line run in its folder. 'how': 'pack': a Riivolution pack from the team's own server ('hosts'), as their installer takes it: the full pack ('install'), each newer update ('updates') and what each takes away ('deletes'), only the 'take' folders kept, and a Dolphin start file booting your disc with the pack's 'xml' and 'options'. 'yours' finds a copy already in the library: a patched cartridge by its header, or a PC version kept as a game of your own by its title, its build named in a file beside what it runs. 'soon' is a project not out yet: one line saying where it stands, shown under Coming soon, never made. 'team' is who made it, as they name themselves (their name and GitHub account, as their repo and licence give them); 'basedon' credits the work it stands on with its makers (the project it is forked from, the decompilation or recompiler it is built on), shown under the team and written into the made game's notes beside it. Xsegon never supplies a game and never hosts a team's files. The list changes with each Xsegon release.",
+  "about": "Fan projects made from games a person owns (roadmap AQ, doc/ideas/49-fan-projects.md). Each entry was read from the team's own page on 2026-10-15, 2026-10-16, 2026-10-17 or 2026-10-28: 'page' is their website, 'repo' their GitHub (a project or its owner's page), each checked against GitHub's own answer; at least one is given. A base names the releases it takes by their No-Intro name (cartridges, with the release's 'size' and 'crc' from libretro's No-Intro list, put in by tools/fan-sums.js, so a copy whose title is not the game's is still found), disc ID (discs; an Xbox disc by its title ID, with 'code' the SHA-1 its default.xbe keeps of its .text, which tells one release from another of the same ID), an arcade game's MAME set ('set', its file's name), or every disc ID of a set ('discs': all must be in the library, in one .pbp or .m3u or as separate discs); a PS4 dump and a Switch game's extracted files are named by their title ID and cannot be read yet: fit 'fits' is what the team asks for, 'works' is taken with a note. 'make' says how Xsegon makes it (includes/fanmake.php). A patch: the team's own list of releases ('list', newest first, each with 'version' and 'files'), which file of a release to take ('take'), where those files are ('from'), the kind of patch, the base's byte order and MD5, the made file's ending; every address on the team's website or GitHub, the patch checked against the CRC32 the team's GitHub release lists for it. 'how': 'release': the Windows download ('asset', a pattern) of the team's latest GitHub release or of 'tag', unpacked into 'folder' in the console's Ports folder; 'run' (with 'args', '{folder}' for where it went) joins the 'list' (Windows unless named); 'game' says where your game goes: 'to' (a copy, '{release}' for its release name, its 'format' and the 'md5' or 'sha1' the team takes), 'discs' (every disc of the set, a .pbp's written out as .bin and .cue), 'xiso' (an Xbox disc's files written out into this folder), 'ini' (the port's own emulator pointed at your disc where it is), or 'args' (your disc where it is, named to the port as it starts by '{disc}' in its 'args'); 'need' files the download must hold, 'write' empty files a port reads as a switch, 'first' what its first start asks. 'how': 'build': the team's source at the newest commit of 'branch', the 'tools' their build guide names (GitHub release downloads of the size given), and their 'compile' line run in its folder. 'how': 'pack': a Riivolution pack from the team's own server ('hosts'), as their installer takes it: the full pack ('install'), each newer update ('updates') and what each takes away ('deletes'), only the 'take' folders kept, and a Dolphin start file booting your disc with the pack's 'xml' and 'options'. 'yours' finds a copy already in the library: a patched cartridge by its header, or a PC version kept as a game of your own by its title, its build named in a file beside what it runs. 'soon' is a project not out yet: one line saying where it stands, shown under Coming soon, never made. 'team' is who made it, as they name themselves (their name and GitHub account, as their repo and licence give them); 'basedon' credits the work it stands on with its makers (the project it is forked from, the decompilation or recompiler it is built on), shown under the team and written into the made game's notes beside it. Xsegon never supplies a game and never hosts a team's files. The list changes with each Xsegon release.",
   "projects": [
     {
       "id": "smash-remix",
@@ -2753,7 +2753,7 @@
       "name": "F-Zero GX Recomp",
       "kind": "pc",
       "console": "Nintendo GameCube",
-      "adds": "F-Zero GX recompiled for PC",
+      "adds": "F-Zero GX recompiled to run natively on PC, with its sound and music, on the desktop or in VR",
       "tags": [],
       "team": "Ethan Nicholas (ethannicholas)",
       "repo": "https://github.com/ethannicholas/fzerogx-recomp",
@@ -2763,7 +2763,123 @@
         "db": { "id": 2498, "title": "F-Zero GX", "platform": "Nintendo GameCube" },
         "match": [ { "console": "Nintendo GameCube", "disc": "GFZE01", "fit": "fits" } ]
       },
-      "soon": "No release yet; the team last worked on it 2026-10-15"
+      "soon": "No download yet, only its source, which its team calls complete and fully playable: you build it yourself with Visual Studio's build tools, Clang, CMake, Ninja and Python"
+    },
+    {
+      "id": "fzero-glinux",
+      "name": "F-ZERO GLINUX",
+      "kind": "disc",
+      "console": "Nintendo GameCube",
+      "adds": "F-Zero GX in a Dolphin of its own with a launcher for the pad: widescreen, up to 4K, online races by room code and a switch that unlocks everything",
+      "tags": ["widescreen"],
+      "team": "Mabec-games",
+      "basedon": "Dolphin by the Dolphin team",
+      "repo": "https://github.com/Mabec-games/F-ZERO-GLINUX",
+      "licence": "none given",
+      "base": {
+        "title": "F-Zero GX (USA)",
+        "db": { "id": 2498, "title": "F-Zero GX", "platform": "Nintendo GameCube" },
+        "match": [ { "console": "Nintendo GameCube", "disc": "GFZE01", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "fzerogx-unleashed",
+      "name": "F-Zero GX Unleashed",
+      "kind": "disc",
+      "console": "Nintendo GameCube",
+      "adds": "Every machine rebalanced to keep up with the fastest, rivals as fast, the Story Mode courses to race on and new staff ghosts",
+      "tags": [],
+      "team": "AKC12",
+      "page": "https://gamebanana.com/mods/40471",
+      "community": "https://discord.gg/AzjuzQtJ3c",
+      "licence": "CC BY-NC-ND 4.0",
+      "base": {
+        "title": "F-Zero GX (USA)",
+        "db": { "id": 2498, "title": "F-Zero GX", "platform": "Nintendo GameCube" },
+        "match": [ { "console": "Nintendo GameCube", "disc": "GFZE01", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "fzerogx-legends-unleashed",
+      "name": "F-Zero GX Legends Unleashed",
+      "kind": "disc",
+      "console": "Nintendo GameCube",
+      "adds": "Unleashed with pilots and machines from GP Legend and Climax: Dragon Bird, Elegance Liberty, Moon Shadow, Panzer Emerald and the Red Bull",
+      "tags": [],
+      "team": "AKC12",
+      "page": "https://gamebanana.com/mods/40472",
+      "community": "https://discord.gg/AzjuzQtJ3c",
+      "licence": "CC BY-NC-ND 4.0",
+      "base": {
+        "title": "F-Zero GX (USA)",
+        "db": { "id": 2498, "title": "F-Zero GX", "platform": "Nintendo GameCube" },
+        "match": [ { "console": "Nintendo GameCube", "disc": "GFZE01", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "fzerogx-climax-edition",
+      "name": "F-Zero GX Climax Edition",
+      "kind": "disc",
+      "console": "Nintendo GameCube",
+      "adds": "Machines tuned to match their F-Zero Climax counterparts, with several ways to play in one download",
+      "tags": [],
+      "team": "Emarcee",
+      "page": "https://gamebanana.com/mods/421718",
+      "community": "https://discord.gg/44xma2DXWy",
+      "licence": "CC BY-NC-ND 4.0",
+      "base": {
+        "title": "F-Zero GX (USA)",
+        "db": { "id": 2498, "title": "F-Zero GX", "platform": "Nintendo GameCube" },
+        "match": [ { "console": "Nintendo GameCube", "disc": "GFZE01", "fit": "works", "note": "should fit: its page names no release, and the mods it follows take the USA disc" } ]
+      }
+    },
+    {
+      "id": "fzero-ax-plus",
+      "name": "F-Zero AX+",
+      "kind": "disc",
+      "console": "Nintendo GameCube",
+      "adds": "Climax Edition with the arcade F-Zero AX machines in place of the Climax ones",
+      "tags": [],
+      "team": "Emarcee",
+      "page": "https://gamebanana.com/mods/488401",
+      "licence": "CC BY-NC-ND 4.0",
+      "base": {
+        "title": "F-Zero GX (USA)",
+        "db": { "id": 2498, "title": "F-Zero GX", "platform": "Nintendo GameCube" },
+        "match": [ { "console": "Nintendo GameCube", "disc": "GFZE01", "fit": "works", "note": "should fit: its page names no release, and the mods it follows take the USA disc" } ]
+      }
+    },
+    {
+      "id": "fzero-g-xtreme",
+      "name": "F-ZERO G-XTREME",
+      "kind": "disc",
+      "console": "Nintendo GameCube",
+      "adds": "Machines pushed past 1,200 km/h and boosts past 2,000: fast, brutal and unfair, as its maker puts it",
+      "tags": [],
+      "team": "supersanicGX",
+      "page": "https://gamebanana.com/mods/40469",
+      "licence": "CC BY-NC-ND 4.0",
+      "base": {
+        "title": "F-Zero GX (USA)",
+        "db": { "id": 2498, "title": "F-Zero GX", "platform": "Nintendo GameCube" },
+        "match": [ { "console": "Nintendo GameCube", "disc": "GFZE01", "fit": "fits" } ]
+      }
+    },
+    {
+      "id": "fzerogx-xtreme-textures",
+      "name": "XTREME Texture Pack",
+      "kind": "disc",
+      "console": "Nintendo GameCube",
+      "adds": "Every machine and track repainted, with new engine flares; made to go with G-XTREME, and fine without it",
+      "tags": [],
+      "team": "supersanicGX",
+      "page": "https://gamebanana.com/mods/40467",
+      "licence": "CC BY-NC-ND 4.0",
+      "base": {
+        "title": "F-Zero GX (USA)",
+        "db": { "id": 2498, "title": "F-Zero GX", "platform": "Nintendo GameCube" },
+        "match": [ { "console": "Nintendo GameCube", "disc": "GFZE01", "fit": "works", "note": "should fit: its page names no release, and the mod it goes with takes the USA disc" } ]
+      }
     },
     {
       "id": "mariokartdd-recomp",
