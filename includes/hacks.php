@@ -692,6 +692,7 @@ function xs_hacks_for(array $game, array $games, ?array $launch = null): array
         $row = ['key' => $p['key'], 'name' => $p['name'], 'kind' => XS_HACK_KINDS[$p['kind']], 'fits' => $how !== null, 'how' => $how,
                 'note' => null, 'route' => null, 'why' => null, 'made' => false, 'sound' => (bool) $p['sound'],
                 'from' => $p['from'] ?? null,          // the library entry it is kept in, when it is one
+                'result' => $p['result'] ?? null,      // the hacked game's checksum, when the patch names it: its page's key
                 'where' => basename(dirname($p['file'])) . DIRECTORY_SEPARATOR . basename($p['file'])];
         if ($how === null) {
             $base = $p['base'] ?? $p['says'];

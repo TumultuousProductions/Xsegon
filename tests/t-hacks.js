@@ -74,7 +74,7 @@ module.exports = async function (b, check) {
     check("hacks: runs only on the test server's own copy (never against libretro itself)", true, true);
     return;
   }
-  const kept = new Guard(["scanned-games.json", "hack-choice.json", "local-games.json", "hack-of.json"]);
+  const kept = new Guard(["scanned-games.json", "hack-choice.json", "local-games.json", "hack-of.json", "hack-about.json"]);
   const before = (await api("api/settings.php")).settings;
   const roms = path.join(DATA, "fixtures", "hacks-roms");
   const dir = path.join(roms, "nes");
@@ -289,6 +289,49 @@ module.exports = async function (b, check) {
     }
     check("through all of it nothing in the games folder was written, changed or added", tree(), untouched);
 
+    /* ---- a hack's own page: what is known of it ----------------------------- */
+    await api("api/hacks.php", { id: id("base"), copy: false });
+    const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
+    const aboutKey = "r-" + crc(colourMade);
+    const art = path.join(DATA, "hacks", "art");
+    const putAbout = () => {
+      fs.writeFileSync(path.join(DATA, "hack-about.json"), JSON.stringify({ [aboutKey]: { title: "Hkt Colour Story", developer: "Tester",
+        released: "2001-02-03", genre: "Action; Puzzle", players: 2, notes: "A hack made for the tests." } }));
+      fs.mkdirSync(art, { recursive: true });
+      fs.writeFileSync(path.join(art, aboutKey + "-box.png"), PNG);
+    };
+    const dropAbout = () => { fs.rmSync(path.join(DATA, "hack-about.json"), { force: true }); fs.rmSync(art, { recursive: true, force: true }); };
+    const raw = async (q) => {
+      const r = await fetch(require("./lib").BASE + "/api/hacks.php?" + q);
+      return [r.status, r.headers.get("content-type"), Buffer.from(await r.arrayBuffer())];
+    };
+    putAbout();
+    base = await ask("base");
+    const brief = row(base, "Hk Colour Hack").about || {};
+    check("a patch that fits brings what is known of it to its row, kept under the hacked game's own checksum, so it follows the hack wherever it is kept",
+      [brief.key, brief.title, brief.developer, brief.year, /^api\/hacks\.php\?pic=r-[0-9a-f]{8}-box\.png&v=\d+$/.test(brief.box || "")],
+      [aboutKey, "Hkt Colour Story", "Tester", "2001", true]);
+    check("one nothing is known of brings nothing, and one that does not fit is not looked at",
+      [row(base, "Hk Bundle").about, row(await ask("rev"), "Hk Colour Hack").about], [null, null]);
+    const page = await api("api/hacks.php?id=" + id("base") + "&about=" + key("Hk Colour Hack"));
+    check("its page says who made it, when, what it is and for how many, from what you wrote, with its picture",
+      [page.ok, page.key, page.title, page.developer, page.released, page.genre, page.players, page.notes, page.from, page.of, page.dbId,
+       (page.pics || {}).shots, /pic=r-/.test((page.pics || {}).box || "")],
+      [true, aboutKey, "Hkt Colour Story", "Tester", "2001-02-03", "Action; Puzzle", 2, "A hack made for the tests.", "you", "Hkt Base", 0, [], true]);
+    const none = await api("api/hacks.php?id=" + id("base") + "&about=" + key("Hk Bundle"));
+    check("a hack nothing is known of has a page all the same, with nothing on it", [none.ok, none.from, none.title, (none.pics || {}).box], [true, null, undefined, null]);
+    check("a page is asked for by a patch's key, and a key that is no patch of this console is refused",
+      [(await api("api/hacks.php?id=" + id("base") + "&about=..%2Fx")).ok, (await api("api/hacks.php?id=" + id("base") + "&about=0123456789abcdef")).error],
+      [false, "no such patch for Nintendo Entertainment System"]);
+    const [picStatus, picType, picBody] = await raw("pic=" + encodeURIComponent(aboutKey + "-box.png"));
+    check("its picture is served as the image it is", [picStatus, picType, picBody.equals(PNG)], [200, "image/png", true]);
+    const refused = [];
+    for (const bad of ["..%5Chack-about.json", "..%2F..%2Fsettings.json", aboutKey + "-box.png%00.txt", "r-00000000-box.png", "x" + aboutKey + "-box.png", aboutKey + "-notes.txt"]) {
+      refused.push((await raw("pic=" + bad))[0]);
+    }
+    check("and nothing else is: no other folder, no other kind of file, no picture that is not there", refused, [404, 404, 404, 404, 404, 404]);
+    dropAbout();
+
     /* ---- the tab, in the page ---------------------------------------------- */
     await api("api/hacks.php", { id: id("base"), copy: false });
     base = await ask("base");
@@ -343,9 +386,36 @@ module.exports = async function (b, check) {
       }
       await b.key("ArrowDown");
       check("Down goes into the list, and the legend says what a press there does",
-        [await b.until(`document.querySelector("#details .dtab-pane").classList.contains("in")`, true, 3000), await b.until(`${legend}.includes(${JSON.stringify(base.memory ? "change" : "play with it")})`, true, 3000)], [true, true]);
-      await b.ev(`${ROWS}.find((r) => r.querySelector(".cr-name").textContent === "Hk Colour Hack").click()`);
-      check("a press on a patch that fits starts the game with it, and closes details",
+        [await b.until(`document.querySelector("#details .dtab-pane").classList.contains("in")`, true, 3000), await b.until(`${legend}.includes(${JSON.stringify(base.memory ? "change" : "open it")})`, true, 3000)], [true, true]);
+      await b.key("Escape");
+      await back();
+
+      putAbout();
+      await details("base");
+      await b.until(names, want, 9000);
+      check("a patch something is known of shows its box on its row, and who made it and when under its name",
+        await b.ev(`(r => [!!r.querySelector(".hck-thumb img"), r.querySelector(".hck-sub").textContent])(${rowOf("Hk Colour Hack")})`),
+        [true, "Tester  ·  2001"]);
+      await b.ev(`${rowOf("Hk Colour Hack")}.click()`);
+      const PAGE = `document.querySelector("#details .dtab-pane.is-hacks .hp-page")`;
+      check("a press on a patch that fits opens its own page: its name, who made it, its words and picture, and Play and Back; nothing starts yet",
+        [await b.until(`!!${PAGE} && !!${PAGE}.querySelector(".hp-notes")`, true, 8000),
+         await b.ev(`${PAGE}.querySelector(".hp-title").textContent`),
+         await b.ev(`${PAGE}.querySelector(".hp-facts").textContent`),
+         await b.ev(`${PAGE}.querySelector(".hp-notes").textContent`),
+         await b.ev(`/pic=r-/.test(${PAGE}.querySelector(".hp-art img").getAttribute("src"))`),
+         await b.ev(`[...${PAGE}.querySelectorAll(".hck-row .cr-name")].map((x) => x.textContent)`),
+         await b.ev(`window.__launches.length`)],
+        [true, "Hkt Colour Story", "Tester  ·  2001-02-03  ·  Action, Puzzle  ·  2 players", "A hack made for the tests.", true,
+         ["Play Hk Colour Hack", "Back to the hacks"], 0]);
+      await b.shot("details-tab-hacks-page");
+      await b.ev(`${PAGE}.querySelector(".hp-back").click()`);
+      check("Back goes to the list of hacks", await b.until(names, want, 6000), want);
+      await b.ev(`${rowOf("Hk Colour Hack")}.click()`);
+      await b.until(`!!${PAGE}`, true, 6000);
+      await b.ev(`${PAGE}.querySelector(".hp-play").click()`);
+      dropAbout();
+      check("Play on its page starts the game with it, and closes details",
         [await b.until(`JSON.stringify(window.__launches)`, JSON.stringify([{ id: id("base"), hack: key("Hk Colour Hack") }]), 6000), await b.until(`document.getElementById("details").hidden`, true, 6000)],
         [JSON.stringify([{ id: id("base"), hack: key("Hk Colour Hack") }]), true]);
       check("the bottom line names the hack while it starts", await b.until(`/running: stub/.test(document.getElementById("strip").textContent)`, true, 6000), true);

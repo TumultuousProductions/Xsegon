@@ -2,6 +2,10 @@
 
 Newest first: what changed for the person at the screen.
 
+## 2026-10-29
+
+- **A hack's own page, like a game's.** In a game's Hacks tab, a press on a hack opens its page: its box, logo and name, who made it and when, what it is about, up to three pictures, and Play. The words and pictures are the Games Database's when the hack is in it, or your own, written in `data\hack-about.json`, which Backup keeps. Back goes to the list of hacks.
+
 ## 2026-10-25
 
 - **Xsegon 0.20.** The three changes below, as a download and as an update for copies of 0.18.1 and 0.19.

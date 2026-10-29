@@ -14,6 +14,9 @@
  *                                               that is not in the library); answers as GET
  *   POST {"id": "...", "notHack": true}     it is no hack, and is not asked about again
  *   POST {"id": "...", "unsettle": true}    what was said of it is taken back
+ *   GET  ?id=<game id>&about=<patch key>    a hack's own page: who made it, when, its story
+ *                                           and pictures (includes\hackabout.php)
+ *   GET  ?pic=<file>                        one of those pictures, from data\hacks\art only
  *
  * Playing one is api\launch.php with "hack": the patch's key. A game of your
  * own listed there ("programs"), and a hack that is a game of its own
@@ -23,12 +26,28 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/hacks.php';
 require_once __DIR__ . '/../includes/hackof.php';
+require_once __DIR__ . '/../includes/hackabout.php';
 
 $post = ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST';
 $body = [];
 if ($post) {
     xs_local_origin_only();
     $body = xs_body();
+}
+
+// A hack's picture: only a file kept in data\hacks\art, under a name checked before any path is made of it.
+if (!$post && isset($_GET['pic'])) {
+    $file = xs_hackabout_pic_file((string) $_GET['pic']);
+    if ($file === null) {
+        xs_fail('no such picture', 404);
+    }
+    $types = ['png' => 'image/png', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'webp' => 'image/webp', 'gif' => 'image/gif'];
+    header('Content-Type: ' . $types[strtolower(pathinfo($file, PATHINFO_EXTENSION))]);
+    header('Cache-Control: private, max-age=86400');
+    header('X-Content-Type-Options: nosniff');
+    header('Content-Length: ' . filesize($file));
+    readfile($file);
+    exit;
 }
 
 if (!$post && ($_GET['settle'] ?? '') === '1') {
@@ -57,6 +76,30 @@ if ($game === null) {
 
 if (!$post && ($_GET['bases'] ?? '') === '1') {
     xs_json(['ok' => true, 'id' => $id, 'bases' => xs_hackof_bases($game, $games, xs_hackof_marks($games))]);
+}
+
+if (!$post && isset($_GET['about'])) {
+    $key = (string) $_GET['about'];
+    if (!preg_match('/^[0-9a-f]{16}$/', $key)) {
+        xs_fail('bad patch key', 400);
+    }
+    $p = null;
+    foreach (xs_hack_index((string) $game['platform'], $games)['patches'] as $x) {
+        if ($x['key'] === $key) {
+            $p = $x;
+            break;
+        }
+    }
+    if ($p === null) {
+        xs_fail('no such patch for ' . $game['platform'], 404);
+    }
+    $t0 = microtime(true);
+    $about = xs_hackabout_for($p, (string) $game['platform']);
+    xs_log('HACK', 'page of ' . $p['name'] . ', a hack of ' . $game['title'] . ': ' . ($about['from'] === null ? 'nothing known of it'
+        : 'words from ' . ['you' => 'you', 'gamesdb' => 'the Games Database', 'both' => 'you and the Games Database'][$about['from']])
+        . ', ' . (count($about['pics']['shots']) + ($about['pics']['box'] ? 1 : 0) + ($about['pics']['logo'] ? 1 : 0)) . ' picture(s), in '
+        . round((microtime(true) - $t0) * 1000) . 'ms');
+    xs_json(['ok' => true, 'id' => $id, 'of' => $game['title']] + $about);
 }
 
 if ($post) {
@@ -99,6 +142,11 @@ if ($post) {
 
 $t0 = microtime(true);
 $list = xs_hacks_for($game, $games);
+// What is known of each hack that fits, for its row: kept files only, so the list reads no database.
+foreach ($list['rows'] as &$r) {
+    $r['about'] = $r['fits'] ? xs_hackabout_brief($r['result'], $r['name']) : null;
+}
+unset($r);
 $marks = xs_hackof_marks($games);
 $is = xs_hackof_state($game, $games, $marks);
 $theirs = xs_hackof_games($id, $games);

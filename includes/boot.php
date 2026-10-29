@@ -189,7 +189,7 @@ function xs_read_json_settled(string $path, $fallback = null)
  * next save would write a nearly empty file over it. So such a file is never written over
  * (xs_write_json refuses), the log says so once, and the page is told until it reads again.
  */
-const XS_YOURS_JSON = ['settings.json', 'emulators.json', 'overrides.json', 'cores.json', 'emu-choice.json', 'hack-choice.json', 'cheats.json', 'cheats-used.json', 'pad-remaps.json',
+const XS_YOURS_JSON = ['settings.json', 'emulators.json', 'overrides.json', 'cores.json', 'emu-choice.json', 'hack-choice.json', 'hack-about.json', 'cheats.json', 'cheats-used.json', 'pad-remaps.json',
                        'player-remaps.json', 'game-remaps.json', 'pad-keys.json', 'ra-hotkeys.json', 'game-hotkeys.json',
                        'favourites.json', 'my-ratings.json', 'notes.json', 'hack-of.json', 'accompanied.json', 'tags.json', 'fix-marks.json', 'hidden.json', 'deleted.json', 'art-hidden.json',
                        'local-games.json', 'scanned-games.json', 'history-seeded.json', 'wanted.json'];
