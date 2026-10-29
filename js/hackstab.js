@@ -1,14 +1,16 @@
 /*  The Hacks tab of a game's details (js\detailtabs.js): the patches on this
     PC that fit this game's file, as the server found them (includes\hacks.php).
 
-    A press on one plays the game with it and leaves the game's file as it is:
-    RetroArch patches as it loads, or Xsegon makes a patched copy once (the row
-    above the patches says which). Then the games of your own started with this
+    A press on one opens its own page (js\hackpage.js): what it is, and Play,
+    which plays the game with it and leaves the game's file as it is: RetroArch
+    patches as it loads, or Xsegon makes a patched copy once (the row above the
+    patches says which). Then the games of your own started with this
     file, and the games said to be hacks of this one. And what this game itself
     is (includes\hackof.php): while in doubt, the choices stand first.       */
 
 import { closeDetails } from "./details.js";
 import { setTabRows, tabPane, tabSays } from "./detailtabs.js";
+import { hackPage } from "./hackpage.js";
 import { sayHack } from "./hacksettle.js";
 import { iconEl } from "./icons.js";
 import { launchNow, showStrip } from "./launch.js";
@@ -27,6 +29,14 @@ var HOW = {
 };
 
 function leaf(path) { return String(path).split(/[\\/]/).filter(Boolean).pop() || path; }
+
+/* The game started with the patch; the entry that is only a patch plays on the game it was made for. */
+function playPatch(on, r) {
+  L("HACK", "play " + on.title + " with " + r.name + (r.route ? " (" + r.route + ")" : ""));
+  closeDetails();
+  launchNow(on, null, false, null, { key: r.key, name: r.name,
+    wait: r.route === "copy" && !r.made ? "Making the patched copy of " + on.title + ", once…" : "starting " + on.title + " with " + r.name + "…" });
+}
 
 /* Where it looked, and what it passed over, under the list. */
 function footWords(res) {
@@ -236,15 +246,16 @@ function paint(pane, g, res, keepAt, choosing) {
       showStrip(r.name + " cannot be played: " + r.why, true);
       return;
     }
-    // The entry that is only a patch plays on the game it was made for.
-    var on = item.act === "own" ? (games.filter(function (x) { return x.id === r.on.id; })[0] || { id: r.on.id, title: r.on.title, platform: g.platform }) : g;
-    L("HACK", "play " + on.title + " with " + r.name + (r.route ? " (" + r.route + ")" : ""));
-    closeDetails();
-    launchNow(on, null, false, null, { key: r.key, name: r.name,
-      wait: r.route === "copy" && !r.made ? "Making the patched copy of " + on.title + ", once…" : "starting " + on.title + " with " + r.name + "…" });
+    if (item.act === "play") {
+      // A patch that fits opens its own page first; Back comes to this row again.
+      sound("select");
+      hackPage(pane, g, r, HOW[r.how], function () { playPatch(g, r); }, function () { sound("back"); paint(pane, g, res, i, choosing); });
+      return;
+    }
+    playPatch(games.filter(function (x) { return x.id === r.on.id; })[0] || { id: r.on.id, title: r.on.title, platform: g.platform }, r);
   }
 
-  var WORD = { route: "change", none: "", prog: "play it", game: "play it", say: "say so", not: "say so", pick: "choose", change: "change", unsettle: "take back" };
+  var WORD = { route: "change", none: "", play: "open it", prog: "play it", game: "play it", say: "say so", not: "say so", pick: "choose", change: "change", unsettle: "take back" };
   function focusAt(i) {
     i = Math.max(0, Math.min(cells.length - 1, i));
     at = i;
@@ -305,10 +316,21 @@ function paint(pane, g, res, keepAt, choosing) {
       tag = item.o.kind;
       if (!item.o.on) { line.classList.add("ro"); }
     } else {
-      var r = item.r;
-      line.appendChild(iconEl("cr-ico", r.fits && r.route ? "play" : "info"));
+      var r = item.r, about = r.fits && r.route ? r.about : null;
+      // Its box, when one is known (includes\hackabout.php), and who made it and when under its name.
+      if (about && about.box) {
+        var thumb = el("div", "sv-shot hck-thumb"), face = el("img");
+        face.src = about.box;
+        face.alt = "";
+        face.loading = "lazy";
+        thumb.appendChild(face);
+        line.appendChild(thumb);
+      } else {
+        line.appendChild(iconEl("cr-ico", r.fits && r.route ? "play" : "info"));
+      }
       words.appendChild(el("span", "cr-name", r.name));
-      words.appendChild(el("span", "sv-sub hck-sub", r.fits ? (r.route ? HOW[r.how] : "cannot be played: " + r.why) : r.note));
+      var known = about ? [about.developer, about.year].filter(Boolean).join("  ·  ") : "";
+      words.appendChild(el("span", "sv-sub hck-sub", r.fits ? (r.route ? known || HOW[r.how] : "cannot be played: " + r.why) : r.note));
       tag = r.kind + "  ·  " + r.where;
       line.dataset.key = r.key;
       if (!r.fits) { line.classList.add("ro", "hck-other"); }
