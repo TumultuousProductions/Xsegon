@@ -214,7 +214,7 @@ function paint(pane, g, res) {
   function packRow(box, f) {
     var p = f.pack && can ? packs.filter(function (x) { return x.id === f.pack; })[0] : null;
     var direct = f.get && can && !res.job;
-    var sub = [f.status, f.kind ? "" : "kind not said", f.note, f.says, f.name ? "by " + f.by : "", f.where + (PAY[f.pay] ? ", " + PAY[f.pay] : ""),
+    var sub = [f.status, f.kind ? "" : "kind not said", f.note, f.says, f.name && f.by ? "by " + f.by : "", f.where + (PAY[f.pay] ? ", " + PAY[f.pay] : ""),
                f.from === "xsegon" ? "not in the Archive" : "", p ? "installed: " + packSaid(p) : ""].filter(Boolean).join("  ·  ");
     var r = { icon: "image", name: f.name || f.by, kind: f.kind, sub: sub, tag: f.size ? sizeSaid(f.size) : "size not said", tip: f.tip ? f.k : "" };
     if (p) { return addRow(box, uninstallRow(r, p)); }
@@ -270,7 +270,7 @@ function askGet(g, f, res, pane) {
   L("MNU", "texture pack: asked to install " + (f.name || f.by) + " for " + g.title);
   confirmWindow("Install this texture pack?", function (box) {
     box.appendChild(el("p", "confirm-game", (f.name || "The pack by " + f.by) + (f.size ? ", " + sizeSaid(f.size) : "")));
-    box.appendChild(el("p", "confirm-note", "From: " + f.where + ", the pack's own download" + (f.name ? ", made by " + f.by : "")));
+    box.appendChild(el("p", "confirm-note", "From: " + f.where + ", the pack's own download" + (f.name && f.by ? ", made by " + f.by : "")));
     box.appendChild(el("p", "confirm-note", "Into: " + res.folder));
     box.appendChild(el("p", "confirm-safe", res.setWords + " is turned on for " + g.title + " alone. Uninstall takes the pack away and puts that back as it was."));
   }, { label: "Install", run: function () { start(g, { get: f.k }, (f.name || "the pack by " + f.by) + (f.size ? ", " + sizeSaid(f.size) : ""), false, pane); } }, "Not now",

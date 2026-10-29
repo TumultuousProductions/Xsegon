@@ -543,7 +543,7 @@ function xs_tp_start(array $game, array $want, ?string &$why = null, ?array &$as
             return false;
         }
         $src = ['kind' => 'url', 'url' => $url, 'path' => $url, 'name' => (string) ($row['get']['name'] ?? basename((string) parse_url($url, PHP_URL_PATH))),
-                'bytes' => (int) ($row['get']['bytes'] ?? 0), 'by' => (string) ($row['by'] ?? ''), 'title' => (string) ($row['name'] ?? ''), 'k' => $get];
+                'bytes' => (int) ($row['get']['bytes'] ?? 0), 'by' => xs_tp_by($row), 'title' => (string) ($row['name'] ?? ''), 'k' => $get];
     } elseif ($from !== null) {
         $src = xs_tp_source($from, $why);
         if ($src === null) {
@@ -668,6 +668,13 @@ function xs_tp_region(array $game, ?string $key): string
     return preg_match('/\((Europe|UK|Germany|France|Spain|Italy|Australia|E)\b/i', $file) ? 'PAL' : '';
 }
 
+/** A listed pack's maker, '' while Xsegon's own short list has not found them yet (tools\texpacks-more.json's words for that). */
+function xs_tp_by(array $r): string
+{
+    $by = (string) ($r['by'] ?? '');
+    return $by === 'WIP finding author' ? '' : $by;
+}
+
 /**
  * The packs listed for this game, handmade first, then the ones made for its own
  * release, then the finished ones; each with what to say about its release.
@@ -689,7 +696,7 @@ function xs_tp_found(array $game, ?string $key): array
         $region = (string) ($r['r'] ?? '');
         $note = isset($said[$region]) ? 'made for ' . $said[$region] . ($mine === $region ? ', as yours is' : '') : '';
         // 'from' is '' for a row of the Texture Packs Archive, 'xsegon' for one of Xsegon's own short list; 'says' is that row's word on it.
-        $out[] = ['k' => (string) $r['k'], 'name' => (string) ($r['name'] ?? ''), 'by' => (string) ($r['by'] ?? ''), 'kind' => (string) ($r['kind'] ?? ''),
+        $out[] = ['k' => (string) $r['k'], 'name' => (string) ($r['name'] ?? ''), 'by' => xs_tp_by($r), 'kind' => (string) ($r['kind'] ?? ''),
                   'status' => (string) ($r['st'] ?? ''), 'note' => $note, 'same' => $mine !== '' && $mine === $region, 'size' => (int) ($r['bytes'] ?? 0),
                   'pay' => (string) ($r['pay'] ?? 'free'), 'where' => (string) ($r['where'] ?? ''), 'tip' => ($r['tip'] ?? '') !== '',
                   'get' => xs_tp_get_ok((string) ($r['get']['url'] ?? '')), 'url' => (string) ($r['get']['url'] ?? ''),
@@ -727,14 +734,17 @@ function xs_tp_url_ok(string $url): bool
     return strlen($url) <= 400 && (bool) preg_match('@^https://[A-Za-z0-9.-]+(/[A-Za-z0-9._~/:?=#%+,;!$\'()*\@&-]*)?$@', $url);
 }
 
-/** A listed address opened in the default browser, handed to Windows with no command line between. */
+/** A listed address opened in the default browser by cmd's start, as fan projects open theirs:
+ *  rundll32's FileProtocolHandler answers as if it opened, and with Brave as the browser nothing opens. */
 function xs_tp_open_url(string $url): bool
 {
-    $p = @proc_open(['rundll32.exe', 'url.dll,FileProtocolHandler', $url], [0 => ['file', 'NUL', 'r'], 1 => ['file', 'NUL', 'w'], 2 => ['file', 'NUL', 'w']],
-        $pipes, null, null, ['bypass_shell' => true]);
-    if (!is_resource($p)) {
+    if (function_exists('xs_open')) {
+        return xs_open($url);
+    }
+    $handle = popen('start "" "' . str_replace('"', '', $url) . '"', 'r');
+    if ($handle === false) {
         return false;
     }
-    proc_close($p);
+    pclose($handle);
     return true;
 }

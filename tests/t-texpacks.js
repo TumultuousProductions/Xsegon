@@ -170,6 +170,8 @@ module.exports = async function (b, check) {
                              row("aaaaaaaaaaa4", "Another Game Entirely", "Someone"),
                              row("aaaaaaaaaab1", "Stand-in Brawl 2", "Joiner"),
                              row("aaaaaaaaaab2", "Stand-in Brawl 2", "Handmaker", { page: "https://example.org/brawl", where: "example.org", from: "xsegon", says: "its download holds more than textures" }),
+                             // Xsegon's own list writes a maker it has not found yet this way.
+                             row("aaaaaaaaaab5", "Stand-in Brawl 2", "WIP finding author", { name: "A Stand-in Brawl pack", page: "https://example.org/brawl-hd", where: "example.org", from: "xsegon" }),
                              row("aaaaaaaaaab3", "Stand-in Saga + International", "Twofold"),
                              row("aaaaaaaaaab4", "Stand-in Hero 10", "Tenth")],
       // A pack with a download of its own carries that download's size, as tools\build-texpacks.js writes it.
@@ -197,7 +199,9 @@ module.exports = async function (b, check) {
       [(await post({ open: "aaaaaaaaaaa2", which: "tip" })).ok, (await post({ open: "aaaaaaaaaaa4" })).ok, (await post({ open: "..\\x" })).ok], [false, false, false]);
     check("a pack with no download of its own cannot be got", /no download Xsegon can fetch/.test((await post({ get: "aaaaaaaaaaa2" })).error || ""), true);
     check("a title the list writes another way finds its packs (Standin Brawl II, Stand-in Brawl 2); a row of Xsegon's own list says so, with its word on it",
-      (await get(BRAWL.id)).found.map((f) => [f.by, f.from, f.says]), [["Joiner", "", ""], ["Handmaker", "xsegon", "its download holds more than textures"]]);
+      (await get(BRAWL.id)).found.map((f) => [f.by, f.from, f.says]), [["Joiner", "", ""], ["Handmaker", "xsegon", "its download holds more than textures"], ["", "xsegon", ""]]);
+    check("a maker Xsegon's own list has not found yet is sent as none, so the tab names no maker, only the pack",
+      (await get(BRAWL.id)).found.filter((f) => f.k === "aaaaaaaaaab5").map((f) => [f.name, f.by]), [["A Stand-in Brawl pack", ""]]);
     check("a listed title of two releases joined by + is found for each of them; an X stays a letter, not 10",
       [(await get(SAGA.id)).found.map((f) => f.by), (await get(SAGA_INT.id)).found.map((f) => f.by), (await get(HERO.id)).found], [["Twofold"], ["Twofold"], []]);
     const texHas = ((await api("api/library.php?texpacks=1&versions=all&grouped=0")).games || []).map((g) => g.id);
