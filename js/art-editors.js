@@ -52,6 +52,83 @@ export function uploadPieces(url, file, say) {
   return sendPiece(0).finally(function () { delete sendingTo[url]; });
 }
 
+/* Paste as Box Art, in the game menu: the copied picture becomes the box, as Change Pictures
+   would store it. The clipboard is read only on that press, so the browser asks only then. */
+export function pasteBoxArt(g) {
+  if (!navigator.clipboard || !navigator.clipboard.read) {
+    L("ED", "paste box art " + g.title + ": this browser cannot read the clipboard");
+    showStrip("This browser cannot read what you copied. Change Pictures takes a picture file instead", true);
+    return;
+  }
+  readClipboard(g).then(function (items) {
+    var item = null, type = null;
+    items.forEach(function (it) {
+      var t = it.types.filter(function (x) { return /^image\//.test(x); })[0];
+      if (t && !item) { item = it; type = t; }
+    });
+    if (!item) {
+      L("ED", "paste box art " + g.title + ": no picture copied (" + (items.map(function (it) { return it.types.join("+"); }).join(", ") || "empty") + ")");
+      showStrip("No picture is copied. Copy one first, such as Copy image on a picture in a web page", true);
+      return;
+    }
+    L("ED", "paste box art " + g.title + ": " + type + " copied");
+    return item.getType(type).then(function (blob) { askThenPaste(g, blob); });
+  }).catch(function (e) {
+    // NotAllowedError: the browser's question was answered Block, or closed.
+    L("ED", "paste box art " + g.title + ": clipboard not read (" + e.name + ": " + e.message + ")");
+    showStrip(e.name === "NotAllowedError"
+      ? "The browser did not let Xsegon see what you copied. Change Pictures takes a picture file instead"
+      : "could not read what you copied: " + e.message, true);
+  });
+}
+
+/* Allow, pressed on the browser's question, leaves the focus on the question: Chrome then refuses
+   that first read as "not focused" though it is allowed. Read once more when the page has it back. */
+function readClipboard(g) {
+  return navigator.clipboard.read().catch(function (e) {
+    if (e.name !== "NotAllowedError" || !navigator.permissions) { throw e; }
+    return navigator.permissions.query({ name: "clipboard-read" }).then(function (p) {
+      if (p.state !== "granted") { throw e; }
+      L("ED", "paste box art " + g.title + ": allowed but refused (" + e.message + "), read again with the focus back");
+      return focusBack().then(function () { return navigator.clipboard.read(); });
+    }, function () { throw e; });
+  });
+}
+
+// When the page has the focus again, a moment after; at most 3 s, then the read says why it failed.
+function focusBack() {
+  return new Promise(function (done) {
+    var t = null;
+    function go() { clearTimeout(t); window.removeEventListener("focus", go); setTimeout(done, 100); }
+    if (document.hasFocus()) { go(); return; }
+    t = setTimeout(go, 3000);
+    window.addEventListener("focus", go);
+  });
+}
+
+// A box art put in before is deleted by the paste, and nothing brings it back: only then it asks.
+function askThenPaste(g, blob) {
+  api("api/art.php?id=" + encodeURIComponent(g.id)).then(function (res) {
+    if (!res.ok) { showStrip("could not paste the box art: " + (res.error || "no answer"), true); return; }
+    var box = res.kinds && res.kinds.box;
+    if (!box || !box.replaced) { sendPasted(g, blob); return; }
+    confirmWindow("Replace the box art you put in?", function (w) {
+      w.appendChild(el("p", null, "The box art you put in for " + res.title + " before is deleted."));
+      if (box.hadOne) { w.appendChild(el("p", "confirm-note", "Reset to the original, in Change Pictures, brings back the original box, not that one.")); }
+    }, { label: "Replace", run: function () { sendPasted(g, blob); } });
+  });
+}
+
+function sendPasted(g, blob) {
+  uploadArt(g, "box", blob, function () {}).then(function (r) {
+    L("ED", "paste box art " + g.title + ": stored, " + r.width + "x" + r.height);
+    sound("select");
+    reloadKeeping(g.id);
+  }).catch(function (e) {
+    showStrip("could not paste the box art: " + e.message, true);
+  });
+}
+
 export function openArtEditor(g) {
   L("ED", "pictures " + g.title);
   stopVideo();
