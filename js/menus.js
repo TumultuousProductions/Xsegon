@@ -5,7 +5,7 @@
 
 import { openAbout } from "./about.js";
 import { openAddChooser } from "./add.js";
-import { openArtEditor, openVideoEditor } from "./art-editors.js";
+import { openArtEditor, openVideoEditor, pasteBoxArt } from "./art-editors.js";
 import { openBiosCheck } from "./bios.js";
 import { openCheatPicker } from "./cheats.js";
 import { openControls } from "./controls.js";
@@ -285,6 +285,7 @@ export function openGameMenu(i, x, y) {
     { rule: true },
     { icon: "pencil", label: g.local ? "Edit Game..." : "Edit Metadata...", hint: "E", tip: g.local ? TIPS.editLocal : TIPS.editMeta, run: function () { g.local ? openLocalEditor(g) : openEditor(g); } },
     { icon: "image", label: "Change Pictures...", tip: TIPS.pictures, run: function () { openArtEditor(g); } },
+    { icon: "image", label: "Paste as Box Art", tip: TIPS.pasteBox, run: function () { pasteBoxArt(g); } },
     { icon: "film", label: g.hasVideo ? "Replace Video..." : "Add Video...", tip: TIPS.video, run: function () { openVideoEditor(g); } },
     { icon: "disc", label: "Emulation", tip: TIPS.emulation, sub: emulation, hidden: !!g.local },
     { icon: "folder", label: "Show in Explorer", tip: TIPS.explorer, sub: explorer },

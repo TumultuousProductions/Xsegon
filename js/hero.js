@@ -11,7 +11,7 @@
 
 import { favStar, myStars, openDetails } from "./details.js";
 import { launch } from "./launch.js";
-import { addsMissing } from "./missing.js";
+import { addsMissing, offersPictures } from "./missing.js";
 import { getRetroArch, raLabel } from "./raoffer.js";
 import { $hero, S, view } from "./state.js";
 import { artUrl, discShort, discWords, el, fixMark, fixWords, hhmm, stars, titleText, versionLabel } from "./util.js";
@@ -27,7 +27,7 @@ var H = null;                            // the panel's parts, once built
 function build() {
   $hero.textContent = "";
   H = {};
-  var frame = H.frame = el("div", "hero-art-frame");
+  var frame = H.frame = offersPictures(el("div", "hero-art-frame"), function () { return H.g; });
   H.img = el("img", "hero-art");
   H.img.alt = "";
   H.noart = addsMissing(el("div", "hero-noart", "NO ART"), function () { return H.g; }, "art");

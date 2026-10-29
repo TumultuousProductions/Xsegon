@@ -177,20 +177,20 @@ module.exports = async function (b, check) {
       [true, true, '"click to add"', "No picture for this game. Click to add one."]);
     await b.clickSel("#hero .hero-noart");
     check("a left click on it offers the pictures and the video, under the game's name",
-      [await b.until(menu, ["Change Pictures...", "Add Video..."], 4000), await b.ev(`(document.querySelector(".ctx .ctx-title") || {}).textContent`)],
-      [["Change Pictures...", "Add Video..."], "Xsbare Scratch"]);
+      [await b.until(menu, ["Change Pictures...", "Paste as Box Art", "Add Video..."], 4000), await b.ev(`(document.querySelector(".ctx .ctx-title") || {}).textContent`)],
+      [["Change Pictures...", "Paste as Box Art", "Add Video..."], "Xsbare Scratch"]);
     await b.menuItem(/Change Pictures/);
     check("and Change Pictures opens from there", await b.until(editorTitle, "CHANGE PICTURES", 6000), "CHANGE PICTURES");
     await closeEditor();
 
     await b.clickSel("#hero .pill.novid-pill");
-    check("a left click on the no video pill offers the video first", await b.until(menu, ["Add Video...", "Change Pictures..."], 4000), ["Add Video...", "Change Pictures..."]);
+    check("a left click on the no video pill offers the video first", await b.until(menu, ["Add Video...", "Change Pictures...", "Paste as Box Art"], 4000), ["Add Video...", "Change Pictures...", "Paste as Box Art"]);
     await b.menuItem(/Add Video/);
     check("and Add Video opens from there", await b.until(editorTitle, "ADD VIDEO", 6000), "ADD VIDEO");
     await closeEditor();
 
     await b.clickSel("#hero .hero-novid");
-    check("the no-video mark on the picture's corner takes the click too", await b.until(menu, ["Add Video...", "Change Pictures..."], 4000), ["Add Video...", "Change Pictures..."]);
+    check("the no-video mark on the picture's corner takes the click too", await b.until(menu, ["Add Video...", "Change Pictures...", "Paste as Box Art"], 4000), ["Add Video...", "Change Pictures...", "Paste as Box Art"]);
     await b.key("Escape");
     await b.until(`!document.querySelector(".ctx")`, true, 3000);
 
@@ -207,7 +207,7 @@ module.exports = async function (b, check) {
       await b.ev(`[!!document.querySelector("#details .cover-noart.can-add"), !!document.querySelector("#details .dlacks .novid-pill.can-add"), !!document.querySelector("#details .cover")]`),
       [true, true, false]);
     await b.clickSel("#details .cover-noart");
-    check("a click on it offers the same two", await b.until(menu, ["Change Pictures...", "Add Video..."], 4000), ["Change Pictures...", "Add Video..."]);
+    check("a click on it offers the same three", await b.until(menu, ["Change Pictures...", "Paste as Box Art", "Add Video..."], 4000), ["Change Pictures...", "Paste as Box Art", "Add Video..."]);
     await b.menuItem(/Change Pictures/);
     check("and the pictures open over Details", await b.until(editorTitle, "CHANGE PICTURES", 6000), "CHANGE PICTURES");
     await closeEditor();

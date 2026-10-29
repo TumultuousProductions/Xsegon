@@ -31,6 +31,7 @@ export var TIPS = {
   editMeta: "Change the title, description, genre and the rest. Every field can be put back to what it was.",
   editLocal: "Change this game's title, its program and its details.",
   pictures: "Choose the box, logo, screenshot and background this game shows. Reset brings the original back.",
+  pasteBox: "The picture you copied becomes this game's box art. The first time, the browser asks to let Xsegon see what you copied. Change Pictures can put the original back.",
   video: "The short video that plays when you rest on this game.",
   emulation: "The core, the controls and the cheats for this game, and RetroArch itself.",
   explorer: "Open the folder that holds this game's file, its pictures or its video.",
