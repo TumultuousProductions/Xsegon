@@ -135,6 +135,9 @@ if (is_file($steam)) {
     $e['args'] = $exe['args'];
 }
 unset($e['url']);
+if (empty($e['run'])) {
+    xs_fail('there is nothing to start it with: steam.exe is not in the Steam folder, and neither is a program of the game\'s own', 409);
+}
 $e['steamId']  = $appid;
 $e['steamDir'] = $a['dir'];
 if ($exe['exe'] !== '') {

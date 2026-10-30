@@ -39,7 +39,16 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                  'settings' => xs_settings(), 'defaults' => xs_settings_defaults()]);
     }
     $before  = xs_settings();
-    $updated = xs_settings_save(xs_body(), $why);
+    $body    = xs_body();
+    /* A Steam folder is one with Steam's steamapps in it. Any other would be
+       kept and only ever find no games, later and without a word. */
+    $steamTo = $body['paths']['steam'] ?? null;
+    if (is_string($steamTo) && trim($steamTo) !== '' && $steamTo !== ($before['paths']['steam'] ?? '')
+        && !is_dir(rtrim(trim($steamTo), '/\\') . DIRECTORY_SEPARATOR . 'steamapps')) {
+        xs_fail('that is not Steam\'s folder: it has no steamapps folder in it. Steam\'s is usually '
+            . 'C:\\Program Files (x86)\\Steam, or leave it blank for Xsegon to find it', 400);
+    }
+    $updated = xs_settings_save($body, $why);
     if ($why !== null) {
         xs_fail((string) $why, 500);
     }

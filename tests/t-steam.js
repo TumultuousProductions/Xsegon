@@ -91,6 +91,37 @@ module.exports = async function (b, check) {
   try {
     await api("api/settings.php", { paths: { steam: FIX } });
 
+    /* ---- a Steam folder is one with steamapps in it ------------------------ */
+    const wrong = await api("api/settings.php", { paths: { steam: path.join(FIX, "steamapps", "common") } });
+    check("a Steam folder with no steamapps in it is refused, saying where Steam's usually is",
+      [wrong.ok, /^that is not Steam's folder: it has no steamapps folder in it\. Steam's is usually C:\\Program Files \(x86\)\\Steam, or leave it blank/.test(wrong.error || "")],
+      [false, true]);
+    check("and the Steam folder stays the one it was",
+      String((((await api("api/settings.php")).settings || {}).paths || {}).steam || "").toLowerCase(), FIX.toLowerCase());
+
+    /* ---- a Steam game with nothing to start it ------------------------------
+       No steam.exe in the Steam folder and no program in the game's own folder:
+       refused with why, not added to fail at Play. A bare app made for this, gone again before the list. */
+    const bareDir = path.join(FIX, "steamapps", "common", "XsSteamBare");
+    const bareManifest = path.join(FIX, "steamapps", "appmanifest_990005.acf");
+    fs.mkdirSync(bareDir, { recursive: true });
+    fs.writeFileSync(path.join(bareDir, "readme.txt"), "x");
+    fs.writeFileSync(bareManifest, `"AppState"\n{\n\t"appid"\t\t"990005"\n\t"name"\t\t"Xsegon Steam Bare"\n\t"installdir"\t\t"XsSteamBare"\n\t"StateFlags"\t\t"4"\n}\n`);
+    fs.renameSync(path.join(FIX, "steam.exe"), path.join(FIX, "steam.exe.away"));
+    try {
+      const bare = await api("api/steam.php", { app: "990005" }, "POST");
+      check("with no steam.exe and no program of its own, a Steam game is not added, and the answer says why",
+        [bare.ok, bare.error], [false, "there is nothing to start it with: steam.exe is not in the Steam folder, and neither is a program of the game's own"]);
+      check("(so it is not in the library)", ((await api("api/local.php")).games || []).some((e) => e.steamId === "990005"), false);
+      const own = await api("api/steam.php", { app: "990001", dry: true }, "POST");
+      check("one with a program of its own is still taken without steam.exe, to start by that program",
+        [own.ok, own.direct, own.viaSteam], [true, true, false]);
+    } finally {
+      fs.renameSync(path.join(FIX, "steam.exe.away"), path.join(FIX, "steam.exe"));
+      fs.rmSync(bareManifest, { force: true });
+      fs.rmSync(bareDir, { recursive: true, force: true });
+    }
+
     /* ---- the list ----------------------------------------------------- */
     const list = await api("api/steam.php");
     check("finds the Steam it is pointed at", list.ok && list.found && list.steam.toLowerCase() === FIX.toLowerCase());
