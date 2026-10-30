@@ -10,6 +10,7 @@
     blurs the words and the picture (.holding) and leaves the panel still.   */
 
 import { favStar, myStars, openDetails } from "./details.js";
+import { needsEmulator } from "./emuhelp.js";
 import { launch } from "./launch.js";
 import { addsMissing, offersPictures } from "./missing.js";
 import { getRetroArch, raLabel } from "./raoffer.js";
@@ -157,7 +158,8 @@ export function paintHero(g) {
   kv("launches", String(g.plays || 0));
   kv("last played", g.lastPlayed ? g.lastPlayed.slice(0, 10) : "never");
 
-  var fix = g.playable ? null : raLabel(g.raOffer);
+  // RetroArch's press, or the emulators to get (js\emuhelp.js, through launch).
+  var fix = g.playable ? null : raLabel(g.raOffer) || (needsEmulator(g) ? "Get an emulator..." : null);
   H.play.textContent = g.playable ? "Play" : fix || "Cannot play";
   H.play.disabled = !g.playable && !fix;
 }

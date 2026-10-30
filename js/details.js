@@ -1,6 +1,7 @@
 import { cheatsFact } from "./cheattab.js";
 import { detailTabs, detailTabsOff, openTab, tabPane } from "./detailtabs.js";
 import { openDocs } from "./docs.js";
+import { askEmulator, needsEmulator } from "./emuhelp.js";
 import { dropExtPage } from "./extensions.js";
 import { dropFanPage } from "./fanprojects.js";
 import { openGameButtons } from "./gamebtns.js";
@@ -285,9 +286,16 @@ function buildDetails(g, full) {
   back.addEventListener("click", closeDetails);
   // No emulator yet where RetroArch would play it: the button gets RetroArch (js\raoffer.js).
   var fix = g.playable ? null : raLabel(g.raOffer);
-  var play = el("button", "primary", g.playable ? "▸ Play" : fix || "Cannot play");
-  play.disabled = !g.playable && !fix;
-  play.addEventListener("click", function () { if (fix) { getRetroArch("Details"); return; } closeDetails(); launch(); });
+  // No emulator where RetroArch is not the way: the emulators to get, over Details (js\emuhelp.js).
+  var getEmu = !fix && needsEmulator(g);
+  var play = el("button", "primary", g.playable ? "▸ Play" : fix || (getEmu ? "Get an emulator..." : "Cannot play"));
+  play.disabled = !g.playable && !fix && !getEmu;
+  play.addEventListener("click", function () {
+    if (fix) { getRetroArch("Details"); return; }
+    if (getEmu) { askEmulator(g); return; }
+    closeDetails();
+    launch();
+  });
   bar.appendChild(back);
   bar.appendChild(play);
   // Its manual, maps and guides (js\docs.js). The row only knows there are

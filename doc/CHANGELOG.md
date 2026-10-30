@@ -2,6 +2,10 @@
 
 Newest first: what changed for the person at the screen.
 
+## 2026-10-30
+
+- **A game with no emulator says what to get, and where.** A game whose console has no emulator, and that RetroArch does not play (GameCube, Wii, Wii U, PlayStation 2 and 3, Xbox, Xbox 360 and others), showed a greyed Cannot play, and Enter gave only a red line at the bottom. Its button now reads Get an emulator..., in the game panel, in Details and in the game's menu, and it and Play open a window that says it kindly: Xsegon comes with RetroArch and no other emulator, so that console's is yours to get, free, from the people who make it. It names the well-known one (Dolphin, Cemu, PCSX2, RPCS3, xemu or Xenia), with a press that opens its makers' own website and what it asks for that Xsegon never provides, such as the BIOS from a console of your own. Add an emulator... is its press, and Emulators for every console... lists them all, as does Settings > Emulators > Emulators for other consoles. Xsegon names none for Switch and 3DS, and never provides games, BIOS or firmware.
+
 ## 2026-10-29
 
 - **Paste a copied picture as a game's box art.** Copy a picture anywhere, such as Copy image on a web page or a Snipping Tool shot, then right-click the game, or the picture beside the list, and choose Paste as Box Art. No file to save first. The first time, the browser asks to let Xsegon see what you copied, and only then. A box art you put in before asks before it is replaced, since nothing brings it back; an original is replaced at once, and Change Pictures' Reset brings it back.

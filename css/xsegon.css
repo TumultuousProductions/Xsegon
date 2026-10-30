@@ -429,6 +429,17 @@ body.no-anim .ctx { animation: none; }
    is dangerous, so it is not dressed in red. */
 .setup-confirm .confirm { border-color: var(--rule-hi); }
 .setup-confirm .confirm h2 { color: var(--cyan); }
+/* Emulators to get yourself (js\emuhelp.js): each a name, its makers' site and what it asks for. */
+.eh-emu { margin: 8px 0; padding: 8px 12px; border: 1px solid var(--rule); background: rgba(var(--well-rgb), .35); }
+.eh-head { display: flex; align-items: center; gap: 12px; }
+.eh-name { flex: 1 1 auto; color: var(--ink); font-weight: 700; letter-spacing: .04em; }
+.eh-emu .eh-needs { margin: 6px 0 0; }
+.eh-all { margin-top: 4px; }
+.eh-sect { margin: 20px 0 0; }
+.eh-title { margin: 0 0 8px; font-size: calc(13px * var(--fs)); letter-spacing: .14em; color: var(--cyan); text-transform: uppercase; }
+.eh-console { margin: 12px 0; }
+.eh-console-name { margin: 0 0 4px; color: var(--ink); }
+.eh-never { margin-top: 20px; }
 /* No games found (js\nofound.js): four ways on, each on one line, and a
    wrap to a second row of buttons rather than words broken in two. */
 .nofound .confirm { width: min(720px, 100%); }
