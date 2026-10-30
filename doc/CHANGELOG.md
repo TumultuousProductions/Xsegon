@@ -4,6 +4,7 @@ Newest first: what changed for the person at the screen.
 
 ## 2026-10-30
 
+- **Xsegon 0.21.** The five changes below, back to 0.20, as a download for Windows, Linux and Mac, and as an update for copies of 0.18.1, 0.19 and 0.20.
 - **A game with no emulator says what to get, and where.** A game whose console has no emulator, and that RetroArch does not play (GameCube, Wii, Wii U, PlayStation 2 and 3, Xbox, Xbox 360 and others), showed a greyed Cannot play, and Enter gave only a red line at the bottom. Its button now reads Get an emulator..., in the game panel, in Details and in the game's menu, and it and Play open a window that says it kindly: Xsegon comes with RetroArch and no other emulator, so that console's is yours to get, free, from the people who make it. It names the well-known one (Dolphin, Cemu, PCSX2, RPCS3, xemu or Xenia), with a press that opens its makers' own website and what it asks for that Xsegon never provides, such as the BIOS from a console of your own. Add an emulator... is its press, and Emulators for every console... lists them all, as does Settings > Emulators > Emulators for other consoles. Xsegon names none for Switch and 3DS, and never provides games, BIOS or firmware.
 
 ## 2026-10-29
