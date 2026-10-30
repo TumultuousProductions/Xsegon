@@ -1,5 +1,6 @@
 import { inApp } from "./appwindow.js";
 import { closeEditor, setEditorOnClose, toolFrame } from "./editors.js";
+import { askEmulator, needsEmulator } from "./emuhelp.js";
 import { askHardcore } from "./hardcoreask.js";
 import { load } from "./library.js";
 import { L, api, postJson } from "./log.js";
@@ -55,6 +56,8 @@ function launchGame(g) {
   // No emulator yet where RetroArch would play it: the press that gets it, not a red line.
   if (!g.playable && raLabel(g.raOffer)) { askRetroArch(g); return; }
   if (!g.playable && g.raOffer) { showStrip(g.title + ": " + g.why, false); return; }
+  // No emulator where RetroArch is not the way: what to get and where, not a red line.
+  if (needsEmulator(g)) { askEmulator(g); return; }
   if (!g.playable) { showStrip("cannot launch: " + (g.why || "no command"), true); return; }
 
   // Ask before launching (Settings > Launching): the yes comes first. The

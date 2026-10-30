@@ -3,6 +3,7 @@
 
 import { achievementsPart } from "./achsettings.js";
 import { openEmuAdd } from "./emuadd.js";
+import { openEmuList } from "./emuhelp.js";
 import { iconEl } from "./icons.js";
 import { showStrip } from "./launch.js";
 import { L, api, postJson } from "./log.js";
@@ -38,6 +39,9 @@ export function emulatorsPage(part, actionRow) {
   top.appendChild(actionRow("Add an emulator",
     "A program of your own for a console, such as Dolphin, PCSX2 or DuckStation. Choose it, select its consoles, and their games start in it.",
     "Add...", function () { openAdd(null); }));
+  top.appendChild(actionRow("Emulators for other consoles",
+    "The well-known emulators for the consoles RetroArch does not play, each with its makers' website. Xsegon does not come with them: you get them yourself, free.",
+    "Show...", function () { closeSettings("stay"); openEmuList({ after: function () { openSettings("emulators"); } }); }));
   var box = el("div", "emu-list");
   var note = el("p", "mt-note", "reading the table...");
   mine.appendChild(box);

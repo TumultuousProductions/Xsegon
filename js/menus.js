@@ -15,6 +15,7 @@ import { openDetails, toggleFav } from "./details.js";
 import { openDocs } from "./docs.js";
 import { hideGame, openEditor, openLocalEditor, removeLocal } from "./editors.js";
 import { openEmuAdd } from "./emuadd.js";
+import { askEmulator, needsEmulator } from "./emuhelp.js";
 import { openEmuMove } from "./emumove.js";
 import { openEmuPicker } from "./emuset.js";
 import { openExtPage } from "./extensions.js";
@@ -267,6 +268,8 @@ export function openGameMenu(i, x, y) {
     // No emulator yet where RetroArch would play it: the press that gets it (js\raoffer.js).
     { icon: "disc", label: raLabel(g.raOffer) || "", hidden: g.playable || !raLabel(g.raOffer), tip: g.why,
       run: function () { getRetroArch("the game menu"); } },
+    // No emulator where RetroArch is not the way: the emulators to get (js\emuhelp.js).
+    { icon: "disc", label: "Get an emulator...", hidden: !needsEmulator(g), tip: g.why, run: function () { askEmulator(g); } },
     // A Steam game's own program, for when Steam or the internet is not
     // there. Play itself goes through Steam.
     { icon: "play", label: "Play without Steam", hidden: !g.steam,

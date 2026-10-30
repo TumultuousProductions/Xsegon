@@ -80,6 +80,7 @@ const GROUPS = {
   wired: "./t-wired",
   pads: "./t-pads",
   emuadd: "./t-emuadd",
+  emuhelp: "./t-emuhelp",
   emumove: "./t-emumove",
   phone: "./t-phone",
   jobs: "./t-jobs",
