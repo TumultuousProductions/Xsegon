@@ -447,7 +447,7 @@ module.exports = async function (b, check) {
     check("Make is offered where the list says how, from the team's own website or GitHub only",
       [mk["t-make"] && mk["t-make"].make, mk["t-make"] && mk["t-make"].base.state, mk["t-offsite"] && mk["t-offsite"].make], [true, "fits", false]);
     check("a project with no way to make it is refused", (await api("api/fanprojects.php", { make: "t-offsite" })).ok, false);
-    const ended = () => apiUntil(async () => { const j = (await api("api/fanprojects.php?job=1")).job; return j && j.state !== "running" ? j : null; }, 30000);
+    const ended = () => apiUntil(async () => { const j = (await api("api/fanprojects.php?job=1")).job; if (j && j.state === "failed") { console.log("    the job said: " + (j.name || "") + ": " + j.error); } return j && j.state !== "running" ? j : null; }, 30000);
     const bad = await api("api/fanprojects.php", { make: "t-badcrc" });
     const badJob = await ended();
     check("a patch that is not the one its GitHub release lists: nothing is made, and it says why",
