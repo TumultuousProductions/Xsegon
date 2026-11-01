@@ -2,9 +2,10 @@
     only when you press for it (api\extensions.php, roadmap AU11). Opened from
     its card on the consoles screen and from the Games menu. Drawn with the
     games' own boxes, as the Fan projects page is, so every theme dresses it.
-    Flashpoint is its one entry so far: found on this PC, or got from its
-    makers; set up with the helper that starts its games without its own
-    window; its playlists brought in as a Flashpoint list.                   */
+    Flashpoint: found on this PC, or got from its makers; set up with the
+    helper that starts its games without its own window; its playlists brought
+    in as a Flashpoint list. A plain program such as Quiver Launcher: found or
+    got the same way, then opened, its signature read by the server first.   */
 
 import { dropDetails } from "./details.js";
 import { dropFanPage } from "./fanprojects.js";
@@ -157,7 +158,7 @@ export function dropExtPage() {
 
 function n(v) { return Number(v || 0).toLocaleString("en-GB"); }
 function mb(bytes) { return bytes >= 1073741824 ? (bytes / 1073741824).toFixed(1) + " GB" : Math.max(1, Math.round(bytes / 1048576)) + " MB"; }
-function fpName(x) { return x.version ? "Flashpoint " + x.version.number + (x.version.edition ? " " + x.version.edition : "") : "Flashpoint"; }
+function withVersion(x) { return x.version ? x.short + " " + x.version.number + (x.version.edition ? " " + x.version.edition : "") : x.short; }
 function favourites(x) { return (x.playlists || []).filter(function (p) { return p.favourites; })[0] || null; }
 // Flashpoint's own best-of list, named by the server only when there are no favourites to bring in.
 function starter(x) { return (x.playlists || []).filter(function (p) { return p.file === x.starter; })[0] || null; }
@@ -165,13 +166,14 @@ function starter(x) { return (x.playlists || []).filter(function (p) { return p.
 // Where it stands, in one line and its colour.
 function extStatus(x) {
   if (XP && XP.working === x.id) { return ["", "At work: the bar in the corner shows how far it is"]; }
-  if (x.next === "get") { return ["", "Not found on this PC. Get fetches " + (x.get ? "Flashpoint " + x.get.version + " (" + mb(x.get.size) + ")" : "it") + " from its makers"]; }
+  if (x.next === "get") { return ["", "Not found on this PC. Get fetches " + (x.get ? x.short + " " + x.get.version + " (" + mb(x.get.size) + ")" : "it") + " from its makers"]; }
+  if (x.next === "run") { return ["ok", withVersion(x) + " is on this PC, ready to open"]; }
   if (x.next === "open") { return ["warn", "On this PC, with no game list yet: open it once so it finishes setting itself up"]; }
-  if (x.next === "none") { return ["no", fpName(x) + " is on this PC, and Xsegon does not know how to start its games yet"]; }
-  if (x.next === "setup") { return ["warn", fpName(x) + " is on this PC. Set up fetches the small helper that starts its games (" + mb(x.fit.size) + ")"]; }
-  if (x.next === "bring" && starter(x)) { return ["ok", fpName(x) + " is set up, with no favourites in it yet. Bring in Flashpoint's best to start"]; }
-  if (x.next === "bring") { return ["ok", fpName(x) + " is set up. Bring in its favourites next"]; }
-  return ["ok", fpName(x) + ": " + n(x.mine) + (x.mine === 1 ? " game" : " games") + " in your library, in the Flashpoint list"];
+  if (x.next === "none") { return ["no", withVersion(x) + " is on this PC, and Xsegon does not know how to start its games yet"]; }
+  if (x.next === "setup") { return ["warn", withVersion(x) + " is on this PC. Set up fetches the small helper that starts its games (" + mb(x.fit.size) + ")"]; }
+  if (x.next === "bring" && starter(x)) { return ["ok", withVersion(x) + " is set up, with no favourites in it yet. Bring in Flashpoint's best to start"]; }
+  if (x.next === "bring") { return ["ok", withVersion(x) + " is set up. Bring in its favourites next"]; }
+  return ["ok", withVersion(x) + ": " + n(x.mine) + (x.mine === 1 ? " game" : " games") + " in your library, in the Flashpoint list"];
 }
 
 function extTile(x) {
@@ -249,7 +251,7 @@ function extPanel(x) {
   var st = extStatus(x);
   kv("Where it stands", st[1], st[0] === "ok");
   if (x.folder) {
-    kv("On this PC", fpName(x) + " in " + x.folder);
+    kv("On this PC", withVersion(x) + " in " + x.folder);
     if (x.games !== null && x.games !== undefined) { kv("Its list", n(x.games) + " games and animations"); }
     var fav = favourites(x);
     if (fav) { kv("Your favourites", n(fav.count) + " in Flashpoint, " + n(fav.here) + " of them in Xsegon"); }
@@ -261,6 +263,8 @@ function extPanel(x) {
   }
   kv("Size", x.size || "not given");
   kv("Licence", x.licence || "none given");
+  if (x.sends) { kv("What it sends", x.sends); }
+  if (x.checks) { kv("Xsegon checks", x.checks); }
   kv("Website", address(x.page));
   info.appendChild(stats);
   XP.hero.appendChild(info);
@@ -275,8 +279,8 @@ function extPanel(x) {
 // The panel's first button is the next thing to do; A on a pad presses it.
 function extFirst(x) {
   var atWork = XP.working ? "Something is at work: the bar in the corner shows how far it is" : null;
-  if (x.next === "get") { return extButton("Get Flashpoint", function () { extGet(x); }, true, atWork); }
-  if (x.next === "open") { return extButton("Open Flashpoint", function () { extLauncher(x); }, true); }
+  if (x.next === "get") { return extButton("Get " + x.short, function () { extGet(x); }, true, atWork); }
+  if (x.next === "open" || x.next === "run") { return extButton("Open " + x.short, function () { extLauncher(x); }, true); }
   if (x.next === "setup") { return extButton(XP.working === x.id ? "Being set up" : "Set up", function () { extSetup(x); }, true, atWork); }
   if (x.next === "bring") {
     var fav = favourites(x), best = starter(x);
@@ -304,25 +308,26 @@ function extMore(x) {
     var other = extButton("Other playlists...", function () { extPlaylists(x, other); });
     out.push(other);
   }
-  if (x.folder && x.next !== "open") { out.push(extButton("Open Flashpoint", function () { extLauncher(x); })); }
+  if (x.folder && x.next !== "open" && x.next !== "run") { out.push(extButton("Open " + x.short, function () { extLauncher(x); })); }
   out.push(extButton(x.folder ? "Choose another folder..." : "Find it in a folder...", function () { extChoose(x); }));
   if (!XP.first || XP.first.dataset.opens !== "page") { out.push(extButton("Website", function () { extOpenUrl(x, "page"); })); }
   if (x.next === "get" && x.get) { out.push(extButton("Its downloads page", function () { extOpenUrl(x, "listed"); })); }
   return out;
 }
 
-// Get: the folder it goes in chosen first (a Flashpoint folder is made in it), then one download in the corner.
+// Get: the folder it goes in chosen first (a folder of its own is made in it), then one download in the corner.
 function extGet(x) {
-  pickWindowsFolder("Choose where Flashpoint goes (a Flashpoint folder is made in it; " + mb(x.get.size) + " to download, up to 4 GB once set up)").then(function (dir) {
+  var g = x.get;
+  pickWindowsFolder("Choose where " + x.short + " goes (a " + g.folder + " folder is made in it; " + mb(g.size) + " to download" + (g.room ? ", " + g.room : "") + ")").then(function (dir) {
     if (!dir) { return; }
     L("EXT", "get " + x.name + " into " + dir);
-    extStart({ get: x.id, into: dir }, x, "Getting Flashpoint " + x.get.version + " from its makers into " + dir + "\\Flashpoint: the bar in the corner shows how far it is");
+    extStart({ get: x.id, into: dir }, x, "Getting " + x.short + " " + g.version + " from its makers into " + dir + "\\" + g.folder + ": the bar in the corner shows how far it is");
   });
 }
 
 function extSetup(x) {
   L("EXT", "set up " + x.name + " pressed");
-  extStart({ setup: x.id }, x, "Setting up " + fpName(x) + ": the bar in the corner shows how far it is");
+  extStart({ setup: x.id }, x, "Setting up " + withVersion(x) + ": the bar in the corner shows how far it is");
 }
 
 function extStart(body, x, said) {
@@ -341,25 +346,26 @@ function extStart(body, x, said) {
   });
 }
 
-// Flashpoint's own window, for what only it does: its first setup, its own settings and updates.
+// Its own window, for what only it does: its first setup, its own settings and updates. A plain program's signature is read first.
 function extLauncher(x) {
+  if (x.next === "run") { showStrip("Checking who signed " + x.short + "...", false, true); }
   postJson("api/extensions.php", { launcher: x.id }).then(function (r) {
-    if (!r || !r.ok) { showStrip("Flashpoint did not open: " + ((r && r.error) || "no answer"), true); return; }
-    L("EXT", "Flashpoint's own window opened");
+    if (!r || !r.ok) { showStrip(x.short + " did not open: " + ((r && r.error) || "no answer"), true); return; }
+    L("EXT", x.short + "'s own window opened");
     sound("select");
-    showStrip(x.next === "open" ? "Flashpoint is opening: let it finish setting itself up, close it, then come back here"
-                                : "Flashpoint is opening in its own window", false);
+    showStrip(x.next === "open" ? x.short + " is opening: let it finish setting itself up, close it, then come back here"
+                                : x.short + " is opening in its own window", false);
   });
 }
 
 // Where it is, when Xsegon did not find it or should look elsewhere: said only from the server's answer.
 function extChoose(x) {
-  pickWindowsFolder("Choose Flashpoint's folder (the one with Launcher, Data and FPSoftware in it)", { start: x.folder || "" }).then(function (dir) {
+  pickWindowsFolder("Choose " + x.short + "'s folder" + (x.holds ? " (the one with " + x.holds + " in it)" : ""), { start: x.folder || "" }).then(function (dir) {
     if (!dir) { return; }
     postJson("api/extensions.php", { folder: dir, id: x.id }).then(function (r) {
       if (!r || !r.ok) { showStrip("That folder was not taken: " + ((r && r.error) || "no answer"), true); sound("back"); return; }
       sound("select");
-      showStrip("Flashpoint's folder is " + r.folder, false);
+      showStrip(x.short + "'s folder is " + r.folder, false);
       extLoad();
     });
   });

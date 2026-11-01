@@ -6,10 +6,10 @@
  *   GET  ?job=1                              Set up or Get at work, or the last one, as its worker left it
  *   POST {"open": "<id>", "which": "page" | "repo" | "listed" | "helper"}
  *                                            its makers' page opened in the default browser
- *   POST {"folder": "<path>", "id": "flashpoint"}   where it is, when Xsegon did not find it ("" forgets)
+ *   POST {"folder": "<path>", "id": "<id>"}  where it is, when Xsegon did not find it ("" forgets)
  *   POST {"setup": "flashpoint"}             its helper fetched and put beside it, in the background
- *   POST {"get": "flashpoint", "into": "<folder>"}  it fetched from its makers and unpacked there, in the background
- *   POST {"launcher": "flashpoint"}          its own window opened, for what only it does (its first setup)
+ *   POST {"get": "<id>", "into": "<folder>"} it fetched from its makers and unpacked there, in the background
+ *   POST {"launcher": "<id>"}                its own window opened, once any signature it must have is read
  *   POST {"bring": "flashpoint", "playlist": "<file>"}   a playlist's games brought into your library
  *   POST {"pictures": "<game id>"}           that game's empty picture slots filled from Flashpoint
  *
@@ -32,7 +32,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
         : '; Flashpoint ' . ($fp['folder'] !== '' ? (string) ($fp['version']['number'] ?? '?') . ' at ' . $fp['folder'] . ', '
             . ($fp['games'] === null ? 'its game list unread' : number_format((int) $fp['games']) . ' games') . ', '
             . (($fp['helperHere']['there'] ?? false) ? 'helper ' . ($fp['helperHere']['tag'] ?? 'of its own') : 'no helper') . ', ' . $fp['mine'] . ' in the library, next ' . $fp['next']
-          : 'not found')));
+          : 'not found'))
+        . implode('', array_map(static fn($x) => isset($x['version']) || isset($x['folder'])
+            ? '; ' . $x['short'] . ' ' . ($x['folder'] !== '' ? (string) ($x['version']['number'] ?? '?') . ' at ' . $x['folder'] : 'not found') . ', next ' . $x['next'] : '',
+            array_filter($list, static fn($x) => $x['id'] !== 'flashpoint'))));
     $job = xs_ext_job();
     xs_json(['ok' => true, 'extensions' => $list, 'ms' => $ms, 'working' => ($job['state'] ?? '') === 'running' ? (string) ($job['id'] ?? '') : null]);
 }
@@ -70,16 +73,22 @@ if (isset($body['open'])) {
 
 if (array_key_exists('folder', $body)) {
     $dir = xs_norm_path(trim((string) $body['folder']));
-    if (($body['id'] ?? 'flashpoint') !== 'flashpoint') {
+    $id = (string) ($body['id'] ?? 'flashpoint');
+    $x = xs_ext_list()[$id] ?? null;
+    if ($id !== 'flashpoint' && !isset($x['program'])) {
         xs_fail('Xsegon knows no such program', 404);
     }
-    if ($dir !== '' && !xs_fp_is($dir)) {
+    if ($id === 'flashpoint' && $dir !== '' && !xs_fp_is($dir)) {
         xs_fail('that folder is not a Flashpoint: Flashpoint\'s own folder holds version.txt, with Launcher, Data and FPSoftware beside it', 422);
     }
-    if (!xs_ext_state_set('flashpoint', ['folder' => $dir], $why)) {
+    if ($id !== 'flashpoint' && $dir !== '' && !xs_ext_prog_is($dir, $x)) {
+        xs_fail('that folder is not ' . $x['short'] . ': its own folder holds ' . (string) ($x['holds'] ?? 'its program'), 422);
+    }
+    if (!xs_ext_state_set($id, ['folder' => $dir], $why)) {
         xs_fail((string) $why, 500);
     }
-    xs_log('EXTN', $dir === '' ? 'the chosen Flashpoint folder forgotten' : 'Flashpoint\'s folder chosen: ' . $dir);
+    $name = (string) ($x['short'] ?? 'Flashpoint');
+    xs_log('EXTN', $dir === '' ? 'the chosen ' . $name . ' folder forgotten' : $name . '\'s folder chosen: ' . $dir);
     xs_json(['ok' => true, 'folder' => $dir]);
 }
 
@@ -89,6 +98,25 @@ if (isset($body['setup']) || isset($body['get'])) {
         xs_fail((string) $why, 409);
     }
     xs_json(['ok' => true, 'job' => xs_ext_job()]);
+}
+
+if (isset($body['launcher']) && $body['launcher'] !== 'flashpoint') {
+    $x = xs_ext_list()[(string) $body['launcher']] ?? null;
+    $root = isset($x['program']) ? xs_ext_prog_root($x) : '';
+    if ($root === '') {
+        xs_fail((string) ($x['short'] ?? 'That program') . ' was not found on this PC', 404);
+    }
+    // No proof of who made it, no start. Read at every start: a folder can be chosen, and a program can be swapped.
+    if (!xs_ext_signed($root, $x['program']['signed'], $x['program']['signer'], $why)) {
+        xs_log('EXTN', $x['short'] . ' not started: ' . $why);
+        xs_fail($why . ', so Xsegon did not start it', 409);
+    }
+    $exe = xs_ext_file($root, $x['program']['exe']);
+    if (!$start($exe, $root)) {
+        xs_fail('Windows did not start ' . $x['short'], 500);
+    }
+    xs_log('EXTN', $x['short'] . ' opened, its signature read: ' . $exe . ($dry ? ' (dry)' : ''));
+    xs_json(['ok' => true, 'exe' => $exe, 'dry' => $dry]);
 }
 
 if (isset($body['launcher'])) {

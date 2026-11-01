@@ -2,6 +2,10 @@
 
 Newest first: what changed for the person at the screen.
 
+## 2026-11-01
+
+- **Quiver Launcher on the Extensions page.** Quiver finds, installs and updates fan PC versions of console games. Get fetches version 3.5.1 from its own GitHub, and Xsegon checks the file's size and SHA-256, has Windows Defender look at it, and reads its Windows signature, then and before every start: if one of those fails, it does not start, and Xsegon says why. A copy already in your Downloads, Desktop, Documents or Games folder is found, or Find it in a folder points to one elsewhere. The panel says what Quiver sends, and that Xsegon does not check what Quiver then installs. Quiver stays a separate program in its own folder, and none of it is in Xsegon's download.
+
 ## 2026-10-30
 
 - **A wrong Steam folder, and a Steam game nothing can start, are said at once.** Settings > Paths > Steam folder kept any folder it was given, and one that was not Steam's only ever found no Steam games, later and without a word. A folder with no steamapps folder in it is now refused, saying where Steam's usually is (C:\Program Files (x86)\Steam), or to leave it blank for Xsegon to find it. And Add Steam games added a game even when nothing could start it, so it failed only at Play: with no steam.exe in the Steam folder (a second Steam library folder chosen as the Steam folder, say) and no program in the game's own folder, it is now not added, and its row and the strip say why. Made on the Mac branch first; now on Windows too.

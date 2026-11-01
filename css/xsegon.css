@@ -5721,6 +5721,8 @@ body.no-glow .flt-tag.on { box-shadow: none; }
 .fanpage .fan-noart { font-size: 10.5px; }
 /* The panel's words are as long as a project's: they wrap, and the picture gives up the room. */
 .fanpage .hero-info { height: auto; }
+/* Extensions has no picture to give up: a long panel scrolls, and its buttons stay in reach. */
+.extpage .hero-info { flex: 0 1 auto; min-height: 0; overflow-y: auto; }
 .fanpage .hero .hero-stats .v { white-space: normal; overflow: visible; overflow-wrap: anywhere; }
 /* Over the picture: what kind of project, its name, and who made it. Under it: its tags, what it adds, the details. */
 .fanpage .hero .fan-top { flex: 0 0 auto; margin: 0 6px 14px; }
