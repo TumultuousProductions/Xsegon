@@ -14,6 +14,7 @@ import { dropFanPage } from "./fanprojects.js";
 import { paintHelp, paintHelpHere } from "./help.js";
 import { heroOn, paintHero, paintHeroArt } from "./hero.js";
 import { artHint } from "./hint.js";
+import { dropHbPage } from "./homebrew.js";
 import { launch } from "./launch.js";
 import { addedEmptyWords, anyFilter, capStrip, clearFilters, filterWords, libraryTotal, load } from "./library.js";
 import { closePicker, listCells, listHead, listMinWidth, listPads, listTemplate, rowClass } from "./list.js";
@@ -607,6 +608,7 @@ export function setView(next) {
   L("VW", view + " -> " + next + (sysStage === "wall" ? " (on the wall)" : ""));
   dropDetails();                         // a new view is never drawn under details
   dropFanPage();                         // nor under the Fan projects page: the screen it covered comes back to change
+  dropHbPage();                          // nor under the Homebrew page
   dropExtPage();                         // nor under the Extensions page
   dropTpPage();                          // nor under Tumultuous Productions' page
   setViewMode(next);

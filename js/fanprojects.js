@@ -9,6 +9,7 @@
 import { dropDetails } from "./details.js";
 import { dropExtPage } from "./extensions.js";
 import { paintHelp, paintHelpHere } from "./help.js";
+import { dropHbPage } from "./homebrew.js";
 import { jobsWatch } from "./jobbars.js";
 import { launchNow, showStrip } from "./launch.js";
 import { L, api, postJson } from "./log.js";
@@ -82,6 +83,7 @@ export function openFanPage() {
   if (FP.open) { return; }
   dropDetails();                         // a game's details never stay over the page
   dropExtPage();                         // nor the Extensions page
+  dropHbPage();                          // nor the Homebrew page
   dropTpPage();                          // nor Tumultuous Productions' page
   stopVideo();                           // nor a snap playing behind it
   // The consoles screen only when it is the one showing: with Systems first off the games show with no stage yet.
@@ -305,7 +307,7 @@ function fanGo(i, quiet) {
   fanPanel(fanShown[fanAt].p);
 }
 
-function fanButton(label, run, primary, off) {
+export function fanButton(label, run, primary, off) {
   var b = el("button", primary ? "primary" : null, label);
   b.type = "button";
   if (off) { b.disabled = true; b.title = off; }
@@ -316,7 +318,7 @@ function fanButton(label, run, primary, off) {
 // The places a project lives, in the order its buttons stand: its website, its GitHub, its community.
 var FAN_LINKS = [["page", "Website"], ["repo", "GitHub"], ["community", "Community"]];
 
-function fanAddress(url) { return url.replace(/^https:\/\/(github\.com\/)?/, "").replace(/\/$/, ""); }
+export function fanAddress(url) { return url.replace(/^https:\/\/(github\.com\/)?/, "").replace(/\/$/, ""); }
 
 // The panel beside the grid: the project's name and who made it over its picture; what it adds, where it stands and its buttons under it.
 function fanPanel(p) {
@@ -433,12 +435,12 @@ function fanPress() {
   b.click();
 }
 
-// The nearest tile that way, by where the tiles stand on screen, so the walk follows the grid's rows and headings.
-function fanStep(dx, dy) {
-  if (!fanShown.length) { return; }
-  var from = fanShown[fanAt].tile.getBoundingClientRect(), best = -1, bestD = Infinity;
-  fanShown.forEach(function (s, k) {
-    if (k === fanAt) { return; }
+// The nearest tile that way, by where the tiles stand on screen, so the walk follows the grid's rows and headings: its place, or -1.
+export function gridNear(shown, at, dx, dy) {
+  if (!shown.length) { return -1; }
+  var from = shown[at].tile.getBoundingClientRect(), best = -1, bestD = Infinity;
+  shown.forEach(function (s, k) {
+    if (k === at) { return; }
     var r = s.tile.getBoundingClientRect();
     var ddx = r.left - from.left, ddy = r.top - from.top;
     if (dx && (Math.sign(ddx) !== dx || Math.abs(ddy) > from.height / 2)) { return; }
@@ -446,6 +448,11 @@ function fanStep(dx, dy) {
     var d = dy ? Math.abs(ddy) * 4 + Math.abs(ddx) : Math.abs(ddx);
     if (d < bestD) { bestD = d; best = k; }
   });
+  return best;
+}
+
+function fanStep(dx, dy) {
+  var best = gridNear(fanShown, fanAt, dx, dy);
   if (best >= 0) { fanGo(best); }
 }
 

@@ -38,6 +38,7 @@ function xs_emu_known(): array
         ['is' => '/^melonds$/',               'name' => 'melonDS',     'args' => '',                       'consoles' => ['Nintendo DS']],
         ['is' => '/^mgba$/',                  'name' => 'mGBA',        'args' => '-f',                     'consoles' => ['Nintendo Game Boy Advance', 'Nintendo Game Boy', 'Nintendo Game Boy Color']],
         ['is' => '/^project64$/',             'name' => 'Project64',   'args' => '',                       'consoles' => ['Nintendo 64']],
+        ['is' => '/^ares$/',                  'name' => 'ares',        'args' => '--system "Nintendo 64" --fullscreen', 'consoles' => ['Nintendo 64']],
         ['is' => '/^snes9x/',                 'name' => 'Snes9x',      'args' => '',                       'consoles' => ['Super Nintendo Entertainment System']],
         ['is' => '/^flycast$/',               'name' => 'Flycast',     'args' => '',                       'consoles' => ['Sega Dreamcast']],
         ['is' => '/^redream$/',               'name' => 'redream',     'args' => '',                       'consoles' => ['Sega Dreamcast']],

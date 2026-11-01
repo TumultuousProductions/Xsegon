@@ -30,9 +30,9 @@ module.exports = async function (b, check) {
   // However many the server sent: the full four when something is recently
   // added (or that one greyed), three only if a fresh library had an empty
   // Favourites too. Count against the API, not against a number, and the
-  // page's own entries after them: Extensions, Fan projects and Tumultuous Productions.
+  // page's own entries after them: Homebrew, Extensions, Fan projects and Tumultuous Productions.
   check("collections ride the rim", await b.ev(`document.querySelectorAll("#syswall .coll").length`),
-        ((await api("api/library.php")).collections || []).length + 3);
+        ((await api("api/library.php")).collections || []).length + 4);
   check("header at the top", await b.ev(`Math.round(document.querySelector("header.top").getBoundingClientRect().top)`), 0);
   // and edge to edge, like the legend at the foot, while the games below it
   // stay in the centred column

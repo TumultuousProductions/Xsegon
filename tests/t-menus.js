@@ -293,9 +293,9 @@ module.exports = async function (b, check) {
   for (const key of ["xsegon", "games", "emulators", "view", "arrange", "images", "badges", "help"]) { bar[key] = await barMenu(key); }
   check("the X opens on Settings, then the controller and the backup", bar.xsegon.labels.slice(0, 3), ["Settings...", "Controller...", "Back up what you made..."]);
   // Hacks to settle carries how many wait, which is this library's own number.
-  check("Games: adding them, a random one, the two lists of what is not there, the hacks that wait for a word, Fan projects and Extensions",
+  check("Games: adding them, a random one, the two lists of what is not there, the hacks that wait for a word, Homebrew, Fan projects and Extensions",
         bar.games.labels.map((l) => l.replace(/^Hacks to settle \(\d+\)\.\.\.$/, "Hacks to settle...")),
-        ["Add Games...", "Scan for Games...", "Add Steam games...", "Surprise me", "Missing Games...", "Check game files...", "Hacks to settle...", "Games you do not have...", "Fan projects...", "Extensions..."]);
+        ["Add Games...", "Scan for Games...", "Add Steam games...", "Surprise me", "Missing Games...", "Check game files...", "Hacks to settle...", "Games you do not have...", "Homebrew...", "Fan projects...", "Extensions..."]);
   /* Get Media is a window, not a menu (js\getmedia.js): each source a row with its button, in sections laid out
      as Settings are, the counts from one look at the library. Find videos from Package is there only where
      private\ is, which adds it after Export. */

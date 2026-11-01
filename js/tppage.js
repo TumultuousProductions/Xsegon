@@ -10,6 +10,7 @@ import { dropDetails } from "./details.js";
 import { dropExtPage } from "./extensions.js";
 import { dropFanPage } from "./fanprojects.js";
 import { paintHelp, paintHelpHere } from "./help.js";
+import { dropHbPage } from "./homebrew.js";
 import { showStrip } from "./launch.js";
 import { L, api, postJson } from "./log.js";
 import { openPadCheck } from "./padcheck.js";
@@ -75,6 +76,7 @@ export function openTpPage() {
   dropDetails();                         // a game's details never stay over the page
   dropFanPage();                         // nor Fan projects or Extensions
   dropExtPage();
+  dropHbPage();
   stopVideo();                           // nor a snap playing behind it
   TP.from = sysStage === "wall" ? "wall" : "inside";
   TP.open = true;

@@ -5,6 +5,7 @@
  *  so this file never has to import js\setup.js.
  */
 
+import { openHbPage } from "./homebrew.js";
 import { L, api } from "./log.js";
 import { showInExplorer } from "./reveal.js";
 import { openScanTool } from "./scan.js";
@@ -38,8 +39,13 @@ export function noGamesBox(beforeOpen, openGuideFn) {
   var guide = el("button", null, "Getting started");
   guide.type = "button";
   guide.addEventListener("click", function () { if (beforeOpen) { beforeOpen(); } openGuideFn(); });
+  // Nothing to scan yet: free games from their makers are something to play today (js\homebrew.js).
+  var free = el("button", null, "Free homebrew games");
+  free.type = "button";
+  free.addEventListener("click", function () { if (beforeOpen) { beforeOpen(); } openHbPage(); });
   btns.appendChild(scan);
   btns.appendChild(guide);
+  btns.appendChild(free);
   box.appendChild(btns);
   var openBtn = null;
   function say() {

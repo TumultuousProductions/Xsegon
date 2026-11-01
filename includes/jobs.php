@@ -31,6 +31,7 @@ function xs_jobs_files(): array
         'cheatlists'    => xs_data_path('cheatlists-job.json'),
         'texpacks'      => xs_data_path('texpacks-job.json'),
         'fanmake'       => xs_data_path('fanmake-job.json'),
+        'homebrew'      => xs_data_path('homebrew-job.json'),
         'extensions'    => xs_data_path('extensions-job.json'),
     ];
 }
@@ -338,6 +339,28 @@ function xs_jobs(): array
         }
     }
 
+    // Get on the Homebrew page: ares first where it is needed, then the game, by size.
+    if (is_file($files['homebrew'])) {
+        require_once __DIR__ . '/homebrew.php';
+        $j = xs_hb_job();
+        $state = (string) ($j['state'] ?? '');
+        if (is_array($j) && $told($files['homebrew'], $state)) {
+            $phase = (string) ($j['phase'] ?? '');
+            $total = (int) ($j['total'] ?? 0);
+            $line  = $phase === 'fetching' ? 'downloading ' . (string) ($j['file'] ?? 'it') . ': ' . xs_jobs_size((int) ($j['bytes'] ?? 0)) . ($total ? ' of ' . xs_jobs_size($total) : '')
+                   : ($phase === 'asking-ares' ? 'asking ares\' makers for their latest release'
+                   : ($phase === 'asking' ? 'asking ' . (string) ($j['name'] ?? 'its') . '\'s team for its latest release'
+                   : ($phase === 'checking' ? 'Windows Defender is checking ares'
+                   : ($phase === 'unpacking' ? 'unpacking ares'
+                   : ($phase === 'writing' ? 'writing it to your games'
+                   : ($phase === 'adding' ? 'adding it to your library' : 'starting'))))));
+            $frac  = $phase === 'fetching' && $total > 0 ? (int) ($j['bytes'] ?? 0) / $total : null;
+            $out[] = xs_jobs_row('homebrew', 'Get ' . (string) ($j['name'] ?? 'a homebrew game'), $state === 'running' ? 'running' : ($state === 'done' ? 'done' : 'failed'),
+                (int) ($j['started'] ?? 0), $line, $frac, true,
+                (string) (($j['error'] ?? '') !== '' ? $j['error'] : (($j['said'] ?? '') !== '' ? $j['said'] : 'nothing was fetched')));
+        }
+    }
+
     // Set up or Get on the Extensions page: one download by size, then checked, unpacked and put in place.
     if (is_file($files['extensions'])) {
         require_once __DIR__ . '/extensions.php';
@@ -457,6 +480,14 @@ function xs_jobs_stop(string $key): bool
         if ((xs_fm_job()['state'] ?? '') === 'running') {
             @touch(xs_fm_stop_path());
             xs_log('FAN', 'make asked to stop: nothing is kept (the corner bar)');
+        }
+        return true;
+    }
+    if ($key === 'homebrew') {
+        require_once __DIR__ . '/homebrew.php';
+        if ((xs_hb_job()['state'] ?? '') === 'running') {
+            @touch(xs_hb_stop_path());
+            xs_log('HBRW', 'get asked to stop: nothing is kept (the corner bar)');
         }
         return true;
     }

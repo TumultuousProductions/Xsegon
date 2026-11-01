@@ -66,6 +66,7 @@ export var TIPS = {
   fileCheck: "What each game's file really is, by its checksum: region and revision, or a translation, a hack or a patch. Files are never changed.",
   hackSettle: "The games that may be hacks, each with the game Xsegon would name for it: say yes, another game, or no hack. A hack shows in the Hacks tab of the game it comes from.",
   wanted: "Every game on record for a console that is not in your library. Star the ones you want and export them as a list.",
+  homebrew: "Free games made by fans, each with the people who made it: one press fetches a game from its makers and it joins its console's list.",
   fanProjects: "Hacks, mods and PC versions made from games you own: each one checked against your copy, with a way to the team that made it.",
   extensions: "Programs Xsegon works with, such as Flashpoint for web games: found on this PC, or fetched from their makers when you press for it.",
   runcheck: "Starts each game for a few seconds to see which ones boot. Games open on the screen while it runs.",

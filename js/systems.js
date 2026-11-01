@@ -6,6 +6,7 @@ import { EXT_KEY, dropExtPage, openExtPage } from "./extensions.js";
 import { FAN_KEY, dropFanPage, openFanPage } from "./fanprojects.js";
 import { openFilterWindow } from "./filterwin.js";
 import { paintHelp } from "./help.js";
+import { HB_KEY, dropHbPage, openHbPage } from "./homebrew.js";
 import { showStrip } from "./launch.js";
 import { addedPeriods, collectionCount, collectionsAll, consoleCounts, filterWords, libraryTotal, load, opensEmpty, periodOf, platformArtUrl, platformsAll, setPeriod, sysShow } from "./library.js";
 import { L, logWarn } from "./log.js";
@@ -52,6 +53,8 @@ function buildSysList() {
     sysList.push({ name: c.key, label: c.label, count: n, show: sysShow[c.key] || null,
                    collection: true, note: c.note || null, off: !!c.note && !opensEmpty(c.key) });
   });
+  // Homebrew first of the pages: games anyone can have, on a page of its own (js\homebrew.js).
+  sysList.push({ name: HB_KEY, label: "Homebrew", count: 0, show: null, collection: true, hb: true, note: null });
   // Fan projects rides last: a page of its own, not a list of games (js\fanprojects.js).
   // Extensions just before it: programs Xsegon works with, a page of its own too (js\extensions.js).
   sysList.push({ name: EXT_KEY, label: "Extensions", count: 0, show: null, collection: true, ext: true, note: null });
@@ -78,6 +81,7 @@ export function repaintWall() {
 // "34 games", or "12 games · 2+ players" while a filter is on: the number
 // is only honest with its condition beside it.
 function countLabel(p) {
+  if (p.hb) { return "Free games made by fans"; }
   if (p.fan) { return "Hacks, mods and PC versions"; }
   if (p.ext) { return "Programs Xsegon works with"; }
   if (p.tp) { return "Help, and the games coming"; }
@@ -96,6 +100,7 @@ export function enterSystems() {
   L("NAV", "the wall, " + sysStyle());
   dropDetails();                         // nothing of a game's stays over the consoles
   dropFanPage();                         // nor the Fan projects page
+  dropHbPage();                          // nor the Homebrew page
   dropExtPage();                         // nor the Extensions page
   dropTpPage();                          // nor Tumultuous Productions' page
   stopVideo();
@@ -117,6 +122,7 @@ export function backToWall() {
   L("NAV", "back to the wall from " + ($platform.value || "all"));
   dropDetails();
   dropFanPage();
+  dropHbPage();
   dropExtPage();
   dropTpPage();
   stopVideo();
@@ -147,6 +153,7 @@ export function backToWall() {
    "" is how List and Grid open from the consoles screen: they have no wall
    shape, so they open the whole library and the back arrow goes back. */
 export function chooseSystem(name) {
+  if (name === HB_KEY) { openHbPage(); return; }
   if (name === FAN_KEY) { openFanPage(); return; }
   if (name === EXT_KEY) { openExtPage(); return; }
   if (name === TP_KEY) { openTpPage(); return; }
@@ -187,6 +194,7 @@ export function chooseSystem(name) {
    request it names the wall's shape over a list. */
 function showInside(name) {
   dropFanPage();                         // a console or every game, chosen from over the Fan projects page
+  dropHbPage();                          // or over the Homebrew page
   dropExtPage();                         // or over the Extensions page
   dropTpPage();                          // or over Tumultuous Productions' page
   setSysStage("inside");
@@ -398,7 +406,7 @@ function paintSysArt(p) {
   if (!sysInfoEl || !p) { return; }
   if (!SI || SI.host !== sysInfoEl) { buildSysInfo(); }
   SI.p = p;
-  SI.mark.textContent = p.fan ? "✦" : p.ext ? "⬇" : p.tp ? "TP" : "★";
+  SI.mark.textContent = p.hb ? "♥" : p.fan ? "✦" : p.ext ? "⬇" : p.tp ? "TP" : "★";
   var url = platformArtUrl(p.name, "device");
   if (SI.img.getAttribute("src") !== url) {
     SI.img.hidden = false;

@@ -24,6 +24,7 @@ import { openFileCheck } from "./filecheck.js";
 import { openFilterWindow } from "./filterwin.js";
 import { openGetMedia } from "./getmedia.js";
 import { hackAsking, openHackSettle } from "./hacksettle.js";
+import { openHbPage } from "./homebrew.js";
 import { iconEl } from "./icons.js";
 import { launch, launchNow, openStates, showStrip } from "./launch.js";
 import { bringInLaunchBox } from "./lbimport.js";
@@ -358,6 +359,8 @@ function mbEntries(which) {
       // The other way round: every game on record for a console that is not
       // in the library, to star and export as a wanted list (js/wanted.js).
       { icon: "star", label: "Games you do not have...", tip: TIPS.wanted, run: openWantedTool },
+      // Free games made by fans (js/homebrew.js), also a card on the consoles screen.
+      { icon: "gamepad", label: "Homebrew...", tip: TIPS.homebrew, run: openHbPage },
       // Hacks, mods and PC versions made from games you have (js/fanprojects.js), also a card on the consoles screen.
       { icon: "wand", label: "Fan projects...", tip: TIPS.fanProjects, run: openFanPage },
       // Programs Xsegon works with, Flashpoint first (js/extensions.js), also a card on the consoles screen.
