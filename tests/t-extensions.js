@@ -3,7 +3,9 @@
    (a game list of three games built with PHP's sqlite3, two playlists, pictures,
    preferences); its favourites come in as games of your own under Flashpoint,
    started through the helper beside it; Set up and Get fetch from stand-ins of
-   their makers' places (data\fan-fixtures\remote) and check what came. Nothing
+   their makers' places (data\fan-fixtures\remote) and check what came. Quiver
+   Launcher is a plain program: fetched the same way, its Windows signature read
+   at Get and at every Open, from a small program Windows itself signed. Nothing
    real is downloaded, opened or started. */
 
 "use strict";
@@ -114,6 +116,12 @@ module.exports = async function (b, check) {
       [true, "Flashpoint Archive", "https://flashpointarchive.org/", true, "CLIFp", "AGPL-3.0"]);
     check("a test copy finds no Flashpoint by itself, so it offers to get one",
       [fp0.section, fp0.folder, fp0.next], ["ready", "", "get"]);
+    const qv0 = (real.extensions || []).find((x) => x.id === "quiver") || {};
+    const qvShipped = JSON.parse(fs.readFileSync(path.join(ROOT, "includes", "extensions", "extensions.json"), "utf8")).extensions.find((x) => x.id === "quiver") || {};
+    check("Quiver Launcher is on the shipped list at 3.5.1, from that tag's own download, never a latest that could move it to another licence",
+      [qv0.name, qv0.section, qv0.next, qv0.folder, (qv0.get || {}).version, /\/releases\/download\/v3\.5\.1\//.test((qvShipped.get || {}).url),
+       /Nova Labs/.test((qvShipped.program || {}).signer), /MIT for 3\.5\.1/.test(qv0.licence), /stays off unless you say yes/.test(qv0.sends), /does not check/.test(qv0.adds)],
+      ["Quiver Launcher", "ready", "get", "", "3.5.1", true, true, true, true, true]);
 
     /* ---- a made-up Flashpoint, chosen as its folder ---------------------------- */
     // The copy holds this PC's own games: Flashpoint ones brought in here are set aside, so the counts below are this test's (kept puts them back).
@@ -191,7 +199,7 @@ module.exports = async function (b, check) {
     const relZip = zipOf([["bin/CLIFp.exe", exe], ["README.md", Buffer.from("read me")]]);
     const relUrl = "https://github.com/xsegon-test/CLIFp/releases/download/v0.9.10/CLIFp-test.zip";
     put(relUrl, relZip);
-    const list = (sum) => ({ extensions: [{ id: "flashpoint", name: "Flashpoint Archive", kind: "Game collection", adds: "a test", by: "the testers",
+    const list = (sum) => ({ extensions: [{ id: "flashpoint", name: "Flashpoint Archive", short: "Flashpoint", kind: "Game collection", adds: "a test", by: "the testers",
       licence: "MIT", page: "https://flashpointarchive.org/", repo: "https://github.com/xsegon-test/launcher", size: "small",
       helper: { name: "CLIFp", by: "the helpers", licence: "AGPL-3.0", repo: "https://github.com/xsegon-test/CLIFp",
                 fits: [{ flashpoint: "12.1", tag: "v0.9.10", asset: "CLIFp-test.zip", size: relZip.length, sha256: sum, exeSize: exe.length },
@@ -347,6 +355,103 @@ module.exports = async function (b, check) {
     fs.writeFileSync(path.join(into, "Flashpoint", "Launcher", "Flashpoint.exe"), "");
     fp = ((await api("api/extensions.php")).extensions || []).find((x) => x.id === "flashpoint") || {};
     check("one with no game list yet is still found, and Open Flashpoint is first", [fp.section, fp.games, fp.next], ["here", null, "open"]);
+
+    /* ---- Quiver Launcher: a plain program, fetched, its signature read, then opened ---- */
+    // Windows signed this small program itself, so the signature read here is a real one.
+    const signedExe = fs.readFileSync(path.join(process.env.WINDIR, "Microsoft.NET", "Framework64", "v4.0.30319", "AddInProcess.exe"));
+    const WINDOWS = "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US";
+    const NOVA = "CN=Nova Labs, O=Nova Labs, L=Epping, S=Victoria, C=AU";
+    const qvZip = (exe) => zipOf([["QuiverLauncher.exe", exe], ["current/QuiverLauncher.exe", exe], ["current/sq.version", Buffer.from("<package><version>3.5.1</version></package>")],
+                                  [".portable", Buffer.alloc(0)]]);
+    const qvUrl = "https://github.com/xsegon-test/quiver/releases/download/v3.5.1/Quiver-test.zip";
+    const qvList = (zip, signer, program) => ({ extensions: [{ id: "quiver", name: "Quiver Launcher", short: "Quiver Launcher", kind: "Fan PC versions", adds: "a test", by: "the testers",
+      licence: "MIT", page: "https://quiverlauncher.com/", size: "small", holds: "QuiverLauncher.exe and a current folder", sends: "what it sends", checks: "what is checked",
+      get: { version: "3.5.1", file: "Quiver-test.zip", url: qvUrl, size: zip.length, sha256: sha256(zip), listed: "https://github.com/xsegon-test/quiver/releases/tag/v3.5.1", folder: "Quiver Launcher" },
+      program: Object.assign({ exe: "QuiverLauncher.exe", signed: ["QuiverLauncher.exe", "current/QuiverLauncher.exe"], signer, versionFile: "current/sq.version" }, program) }] });
+    const useList = (doc) => fs.writeFileSync(path.join(DATA, "extensions-list.json"), JSON.stringify(doc));
+    const quiver = async () => ((await api("api/extensions.php")).extensions || []).find((x) => x.id === "quiver") || {};
+    const qvInto = path.join(fix, "quiver place"), qvDir = path.join(qvInto, "Quiver Launcher");
+    fs.mkdirSync(qvInto, { recursive: true });
+
+    useList(qvList(qvZip(signedExe), ""));
+    let qv = await quiver();
+    check("a program with no signer to read is neither fetched nor started", [qv.next, qv.get], ["none", null]);
+    useList(qvList(qvZip(signedExe), WINDOWS, { exe: "../QuiverLauncher.exe", signed: ["../QuiverLauncher.exe"] }));
+    qv = await quiver();
+    check("nor one whose program lies outside its folder", [qv.next, qv.get], ["none", null]);
+
+    const plainZip = qvZip(Buffer.from("MZ stand-in, not signed"));
+    put(qvUrl, plainZip);
+    useList(qvList(plainZip, WINDOWS));
+    await api("api/extensions.php", { get: "quiver", into: qvInto });
+    const noSignature = (await ended()) || {};
+    check("a download with no signature: nothing is kept, and it says why",
+      [noSignature.state, /QuiverLauncher\.exe has no Windows signature/.test(noSignature.error || ""), /nothing was kept/.test(noSignature.error || ""), fs.readdirSync(qvInto)],
+      ["failed", true, true, []]);
+
+    const goodZip = qvZip(signedExe);
+    put(qvUrl, goodZip);
+    useList(qvList(goodZip, NOVA));
+    await api("api/extensions.php", { get: "quiver", into: qvInto });
+    const otherSigner = (await ended()) || {};
+    check("one signed by someone else: nothing is kept, and it names them",
+      [otherSigner.state, /signed by Microsoft Windows, not Nova Labs/.test(otherSigner.error || ""), fs.readdirSync(qvInto)], ["failed", true, []]);
+
+    useList(qvList(goodZip, WINDOWS));
+    const qvGet = await api("api/extensions.php", { get: "quiver", into: qvInto });
+    const qvJob = (await ended()) || {};
+    check("Get: fetched, checked, its signature read, and put in a folder of its own where chosen",
+      [qvGet.ok, qvJob.state, fs.readdirSync(qvInto), fs.existsSync(path.join(qvDir, ".portable")), fs.existsSync(path.join(qvDir, "current", "QuiverLauncher.exe"))],
+      [true, "done", ["Quiver Launcher"], true, true]);
+    const qvBar = ((await api("api/jobs.php")).jobs || []).find((j) => j.key === "extensions") || {};
+    check("the corner bar says where it is", [qvBar.state, /Quiver Launcher 3\.5\.1 is in .*: open it from the Extensions page/.test(qvBar.said || "")], ["done", true]);
+    qv = await quiver();
+    check("and it is the one found now, with its version, ready to open",
+      [qv.section, qv.folder, qv.version && qv.version.number, qv.next, (qv.put || {}).quiver], ["here", qvDir, "3.5.1", "run", qvDir]);
+    check("Get again never unpacks over it", (await api("api/extensions.php", { get: "quiver", into: qvInto })).ok, false);
+    check("Set up is Flashpoint's alone", (await api("api/extensions.php", { setup: "quiver" })).ok, false);
+
+    const qvOpen = await api("api/extensions.php", { launcher: "quiver" });
+    check("Open reads the signature, then starts its own program (a test copy starts nothing)", [qvOpen.ok, qvOpen.exe, qvOpen.dry], [true, path.join(qvDir, "QuiverLauncher.exe"), true]);
+    const qvExe = path.join(qvDir, "QuiverLauncher.exe");
+    fs.writeFileSync(qvExe, Buffer.from("MZ swapped since"));
+    const swapped = await api("api/extensions.php", { launcher: "quiver" });
+    check("a program swapped since is not started, and it says why",
+      [swapped.ok, /QuiverLauncher\.exe has no Windows signature/.test(swapped.error || ""), /so Xsegon did not start it/.test(swapped.error || "")], [false, true, true]);
+    const changed = Buffer.from(signedExe);
+    changed[Math.floor(changed.length / 2)] ^= 1;
+    fs.writeFileSync(qvExe, changed);
+    check("nor one changed by a single byte", /has been changed since it was signed/.test((await api("api/extensions.php", { launcher: "quiver" })).error || ""), true);
+    fs.writeFileSync(qvExe, signedExe);
+
+    check("a folder that is no Quiver is refused, and said why",
+      [(await api("api/extensions.php", { folder: fix, id: "quiver" })).ok, /not Quiver Launcher/.test((await api("api/extensions.php", { folder: fix, id: "quiver" })).error || "")], [false, true]);
+    const qvForgot = await api("api/extensions.php", { folder: "", id: "quiver" });
+    qv = await quiver();
+    check("its folder forgotten, a test copy finds none by itself", [qvForgot.ok, qv.section, qv.next, qv.folder], [true, "ready", "get", ""]);
+    const qvChose = await api("api/extensions.php", { folder: qvDir, id: "quiver" });
+    qv = await quiver();
+    check("Quiver's own folder is taken, as for a copy you already have", [qvChose.ok, qv.next, qv.folder], [true, "run", qvDir]);
+    check("a program the list does not know is refused", (await api("api/extensions.php", { folder: qvDir, id: "nothing" })).ok, false);
+    check("its release page opens (a test copy opens nothing)", (await api("api/extensions.php", { open: "quiver", which: "listed" })).url, "https://github.com/xsegon-test/quiver/releases/tag/v3.5.1");
+
+    await b.goto(BASE + "/");
+    await b.waitFor(`!document.getElementById("syswall").hidden && document.querySelectorAll("#syswall .sel").length > 0`, 10000);
+    await b.key("End");
+    await b.settled();
+    await b.key("ArrowLeft");
+    await b.settled();
+    await b.key("Enter");
+    const qvButtons = ["Open Quiver Launcher", "Choose another folder...", "Website"];
+    check("on the page: under On this PC, Open first, saying what it sends and what Xsegon checks",
+      await b.until(`[document.querySelector("#extpage .hero-name") && document.querySelector("#extpage .hero-name").textContent,
+                      [...document.querySelectorAll("#extpage .hero .bar button")].map((x) => x.textContent),
+                      [...document.querySelectorAll("#extpage .hero-stats .k")].map((x) => x.textContent).filter((x) => /sends|checks/.test(x))]`,
+        ["Quiver Launcher", qvButtons, ["What it sends", "Xsegon checks"]], 8000), ["Quiver Launcher", qvButtons, ["What it sends", "Xsegon checks"]]);
+    await b.key("Enter");
+    check("Enter opens it, said only from the server's answer",
+      await b.until(`(document.getElementById("strip").textContent || "").includes("Quiver Launcher is opening in its own window")`, true, 8000), true);
+    await b.key("Escape");
   } finally {
     fs.rmSync(fix, { recursive: true, force: true });
     kept.restore();

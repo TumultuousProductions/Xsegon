@@ -1,9 +1,11 @@
 {
-  "about": "Programs Xsegon works with, for the Extensions page (roadmap AU11, js/extensions.js, includes/extensions.php). Each entry was read from its makers' own page on 2026-10-17. Xsegon never ships or hosts any of them: 'get' is the makers' own download, named on the page 'listed', with the size and the SHA-256 that page publishes, fetched only when a person presses Get. 'helper' is a program of another team's that Xsegon puts beside it to start its games, one release for each version of the program it fits ('fits': 'flashpoint' is the version series it targets, as its release names it; 'size' and 'sha256' are the release's zip, as GitHub gives them or as read from the download that day; 'exeSize' tells which release a program already there is). 'page' is the makers' website, 'repo' their source. The list changes with each Xsegon release.",
+  "about": "Programs Xsegon works with, for the Extensions page (roadmap AU11, js/extensions.js, includes/extensions.php). Flashpoint was read from its makers' own page on 2026-10-17, Quiver Launcher from its own GitHub on 2026-11-01. Xsegon never ships or hosts any of them: 'get' is the makers' own download, named on the page 'listed', with the size and the SHA-256 that page publishes, fetched only when a person presses Get, and unpacked into a folder named 'folder' ('room' says how much it takes). 'helper' is a program of another team's that Xsegon puts beside it to start its games, one release for each version of the program it fits ('fits': 'flashpoint' is the version series it targets, as its release names it; 'size' and 'sha256' are the release's zip, as GitHub gives them or as read from the download that day; 'exeSize' tells which release a program already there is). 'program' is one Xsegon only opens: 'exe' is what starts, every file in 'signed' must have 'signer' as its Windows signature's whole subject before it does, 'versionFile' gives its version, and 'look' is what its folder may be called in your own folders. 'short' is its everyday name and 'holds' what its folder has in it; 'sends' and 'checks' are the panel's words on what it sends and what Xsegon checks. 'page' is the makers' website, 'repo' their source. The list changes with each Xsegon release.",
   "extensions": [
     {
       "id": "flashpoint",
       "name": "Flashpoint Archive",
+      "short": "Flashpoint",
+      "holds": "Launcher, Data and FPSoftware",
       "kind": "Game collection",
       "adds": "Web games and animations from the Flash era and after (Flash, Shockwave, Java, HTML5 and more), over 190,000 of them, kept playable by its own team. Xsegon brings your Flashpoint favourites in as a Flashpoint list and starts them without Flashpoint's own window.",
       "by": "the Flashpoint Archive team",
@@ -18,7 +20,8 @@
         "url": "https://download.unstable.life/archive/infinity/Flashpoint%20Infinity%2014.0.3.7z",
         "size": 1148857725,
         "sha256": "17f6ab93a7ca1f0adc468649f3d376aa3deb30caa808837a7735e8a6dc0e7502",
-        "listed": "https://flashpointarchive.org/downloads"
+        "listed": "https://flashpointarchive.org/downloads",
+        "room": "up to 4 GB once set up"
       },
       "helper": {
         "name": "CLIFp",
@@ -33,6 +36,39 @@
           { "flashpoint": "14.0", "tag": "v0.9.16", "asset": "CLIFp_v0.9.16_Windows_Static_x64.zip", "size": 24554972,
             "sha256": "a5491d89a0e77237c1540d5e861a388a6f001c039c809086421612cce23d37ee", "exeSize": 23942656 }
         ]
+      }
+    },
+    {
+      "id": "quiver",
+      "name": "Quiver Launcher",
+      "short": "Quiver Launcher",
+      "holds": "QuiverLauncher.exe, Update.exe and a current folder",
+      "kind": "Fan PC versions",
+      "adds": "Finds, installs and updates fan PC versions of console games from its own catalog, using your own copy of each game. Xsegon fetches Quiver and opens it. What Quiver installs after that is between you and Quiver: Xsegon does not check it.",
+      "by": "Thomas Georgiadis, from SirDiabo's GithubLauncher",
+      "licence": "MIT for 3.5.1. Quiver 4 and later use another licence, so Xsegon stays on 3.5.1 for now",
+      "page": "https://quiverlauncher.com/",
+      "repo": "https://github.com/tgeorgiadis/quiver-launcher",
+      "size": "a 58 MB download, about 125 MB unpacked; each fan version it installs takes its own room",
+      "sends": "At its first start Quiver asks whether to share usage data, and it stays off unless you say yes. Its catalog comes from quiverlauncher.com, which also names each file to download and its checksum, and Quiver tells that site when a file is missing or does not match. Quiver's own updates come from GitHub, after it asks.",
+      "checks": "The download's size and SHA-256, Windows Defender, and before every start the Windows signature of Quiver's programs, which must be Nova Labs, the name on its official builds. If a check fails, it does not start.",
+      "get": {
+        "version": "3.5.1",
+        "released": "2026-10-15",
+        "file": "QuiverLauncher-win-Portable.zip",
+        "url": "https://github.com/tgeorgiadis/quiver-launcher/releases/download/v3.5.1/QuiverLauncher-win-Portable.zip",
+        "size": 57601204,
+        "sha256": "a19bf3abcfa044acea7bbea80088da02cfe2453c3dd6f8da038912d7a7ede6ef",
+        "listed": "https://github.com/tgeorgiadis/quiver-launcher/releases/tag/v3.5.1",
+        "folder": "Quiver Launcher",
+        "room": "about 125 MB unpacked"
+      },
+      "program": {
+        "exe": "QuiverLauncher.exe",
+        "signed": ["QuiverLauncher.exe", "Update.exe", "current/QuiverLauncher.exe"],
+        "signer": "CN=Nova Labs, O=Nova Labs, L=Epping, S=Victoria, C=AU",
+        "versionFile": "current/sq.version",
+        "look": ["QuiverLauncher-win-Portable", "Quiver Launcher"]
       }
     }
   ]

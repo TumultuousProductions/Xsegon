@@ -9,7 +9,8 @@
  * from its own GitHub, checked against the size and SHA-256 the list gives, looked at by
  * Windows Defender, and its program put beside Flashpoint. Get: Flashpoint's own download from
  * its makers, checked against the SHA-256 their page publishes, looked at by Windows Defender
- * and unpacked into the folder chosen. Nothing half done is left behind.
+ * and unpacked into the folder chosen; a program such as Quiver Launcher the same way, its
+ * Windows signature read before it is put in place. Nothing half done is left behind.
  */
 declare(strict_types=1);
 
@@ -38,8 +39,8 @@ $save = static function (bool $now = true) use (&$job, &$last): void {
 $save();
 
 $get = ($job['action'] ?? '') === 'get';
-// Flashpoint's download is a gigabyte: it waits on the drive it is going to, not in Xsegon's data folder.
-$dl = $get ? dirname((string) $job['to']) . $DS . 'Flashpoint download.part' : xs_data_path('extensions.download');
+// A program's download can be a gigabyte: it waits on the drive it is going to, not in Xsegon's data folder.
+$dl = $get ? dirname((string) $job['to']) . $DS . basename((string) $job['to']) . ' download.part' : xs_data_path('extensions.download');
 $tmp = $get ? (string) $job['to'] . '.part' : xs_data_path('extensions-unpack');
 register_shutdown_function(static function () use (&$job, $save, $dl, $tmp): void {
     @unlink($dl);
@@ -132,11 +133,22 @@ if (!xs_fm_unpack($dl, $tmp, $w, true)) {
     $end('failed', $job['file'] . ': ' . $w);
 }
 @unlink($dl);
+// A program that must be signed: read from what came, before any of it is put in place.
+if (!empty($job['signed'])) {
+    $job['phase'] = 'signature';
+    $save();
+    if (!xs_ext_signed($tmp, (array) $job['signed'], (string) $job['signer'], $w)) {
+        $end('failed', $w . ', so nothing was kept');
+    }
+    xs_log('EXTN', $name . ': its Windows signature is as it should be: ' . $job['signer']);
+}
 $job['phase'] = 'placing';
 $save();
-if (!@rename($tmp, (string) $job['to']) && !(is_dir((string) $job['to']) && !array_diff((array) @scandir((string) $job['to']), ['.', '..']) && @rmdir((string) $job['to']) && @rename($tmp, (string) $job['to']))) {
+if (!@rename($tmp, (string) $job['to']) &&!(is_dir((string) $job['to']) && !array_diff((array) @scandir((string) $job['to']), ['.', '..']) && @rmdir((string) $job['to']) && @rename($tmp, (string) $job['to']))) {
     $end('failed', 'it was unpacked but could not be moved to ' . $job['to'] . ' (' . xs_file_error_reason() . ')');
 }
-$put = (array) (xs_ext_state()['flashpoint']['put'] ?? []);
-xs_ext_state_set('flashpoint', ['folder' => (string) $job['to'], 'put' => ['flashpoint' => (string) $job['to'], 'version' => (string) $job['version'], 'on' => date('c')] + $put]);
-$end('done', 'Flashpoint ' . $job['version'] . ' is in ' . $job['to'] . ': open it once from the Extensions page, so it finishes setting itself up');
+$id = (string) $job['id'];
+$put = (array) (xs_ext_state()[$id]['put'] ?? []);
+xs_ext_state_set($id, ['folder' => (string) $job['to'], 'put' => [$id => (string) $job['to'], 'version' => (string) $job['version'], 'on' => date('c')] + $put]);
+$end('done', $job['short'] . ' ' . $job['version'] . ' is in ' . $job['to'] . ': open it '
+    . ($id === 'flashpoint' ? 'once from the Extensions page, so it finishes setting itself up' : 'from the Extensions page'));

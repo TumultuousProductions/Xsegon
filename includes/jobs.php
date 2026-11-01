@@ -349,8 +349,9 @@ function xs_jobs(): array
             $line  = $phase === 'fetching' ? 'downloading ' . (string) ($j['file'] ?? '') . ': ' . xs_jobs_size((int) ($j['bytes'] ?? 0)) . ($total ? ' of ' . xs_jobs_size($total) : '')
                    : ($phase === 'verifying' ? 'checking it is the file its makers list'
                    : ($phase === 'checking' ? 'Windows Defender is checking ' . (string) ($j['file'] ?? 'the download')
-                   : ($phase === 'unpacking' ? 'unpacking it' . (($j['action'] ?? '') === 'get' ? ': this takes a few minutes' : '')
-                   : ($phase === 'placing' ? 'putting it in place' : 'starting'))));
+                   : ($phase === 'unpacking' ? 'unpacking it' . ((int) ($j['size'] ?? 0) > 1073741824 ? ': this takes a few minutes' : '')
+                   : ($phase === 'signature' ? 'checking who signed it'
+                   : ($phase === 'placing' ? 'putting it in place' : 'starting')))));
             $out[] = xs_jobs_row('extensions', (string) ($j['name'] ?? 'Extensions'), $state === 'running' ? 'running' : ($state === 'done' ? 'done' : 'failed'),
                 (int) ($j['started'] ?? 0), $line, $phase === 'fetching' && $total > 0 ? (int) ($j['bytes'] ?? 0) / $total : null, $phase === 'fetching',
                 (string) (($j['error'] ?? '') !== '' ? $j['error'] : (($j['said'] ?? '') !== '' ? $j['said'] : 'nothing was done')));
