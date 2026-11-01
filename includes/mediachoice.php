@@ -28,9 +28,10 @@ require_once __DIR__ . '/arcadevid.php';
 require_once __DIR__ . '/videomatch.php';
 require_once __DIR__ . '/curlmany.php';
 require_once __DIR__ . '/screenscraper.php';
+require_once __DIR__ . '/homebrew.php';
 
 const XS_MC_PLACES = ['ss' => 'ScreenScraper', 'gamesdb' => 'Games Database', 'libretro' => 'libretro', 'steam' => 'Steam',
-                      'archive' => 'Internet Archive', 'arcadedb' => 'Arcade Database'];
+                      'archive' => 'Internet Archive', 'arcadedb' => 'Arcade Database', 'homebrew' => 'Homebrew list'];
 /** ScreenScraper's names for each kind, the better first. */
 const XS_MC_SS_TYPES = ['box' => ['box-2D'], 'box3d' => ['box-3D'], 'logo' => ['wheel-hd', 'wheel'], 'shot' => ['ss'],
                         'fanart' => ['fanart'], 'video' => ['video-normalized', 'video'], 'manual' => ['manuel']];
@@ -82,6 +83,7 @@ function xs_mc_fits(array $g, string $kind): array
         if ($kind !== 'box3d' && xs_lr_system($platform) !== null) { $out['libretro'] = ''; }
         if ($steam !== '' && $kind !== 'box3d') { $out['steam'] = ''; }
     }
+    if (isset(xs_hb_art(xs_hb_match($g) ?? [])[$kind])) { $out['homebrew'] = ''; }
     if (isset($out['ss']) && !xs_ss_ready(xs_ss_account_in_use())) {
         $out['ss'] = 'needs a free ScreenScraper account: Get Media > ScreenScraper videos';
     }
@@ -369,6 +371,18 @@ function xs_mc_ask(string $ticket, array $g, string $place, array $kinds): array
             }
         }
         return $items ? ['state' => 'done', 'why' => '', 'items' => $items] : $none('the Games Database has none for this game');
+    }
+    if ($place === 'homebrew') {
+        // The list's pictures, at their makers' addresses or the site it names, each credited.
+        $art = xs_hb_art(xs_hb_match($g) ?? []);
+        foreach ($kinds as $k) {
+            foreach (array_slice((array) ($art[$k] ?? []), 0, XS_MC_MAX) as $i => $it) {
+                $url = xs_fm_source($it['url']);
+                $items[] = ['ref' => 'homebrew:' . $k . ':' . $i, 'kind' => $k, 'label' => $it['by'], 'sub' => (string) parse_url($it['url'], PHP_URL_HOST),
+                            'view' => xs_mc_viewable($ticket, $url, 'hb-' . (++$n) . '.' . pathinfo($it['url'], PATHINFO_EXTENSION)), 'src' => $url];
+            }
+        }
+        return $items ? ['state' => 'done', 'why' => '', 'items' => $items] : $none('the homebrew list has none for this game');
     }
     if ($place === 'libretro') {
         $sys = xs_lr_system($platform);

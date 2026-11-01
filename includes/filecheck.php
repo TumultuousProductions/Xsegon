@@ -484,7 +484,7 @@ function xs_fc_guess(string $rom, ?string $inner): ?string
         || preg_match('/(?<![a-z])(?:hack|mod)(?![a-z])|\[h[0-9a-z]{0,3}\]|\[H\.[^\]]*\]/i', $name)) {
         return 'hack';
     }
-    if (in_array($folder, ['homebrew', 'home brew'], true) || preg_match('/homebrew|\(PD\)|\(Aftermarket\)/i', $name)) {
+    if (preg_match('/^home ?brew/', $folder) || preg_match('/homebrew|\(PD\)|\(Aftermarket\)/i', $name)) {
         return 'homebrew';
     }
     return null;

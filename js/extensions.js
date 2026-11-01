@@ -10,6 +10,7 @@
 import { dropDetails } from "./details.js";
 import { dropFanPage } from "./fanprojects.js";
 import { paintHelp, paintHelpHere } from "./help.js";
+import { dropHbPage } from "./homebrew.js";
 import { jobsWatch } from "./jobbars.js";
 import { showStrip } from "./launch.js";
 import { load } from "./library.js";
@@ -74,6 +75,7 @@ export function openExtPage() {
   if (XP.open) { return; }
   dropDetails();
   dropFanPage();                         // the pages never stand one over another
+  dropHbPage();
   dropTpPage();
   stopVideo();
   // The consoles screen only when it is the one showing: with Systems first off the games show with no stage yet.

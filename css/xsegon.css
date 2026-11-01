@@ -5732,4 +5732,8 @@ body.no-glow .flt-tag.on { box-shadow: none; }
 .fanpage .hero .pills { margin: 0 0 8px; }
 .fan-adds { margin: 0; color: var(--mute); font-size: 13px; line-height: 1.45; }
 .fanpage .hero .hero-stats { margin-top: 10px; padding-top: 0; }
+/* The Homebrew page: a game's makers in their own words, their warning first. */
+.fanpage .hb-warn, .fanpage .hb-says { margin: 8px 0 0; font-size: 12px; line-height: 1.4; }
+.fanpage .hb-warn { color: var(--warn); }
+.fanpage .hb-says { color: var(--faint); }
 .fan-wait { grid-column: 1 / -1; padding: 18px 2px; color: var(--faint); font-size: 12.5px; letter-spacing: .06em; }

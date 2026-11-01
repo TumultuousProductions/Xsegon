@@ -619,6 +619,11 @@ wants a logo taken out has only to ask: help@tumultuousproductions.site.
   set leaves a gap, Xsegon keeps the first 30 seconds of the game's recording
   as its video and writes the player's name in its log. Xsegon carries none
   of the videos ([includes/archivevid/ABOUT.txt](includes/archivevid/ABOUT.txt)).
+- Pictures of homebrew games, where a person presses Get or asks the Media
+  tab: their makers' own from GitHub and itch.io, and otherwise the
+  screenshots of [N64 Squid](https://n64squid.com), who has written up every
+  N64brew jam game. Xsegon carries none of them: it fetches them from those
+  places on the person's own PC, and each game says whose its pictures are.
 - Manuals for the games with none, where a person asks (Get Media >
   Manuals from online archives): sets of game manuals on the
   [Internet Archive](https://archive.org), a console each, scanned and put

@@ -8,9 +8,9 @@ import { detailTabKey, detailTabPad, toggleTab } from "./detailtabs.js";
 import { openDocs } from "./docs.js";
 import { closeEditor, openEditor, openLocalEditor } from "./editors.js";
 import { extKeys, extOpen, extPad } from "./extensions.js";
-import { fanKeys, fanOpen, fanPad } from "./fanprojects.js";
 import { filterKeys } from "./filterwin.js";
 import { setPadMode } from "./help.js";
+import { pageKeys, pageOpen, pagePad } from "./homebrew.js";
 import { launch, pick } from "./launch.js";
 import { pageBy } from "./letters.js";
 import { listOwed, listSettled, randomGame, toggleFavourites, togglePlayers } from "./library.js";
@@ -276,7 +276,7 @@ function onKey(e) {
     if (e.key === "Enter" && sysStage !== "wall") { play(true); e.preventDefault(); return; }
   }
 
-  if (fanKeys(e)) { return; }            // the Fan projects page, while it is up (js\fanprojects.js)
+  if (pageKeys(e)) { return; }           // the Homebrew and Fan projects pages, while one is up (js\homebrew.js)
   if (extKeys(e)) { return; }            // the Extensions page, while it is up (js\extensions.js)
   if (tpKeys(e)) { return; }             // Tumultuous Productions' page, while it is up (js\tppage.js)
   // A dropdown at the top left with the keys after a click: Xsegon's key acts, once, never its letter jump or arrow as well
@@ -624,7 +624,7 @@ export function pollPad() {
       continue;
     }
 
-    if (fanOpen()) { padPrev[i] = fanPad({ up: up, down: down, left: left, right: right, a: a, b: b, x: x, y: y }, prev); repeatDir = 0; continue; }
+    if (pageOpen()) { padPrev[i] = pagePad({ up: up, down: down, left: left, right: right, a: a, b: b, x: x, y: y }, prev); repeatDir = 0; continue; }
     if (extOpen()) { padPrev[i] = extPad({ up: up, down: down, left: left, right: right, a: a, b: b, x: x, y: y }, prev); repeatDir = 0; continue; }
     if (tpOpen()) { padPrev[i] = tpPad({ up: up, down: down, left: left, right: right, a: a, b: b, lb: lbHit, rb: rbHit }, prev); repeatDir = 0; continue; }
 

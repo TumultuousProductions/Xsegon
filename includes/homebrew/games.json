@@ -1,0 +1,1112 @@
+{
+ "about": "Free homebrew games and the people who made them (js/homebrew.js, includes/homebrew.php). Each entry was read on 2026-11-01: 'team' from the jam's own wiki page and the entry's INFO.txt, 'about' from the team's readme or page, or the jam's write-up at n64squid.com, 'notes' and 'warn' the team's own words from INFO.txt, 'licence' from the team's repo. 'file.drive' is the copy entered in the jam, in the jam's public folder, with its size and SHA-1 read from the file; 'file.release' the pattern of the file on the GitHub releases of 'repo', the team's own. 'pic' is the picture on its tile, shown while online and never kept. 'art' names pictures for the library game by kind, its makers' own first, fetched when a person presses Get or asks the Media tab; 'pictures' names the sites that are not the makers', so each picture is credited. Xsegon hosts none of these files.",
+ "jams": {
+  "n64brew-2025": {
+   "name": "N64brew Game Jam 2025",
+   "theme": "Repair",
+   "page": "https://n64brew.dev/wiki/N64brew_Game_Jam_2025",
+   "community": "https://discord.gg/WqFgNWf",
+   "folder": "https://drive.google.com/drive/folders/16O90QHfmrCzl_heo2B8A__8Brx70I_On"
+  },
+  "n64brew-2024": {
+   "name": "N64brew Game Jam 2024",
+   "page": "https://n64brew.dev/wiki/N64brew_Game_Jam_2024",
+   "community": "https://discord.gg/WqFgNWf",
+   "folder": "https://drive.google.com/drive/folders/1jQKH-gEwxBCBDlO9OMvKt0rD4pyPiYNk"
+  }
+ },
+ "games": [
+  {
+   "id": "junk-runner-64",
+   "name": "Junk Runner 64",
+   "console": "Nintendo 64",
+   "about": "Save your brother by repairing the machines of your village.",
+   "team": "Team Ultrarare (lambertjamesd, Pyroxene, SapphireOnze, beta_dynast, terzdesign)",
+   "basedon": "libdragon and Tiny3D",
+   "jam": "n64brew-2025",
+   "place": 1,
+   "repo": "https://github.com/lambertjamesd/n64brew2025",
+   "licence": "MIT",
+   "emulator": "ares",
+   "tested": "NTSC N64 only",
+   "notes": "The entry technically works without the expansion PAK, but it aint pretty and sometimes OOMs. We couldn't iron out all the crashes but the auto saves are generous so hopefully if it crashes you don't lose much progress",
+   "pic": "https://n64squid.com/wp-content/uploads/2026/03/junk-runner-0.jpg",
+   "art": {
+    "box": [
+     "https://n64squid.com/wp-content/uploads/2026/03/junk-runner-0.jpg"
+    ],
+    "logo": [
+     "https://raw.githubusercontent.com/lambertjamesd/n64brew2025/master/assets/images/menu/game_title.png"
+    ],
+    "shot": [
+     "https://n64squid.com/wp-content/uploads/2026/03/junk-runner-4.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/03/junk-runner-6.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/03/junk-runner-8.jpg"
+    ],
+    "fanart": [
+     "https://n64squid.com/wp-content/uploads/2026/03/junk-runner-2.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/03/junk-runner-5.jpg"
+    ]
+   },
+   "file": {
+    "drive": {
+     "id": "1MMoweVrkuQkwsFSR0XqIownXE-CicYTV",
+     "size": 17006592,
+     "sha1": "ce062bca45bb7cf0c30ae84f9fad232410a0465b"
+    },
+    "release": "\\.z64$"
+   }
+  },
+  {
+   "id": "cathode-quest-64",
+   "name": "Cathode Quest 64",
+   "console": "Nintendo 64",
+   "about": "Play as a CRT tube, platforming over abstract shapes to restore a kingdom.",
+   "team": "HailToDodongo",
+   "basedon": "Pyrite64 and Tiny3D by HailToDodongo, with libdragon",
+   "jam": "n64brew-2025",
+   "place": 2,
+   "page": "https://hailtododongo.github.io/pyrite64/",
+   "repo": "https://github.com/N64brew-Game-Jam-2025/Cathode-Quest-64",
+   "licence": "MIT",
+   "emulator": "ares",
+   "tested": "NTSC and PAL N64",
+   "warn": "Can flicker in ares on title screen, a known ares problem for some users.",
+   "notes": "Requires Expansion pak.",
+   "pic": "https://n64squid.com/wp-content/uploads/2026/03/cathode-quest-0.jpg",
+   "art": {
+    "box": [
+     "https://n64squid.com/wp-content/uploads/2026/03/cathode-quest-0.jpg"
+    ],
+    "shot": [
+     "https://n64squid.com/wp-content/uploads/2026/03/cathode-quest-4.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/03/cathode-quest-6.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/03/cathode-quest-8.jpg"
+    ],
+    "fanart": [
+     "https://n64squid.com/wp-content/uploads/2026/03/cathode-quest-2.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/03/cathode-quest-5.jpg"
+    ]
+   },
+   "file": {
+    "drive": {
+     "id": "162-7kPRwPmdTsXbAUqO4IDJZPqESXtec",
+     "size": 21200896,
+     "sha1": "821e60bd2d267dd9487dc90165a15f96351342c0"
+    }
+   }
+  },
+  {
+   "id": "phazer-64",
+   "name": "Phazer 64",
+   "console": "Nintendo 64",
+   "about": "A retro-flavored 2D space adventure blending UFO action, RPG exploration and platforming. One forbidden button, one blown-up satellite, and zero time before Mom gets home.",
+   "team": "DarkRage64 (Johannes Roth)",
+   "jam": "n64brew-2025",
+   "place": 3,
+   "page": "https://phazer64.com",
+   "repo": "https://github.com/johannesroth-coreproduction/phazer64",
+   "licence": "MIT",
+   "emulator": "ares",
+   "tested": "NTSC and PAL N64",
+   "pic": "https://raw.githubusercontent.com/johannesroth-coreproduction/phazer64/main/github_screenshots/promo_asset.png",
+   "art": {
+    "box": [
+     "https://raw.githubusercontent.com/johannesroth-coreproduction/phazer64/main/github_screenshots/promo_asset.png",
+     "https://img.itch.zone/aW1nLzI1MzQwNzQxLnBuZw==/original/LDj3Rw.png",
+     "https://n64squid.com/wp-content/uploads/2026/04/phazer-64-0.png"
+    ],
+    "shot": [
+     "https://raw.githubusercontent.com/johannesroth-coreproduction/phazer64/main/github_screenshots/01_laser_00.png",
+     "https://raw.githubusercontent.com/johannesroth-coreproduction/phazer64/main/github_screenshots/02_cave_00.png",
+     "https://raw.githubusercontent.com/johannesroth-coreproduction/phazer64/main/github_screenshots/04_planet_00.png",
+     "https://img.itch.zone/aW1nLzI1MzQwODY5LnBuZw==/original/DlnqmR.png",
+     "https://img.itch.zone/aW1hZ2UvNDI1MzU1OS8yNTM0MDQ2NS5wbmc=/original/j6lOPR.png",
+     "https://img.itch.zone/aW1hZ2UvNDI1MzU1OS8yNTM0MDQ2NC5wbmc=/original/ZONZyH.png"
+    ],
+    "fanart": [
+     "https://n64squid.com/wp-content/uploads/2026/04/phazer-64-2.jpg"
+    ]
+   },
+   "file": {
+    "drive": {
+     "id": "13fpnvuCfKsqyv7Xqy-xd_aQuuqA5Z1n7",
+     "size": 7716864,
+     "sha1": "1128b547629d24d09fc406fd3eb682935888c532"
+    },
+    "release": "\\.z64$"
+   }
+  },
+  {
+   "id": "asterisk",
+   "name": "AsteRisk",
+   "console": "Nintendo 64",
+   "about": "Pilot your ship, mine asteroids, manage resources and survive as long as possible.",
+   "team": "Brainpann (Seth Brady)",
+   "basedon": "libdragon and Tiny3D",
+   "jam": "n64brew-2025",
+   "repo": "https://github.com/sethgabrielbrady/moonshot",
+   "licence": "CC BY-NC-SA 4.0",
+   "emulator": "ares",
+   "tested": "NTSC and PAL N64",
+   "notes": "Its starts getting really fun around the 3 minute mark",
+   "pic": "https://n64squid.com/wp-content/uploads/2026/02/asterisk-head.jpg",
+   "art": {
+    "box": [
+     "https://n64squid.com/wp-content/uploads/2026/02/asterisk-head.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/02/asterisk-0.jpg"
+    ],
+    "shot": [
+     "https://n64squid.com/wp-content/uploads/2026/02/asterisk-4.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/02/asterisk-6.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/02/asterisk-8.jpg"
+    ],
+    "fanart": [
+     "https://n64squid.com/wp-content/uploads/2026/02/asterisk-2.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/02/asterisk-5.jpg"
+    ]
+   },
+   "file": {
+    "drive": {
+     "id": "1vIRB9AT6dGBtezwsJZWBr6rvO-dp_Ecq",
+     "size": 1867776,
+     "sha1": "4fdecb9024006031562bcf4a2a218769137afab1"
+    }
+   }
+  },
+  {
+   "id": "biosphere-64",
+   "name": "Biosphere 64",
+   "console": "Nintendo 64",
+   "about": "Explore a deserted island and combine items to progress.",
+   "team": "Milton7854 (Flávio Zavan)",
+   "jam": "n64brew-2025",
+   "page": "https://codeberg.org/flaviozavan/biosphere64",
+   "repo": "https://github.com/N64brew-Game-Jam-2025/biosphere64",
+   "licence": "GPL-2.0",
+   "emulator": "ares",
+   "tested": "NTSC N64 only",
+   "warn": "I would say it's for everyone, there's a skeleton at some point, but that's it.",
+   "notes": "Having an expansion pack allows playing the game in high-res, and is the recommended way of experiencing it.",
+   "pic": "https://n64squid.com/wp-content/uploads/2026/02/biosphere-64-blend-0.jpg",
+   "art": {
+    "box": [
+     "https://n64squid.com/wp-content/uploads/2026/02/biosphere-64-blend-0.jpg"
+    ],
+    "shot": [
+     "https://n64squid.com/wp-content/uploads/2026/02/biosphere-64-4.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/02/biosphere-64-6.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/02/biosphere-64-8.jpg"
+    ],
+    "fanart": [
+     "https://n64squid.com/wp-content/uploads/2026/02/biosphere-64-2.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/02/biosphere-64-5.jpg"
+    ]
+   },
+   "file": {
+    "drive": {
+     "id": "1Cg7ye_PSbXEf4sAovziwPprCnIsu4xev",
+     "size": 40108032,
+     "sha1": "139d7b231904c0f946390755dd6f3b4d6680aef6"
+    }
+   }
+  },
+  {
+   "id": "botboy-64",
+   "name": "BotBoy!64",
+   "console": "Nintendo 64",
+   "about": "A 3D platformer: fix up an abandoned strip mine run down by rogue AI, while BotBoy hunts for the body parts he lost in a fall.",
+   "team": "Psyops Studio (CYPRESS, dakodacomposer, Nupi, StatycTyr, DC.all)",
+   "jam": "n64brew-2025",
+   "page": "https://psyopsstudio.itch.io/botboy64",
+   "repo": "https://github.com/Psyop-Studios/BotBoy64",
+   "licence": "MIT",
+   "emulator": "ares",
+   "tested": "NTSC N64 only",
+   "notes": "Ares please! Hardware works but there's a few crashes that are hardware only that I did not have time to fix. If you 100% the game, get all bolts and golden bolts, you will unlock a great reward.",
+   "pic": "https://raw.githubusercontent.com/Psyop-Studios/BotBoy64/main/assets/banner.png",
+   "art": {
+    "box": [
+     "https://raw.githubusercontent.com/Psyop-Studios/BotBoy64/main/assets/banner.png",
+     "https://n64squid.com/wp-content/uploads/2026/02/botboy-64-0.png"
+    ],
+    "logo": [
+     "https://raw.githubusercontent.com/Psyop-Studios/BotBoy64/main/assets/logo.png"
+    ],
+    "shot": [
+     "https://img.itch.zone/aW1nLzI1MzE4MzA4LnBuZw==/original/hDpVzn.png",
+     "https://img.itch.zone/aW1nLzI1MzE2MTUxLnBuZw==/original/ruynok.png",
+     "https://img.itch.zone/aW1hZ2UvNDI0OTA2MS8yNTMxNTc4OC5wbmc=/original/MOT1UD.png",
+     "https://n64squid.com/wp-content/uploads/2026/02/botboy-64-4.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/02/botboy-64-6.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/02/botboy-64-8.jpg"
+    ],
+    "fanart": [
+     "https://n64squid.com/wp-content/uploads/2026/02/botboy-64-2.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/02/botboy-64-5.jpg"
+    ]
+   },
+   "file": {
+    "drive": {
+     "id": "1MqPMt56tM8M_jSxa53z8IqfikZNy1sVM",
+     "size": 17104896,
+     "sha1": "75c8490ad23ca2770938a2fc7276113dc38368f5"
+    }
+   }
+  },
+  {
+   "id": "box-fix-box-with-box",
+   "name": "Box Fix Box with Box",
+   "console": "Nintendo 64",
+   "about": "You are a box, filling a pattern of boxes by throwing boxes at them.",
+   "team": "Razz",
+   "jam": "n64brew-2025",
+   "repo": "https://github.com/Razz64/N64GameJam2025-BoxFixBoxWithBox",
+   "licence": "none given",
+   "emulator": "ares",
+   "tested": "NTSC N64 only",
+   "notes": "Bad memory leak, but no time to fix, I'm not knowledgeable enough. It doesn't technically need the expansion pack, but you should probably have it. If the screen turns black, just restart the console and select the level you were on.",
+   "pic": "https://n64squid.com/wp-content/uploads/2026/02/box-fix-box-with-box-0.jpg",
+   "art": {
+    "box": [
+     "https://n64squid.com/wp-content/uploads/2026/02/box-fix-box-with-box-0.jpg"
+    ],
+    "shot": [
+     "https://n64squid.com/wp-content/uploads/2026/02/box-fix-box-with-box-4.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/02/box-fix-box-with-box-6.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/02/box-fix-box-with-box-8.jpg"
+    ],
+    "fanart": [
+     "https://n64squid.com/wp-content/uploads/2026/02/box-fix-box-with-box-2.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/02/box-fix-box-with-box-5.jpg"
+    ]
+   },
+   "file": {
+    "drive": {
+     "id": "1y6y5IcnZyUizGnBXKlx7QrmAt7U_f7v4",
+     "size": 2342912,
+     "sha1": "d030970d60281f49cedfbe4245e1ae60f47e1228"
+    }
+   }
+  },
+  {
+   "id": "bunbrush",
+   "name": "Bunbrush in Operation Friendship Repair",
+   "console": "Nintendo 64",
+   "about": "Guide a bunny on a quest to open his front door, repairing things and friendships along the way.",
+   "team": "Team Happy-Ferret (Happy-Ferret, Sloan 누구, jorquera)",
+   "jam": "n64brew-2025",
+   "repo": "https://github.com/mark-temporary/Bunbrush",
+   "licence": "none given",
+   "emulator": "ares",
+   "tested": "NTSC and PAL N64",
+   "notes": "Controls are START to pause (saves are not supported), A is to fast foward tet, Z is your \"left mouse click\", and the stick is to move the cursor.",
+   "pic": "https://raw.githubusercontent.com/mark-temporary/Bunbrush/main/banner.png",
+   "art": {
+    "box": [
+     "https://raw.githubusercontent.com/mark-temporary/Bunbrush/main/banner.png",
+     "https://n64squid.com/wp-content/uploads/2026/03/bunbrush-friendship-repair-0.jpg"
+    ],
+    "shot": [
+     "https://n64squid.com/wp-content/uploads/2026/03/bunbrush-friendship-repair-4.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/03/bunbrush-friendship-repair-6.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/03/bunbrush-friendship-repair-8.jpg"
+    ],
+    "fanart": [
+     "https://n64squid.com/wp-content/uploads/2026/03/bunbrush-friendship-repair-2.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/03/bunbrush-friendship-repair-5.jpg"
+    ]
+   },
+   "file": {
+    "drive": {
+     "id": "1H-ZDOSI6X5VP8uruv6hZhYMb7bwKP4aP",
+     "size": 18033424,
+     "sha1": "c36d2f4263466767cd668dfec1c71b50339ffe5f"
+    }
+   }
+  },
+  {
+   "id": "console-clash",
+   "name": "Console Clash",
+   "console": "Nintendo 64",
+   "about": "Protect your N64 consoles from the competition, moving a single controller across the ports to run up to four of them.",
+   "team": "tfmoe__",
+   "jam": "n64brew-2025",
+   "repo": "https://github.com/marian-m12l/n64brew-gamejam-6",
+   "licence": "none given",
+   "emulator": "ares",
+   "tested": "PAL N64 only",
+   "notes": "The game really needs to be played on hardware. Expansion Pak not strictly required but may work better. My entry is peculiar and requires that you tinker with the console as part of the gameplay, which some players may not be comfortable doing.",
+   "pic": "https://n64squid.com/wp-content/uploads/2026/03/console-clash-0.jpg",
+   "art": {
+    "box": [
+     "https://n64squid.com/wp-content/uploads/2026/03/console-clash-0.jpg"
+    ],
+    "shot": [
+     "https://n64squid.com/wp-content/uploads/2026/03/console-clash-4.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/03/console-clash-6.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/03/console-clash-8.jpg"
+    ],
+    "fanart": [
+     "https://n64squid.com/wp-content/uploads/2026/03/console-clash-2.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/03/console-clash-5.jpg"
+    ]
+   },
+   "file": {
+    "drive": {
+     "id": "1czC0XvJ0ORLtJvncf9k93vnRA_c0yFEU",
+     "size": 688128,
+     "sha1": "9624952047c81f0993e2cce86f4e466b79c00cf9"
+    },
+    "release": "\\.z64$"
+   }
+  },
+  {
+   "id": "damn64",
+   "name": "DamN64",
+   "console": "Nintendo 64",
+   "about": "The dam broke and needs to be repaired before the city floods: an isometric sandbox with two driveable vehicles and split screen.",
+   "team": "vrgl117 games (vieux - vrgl117, Isabel, manuhoz)",
+   "basedon": "libdragon",
+   "jam": "n64brew-2025",
+   "repo": "https://github.com/vrgl117-games/DamN64",
+   "licence": "MIT",
+   "emulator": "ares",
+   "tested": "NTSC N64 only",
+   "notes": "best played 2 players, basic rumble support.",
+   "pic": "https://raw.githubusercontent.com/vrgl117-games/DamN64/main/screenshots/title.png",
+   "art": {
+    "box": [
+     "https://raw.githubusercontent.com/vrgl117-games/DamN64/main/screenshots/title.png",
+     "https://n64squid.com/wp-content/uploads/2026/03/damn64-0.jpg"
+    ],
+    "shot": [
+     "https://raw.githubusercontent.com/vrgl117-games/DamN64/main/screenshots/story.png",
+     "https://raw.githubusercontent.com/vrgl117-games/DamN64/main/screenshots/split.png",
+     "https://raw.githubusercontent.com/vrgl117-games/DamN64/main/screenshots/single.png",
+     "https://n64squid.com/wp-content/uploads/2026/03/damn64-4.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/03/damn64-6.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/03/damn64-8.jpg"
+    ],
+    "fanart": [
+     "https://n64squid.com/wp-content/uploads/2026/03/damn64-2.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/03/damn64-5.jpg"
+    ]
+   },
+   "file": {
+    "drive": {
+     "id": "1qB1mwR_JXW69xl2BJ0w42TCzwWtaNZ7O",
+     "size": 5062656,
+     "sha1": "a2452c40e70fca2bc9776cd09b884852a5a81417"
+    }
+   }
+  },
+  {
+   "id": "fallout-vault-64",
+   "name": "Fallout: Vault 64",
+   "console": "Nintendo 64",
+   "about": "Fallout inspired: defeat the spore plants and repair the vault computer.",
+   "team": "Rumbarrel64",
+   "basedon": "Tiny3D",
+   "jam": "n64brew-2025",
+   "repo": "https://github.com/rumbarrel64/N64brew-GameJam2025",
+   "licence": "none given",
+   "emulator": "ares",
+   "tested": "NTSC N64 only",
+   "notes": "First time submitting!",
+   "pic": "https://n64squid.com/wp-content/uploads/2026/03/fallout-vault-64-0.jpg",
+   "art": {
+    "box": [
+     "https://n64squid.com/wp-content/uploads/2026/03/fallout-vault-64-0.jpg"
+    ],
+    "shot": [
+     "https://n64squid.com/wp-content/uploads/2026/03/fallout-vault-64-4.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/03/fallout-vault-64-6.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/03/fallout-vault-64-8.jpg"
+    ],
+    "fanart": [
+     "https://n64squid.com/wp-content/uploads/2026/03/fallout-vault-64-2.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/03/fallout-vault-64-5.jpg"
+    ]
+   },
+   "file": {
+    "drive": {
+     "id": "1D1vc_kl1Rq2A-zlv17RS8vfd_zm7LCfh",
+     "size": 491520,
+     "sha1": "a799b9fcc2f8a1de4e9a2d90aa66df4faf2306a2"
+    }
+   }
+  },
+  {
+   "id": "ice-fishing",
+   "name": "Ice Fishing",
+   "console": "Nintendo 64",
+   "about": "Catch fish to earn enough money to repair your snowmobile.",
+   "team": "Team zenden (Zest, Ghumdraup, moxy, Cobra!, blamerobots)",
+   "jam": "n64brew-2025",
+   "repo": "https://github.com/N64brew-Game-Jam-2025/Icefishing",
+   "licence": "none given",
+   "emulator": "ares",
+   "tested": "NTSC N64 only",
+   "notes": "Requires Expansion PAK. Technically not finished, so buggy. Unsure if saving works on hardware, but it works in ares.",
+   "pic": "https://n64squid.com/wp-content/uploads/2026/03/icefishing-0.jpg",
+   "art": {
+    "box": [
+     "https://n64squid.com/wp-content/uploads/2026/03/icefishing-0.jpg"
+    ],
+    "shot": [
+     "https://n64squid.com/wp-content/uploads/2026/03/icefishing-4.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/03/icefishing-6.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/03/icefishing-8.jpg"
+    ],
+    "fanart": [
+     "https://n64squid.com/wp-content/uploads/2026/03/icefishing-2.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/03/icefishing-5.jpg"
+    ]
+   },
+   "file": {
+    "drive": {
+     "id": "1Rj1cgB-iHIlY4ayCCR31e5zeAUm6hnHi",
+     "size": 17203200,
+     "sha1": "7a2ba427db5dfdcb76324b3414ad5067d371ff94"
+    }
+   }
+  },
+  {
+   "id": "kaiju-response-team",
+   "name": "Kaiju Response Team",
+   "console": "Nintendo 64",
+   "about": "Race around in a k-car repairing the city from monster damage.",
+   "team": "Kaiju Response Team (Xtagon, Will)",
+   "jam": "n64brew-2025",
+   "repo": "https://github.com/xtagon/kaiju-response-team",
+   "licence": "MIT for the code, with exceptions in its licence file",
+   "emulator": "ares",
+   "warn": "Age 6+. Fire/monster might be a little scary to very young ones",
+   "notes": "Works on Ares v147, default driver settings, Windows 11 but audio stutters. May work better on Gopher64 or other?",
+   "pic": "https://n64squid.com/wp-content/uploads/2026/04/kaiju-response-team-0.jpg",
+   "art": {
+    "box": [
+     "https://n64squid.com/wp-content/uploads/2026/04/kaiju-response-team-0.jpg"
+    ],
+    "shot": [
+     "https://n64squid.com/wp-content/uploads/2026/04/kaiju-response-team-4.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/04/kaiju-response-team-6.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/04/kaiju-response-team-8.jpg"
+    ],
+    "fanart": [
+     "https://n64squid.com/wp-content/uploads/2026/04/kaiju-response-team-2.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/04/kaiju-response-team-5.jpg"
+    ]
+   },
+   "file": {
+    "drive": {
+     "id": "1JcfPZKShqttSAN9gKzuvtggs6bUlhA18",
+     "size": 23265280,
+     "sha1": "ea3151893bc756ca86e4c199d37bfdedc22e49e3"
+    },
+    "release": "^KaijuResponseTeam\\.z64$"
+   }
+  },
+  {
+   "id": "moonfish",
+   "name": "Moonfish",
+   "console": "Nintendo 64",
+   "about": "Run an aquarium, buying and feeding its fish.",
+   "team": "Team GTvLC (ася, themoonmademehigh)",
+   "jam": "n64brew-2025",
+   "repo": "https://github.com/hadahlia/moonfish",
+   "licence": "none given",
+   "emulator": "ares",
+   "tested": "Not tested on hardware",
+   "notes": "press B to spawn food, L and R to switch room, A to click button",
+   "pic": "https://n64squid.com/wp-content/uploads/2026/04/moonfish-0.jpg",
+   "art": {
+    "box": [
+     "https://n64squid.com/wp-content/uploads/2026/04/moonfish-0.jpg"
+    ],
+    "shot": [
+     "https://n64squid.com/wp-content/uploads/2026/04/moonfish-4.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/04/moonfish-6.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/04/moonfish-8.jpg"
+    ],
+    "fanart": [
+     "https://n64squid.com/wp-content/uploads/2026/04/moonfish-2.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/04/moonfish-5.jpg"
+    ]
+   },
+   "file": {
+    "drive": {
+     "id": "146Yac7JQwqLXg_bsfJAzJy_LvvXtxw7l",
+     "size": 983040,
+     "sha1": "780aca838dff1ffd93978eca4c5b7de198b786bf"
+    },
+    "release": "\\.z64$"
+   }
+  },
+  {
+   "id": "mysterious-barricades",
+   "name": "Mysterious Barricades",
+   "console": "Nintendo 64",
+   "about": "Create barriers to defend your towers.",
+   "team": "visualculture",
+   "basedon": "libdragon and Tiny3D",
+   "jam": "n64brew-2025",
+   "page": "https://visualculture.itch.io/mysterious-barricades",
+   "repo": "https://github.com/genecro/MysteriousBarricades",
+   "licence": "none given",
+   "emulator": "ares",
+   "tested": "NTSC N64 only",
+   "notes": "There is no way to save the game, so if you want to resume where you left off, press the sequence c-up, c-right, c-down, c-left on the level select screen to unlock everything",
+   "pic": "https://img.itch.zone/aW1nLzI1MzQ1NTk0LnBuZw==/original/%2BVOtHe.png",
+   "art": {
+    "box": [
+     "https://img.itch.zone/aW1nLzI1MzQ1NTk0LnBuZw==/original/%2BVOtHe.png",
+     "https://n64squid.com/wp-content/uploads/2026/04/mysterious-barricades-0.jpg"
+    ],
+    "logo": [
+     "https://raw.githubusercontent.com/genecro/MysteriousBarricades/master/assets/sprites/mystbarLogo.rgba32.png"
+    ],
+    "shot": [
+     "https://img.itch.zone/aW1nLzI1MzQ2MjQ4LmdpZg==/original/YqAwzh.gif",
+     "https://img.itch.zone/aW1nLzI1MzQ2MTY3LmdpZg==/original/E%2FJMKd.gif",
+     "https://img.itch.zone/aW1nLzI1MzQ2MjE0LmdpZg==/original/RYY2g%2B.gif",
+     "https://n64squid.com/wp-content/uploads/2026/04/mysterious-barricades-4.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/04/mysterious-barricades-6.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/04/mysterious-barricades-8.jpg"
+    ],
+    "fanart": [
+     "https://n64squid.com/wp-content/uploads/2026/04/mysterious-barricades-2.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/04/mysterious-barricades-5.jpg"
+    ]
+   },
+   "file": {
+    "drive": {
+     "id": "1qsWbjgyEmWxRwC5AfniLCNbitP7FQPVB",
+     "size": 8929280,
+     "sha1": "be51706bbccb991b7d5bb3792000d8dbf3917ddc"
+    },
+    "release": "^mystbar\\.z64$"
+   }
+  },
+  {
+   "id": "giallo-crystal-dreams",
+   "name": "Giallo: Crystal Dreams on Death's Wing",
+   "console": "Nintendo 64",
+   "about": "A pick-your-adventure: you wake up falling from a great height and try to recall how you got there, a plane and a jewelry heist.",
+   "team": "Bop0880 (Team Disposable)",
+   "basedon": "libdragon",
+   "jam": "n64brew-2025",
+   "page": "https://team-disposable.itch.io/n64-giallo-crystal-dreams-on-deaths-wing",
+   "repo": "https://github.com/N64brew-Game-Jam-2025/Crystal-dreams-on-deaths-wing",
+   "licence": "none given",
+   "emulator": "ares",
+   "notes": "A newer 1.1 is on its page.",
+   "pic": "https://img.itch.zone/aW1nLzI1MzAzNzcwLnBuZw==/original/dM0%2FYY.png",
+   "art": {
+    "box": [
+     "https://img.itch.zone/aW1nLzI1MzAzNzcwLnBuZw==/original/dM0%2FYY.png"
+    ],
+    "shot": [
+     "https://img.itch.zone/aW1nLzI1MzAzODc3LnBuZw==/original/nsmSoY.png",
+     "https://img.itch.zone/aW1nLzI1Mjk0Nzg5LnBuZw==/original/nSU7fI.png",
+     "https://img.itch.zone/aW1hZ2UvNDI0NTAzNi8yNTMwMzc4Ni5wbmc=/original/7VEJos.png",
+     "https://n64squid.com/wp-content/uploads/2026/04/crystal-dreams-on-deaths-wing-4.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/04/crystal-dreams-on-deaths-wing-6.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/04/crystal-dreams-on-deaths-wing-8.jpg"
+    ],
+    "fanart": [
+     "https://n64squid.com/wp-content/uploads/2026/04/crystal-dreams-on-deaths-wing-2.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/04/crystal-dreams-on-deaths-wing-5.jpg"
+    ]
+   },
+   "file": {
+    "drive": {
+     "id": "1V9LDuIF1JFoeI4jnNzkQOVCSWanmCxmo",
+     "size": 2129920,
+     "sha1": "d1e2407ca9e720a9f5804b37066f1b07d2c2cb4c"
+    }
+   }
+  },
+  {
+   "id": "pandemonium",
+   "name": "Pandemonium",
+   "console": "Nintendo 64",
+   "about": "A dark-fantasy souls game inspired by Elden Ring: defeat the Guardian of the Shackled Sun and dethrone the Demon King.",
+   "team": "Team Zero Cool (BoxingBruin, HelloNewman)",
+   "jam": "n64brew-2025",
+   "repo": "https://github.com/Boxingbruin/Pandemonium",
+   "licence": "GPL-3.0",
+   "emulator": "ares",
+   "tested": "NTSC and PAL N64",
+   "pic": "https://raw.githubusercontent.com/N64brew-Game-Jam-2025/Pandemonium/main/box-art.png",
+   "art": {
+    "box": [
+     "https://raw.githubusercontent.com/N64brew-Game-Jam-2025/Pandemonium/main/box-art.png",
+     "https://raw.githubusercontent.com/Boxingbruin/Pandemonium/main/screenshot-1.png",
+     "https://n64squid.com/wp-content/uploads/2026/04/pandemonium-0.jpg"
+    ],
+    "shot": [
+     "https://raw.githubusercontent.com/Boxingbruin/Pandemonium/main/screenshot-3.png",
+     "https://raw.githubusercontent.com/Boxingbruin/Pandemonium/main/screenshot-1.png",
+     "https://raw.githubusercontent.com/Boxingbruin/Pandemonium/main/screenshot-2.png",
+     "https://n64squid.com/wp-content/uploads/2026/04/pandemonium-4.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/04/pandemonium-6.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/04/pandemonium-8.jpg"
+    ],
+    "fanart": [
+     "https://n64squid.com/wp-content/uploads/2026/04/pandemonium-2.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/04/pandemonium-5.jpg"
+    ],
+    "video": [
+     "https://raw.githubusercontent.com/Boxingbruin/Pandemonium/main/assets/video.mp4"
+    ]
+   },
+   "file": {
+    "drive": {
+     "id": "1PXCbjDiIoKTTOEV6ojsJ6eMI4avaTnbw",
+     "size": 21807104,
+     "sha1": "321345393cf9850c97fd47e5bdcd4d817863dedc"
+    },
+    "release": "\\.z64$"
+   }
+  },
+  {
+   "id": "plug-n-repair",
+   "name": "Plug-N-Repair",
+   "console": "Nintendo 64",
+   "about": "Keep four self-repairing laptops charged from a single power plug, by moving one controller between the four ports.",
+   "team": "Dr. Ludos",
+   "jam": "n64brew-2025",
+   "page": "https://drludos.itch.io/plug-n-repair",
+   "repo": "https://github.com/N64brew-Game-Jam-2025/Plug-N-Repair",
+   "licence": "MIT for the code, CC BY 4.0 for the art",
+   "emulator": "ares",
+   "tested": "PAL N64 only",
+   "notes": "This game is experimental and uses an unique controlling scheme. To play you WILL NOT PRESS any button, but only PLUG and UNPLUG a single controller into the four N64 ports.",
+   "pic": "https://img.itch.zone/aW1nLzI1MzA3MTk1LmpwZw==/original/rU15sS.jpg",
+   "art": {
+    "box": [
+     "https://img.itch.zone/aW1nLzI1MzA3MTk1LmpwZw==/original/rU15sS.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/04/plug-n-repair-0.png"
+    ],
+    "logo": [
+     "https://raw.githubusercontent.com/N64brew-Game-Jam-2025/Plug-N-Repair/main/assets/title.png"
+    ],
+    "shot": [
+     "https://img.itch.zone/aW1nLzI1MzA3NzQ5LmdpZg==/original/BVpCy6.gif",
+     "https://img.itch.zone/aW1nLzI1MzA3ODE3LmpwZw==/original/EHUA50.jpg",
+     "https://img.itch.zone/aW1nLzI1MzA3ODU4LnBuZw==/original/JQfBga.png",
+     "https://n64squid.com/wp-content/uploads/2026/04/plug-n-repair-4.png",
+     "https://n64squid.com/wp-content/uploads/2026/04/plug-n-repair-6.png"
+    ],
+    "fanart": [
+     "https://n64squid.com/wp-content/uploads/2026/04/plug-n-repair-2.png",
+     "https://n64squid.com/wp-content/uploads/2026/04/plug-n-repair-5.png"
+    ]
+   },
+   "file": {
+    "drive": {
+     "id": "13C7K93atjyJpH1ct9JAURb-L-CIDKsh-",
+     "size": 5177344,
+     "sha1": "e5f952a37d457444ccb1e770888ca1c6b3677e6a"
+    }
+   }
+  },
+  {
+   "id": "repairman-vs-creatures",
+   "name": "Repairman vs. Creatures",
+   "console": "Nintendo 64",
+   "about": "A first-person shooter prototype: survive as long as you can while fixing a bolt, a fence and a wire, each with its own tool.",
+   "team": "ValTheRabbit",
+   "jam": "n64brew-2025",
+   "page": "https://valconiglio.itch.io/n64-fps-test-project",
+   "repo": "https://github.com/N64brew-Game-Jam-2025/Repairman",
+   "licence": "Apache-2.0",
+   "emulator": "ares",
+   "tested": "NTSC N64 only",
+   "warn": "The level collision is buggy. Minor flashing warning if you run into a corner.",
+   "pic": "https://img.itch.zone/aW1nLzI1MjUxMDY0LnBuZw==/original/elfYvo.png",
+   "art": {
+    "box": [
+     "https://img.itch.zone/aW1nLzI1MjUxMDY0LnBuZw==/original/elfYvo.png",
+     "https://n64squid.com/wp-content/uploads/2026/04/repairman-vs-creatures-0.jpg"
+    ],
+    "shot": [
+     "https://n64squid.com/wp-content/uploads/2026/04/repairman-vs-creatures-4.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/04/repairman-vs-creatures-6.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/04/repairman-vs-creatures-8.jpg"
+    ],
+    "fanart": [
+     "https://n64squid.com/wp-content/uploads/2026/04/repairman-vs-creatures-2.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/04/repairman-vs-creatures-5.jpg"
+    ]
+   },
+   "file": {
+    "drive": {
+     "id": "14qEJDBMg7AlsMd0TIj9F6cuFY6Vvqt_U",
+     "size": 540672,
+     "sha1": "113d6a2f1911d662c49a472bc14b5e85b843ee68"
+    }
+   }
+  },
+  {
+   "id": "robo-renovations",
+   "name": "Robo Renovations",
+   "console": "Nintendo 64",
+   "about": "Fix the gadgets breaking around the house before it falls apart.",
+   "team": "Team Catch 64 (Gary Jones III, N64 Squid)",
+   "jam": "n64brew-2025",
+   "page": "https://gitlab.com/n64squid/GameJam2025",
+   "repo": "https://github.com/N64brew-Game-Jam-2025/Robo-Renovations",
+   "licence": "none given",
+   "emulator": "ares",
+   "tested": "PAL N64 only",
+   "notes": "Incomplete",
+   "pic": "https://n64squid.com/wp-content/uploads/2026/05/robo-renovations-0.png",
+   "art": {
+    "box": [
+     "https://n64squid.com/wp-content/uploads/2026/05/robo-renovations-0.png"
+    ],
+    "shot": [
+     "https://n64squid.com/wp-content/uploads/2026/05/robo-renovations-4.png",
+     "https://n64squid.com/wp-content/uploads/2026/05/robo-renovations-6.png",
+     "https://n64squid.com/wp-content/uploads/2026/05/robo-renovations-8.png"
+    ],
+    "fanart": [
+     "https://n64squid.com/wp-content/uploads/2026/05/robo-renovations-2.png",
+     "https://n64squid.com/wp-content/uploads/2026/05/robo-renovations-5.png"
+    ]
+   },
+   "file": {
+    "drive": {
+     "id": "14NarOdzeRGjwHKDfnuqqm66UCQanIi0d",
+     "size": 753664,
+     "sha1": "6aeb67e2c5a389666d8c16128ac80a032d70e126"
+    }
+   }
+  },
+  {
+   "id": "suggoma",
+   "name": "someone2639's Ultimate Gadget Game of Martial Arts",
+   "console": "Nintendo 64",
+   "about": "Two shapes bash each other until one is defeated.",
+   "team": "Someone2639",
+   "jam": "n64brew-2025",
+   "repo": "https://github.com/N64brew-Game-Jam-2025/suggoma",
+   "licence": "none given",
+   "emulator": "ares",
+   "pic": "https://n64squid.com/wp-content/uploads/2026/05/suggoma-0.jpg",
+   "art": {
+    "box": [
+     "https://n64squid.com/wp-content/uploads/2026/05/suggoma-0.jpg"
+    ],
+    "shot": [
+     "https://n64squid.com/wp-content/uploads/2026/05/suggoma-4.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/05/suggoma-6.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/05/suggoma-8.jpg"
+    ],
+    "fanart": [
+     "https://n64squid.com/wp-content/uploads/2026/05/suggoma-2.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/05/suggoma-5.jpg"
+    ]
+   },
+   "file": {
+    "drive": {
+     "id": "1RPG8w7PqDrkGBe1SSHklUMfvcouPHjK9",
+     "size": 770048,
+     "sha1": "a0e024954025378dfd114d640158dccf077ef240"
+    }
+   }
+  },
+  {
+   "id": "somewhere-to-escape",
+   "name": "Somewhere to Escape",
+   "console": "Nintendo 64",
+   "about": "Make your way through three demonic levels.",
+   "team": "RaisedWizardry",
+   "basedon": "libdragon, Tiny3D and Bullet",
+   "jam": "n64brew-2025",
+   "repo": "https://github.com/raisedwizardry/somewhere-to-escape",
+   "licence": "MIT",
+   "emulator": "ares",
+   "tested": "NTSC N64 only",
+   "warn": "May trigger epilepsy",
+   "notes": "Requires Expansion PAK.",
+   "pic": "https://n64squid.com/wp-content/uploads/2026/05/somewhere-to-escape-0.jpg",
+   "art": {
+    "box": [
+     "https://n64squid.com/wp-content/uploads/2026/05/somewhere-to-escape-0.jpg"
+    ],
+    "shot": [
+     "https://n64squid.com/wp-content/uploads/2026/05/somewhere-to-escape-4.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/05/somewhere-to-escape-6.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/05/somewhere-to-escape-8.jpg"
+    ],
+    "fanart": [
+     "https://n64squid.com/wp-content/uploads/2026/05/somewhere-to-escape-2.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/05/somewhere-to-escape-5.jpg"
+    ]
+   },
+   "file": {
+    "drive": {
+     "id": "1bC8REPWOEFWTcohbbZSJyYey8qRsB0Nt",
+     "size": 31784960,
+     "sha1": "a6fe158dc7c6eea9aae3506eb7abc77bd8d65dcb"
+    },
+    "release": "\\.z64$"
+   }
+  },
+  {
+   "id": "the-big-fix",
+   "name": "The Big Fix",
+   "console": "Nintendo 64",
+   "about": "Play a dog detective solving a murder mystery. Unfinished.",
+   "team": "Shootfast",
+   "jam": "n64brew-2025",
+   "repo": "https://github.com/Shootfast/the_big_fix",
+   "licence": "none given",
+   "emulator": "ares",
+   "tested": "PAL N64 only",
+   "notes": "Requires Expansion pak.",
+   "pic": "https://n64squid.com/wp-content/uploads/2026/05/the-big-fix-0.jpg",
+   "art": {
+    "box": [
+     "https://n64squid.com/wp-content/uploads/2026/05/the-big-fix-0.jpg"
+    ],
+    "shot": [
+     "https://n64squid.com/wp-content/uploads/2026/05/the-big-fix-4.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/05/the-big-fix-6.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/05/the-big-fix-8.jpg"
+    ],
+    "fanart": [
+     "https://n64squid.com/wp-content/uploads/2026/05/the-big-fix-2.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/05/the-big-fix-5.jpg"
+    ]
+   },
+   "file": {
+    "drive": {
+     "id": "15EwV9XkpfHQ5SDcskSoV7WbFUen-FxoM",
+     "size": 6832128,
+     "sha1": "aa5d205e24eff2783d8c4a6609a3e7df7982ec70"
+    }
+   }
+  },
+  {
+   "id": "tool-time-64",
+   "name": "Tool Time 64",
+   "console": "Nintendo 64",
+   "about": "Walk around throwing hammers at Home Improvement characters.",
+   "team": "Project-Simulacrum (tree, FadedParadigm, hbw)",
+   "jam": "n64brew-2025",
+   "page": "https://project-simulacrum.itch.io/tt64",
+   "repo": "https://github.com/N64brew-Game-Jam-2025/tt64",
+   "licence": "none given",
+   "emulator": "ares",
+   "tested": "NTSC N64 only",
+   "pic": "https://n64squid.com/wp-content/uploads/2026/05/tool-time-64-0.jpg",
+   "art": {
+    "box": [
+     "https://n64squid.com/wp-content/uploads/2026/05/tool-time-64-0.jpg"
+    ],
+    "shot": [
+     "https://n64squid.com/wp-content/uploads/2026/05/tool-time-64-4.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/05/tool-time-64-6.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/05/tool-time-64-8.jpg"
+    ],
+    "fanart": [
+     "https://n64squid.com/wp-content/uploads/2026/05/tool-time-64-2.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/05/tool-time-64-5.jpg"
+    ]
+   },
+   "file": {
+    "drive": {
+     "id": "1nGaEBw-07iqbcpW_MN3AStZtOI5F8Gtc",
+     "size": 1228800,
+     "sha1": "89fd28519f9253dd49200e08734115e937a2025f"
+    }
+   }
+  },
+  {
+   "id": "uncharted-terra-2264",
+   "name": "Uncharted Terra 2264",
+   "console": "Nintendo 64",
+   "about": "A first-person puzzle adventure through a colony on another planet.",
+   "team": "SpookyIluha",
+   "basedon": "libdragon and Tiny3D",
+   "jam": "n64brew-2025",
+   "repo": "https://github.com/SpookyIluha/uncharted-terra-2264",
+   "licence": "Unlicense",
+   "emulator": "ares",
+   "tested": "NTSC N64 only",
+   "warn": "Depictions of dead human's skeletons, horror atmosphere",
+   "notes": "The game may crash in rare cases, also in a case where you beat it and start a new game. Just reload the game in that case.",
+   "pic": "https://raw.githubusercontent.com/SpookyIluha/uncharted-terra-2264/main/metadata/boxart.png",
+   "art": {
+    "box": [
+     "https://raw.githubusercontent.com/SpookyIluha/uncharted-terra-2264/main/metadata/boxart.png",
+     "https://n64squid.com/wp-content/uploads/2026/05/uncharted-terra-2264-0.jpg"
+    ],
+    "logo": [
+     "https://raw.githubusercontent.com/SpookyIluha/uncharted-terra-2264/main/assets/textures/menu/gamelogo.ia8.png"
+    ],
+    "shot": [
+     "https://n64squid.com/wp-content/uploads/2026/05/uncharted-terra-2264-4.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/05/uncharted-terra-2264-6.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/05/uncharted-terra-2264-8.jpg"
+    ],
+    "fanart": [
+     "https://n64squid.com/wp-content/uploads/2026/05/uncharted-terra-2264-2.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/05/uncharted-terra-2264-5.jpg"
+    ]
+   },
+   "file": {
+    "drive": {
+     "id": "1gwV9wPZj9Tgkg7QDwpnpbWb8yYTvKAY3",
+     "size": 8388608,
+     "sha1": "cc26aac5dbfbf39164f3b9c1b3bdb4f61c8b6b24"
+    },
+    "release": "\\.z64$"
+   }
+  },
+  {
+   "id": "untitled-racing-game",
+   "name": "Untitled Racing Game",
+   "console": "Nintendo 64",
+   "about": "Race around a track in a customized vehicle. Unfinished.",
+   "team": "Team Turtledove (lepidotós, chr0nomaton, hashalon, TurtleBox)",
+   "basedon": "libdragon",
+   "jam": "n64brew-2025",
+   "repo": "https://github.com/oschijns/n64brew-gamejam-2025",
+   "licence": "none given",
+   "emulator": "ares",
+   "tested": "NTSC N64 only",
+   "notes": "It's not finished! Submitting for the love of the jam :)",
+   "pic": "https://n64squid.com/wp-content/uploads/2026/05/untitled-racing-game-0.png",
+   "art": {
+    "box": [
+     "https://n64squid.com/wp-content/uploads/2026/05/untitled-racing-game-0.png"
+    ],
+    "shot": [
+     "https://n64squid.com/wp-content/uploads/2026/05/untitled-racing-game-4.png",
+     "https://n64squid.com/wp-content/uploads/2026/05/untitled-racing-game-6.png",
+     "https://n64squid.com/wp-content/uploads/2026/05/untitled-racing-game-8.png"
+    ],
+    "fanart": [
+     "https://n64squid.com/wp-content/uploads/2026/05/untitled-racing-game-2.png",
+     "https://n64squid.com/wp-content/uploads/2026/05/untitled-racing-game-5.png"
+    ]
+   },
+   "file": {
+    "drive": {
+     "id": "1tFaDkSOibPh3dgcpaBXtikZdBdrD6kxB",
+     "size": 376832,
+     "sha1": "f0a531bb28e12c8d905d5a97a96ae47afc99217d"
+    },
+    "release": "\\.z64$"
+   }
+  },
+  {
+   "id": "wizard-critter-64",
+   "name": "Wizard Critter 64",
+   "console": "Nintendo 64",
+   "about": "Defend your cake from relentless enemies.",
+   "team": "Team Wizard Cat (Digi-Space Productions, CandiedCat, bigtimegoat)",
+   "jam": "n64brew-2025",
+   "page": "https://digi-space-productions.itch.io/soweli-pi-wawa-nasa",
+   "repo": "https://github.com/EGAMatsu/soweli-pi-wawa-nasa",
+   "licence": "GPL-3.0 for the code; the art may be shared, not sold",
+   "emulator": "ares",
+   "tested": "NTSC N64 only",
+   "warn": "Audio might be a bit loud, and the graphics (as per most retro systems and modern systems) can cause seizures.",
+   "notes": "Does crash, unsure of the rate on real hardware vs. emulation, need to test the latest",
+   "pic": "https://img.itch.zone/aW1nLzI1MzA1NDMwLnBuZw==/original/RVeGZs.png",
+   "art": {
+    "box": [
+     "https://img.itch.zone/aW1nLzI1MzA1NDMwLnBuZw==/original/RVeGZs.png",
+     "https://n64squid.com/wp-content/uploads/2026/05/wizard-critter-64-0.png"
+    ],
+    "shot": [
+     "https://img.itch.zone/aW1nLzI1MzA1NDUyLnBuZw==/original/y%2B8pkS.png",
+     "https://img.itch.zone/aW1nLzI1MzA1NDcwLnBuZw==/original/0Zc5ab.png",
+     "https://n64squid.com/wp-content/uploads/2026/05/wizard-critter-64-4.png",
+     "https://n64squid.com/wp-content/uploads/2026/05/wizard-critter-64-6.png",
+     "https://n64squid.com/wp-content/uploads/2026/05/wizard-critter-64-8.png"
+    ],
+    "fanart": [
+     "https://n64squid.com/wp-content/uploads/2026/05/wizard-critter-64-2.png",
+     "https://n64squid.com/wp-content/uploads/2026/05/wizard-critter-64-5.png"
+    ]
+   },
+   "file": {
+    "drive": {
+     "id": "1Nfo1ut19JIMpwtkqObsbmx0DYmABAp-K",
+     "size": 688128,
+     "sha1": "e00d4fe7738761e8555b629a6cba9710f8451c8a"
+    }
+   }
+  },
+  {
+   "id": "wrench-wrangle",
+   "name": "Wrench Wrangle",
+   "console": "Nintendo 64",
+   "about": "Place signs on the floor to draw people to your repair shop.",
+   "team": "Fazana",
+   "jam": "n64brew-2025",
+   "repo": "https://github.com/FazanaJ/jam25",
+   "licence": "none given",
+   "emulator": "ares",
+   "tested": "PAL N64 only",
+   "notes": "Expansion PAK required. Game supports multiplayer, will be way more fun and functional with human players over the artificial \"intelligence\" players",
+   "pic": "https://n64squid.com/wp-content/uploads/2026/06/wrench-wrangle-0.jpg",
+   "art": {
+    "box": [
+     "https://n64squid.com/wp-content/uploads/2026/06/wrench-wrangle-0.jpg"
+    ],
+    "logo": [
+     "https://raw.githubusercontent.com/FazanaJ/jam25/main/assets/logo.ci8.png"
+    ],
+    "shot": [
+     "https://n64squid.com/wp-content/uploads/2026/06/wrench-wrangle-4.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/06/wrench-wrangle-6.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/06/wrench-wrangle-8.jpg"
+    ],
+    "fanart": [
+     "https://n64squid.com/wp-content/uploads/2026/06/wrench-wrangle-2.jpg",
+     "https://n64squid.com/wp-content/uploads/2026/06/wrench-wrangle-5.jpg"
+    ]
+   },
+   "file": {
+    "drive": {
+     "id": "12AIGWg_HGmBg0e0FOCKap6s_4Up5k_Cr",
+     "size": 1228800,
+     "sha1": "949c4618df809049cc5023752a50307e00af7833"
+    },
+    "release": "\\.z64$"
+   }
+  },
+  {
+   "id": "n64brew-jam-2024",
+   "name": "N64brew Game Jam 2024",
+   "console": "Nintendo 64",
+   "about": "Every entry of the 2024 jam in one ROM: minigames built on one shared template, each naming its makers.",
+   "team": "the N64brew community",
+   "basedon": "libdragon",
+   "jam": "n64brew-2024",
+   "repo": "https://github.com/n64brew/N64brew-GameJam2024",
+   "licence": "MIT",
+   "emulator": "ares",
+   "file": {
+    "drive": {
+     "id": "1sIgXn7do9fgVDbyJJeuxGcyVez3TNZ8J",
+     "size": 11943936,
+     "sha1": "44c1e9a0983d2db861d83dc399b784393303fb54"
+    },
+    "release": "^gamejam2024\\.z64$"
+   }
+  }
+ ],
+ "pictures": {
+  "n64squid.com": "N64 Squid"
+ }
+}

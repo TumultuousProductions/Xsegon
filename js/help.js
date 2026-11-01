@@ -27,6 +27,8 @@ var HELP = {
   tabrows:  [["↑ ↓", "move"], ["Enter", "select"], ["Type", "find"], ["Esc", "back to the tabs"]],
   settings: [["↑↓", "move"], ["←→", "change"], ["Enter", "open"],
              ["Esc", "back"], ["Type", "find a setting"]],
+  // the Homebrew page (js\homebrew.js)
+  homebrew: [["↑↓←→", "choose"], ["Enter", "the panel's first button"], ["Type", "find a game"], ["Esc", "back"]],
   // the Fan projects page (js\fanprojects.js)
   fanprojects: [["↑↓←→", "choose"], ["Enter", "the panel's first button"], ["Type", "find a project"], ["Esc", "back"]],
   // the Extensions page (js\extensions.js)
@@ -48,6 +50,7 @@ var HELP_PAD = {
   details:  [["LB RB", "tabs"], ["▾", "the list"], ["A", "play"], ["Y", "documents"], ["B", "back"]],
   tabrows:  [["✥", "move"], ["A", "select"], ["B", "back to the tabs"]],
   settings: [["✥", "move"], ["◂▸", "change"], ["A", "open"], ["B", "back"]],
+  homebrew: [["✥", "choose"], ["A", "the panel's first button"], ["X", "their page"], ["B", "back"]],
   fanprojects: [["✥", "choose"], ["A", "the panel's first button"], ["X", "their page"], ["B", "back"]],
   extensions: [["✥", "choose"], ["A", "the panel's first button"], ["X", "its website"], ["B", "back"]],
   tppage: [["✥", "choose"], ["A", "press"], ["LB RB", "Help, My games"], ["B", "back"]]

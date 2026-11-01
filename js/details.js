@@ -6,6 +6,7 @@ import { dropExtPage } from "./extensions.js";
 import { dropFanPage } from "./fanprojects.js";
 import { openGameButtons } from "./gamebtns.js";
 import { paintHelp } from "./help.js";
+import { dropHbPage } from "./homebrew.js";
 import { launch, launchNow, openStates, showStrip, whenSaved } from "./launch.js";
 import { L, api, postJson } from "./log.js";
 import { addsMissing } from "./missing.js";
@@ -480,7 +481,7 @@ export function openDetails() {
   var g = games[sel];
   if (!g) { return; }
   // Surprise me from over the Fan projects page: the details stand over every game, never over the page or the consoles.
-  if ((dropFanPage() || dropExtPage() || dropTpPage()) && sysStage === "wall") { startOnAllGames(); }
+  if ((dropFanPage() || dropHbPage() || dropExtPage() || dropTpPage()) && sysStage === "wall") { startOnAllGames(); }
   sound("select");
 
   buildDetails(g, null);

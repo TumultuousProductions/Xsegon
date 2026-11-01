@@ -2,6 +2,7 @@ import { openDetails } from "./details.js";
 import { dropExtPage } from "./extensions.js";
 import { dropFanPage } from "./fanprojects.js";
 import { paintHelp } from "./help.js";
+import { dropHbPage } from "./homebrew.js";
 import { iconEl } from "./icons.js";
 import { pick, setPick, showStrip } from "./launch.js";
 import { fillPlatforms, load, setCollectionsAll, setPlatformsAll, setPlatformsFilled } from "./library.js";
@@ -446,6 +447,7 @@ export function openLocalEditor(g, onBack) {
               // From the consoles screen (the + in the masthead) this lands
               // inside the new game's platform; the Back button applies.
               dropFanPage();             // the + pressed over the Fan projects page: what it covered is where it lands
+              dropHbPage();              // or over the Homebrew page
               dropExtPage();             // or over the Extensions page
               dropTpPage();              // or over Tumultuous Productions' page
               if ($syswall && !$syswall.hidden) {

@@ -28,7 +28,7 @@ var changed = null;       // the game whose media changed here: the views behind
 var leaving = [];         // what a view lets go of when the tab or the view changes
 var sending = {};         // "id|kind" of a picture let go on a card and still being sent, past a redraw
 var lastCard = null;      // { id, key } selected last on the cards: coming back to them lands there
-var PLACE_ORDER = ["ss", "gamesdb", "libretro", "steam", "archive", "arcadedb"];
+var PLACE_ORDER = ["homebrew", "ss", "gamesdb", "libretro", "steam", "archive", "arcadedb"];
 
 /* The game whose documents folder holds its manuals: a card of several versions keeps them with the first that has any (js\docs.js). */
 function holderOf(g) {

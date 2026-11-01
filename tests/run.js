@@ -88,6 +88,7 @@ const GROUPS = {
   brand: "./t-brand",
   more: "./t-more",
   fanprojects: "./t-fanprojects",
+  homebrew: "./t-homebrew",
   extensions: "./t-extensions",
   tumultuous: "./t-tppage",
   newversion: "./t-newversion",
