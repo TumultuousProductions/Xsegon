@@ -59,8 +59,9 @@ function zipOf(files) {
 
 module.exports = async function (b, check) {
   const kept = new Guard(["homebrew.json", "homebrew-got.json", "homebrew-job.json", "scanned-games.json", "emulators.json", "emu-choice.json",
-                          "overrides.json", "settings.json", "changed.json", "news.json"]);
+                          "overrides.json", "settings.json", "changed.json", "news.json", "hidden.json"]);
   const fix = path.join(DATA, "fan-fixtures"), games = path.join(DATA, "homebrew-games"), aresDir = path.join(DATA, "emulators", "ares");
+  const HOLD = path.join(DATA, "fixtures", "defender-hold");   // keeps the stand-in Defender on a file (tests\sandbox.js)
   try {
     /* ---- the shipped list: the credit ------------------------------------------ */
     for (const f of ["homebrew.json", "homebrew-got.json", "homebrew-job.json"]) { fs.rmSync(path.join(DATA, f), { force: true }); }
@@ -149,6 +150,21 @@ module.exports = async function (b, check) {
     const bar = ((await api("api/jobs.php")).jobs || []).find((j) => j.key === "homebrew") || {};
     check("the corner bar says how it ended", [bar.state, /Release Game is in your Nintendo 64 list/.test(bar.said || ""), bar.name], ["done", true, "Get Release Game"]);
 
+    // Hidden from Xsegon, it is out of the library: Get says so and where to show it again, and fetches no second copy.
+    await api("api/hide.php", { id: made.id, hide: true });
+    const whileHidden = await api("api/homebrew.php", { get: "t-rel" });
+    await api("api/hide.php", { id: made.id, hide: false });
+    check("a game of yours hidden from Xsegon is not fetched again: Get says it is hidden, and where it shows again",
+      [whileHidden.ok, /is in your library, hidden from Xsegon: Settings > Library shows it again/.test(whileHidden.error || "")], [false, true]);
+
+    // On the disk but not taken into the library: Get says where it is and fetches no second copy.
+    const gotFile = path.join(DATA, "homebrew-got.json"), gotWas = fs.readFileSync(gotFile, "utf8");
+    fs.writeFileSync(gotFile, JSON.stringify(Object.assign(JSON.parse(gotWas), { "t-fall": { game: "xs-scan-notinlibrary", version: "", file: made.file, at: 1 } })));
+    const twice = await api("api/homebrew.php", { get: "t-fall" });
+    fs.writeFileSync(gotFile, gotWas);
+    check("a game on the disk that the library did not take in is not fetched again: Get says where it is",
+      [twice.ok, /is at .* already, not in your library yet: Scan for Games brings it in/.test(twice.error || "")], [false, true]);
+
     // No release to take: the copy entered in the jam, its size and SHA-1 checked.
     put("https://drive.google.com/uc", fromJam);
     await api("api/homebrew.php", { get: "t-fall" });
@@ -223,6 +239,16 @@ module.exports = async function (b, check) {
       { name: "ares-macos-universal.zip", size: 5, browser_download_url: "https://github.com/ares-emulator/ares/releases/download/v148/ares-macos-universal.zip" },
       { name: "ares-windows-x64.zip", size: zip.length, browser_download_url: zipUrl, digest: "sha256:" + hash("sha256", zip) }] }));
     put("https://drive.google.com/uc", fromJam);
+    // Stop pressed while Windows Defender checks ares: the stand-in is held on the download until then.
+    fs.writeFileSync(HOLD, "homebrew.download");
+    await api("api/homebrew.php", { get: "t-ares", ares: true });
+    const inCheck = await apiUntil(async () => { const j = (await api("api/homebrew.php?job=1")).job; return j && j.phase === "checking" ? j : null; }, 20000);
+    await api("api/jobs.php", { stop: "homebrew" });
+    const stopped = await ended();
+    fs.rmSync(HOLD, { force: true });
+    check("Stop while Windows Defender checks ares: none of it is kept, and the emulator table is as it was",
+      [!!inCheck, stopped && stopped.state, stopped && stopped.error, fs.existsSync(aresDir), !!(table().programs || {}).ares],
+      [true, "failed", "stopped: nothing was kept", false, false]);
     await api("api/homebrew.php", { get: "t-ares", ares: true });
     const withAres = await ended();
     const after = table(), aresKey = "ares", gameId = ((withAres && withAres.made) || {}).id;
@@ -290,5 +316,6 @@ module.exports = async function (b, check) {
     fs.rmSync(fix, { recursive: true, force: true });
     fs.rmSync(games, { recursive: true, force: true });
     fs.rmSync(aresDir, { recursive: true, force: true });
+    fs.rmSync(HOLD, { force: true });
   }
 };
