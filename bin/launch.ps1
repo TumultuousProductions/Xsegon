@@ -44,6 +44,9 @@ param(
     # that ends with an error code after this many seconds was played, and is
     # taken as closed, not failed. Tests pass a small one.
     [int]    $PlayedFor  = 10,
+    # How long a program left with no window has to do nothing before its game
+    # is taken as closed (Wait-Program). Tests pass a small one.
+    [int]    $GoneFor    = 15,
     # What api\launch.php knew before the start that would explain a game not
     # starting (a BIOS file not in place). Said only if the start fails.
     [string] $FailHint   = '',
@@ -321,6 +324,18 @@ function Get-XsegonWindow {
     return @($all | Where-Object { $_.ProcessName -in @('chrome', 'msedge', 'firefox', 'brave') })[0]
 }
 
+<#  Programs started since the launch that have a window, newest first: the
+    game's, or a launcher's or Battle.net's on the way to it. $orUnsure counts
+    one that will not say when it started.                                  #>
+function Get-NewWindow([bool] $orUnsure) {
+    $skip = @('powershell', 'pwsh', 'cmd', 'conhost', 'WindowsTerminal', 'OpenConsole', 'chrome', 'msedge', 'explorer')
+    $since = $started.AddSeconds(-1)
+    @(Get-Process -ErrorAction SilentlyContinue | Where-Object {
+        try { if ($_.MainWindowHandle -eq 0 -or $skip -contains $_.ProcessName) { return $false } } catch { return $false }
+        try { return $_.StartTime -ge $since } catch { return $orUnsure }
+    } | Sort-Object StartTime -Descending)
+}
+
 <#  STEPPING ASIDE.
     Windows lets only the process in front hand over the front, so a game
     started by this hidden script could open behind Xsegon, or with Xsegon
@@ -333,15 +348,10 @@ function Step-Aside($proc) {
     if (-not $StepAside -or -not $proc) { return }
     try {
         Initialize-Fg
-        $skip = @('powershell', 'pwsh', 'cmd', 'conhost', 'WindowsTerminal', 'OpenConsole', 'chrome', 'msedge', 'explorer')
-        $since = $started.AddSeconds(-1)
         $game = $null
         $until = (Get-Date).AddSeconds(40)
         while ((Get-Date) -lt $until -and -not $proc.HasExited) {
-            $wins = @(Get-Process -ErrorAction SilentlyContinue | Where-Object {
-                if ($_.MainWindowHandle -eq 0 -or $skip -contains $_.ProcessName) { return $false }
-                try { return $_.StartTime -ge $since } catch { return $false }
-            } | Sort-Object StartTime -Descending)
+            $wins = @(Get-NewWindow $false)
             $game = @($wins | Where-Object { $_.ProcessName -eq 'retroarch' })[0]
             if (-not $game) { $game = $wins[0] }
             if ($game) { break }
@@ -360,11 +370,54 @@ function Step-Aside($proc) {
             $script:steppedAside = $xs.MainWindowHandle
         }
         $front = Set-Front $game.MainWindowHandle
-        Write-Log 'LNCH' ("stepped aside for " + $game.ProcessName + ".exe: Xsegon " +
+        Write-Log 'LNCH' ("stepped aside for " + $game.ProcessName + '.exe ("' + $game.MainWindowTitle + '"): Xsegon ' +
             $(if (-not $xs) { 'not found' } elseif ($minimised) { 'minimised' } else { 'already minimised' }) +
             ", the game " + $(if ($front) { 'has the keyboard' } else { 'was refused the front by Windows' }))
     } catch {
         Write-Log 'LNCH' "could not step aside: $($_.Exception.Message)"
+    }
+}
+
+<#  A PROGRAM CAN OUTLIVE ITS GAME.
+    StarCraft Launcher.exe opens Battle.net and stays on with no window once
+    that has closed, so waiting on it alone left the game playing for ever.
+    The game has closed when a window of it was seen and then, for $GoneFor
+    seconds together, nothing started since the launch has a window, the
+    program does next to nothing, and nothing it started or from its folder
+    runs. Then $closedAt says when, and the program is left alone. Windows
+    refusing an answer ends the watch: the wait is on the program, as before. #>
+$script:closedAt = $null
+function Wait-Program($proc) {
+    try {
+        $name  = [System.IO.Path]::GetFileNameWithoutExtension($Exe)
+        $since = $started.AddSeconds(-1)
+        $me = $null; $last = ''; $quiet = $null; $cpu = $null
+        do {
+            if (-not $me) {
+                $me = @(Get-Process -Name $name -ErrorAction SilentlyContinue | Where-Object { $_.StartTime -ge $since } | Sort-Object StartTime)[0]
+            }
+            if (-not $me -or $me.HasExited) { continue }
+            $wins = @(Get-NewWindow $true)
+            if ($wins.Count) { $last = $wins[0].ProcessName; $quiet = $null; continue }
+            if (-not $last) { continue }
+            if (-not $quiet) { $quiet = Get-Date; $cpu = $me.TotalProcessorTime; continue }
+            if (((Get-Date) - $quiet).TotalSeconds -lt $GoneFor) { continue }
+            # Busy with no window is a game loading; the rest are looked at only now, being slow.
+            $busy = ($me.TotalProcessorTime - $cpu).TotalSeconds -ge ($GoneFor / 10)
+            $kin = @(Get-GameProcess (Split-Path $Exe -Parent) @() | Where-Object {
+                if ($_.Id -eq $me.Id) { return $false }
+                try { return $_.StartTime -ge $since } catch { return $true }
+            })
+            $kids = @(Get-CimInstance Win32_Process -Filter "ParentProcessId = $($me.Id)")
+            if ($busy -or $kin.Count -or $kids.Count) { $quiet = $null; continue }
+            Write-Log 'LNCH' ($name + ".exe stayed behind with no window, doing nothing, and " + $last +
+                ".exe's window has gone: " + $Title + " taken as closed, the program left running")
+            $script:closedAt = $quiet
+            return
+        # Often until a first window, which can be a splash of a second or two; then every 3 s.
+        } while (-not $proc.WaitForExit($(if ($last -or ((Get-Date) - $started).TotalSeconds -gt 40) { 3000 } else { 500 })))
+    } catch {
+        Write-Log 'LNCH' "could not look at what is left of $Title, so its program is waited for: $($_.Exception.Message)"
     }
 }
 
@@ -523,8 +576,13 @@ try {
         $proc = Start-Process -FilePath $cmdFile -PassThru -WindowStyle Hidden
         $null = $proc.Handle          # without it a finished process can forget its exit code
         Step-Aside $proc
-        $proc.WaitForExit()
-        $code = $proc.ExitCode
+        if ($Kind -ne 'retroarch') { Wait-Program $proc }      # RetroArch ends with its window
+        if ($script:closedAt) {
+            $code = 0
+        } else {
+            $proc.WaitForExit()
+            $code = $proc.ExitCode
+        }
     }
 } catch {
     Write-Failure "could not start: $($_.Exception.Message)"
@@ -566,8 +624,8 @@ $code = $realCode
 # Through Steam, give Steam time to start, update and sync first. Started by
 # its own program, only one that stopped straight away can have handed over
 # (a publisher's launcher, or a game restarting itself through Steam).
-$ended = Get-Date
-if ($WatchDir) {
+$ended = if ($script:closedAt) { $script:closedAt } else { Get-Date }
+if ($WatchDir -and -not $script:closedAt) {
     $names = @($WatchNames -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
     $firstWait = 0
     if ($ViaSteam) { $firstWait = 180 }
