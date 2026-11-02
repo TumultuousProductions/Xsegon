@@ -81,7 +81,26 @@ function xs_jobs_any(): bool
 function xs_jobs_row(string $key, string $name, string $state, int $started, string $line, ?float $frac, bool $stop, string $said): array
 {
     return ['key' => $key, 'name' => $name, 'state' => $state, 'started' => $started, 'line' => $line,
-            'frac' => $frac === null ? null : max(0.0, min(1.0, $frac)), 'stop' => $stop && $state === 'running', 'said' => $said];
+            'frac' => $frac === null ? null : max(0.0, min(1.0, $frac)), 'stop' => $stop && $state === 'running', 'said' => $said,
+            'onClose' => xs_jobs_on_close($key)];
+}
+
+/**
+ * What closing Xsegon does to a job at work today, for the X's question
+ * (js\appwindow.js). Its server stops a few seconds after the window, and the
+ * workers go on without it: only those that add to the library need it.
+ */
+function xs_jobs_on_close(string $key): string
+{
+    $notAdded = ' Xsegon cannot add it to your games while it is closed';
+    return match ($key) {
+        'unpack'        => 'Every archive is still unpacked, but Xsegon cannot add them to your games while it is closed: Scan for Games will offer them.',
+        'fanmake'       => 'It is still made, but' . $notAdded . '.',
+        'homebrew'      => 'The game is still downloaded, but' . $notAdded . ', nor its pictures: Scan for Games will find it.',
+        'screenscraper' => 'Its videos and manuals finish with Xsegon closed; covers it fetched are put in place the next time Xsegon is open.',
+        'getall'        => 'What it has started carries on with Xsegon closed.',
+        default         => 'It finishes by itself with Xsegon closed.',
+    };
 }
 
 function xs_jobs_size(int $bytes): string

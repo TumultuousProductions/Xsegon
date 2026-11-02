@@ -3,6 +3,7 @@
  *  api\runcheck.php to start it, as the Runs check panel does.
  */
 
+import { setAtWork } from "./atwork.js";
 import { showStrip } from "./launch.js";
 import { L, postJson } from "./log.js";
 import { mailArrived, troubleSeen } from "./news.js";
@@ -12,6 +13,8 @@ import { el, plural } from "./util.js";
 
 var bar = null, line = null, track = null, stopBtn = null, hideT = null;
 var asking = false;
+// What closing Xsegon does to a check today, said by the X's question (js\appwindow.js): bin\runcheck.ps1 needs no server.
+var RUNS_ON_CLOSE = "It carries on with Xsegon closed, starting and closing games on the screen until it is through.";
 
 function post(body) {
   return postJson("api/runcheck.php", body);
@@ -57,6 +60,7 @@ function ending(r) {
    runner that died goes quiet; the log says so). Its end is said only by a
    page that showed it running; the panel keeps every result. */
 export function paintRunsBar(r) {
+  setAtWork("runs", r && r.running ? { name: "The Runs check", line: r.index ? "game " + r.index + " of " + r.total : "starting", onClose: RUNS_ON_CLOSE } : null);
   if (!r) {
     if (bar && !bar.classList.contains("ended")) { bar.hidden = true; }
     return;

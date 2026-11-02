@@ -5,6 +5,7 @@
  *  no bar; with no fast lane, or work that counts nothing, the bar travels.
  */
 
+import { setAtWork } from "./atwork.js";
 import { api } from "./log.js";
 import { el } from "./util.js";
 
@@ -12,11 +13,15 @@ var SHOW_AFTER_MS = 500, TICK_MS = 300;
 
 /* under: the node the bar goes beneath (the words or the button that began
    the wait). words: what the wait is for. promise: the request waited on,
-   handed back so a caller wraps it in place. */
-export function waitBar(under, words, promise) {
+   handed back so a caller wraps it in place. work: { name, onClose } for a
+   wait that closing Xsegon would cut (js\atwork.js), named by the X's question. */
+export function waitBar(under, words, promise, work) {
   var bar = null, line = null, fill = null, timer = null, over = false, asking = false;
+  var key = "wait:" + words;
+  if (work) { setAtWork(key, { name: work.name, line: "", onClose: work.onClose }); }
   function paint(step) {
     var measured = step.total > 0;
+    if (work && measured) { setAtWork(key, { name: work.name, line: step.done + " of " + step.total, onClose: work.onClose }); }
     line.textContent = step.what + (measured ? ": " + step.done + " of " + step.total : "...");
     bar.classList.toggle("wait", !measured);
     fill.style.width = measured ? Math.round(100 * Math.min(1, step.done / step.total)) + "%" : "";
@@ -44,6 +49,7 @@ export function waitBar(under, words, promise) {
   }, SHOW_AFTER_MS);
   function end() {
     over = true;
+    if (work) { setAtWork(key, null); }
     clearTimeout(show);
     clearInterval(timer);
     if (bar && bar.parentNode) { bar.parentNode.removeChild(bar); }

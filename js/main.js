@@ -59,6 +59,7 @@
 import { openAddChooser } from "./add.js";
 import { inApp, initWindowButtons, toggleStatus, watchScreen } from "./appwindow.js";
 import { initArtEditors } from "./art-editors.js";
+import { initAtWork } from "./atwork.js";
 import { initChrome } from "./chrome.js";
 import { attachSpin } from "./drag.js";
 import { closeEditor } from "./editors.js";
@@ -140,6 +141,7 @@ closeOnBackdrop($editor, closeEditor);
 initVolume();
 initSettingsSave();
 initWindowButtons();
+initAtWork();    // a close from outside the X while a job is at work: Chrome asks first
 watchScreen();   // a TV plugged in, or taken away: the window is opened again at that screen's size
 initInput();
 

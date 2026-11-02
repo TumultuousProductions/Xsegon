@@ -984,6 +984,37 @@ module.exports = async function (b, check) {
   await b.clickSel("#btn-close");
   check("with the question turned off it just closes", await b.until(`window.__ops.join("|")`, '{"op":"close"}'), '{"op":"close"}');
   check("and never asked", await b.ev(asking), false);
+
+  /* While a job is at work the X asks even with the question turned off, and
+     says what closing does to it. A Get Pictures pass stands in: its job file
+     as the worker writes it, with no worker (fresh, so it is not taken as dead). */
+  const fillJob = path.join(DATA, "fill-job.json");
+  const fillBefore = fs.existsSync(fillJob) ? fs.readFileSync(fillJob) : null;
+  const leaveAsks = `(() => { const e = new Event("beforeunload", { cancelable: true }); window.dispatchEvent(e); return e.defaultPrevented; })()`;
+  fs.writeFileSync(fillJob, JSON.stringify({ state: "running", mode: "all", phase: "first", done: 120, total: 800, started: Math.floor(Date.now() / 1000), pid: 0 }));
+  try {
+    await b.goto(BASE + "/?app=1");
+    await b.ev(stub);
+    await b.until(`!document.getElementById("winctl").hidden`);
+    check("(the stand-in pass is on its corner bar)",
+          await b.until(`/names and box art, 120 of 800/.test((document.querySelector(".fill-bar .fb-line") || {}).textContent || "")`, true, 15000), true);
+    check("while it works, a close from outside the X gets Chrome's Leave site box", await b.ev(leaveAsks), true);
+    await b.clickSel("#btn-close");
+    check("with a job at work the X asks, even with the question turned off", await b.until(asking), true);
+    await b.settled();
+    check("naming the job, how far it is, and what closing does to it",
+          /Get Pictures is still going: names and box art, 120 of 800\. If Xsegon closes now, the games it has not named yet get no pictures/.test(await b.ev(`document.querySelector("#editor .panel-inner").textContent`)), true);
+    check("and closes nothing yet", await b.ev(`window.__ops.length`), 0);
+    await b.ev(`[...document.querySelectorAll("#editor button")].find(x => /Keep Xsegon open/.test(x.textContent)).click()`);
+    check("Keep Xsegon open puts it away, with nothing closed", await b.until(`document.getElementById("editor").hidden && window.__ops.length === 0`), true);
+    await b.clickSel("#btn-close");
+    await b.until(asking); await b.settled();
+    await b.ev(`[...document.querySelectorAll("#editor button")].find(x => /Close Xsegon/.test(x.textContent)).click()`);
+    check("Close Xsegon closes the window", await b.until(`window.__ops.join("|")`, '{"op":"close"}'), '{"op":"close"}');
+    check("and Chrome's box does not ask a second time", await b.ev(leaveAsks), false);
+  } finally {
+    if (fillBefore) { fs.writeFileSync(fillJob, fillBefore); } else { fs.rmSync(fillJob, { force: true }); }
+  }
   await api("api/settings.php", { window: { confirmClose: true } });
 
   await api("api/settings.php", { controller: { arrowsWrap: false, wheelTurns: true, hidePointer: false, hidePointerSec: 3 } });

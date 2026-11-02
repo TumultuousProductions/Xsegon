@@ -4,6 +4,7 @@
     lays each over the stored file, so nothing changed elsewhere is undone. The
     page reads most settings as it starts, so it is drawn again after. */
 
+import { leaveQuietly } from "./atwork.js";
 import { paintHelpAgain } from "./help.js";
 import { showStrip } from "./launch.js";
 import { L, api } from "./log.js";
@@ -157,6 +158,7 @@ export function redrawIfClear() {
   queue.then(function () {
     if (held || pageJobs || !$settings.hidden || !$editor.hidden || !due()) { return; }
     L("SET", "settings were changed: the page is drawn again");
+    leaveQuietly();
     location.reload();
   });
 }

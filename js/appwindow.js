@@ -1,3 +1,4 @@
+import { atWorkList, leaveQuietly } from "./atwork.js";
 import { closeEditor, setEditorOnClose } from "./editors.js";
 import { iconEl } from "./icons.js";
 import { showStrip } from "./launch.js";
@@ -20,6 +21,7 @@ try {
 
 export function windowOp(op) {
   L("WIN", op);
+  if (op === "close") { leaveQuietly(); }       // asked already: no Leave site box after it
   sound(op === "close" ? "back" : "select");
   postJson("api/window.php", { op: op }).then(function (r) {
     if (!r.ok) { showStrip("could not " + op + " the window: " + (r.error || "no answer"), true); }
@@ -27,11 +29,14 @@ export function windowOp(op) {
 }
 
 /* The X asks first (Settings > Window > Ask before closing Xsegon): it sits a few
-   pixels from the open panel's Close. It logs "close asked" first, so a window that
-   vanishes without that line did not go out through this button. */
+   pixels from the open panel's Close. While a job is at work it asks even with
+   that off, naming the job and what closing does to it (js\atwork.js). It logs
+   "close asked" first, so a window that vanishes without that line did not go
+   out through this button. */
 export function askClose() {
-  if (!(S.window || {}).confirmClose) { windowOp("close"); return; }
-  L("WIN", "close asked");
+  var work = atWorkList();
+  if (!(S.window || {}).confirmClose && !work.length) { windowOp("close"); return; }
+  L("WIN", "close asked" + (work.length ? ", with " + work.map(function (j) { return j.name; }).join(", ") + " at work" : ""));
   stopVideo();
   // A tool open underneath (the media copy repaints itself every second)
   // checks this marker before painting; without it, it would paint over this.
@@ -42,8 +47,16 @@ export function askClose() {
   $editor.textContent = "";
   var inner = el("div", "panel-inner ask-inner");
   inner.appendChild(el("h1", "panel-title", "CLOSE XSEGON?"));
-  inner.appendChild(el("p", "group-help",
-    "This closes the whole window, not the screen you are on. Nothing is lost: favourites, edits and play history are already saved."));
+  if (work.length) {
+    work.forEach(function (j) {
+      inner.appendChild(el("p", "group-help", j.name + " is still going" + (j.line ? ": " + j.line : "") + ". " +
+        (j.onClose || "Closing now stops it where it is. What is done is kept.")));
+    });
+    inner.appendChild(el("p", "group-help", "Favourites, edits and play history are already saved."));
+  } else {
+    inner.appendChild(el("p", "group-help",
+      "This closes the whole window, not the screen you are on. Nothing is lost: favourites, edits and play history are already saved."));
+  }
   var row = el("div", "ask-row");
   var yes = el("button", "primary", "Close Xsegon");
   yes.addEventListener("click", function () {
@@ -52,7 +65,7 @@ export function askClose() {
     closeEditor();
     windowOp("close");
   });
-  var no = el("button", null, "Stay (esc)");
+  var no = el("button", null, work.length ? "Keep Xsegon open (esc)" : "Stay (esc)");
   no.addEventListener("click", closeEditor);
   row.appendChild(yes);
   row.appendChild(no);
@@ -106,6 +119,7 @@ export function watchScreen() {
     // Each screen is asked about once; the one the page started on only when it is drawn small.
     if (sameScreen(now, asked) || (sameScreen(now, first) && !small)) { return; }
     asked = now;
+    leaveQuietly();                                      // bin\open.ps1 -Fit may close and open the window
     L("WIN", (sameScreen(now, first) ? "a " + screenWords(now) + " screen is drawn smaller than Fill a big screen has it"
       : "the screen changed, from " + screenWords(first) + " to " + screenWords(now)) + ": asking whether the window still fits it");
     postJson("api/window.php", { op: "fit" }).then(function (r) {

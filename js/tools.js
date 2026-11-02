@@ -1,4 +1,4 @@
-import { backupFailed, backupIoButtons, backupSaid } from "./backup-io.js";
+import { BACKUP_WORK, RESTORE_WORK, backupFailed, backupIoButtons, backupSaid } from "./backup-io.js";
 import { closeEditor, setEditorOnClose, toolFrame } from "./editors.js";
 import { showStrip } from "./launch.js";
 import { load } from "./library.js";
@@ -188,7 +188,7 @@ export function openBackupTool(after) {
       go.addEventListener("click", function () {
         go.disabled = true;
         go.textContent = "Backing up...";
-        waitBar(btns, "Backing up your files", postJson("api/backup.php", { action: "make" })).then(function (r) {
+        waitBar(btns, "Backing up your files", postJson("api/backup.php", { action: "make" }), BACKUP_WORK).then(function (r) {
           if (!r.ok) { backupFailed("The backup was not made", "could not back up", r, openReportTool); paint(); return; }
           sound("select");
           // A file that was there and would not read is named, not passed over.
@@ -289,7 +289,7 @@ export function openBackupTool(after) {
         if (!sureNow(go, "Restore, really?")) { return; }
         go.disabled = true;
         go.textContent = "Restoring...";
-        waitBar(go.parentNode, "Putting your files back", postJson("api/backup.php", { action: "restore", name: b.name, parts: want })).then(function (r) {
+        waitBar(go.parentNode, "Putting your files back", postJson("api/backup.php", { action: "restore", name: b.name, parts: want }), RESTORE_WORK).then(function (r) {
           if (!r.ok) { backupFailed("The restore did not go through", "could not restore", r, openReportTool); paint(); return; }
           restored = true;
           sound("select");
