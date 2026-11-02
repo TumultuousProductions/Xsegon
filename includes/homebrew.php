@@ -282,6 +282,17 @@ function xs_hb_start(string $id, bool $ares, ?string &$why = null): bool
         $why = $g['name'] . ' is in your library already';
         return false;
     }
+    // A hidden game is out of xs_library(), so it is asked for apart: a second Get would only make a second copy.
+    if ($had !== '' && isset(xs_hidden_games()[$had])) {
+        $why = $g['name'] . ' is in your library, hidden from Xsegon: Settings > Library shows it again';
+        return false;
+    }
+    // Fetched before but not taken into the library: the same.
+    $file = (string) (xs_hb_got()[$id]['file'] ?? '');
+    if ($file !== '' && is_file($file)) {
+        $why = $g['name'] . ' is at ' . $file . ' already, not in your library yet: Scan for Games brings it in';
+        return false;
+    }
     if (xs_curl_exe() === '') {
         $why = 'Windows\' own curl.exe is not on this PC (it comes with Windows 10 from 2018 on), and that is what downloads it';
         return false;

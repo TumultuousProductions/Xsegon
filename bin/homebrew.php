@@ -114,6 +114,10 @@ if (!empty($job['ares'])) {
     $zip = $part . '.zip';
     @rename($part, $zip);
     $said = xs_unpack_defender_scan($zip, $what, static fn (): bool => !$stopped());
+    if ($said === 'stopped') {
+        @unlink($zip);
+        $end('failed', 'stopped: nothing was kept');
+    }
     if ($said === 'found') {
         @unlink($zip);
         $end('failed', 'Windows Defender found ' . $what . ' in ' . $rel['file'] . ' from GitHub, so it was not unpacked and nothing was kept');
@@ -224,9 +228,16 @@ xs_log('HBRW', 'get ' . $name . ' ' . $version . ': wrote ' . $out);
 $job['phase'] = 'adding';
 $save();
 $id = xs_fm_scan_id($console, $out);
+// What Get brought, for the page and the next Get; kept also when the library did not take it in, so it is not fetched twice.
+$remember = static function () use ($g, $id, $version, $out): void {
+    $kept = xs_hb_got();
+    $kept[(string) $g['id']] = ['game' => $id, 'version' => $version, 'file' => $out, 'at' => time()];
+    xs_write_json(xs_hb_got_path(), $kept);
+};
 $took = $ask('/api/scan.php', ['action' => 'accept', 'games' => [['id' => $id, 'title' => $name, 'platform' => $console, 'rom' => $out]]]);
 $in = ($took['ok'] ?? false) && ((int) ($took['added'] ?? 0) > 0 || ($took['skipped'][0]['why'] ?? '') === 'already accepted before');
 if (!$in) {
+    $remember();
     $job['made'] = ['id' => null, 'file' => $out, 'version' => $version];
     $end('done', $name . ' is at ' . $out . ', but it is not in your library yet ('
         . (string) ($took['error'] ?? ($took['skipped'][0]['why'] ?? 'Xsegon did not answer')) . '): Scan for Games will find it');
@@ -270,8 +281,6 @@ if ($aresKey !== null) {
         xs_log('HBRW', 'get ' . $name . ': ares not set for it: ' . (string) $why);
     }
 }
-$kept = xs_hb_got();
-$kept[(string) $g['id']] = ['game' => $id, 'version' => $version, 'file' => $out, 'at' => time()];
-xs_write_json(xs_hb_got_path(), $kept);
+$remember();
 $job['made'] = ['id' => $id, 'file' => $out, 'version' => $version];
 $end('done', $name . ' is in your ' . $console . ' list' . ($version !== '' ? ' (' . $version . ')' : '') . ': ' . $out);
