@@ -4,6 +4,7 @@ Newest first: what changed for the person at the screen.
 
 ## 2026-11-02
 
+- **A launcher left open no longer keeps its game "playing".** Some programs Play starts are not the game itself: StarCraft's launcher opens Battle.net, and stays on out of sight after Battle.net has closed. Xsegon waited for it to end, so the looks that move stayed still, videos did not play and every other game was refused as "still running". Now, once nothing of the game has a window and what is left has done nothing for 15 seconds, Xsegon takes the game as closed, comes back and says Finished. A game still loading, or anything the launcher started that is still running, keeps it playing. The launcher itself is left alone.
 - **Running from the source code, Xsegon finds PHP one folder further up.** A checkout kept in a subfolder of the folder PHP is in now starts, whatever version PHP has moved to, where it used to stop at "PHP could not be located". The newest php-* folder there is tried last, after everything Xsegon looked at before, so nobody's PHP changes. A downloaded copy carries its own PHP and is not affected.
 
 ## 2026-11-01

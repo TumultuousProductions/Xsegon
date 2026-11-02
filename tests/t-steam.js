@@ -9,6 +9,7 @@
  * The last part runs bin\launch.ps1 for real: a stand-in steam.exe (cmd.exe)
  * starts a stand-in game (ping.exe in the game's folder) and exits at once,
  * as steam.exe does with Steam open, so the launcher must follow the folder.
+ * A stand-in launcher (tests\fake-launcher.cs) then outlives its game.
  */
 "use strict";
 const fs = require("fs");
@@ -336,6 +337,48 @@ module.exports = async function (b, check) {
     await runLauncher(["-NetPort", port, "-Arguments", `"${fakeRa}" ${port} CONTENTLESS 4000 5`], process.execPath, "2");
     check("RetroArch answered but never played: a failure, even after the clock rule's time",
           /^the game never started in RetroArch \(exited with code 5 after [3-9]s\)$/.test((lastError() || {}).error || ""), true);
+
+    /* A program can outlive its game: StarCraft Launcher.exe opens Battle.net
+       and stays on with no window once that has closed. A stand-in launcher
+       (tests\fake-launcher.cs) plays each part; -GoneFor 4 stands in for the
+       real 15 seconds. */
+    const fake = path.join(tmpData, "game", "xsfake-launcher.exe");
+    const net = path.join(tmpData, "net", "xsfake-net.exe");
+    fs.mkdirSync(path.dirname(fake), { recursive: true });
+    fs.mkdirSync(path.dirname(net), { recursive: true });
+    const fakeSrc = path.join(ROOT, "tests", "fake-launcher.cs");
+    await new Promise((resolve) => execFile("powershell.exe", ["-NoProfile", "-Command",
+      `Add-Type -OutputAssembly '${fake}' -OutputType WindowsApplication -ReferencedAssemblies System.Windows.Forms,System.Drawing -TypeDefinition ([IO.File]::ReadAllText('${fakeSrc}'))`],
+      { windowsHide: true, timeout: 90000 }, () => resolve()));
+    check("(the stand-in launcher was built)", fs.existsSync(fake), true);
+    if (fs.existsSync(fake)) {
+      fs.copyFileSync(fake, net);
+      const logText = () => { try { return fs.readdirSync(path.join(tmpData, "log")).map((f) => fs.readFileSync(path.join(tmpData, "log", f), "utf8")).join(""); } catch (e) { return ""; } };
+      const fakeAlive = () => new Promise((resolve) => execFile("tasklist.exe", ["/FI", "IMAGENAME eq xsfake-launcher.exe", "/NH"],
+        { windowsHide: true }, (e, out) => resolve(/xsfake-launcher\.exe/i.test(String(out || "")))));
+      const stopFakes = () => new Promise((resolve) => execFile("taskkill.exe", ["/F", "/IM", "xsfake-launcher.exe", "/IM", "xsfake-net.exe"],
+        { windowsHide: true }, () => setTimeout(resolve, 600)));
+      const play = async (args) => {
+        const from = logText().length, t = Date.now();
+        await runLauncher(["-GoneFor", "4", "-Arguments", args], fake);
+        return { took: (Date.now() - t) / 1000, s: lastSession(), log: logText().slice(from) };
+      };
+      try {
+        let r = await play(`opens 5 "${net}"`);
+        check("a launcher with no window is not taken as closed while what it opened has one (Battle.net)",
+              [!!r.s && r.s.seconds >= 6, /xsfake-net\.exe's window has gone/.test(r.log)], [true, true]);
+        check("once that has closed and the launcher does nothing, the game ends about 4 seconds on, not when the launcher does",
+              [r.took < 35, !!r.s && r.s.exitCode, fs.existsSync(path.join(tmpData, "running.json"))], [true, 0, false]);
+        check("the log says so, and the launcher is left running", [/xsfake-launcher\.exe stayed behind with no window, doing nothing, .*Exit Test taken as closed/.test(r.log), await fakeAlive()], [true, true]);
+        await stopFakes();
+        r = await play("loads 10");
+        check("a program busy with no window is a game loading: not taken as closed", [/stayed behind/.test(r.log), !!r.s && r.s.seconds >= 11], [false, true]);
+        r = await play("child 10");
+        check("nor one whose own program is still running with no window", [/stayed behind/.test(r.log), !!r.s && r.s.seconds >= 10], [false, true]);
+      } finally {
+        await stopFakes();
+      }
+    }
     fs.rmSync(tmpData, { recursive: true, force: true });
   } finally {
     await api("api/settings.php", { paths: { steam: "" } });
