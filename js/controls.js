@@ -69,6 +69,13 @@ function paint(g, res) {
     head(inner, "Leaving and pausing a game");
     hot.leave.forEach(function (h) { hotkeyRow(inner, h); });
     head(inner, g.platform + ": the buttons");
+  } else if (res.leave) {
+    // Another emulator: its own pad way out, or Xsegon's held Xbox button (includes\emus.php).
+    head(inner, "Leaving a game");
+    var out = el("p", "group-help ctl-leave" + (res.leave.on ? "" : " ctl-unset"), res.leave.words);
+    out.dataset.by = res.leave.by;
+    inner.appendChild(out);
+    head(inner, g.platform + ": the buttons");
   }
 
   var rows = res.rows || [];
@@ -82,7 +89,12 @@ function paint(g, res) {
     var ra = raButton(res.raOffer, "Controls");
     if (ra) { var raBar = el("div", "bar"); raBar.appendChild(ra); inner.appendChild(raBar); }
   } else {
-    rows.forEach(function (r) { pairRow(inner, r.name, r.value); });
+    rows.forEach(function (r) {
+      var line = pairRow(inner, r.name, r.value);
+      // A binding the emulator would not act on, said where it is (a Dolphin input the pad lacks, a control on no button).
+      if (r.unset) { line.classList.add("ctl-unset"); }
+      if (r.flag) { line.classList.add("ctl-dead"); line.lastChild.appendChild(el("span", "ctl-sub", r.flag)); }
+    });
   }
 
   if (res.remap && res.remap.changes && res.remap.changes.length) {

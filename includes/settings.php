@@ -153,6 +153,8 @@ function xs_settings_defaults(): array
             // Needs RetroArch's network commands; the UI reads the real value
             // from retroarch.cfg. This only says whether Xsegon offers the button.
             'offerQuitButton'   => true,   // needs network_cmd_enable = "true"
+            // PCSX2, Dolphin, Cemu and Xenia have no pad press that leaves a game: a held Xbox button does (bin\padleave.ps1).
+            'padLeave'          => true,
             // "Finished X, 12 min" for a few seconds after a game; its "Don't show again" turns this off.
             'showFinished'      => true,
 
@@ -461,6 +463,8 @@ function xs_settings_schema(): array
                                       'help' => 'A few seconds of "Finished", with the time played, when you come back from a game.'],
             'offerQuitButton'     => ['label' => 'Offer a Stop Game button', 'section' => 'While it plays',
                                       'help' => 'Needs network_cmd_enable = "true" in retroarch.cfg.'],
+            'padLeave'            => ['label' => 'Leave a game by holding the Xbox button', 'section' => 'While it plays',
+                                      'help' => 'In PCSX2, Dolphin, Cemu and Xenia, which have no pad press of their own for it: holding the Xbox button for 2 seconds closes the game and brings Xsegon back. RPCS3, xemu and Eden keep their own way out, which a game\'s Controls window names.'],
             'stateLoad'           => ['label' => 'Loading a save you picked', 'type' => 'enum', 'section' => 'Before a game starts',
                                       'options' => ['ask' => 'Ask me the first time',
                                                     'session' => "Turn RetroArch's network commands on for Xsegon's games",

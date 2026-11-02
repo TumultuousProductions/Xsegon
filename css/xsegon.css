@@ -3712,6 +3712,10 @@ body.offline-now .saver { display: none; }
 .ctl-hot.ctl-unset .ctl-val { color: var(--faint); }
 .ctl-sub { display: block; margin-top: 3px; font-size: 12px; color: var(--mute); }
 .ctl-where .ctl-open { margin-left: 6px; }
+/* Another emulator's rows: a control on no button is dimmed, a binding it would not act on says so in the warning colour. */
+.ed-row.ctl-unset .ctl-val { color: var(--faint); }
+.ctl-dead .ctl-sub { color: var(--warn); }
+.ctl-leave.ctl-unset { color: var(--faint); }
 /* The same hotkeys in Settings > Controls (js\rahotkeys.js): read-only rows,
    the value where a control would sit; one that is not set is dimmed. */
 .set-body .opt.hkrow { grid-template-columns: calc(26px * var(--fs)) minmax(0, 1fr) minmax(0, 38%); }

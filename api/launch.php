@@ -658,6 +658,18 @@ if (($game['fpId'] ?? '') !== '' && ($launch['via'] ?? '') === 'Flashpoint') {
     }
 }
 
+/* An emulator with no pad press of its own that leaves a game (includes\emus\): a helper
+   beside the launcher closes it when the Xbox button is held (bin\padleave.ps1). */
+$padLeave = null;
+if (($launch['kind'] ?? '') === 'emulator' && empty($launch['local'])) {
+    require_once __DIR__ . '/../includes/emus.php';
+    $emu = xs_emu_of((string) $launch['exe']);
+    if ($emu !== null && ($emu['leave'] ?? 'xsegon') === 'xsegon' && xs_emus_pad_leave_on()) {
+        $padLeave = xs_ps_call(XS_ROOT . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'padleave.ps1', [
+            'Exe' => (string) $launch['exe'], 'GameId' => (string) $shown['id'], 'DataDir' => xs_data_dir(), 'Log' => xs_log_enabled()]);
+    }
+}
+
 if ($dry) {
     xs_json(['ok' => true, 'dry' => true, 'launched' => $shown['title'], 'plays' => $game['title'], 'via' => $launch['via'],
              'exe' => $launch['exe'], 'args' => $launch['args'], 'command' => $command,
@@ -669,6 +681,7 @@ if ($dry) {
              'texRead' => $texRead ?: null,                 // bytes of texture packs this start reads first
              'padKeys' => $padKeys,                         // a Flashpoint game's controller as its keys
              'padCall' => $padCall,
+             'padLeave' => $padLeave,                       // the held Xbox button's helper, for an emulator with no pad way out
              'raFix' => $raFix]);                           // what was found wrong in RetroArch's settings, and where it would be put right
 }
 
@@ -690,7 +703,8 @@ xs_log('LNCH', $shown['title'] . ' via ' . $launch['via'] . ' exe=' . basename($
        . ($slot >= 0 ? ' slot=' . $slot . ($netPort > 0 ? ' load=sent' : ' load=hotkey') : '')
        . ($texRead > 0 ? ' texread=' . round($texRead / 1048576) . 'MB' : '')
        . ($follow !== null ? ' follow=' . basename((string) $follow['dir']) : '')
-       . ($padKeys !== null ? ' padkeys=' . $padKeys['map'] . ($padKeys['fullScreen'] !== '' ? ' full=' . $padKeys['fullScreen'] : '') : ''));
+       . ($padKeys !== null ? ' padkeys=' . $padKeys['map'] . ($padKeys['fullScreen'] !== '' ? ' full=' . $padKeys['fullScreen'] : '') : '')
+       . ($padLeave !== null ? ' padleave=on' : ''));
 // Detached: this returns now, the game runs on.
 if (!xs_spawn_ps($command)) {
     xs_fail('could not start the launcher', 500);
@@ -698,6 +712,9 @@ if (!xs_spawn_ps($command)) {
 // Started as the launcher is, beside it.
 if ($padCall !== null && !xs_spawn_ps($padCall)) {
     xs_log('LNCH', 'the controller helper for ' . $shown['title'] . ' could not be started: the game plays on the keyboard alone');
+}
+if ($padLeave !== null && !xs_spawn_ps($padLeave)) {
+    xs_log('LNCH', 'the held Xbox button\'s helper for ' . $shown['title'] . ' could not be started: the game is left from the emulator\'s own window');
 }
 // Marked running at once, not in a second when PowerShell is up, so a second
 // press meanwhile is refused (xs_game_running); the launcher replaces it.
