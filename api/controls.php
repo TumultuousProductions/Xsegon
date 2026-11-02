@@ -19,6 +19,7 @@ require_once __DIR__ . '/../includes/import.php';
 require_once __DIR__ . '/../includes/scan.php';
 require_once __DIR__ . '/../includes/retroarch.php';
 require_once __DIR__ . '/../includes/rahotkeys.php';
+require_once __DIR__ . '/../includes/emus.php';
 
 /* RetroArch's sixteen RetroPad slots, in RetroArch's own id order (0 to 15):
  * the order matters because a remap file names buttons by these numbers. */
@@ -42,29 +43,6 @@ function xs_controls_real_exe(string $exe): string
         }
     }
     return $exe;
-}
-
-/** One [Section] of a flat ini, as ordered key => value pairs. */
-function xs_controls_ini_section(string $file, string $section): array
-{
-    $out = [];
-    $in = false;
-    foreach (@file($file, FILE_IGNORE_NEW_LINES) ?: [] as $line) {
-        $line = trim($line);
-        if (preg_match('/^\[(.+)\]$/', $line, $m)) {
-            $in = strcasecmp(trim($m[1]), $section) === 0;
-            continue;
-        }
-        if (!$in || $line === '' || $line[0] === ';' || $line[0] === '#') {
-            continue;
-        }
-        $eq = strpos($line, '=');
-        if ($eq === false) {
-            continue;
-        }
-        $out[trim(substr($line, 0, $eq))] = trim(substr($line, $eq + 1), " \t`\"");
-    }
-    return $out;
 }
 
 /* ---- the hotkeys alone, for Settings > RetroArch + Emulator Controls -------------
@@ -133,6 +111,7 @@ $rows = [];
 $remap = null;
 $gameMap = null;        // RetroArch only: the game's own buttons set in Xsegon
 $hotkeys = null;        // RetroArch only: the presses that leave, pause and save (includes\rahotkeys.php)
+$leave = null;          // the other emulators: how a game is left with a pad (includes\emus.php)
 $source = ['file' => null, 'read' => false, 'note' => ''];
 
 /* ---- RetroArch: the full read ------------------------------------------- */
@@ -225,107 +204,16 @@ if ($name === 'retroarch.exe' || ($launch['kind'] ?? '') === 'retroarch') {
     }
 }
 
-/* ---- the other emulators: as far as each format allows ------------------ */
-elseif ($name === 'dolphin.exe') {
-    $file = $dir . DIRECTORY_SEPARATOR . 'User' . DIRECTORY_SEPARATOR . 'Config' . DIRECTORY_SEPARATOR
-          . (stripos($platform, 'wii') !== false && stripos($platform, 'gamecube') === false
-             ? 'WiimoteNew.ini' : 'GCPadNew.ini');
-    $sec = basename($file) === 'WiimoteNew.ini' ? 'Wiimote1' : 'GCPad1';
-    if (is_file($file)) {
-        foreach (xs_controls_ini_section($file, $sec) as $k => $v) {
-            if (stripos($k, 'Calibration') !== false || stripos($k, 'Dead Zone') !== false) {
-                continue;
-            }
-            $rows[] = ['name' => $k, 'value' => $v];
-        }
-        $source = ['file' => $file, 'read' => true, 'note' => 'Dolphin\'s own words: the left side is the console\'s control, the right the pad or key it listens to.'];
-    } else {
-        $source['note'] = 'Dolphin keeps its bindings in ' . $file . ', which is not there; its Controllers screen has them.';
-    }
-} elseif (str_starts_with($name, 'pcsx2')) {
-    $file = $dir . DIRECTORY_SEPARATOR . 'inis' . DIRECTORY_SEPARATOR . 'PCSX2.ini';
-    if (is_file($file)) {
-        foreach (xs_controls_ini_section($file, 'Pad1') as $k => $v) {
-            // Bindings look like "SDL-3/FaceNorth"; the rest of the section
-            // is tuning numbers, which are not controls.
-            if ($k === 'Type' || str_contains($v, '/')) {
-                $rows[] = ['name' => $k, 'value' => $v];
-            }
-        }
-        $source = ['file' => $file, 'read' => true, 'note' => 'PCSX2\'s own words: DualShock button on the left, the pad input it listens to on the right.'];
-    } else {
-        $source['note'] = 'PCSX2 keeps its bindings in inis\\PCSX2.ini, which is not there; Settings > Controllers has them.';
-    }
-} elseif ($name === 'rpcs3.exe') {
-    $file = $dir . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'input_configs'
-          . DIRECTORY_SEPARATOR . 'global' . DIRECTORY_SEPARATOR . 'Default.yml';
-    if (is_file($file)) {
-        /* The yml is one flat "Key: Value" block under Player 1 Input >
-           Config: indentation is the whole grammar read here. */
-        $in = false;
-        foreach (@file($file, FILE_IGNORE_NEW_LINES) ?: [] as $line) {
-            if (preg_match('/^\s{2}Config:\s*$/', $line)) {
-                $in = true;
-                continue;
-            }
-            if ($in && preg_match('/^\s{4}([^:]+):\s*(.+)$/', $line, $m)) {
-                $v = trim($m[2], ' "');
-                if ($v !== '' && !is_numeric($v)) {
-                    $rows[] = ['name' => trim($m[1]), 'value' => $v];
-                }
-                continue;
-            }
-            if ($in && !preg_match('/^\s{4,}/', $line)) {
-                break;
-            }
-        }
-        $source = ['file' => $file, 'read' => true, 'note' => 'RPCS3\'s own words: PS3 control on the left, the pad input on the right.'];
-    } else {
-        $source['note'] = 'RPCS3 keeps its bindings under config\\input_configs; Pads in its own window has them.';
-    }
-} elseif ($name === 'xemu.exe') {
-    $file = $dir . DIRECTORY_SEPARATOR . 'xemu.toml';
-    $source['note'] = 'Xemu drives a standard pad by itself: the Xbox controller maps one to one, and '
-                    . ($file && is_file($file) ? 'xemu.toml only records which controller sits in which port.'
-                                               : 'there is no per-button file to read.');
-    if (is_file($file)) {
-        $source['file'] = $file;
-        $source['read'] = true;
-        $in = false;
-        foreach (@file($file, FILE_IGNORE_NEW_LINES) ?: [] as $line) {
-            $line = trim($line);
-            if (preg_match('/^\[input\.bindings\]$/i', $line)) {
-                $in = true;
-                continue;
-            }
-            if ($in && $line !== '' && $line[0] === '[') {
-                break;
-            }
-            if ($in && preg_match('/^([^=]+)=\s*(.+)$/', $line, $m)) {
-                $rows[] = ['name' => trim($m[1]), 'value' => trim($m[2], " '\"")];
-            }
-        }
-    }
-} elseif (str_starts_with($name, 'xenia')) {
-    $source['note'] = 'Xenia maps XInput pads directly and keeps no per-button file: an Xbox-shaped pad is already the Xbox 360 pad.';
-} elseif ($name === 'cemu.exe') {
-    $prof = $dir . DIRECTORY_SEPARATOR . 'controllerProfiles';
-    $found = null;
-    foreach (@scandir($prof) ?: [] as $f) {
-        if (preg_match('/\.xml$/i', $f)) {
-            $found = $prof . DIRECTORY_SEPARATOR . $f;
-            break;
-        }
-    }
-    $source['note'] = $found !== null
-        ? 'Cemu\'s profile is XML; open it to read the pairs.'
-        : 'Cemu has no saved controller profile here (controllerProfiles\\ is empty); its Input settings screen has the live mapping.';
-    if ($found !== null) {
-        $source['file'] = $found;
-    }
+/* ---- the other emulators: each one's own file says (includes\emus\) ----- */
+elseif (($emu = xs_emu_of($exe)) !== null) {
+    $home  = xs_emu_home($emu, $exe);
+    $read  = ($emu['controls'])($home, $platform);
+    $rows  = $read['rows'];
+    $source = $read['source'];
+    $leave = xs_emu_leave($emu, $home);
 } else {
-    $source['note'] = ($via !== '' ? $via : basename($exe)) . ' keeps its bindings in its own settings screen; nothing readable sits beside the exe.';
+    $source['note'] = ($via !== '' ? $via : basename($exe)) . ' keeps its bindings in its own settings screen; Xsegon does not know where it keeps them.';
 }
 
 xs_json(['ok' => true, 'title' => $title, 'platform' => $platform, 'via' => $via,
-         'source' => $source, 'rows' => $rows, 'remap' => $remap, 'gameMap' => $gameMap, 'hotkeys' => $hotkeys]);
+         'source' => $source, 'rows' => $rows, 'remap' => $remap, 'gameMap' => $gameMap, 'hotkeys' => $hotkeys, 'leave' => $leave]);

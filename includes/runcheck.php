@@ -317,40 +317,12 @@ function xs_runcheck_strip(array $tokens, array $drop): array
     return $out;
 }
 
-/** A folder under Documents, wherever Windows keeps Documents. */
-function xs_runcheck_docs(string $sub): string
-{
-    $home = (string) getenv('USERPROFILE');
-    foreach ([$home . '\\OneDrive\\Documents', $home . '\\Documents'] as $d) {
-        if (is_dir($d . DIRECTORY_SEPARATOR . $sub)) {
-            return $d . DIRECTORY_SEPARATOR . $sub;
-        }
-    }
-    return $home . '\\Documents\\' . $sub;
-}
-
-/** Where an emulator keeps its settings and log, decided the way it decides. */
+/** Where an emulator keeps its settings and log, as its own file in includes\emus\ says. */
 function xs_runcheck_emu_home(string $name, string $exe): string
 {
-    $dir = dirname($exe);
-    switch ($name) {
-        case 'PCSX2':
-            return is_file($dir . '\\portable.ini') || is_file($dir . '\\portable.txt') ? $dir : xs_runcheck_docs('PCSX2');
-        case 'Dolphin':
-            if (is_file($dir . '\\portable.txt')) {
-                return $dir . '\\User';
-            }
-            $docs = xs_runcheck_docs('Dolphin Emulator');
-            return is_dir($docs) ? $docs : getenv('APPDATA') . '\\Dolphin Emulator';
-        case 'Cemu':
-            if (is_dir($dir . '\\portable')) {
-                return $dir . '\\portable';
-            }
-            return is_file($dir . '\\settings.xml') ? $dir : getenv('APPDATA') . '\\Cemu';
-        case 'xemu':
-            return is_file($dir . '\\xemu.toml') ? $dir : getenv('APPDATA') . '\\xemu\\xemu';
-    }
-    return $dir;                                    // RPCS3 and Xenia: beside the program
+    require_once __DIR__ . '/emus.php';
+    $e = xs_emu_of($exe);
+    return $e !== null ? xs_emu_home($e, $exe) : dirname($exe);
 }
 
 /** RPCS3's settings file: config\config.yml, or config.yml beside it in older builds. */

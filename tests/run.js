@@ -82,6 +82,7 @@ const GROUPS = {
   emuadd: "./t-emuadd",
   emuhelp: "./t-emuhelp",
   emumove: "./t-emumove",
+  emus: "./t-emus",
   phone: "./t-phone",
   jobs: "./t-jobs",
   themes: "./t-themes",
