@@ -91,12 +91,20 @@ $foundPhp = if (-not (Test-Path -LiteralPath $ownPhp) -and -not (Test-Path -Lite
         Select-Object -First 1 -ExpandProperty FullName
 }
 $pathPhp  = if (Get-Command php -ErrorAction SilentlyContinue) { (Get-Command php).Source }
+# Last of all, the newest php-* folder one level further up, for a checkout kept in a
+# subfolder of the folder PHP is in, through whatever version PHP has moved to.
+$above    = Split-Path $myApps -Parent
+$abovePhp = if ($above -and -not (Test-Path -LiteralPath $ownPhp) -and -not (Test-Path -LiteralPath $knownPhp)) {
+    Get-ChildItem -LiteralPath $above -Directory -Filter 'php-*' -ErrorAction SilentlyContinue | Sort-Object Name -Descending |
+        ForEach-Object { Join-Path $_.FullName 'php.exe' } | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+}
 
 $searched = @(
     @{ where = 'comes with this copy'; path = $ownPhp },
     @{ where = 'known install'; path = $knownPhp },
     @{ where = "search $myApps"; path = $foundPhp },
-    @{ where = 'PATH';          path = $pathPhp }
+    @{ where = 'PATH';          path = $pathPhp },
+    @{ where = "php-* in $above"; path = $abovePhp }
 )
 $phpPath = ($searched | Where-Object { $_.path -and (Test-Path -LiteralPath $_.path) } | Select-Object -First 1).path
 
