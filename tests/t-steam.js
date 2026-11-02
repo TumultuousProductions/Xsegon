@@ -370,6 +370,15 @@ module.exports = async function (b, check) {
         check("once that has closed and the launcher does nothing, the game ends about 4 seconds on, not when the launcher does",
               [r.took < 35, !!r.s && r.s.exitCode, fs.existsSync(path.join(tmpData, "running.json"))], [true, 0, false]);
         check("the log says so, and the launcher is left running", [/xsfake-launcher\.exe stayed behind with no window, doing nothing, .*Exit Test taken as closed/.test(r.log), await fakeAlive()], [true, true]);
+        // The launcher's cmd still waits in that launch's own .bat: the next launch runs its own and takes that one away.
+        const bats = () => fs.readdirSync(tmpData).filter((f) => /^launch-\d+\.bat$/i.test(f));
+        const left = bats();
+        await runLauncher(["-Arguments", "/c exit 0"]);
+        const next = bats();
+        check("each launch runs a .bat of its own, last-launch.bat its copy, and the one a launcher left running is taken away",
+              [left.length, next.length, next[0] !== left[0],
+               next.length === 1 && fs.readFileSync(path.join(tmpData, next[0]), "utf8") === fs.readFileSync(path.join(tmpData, "last-launch.bat"), "utf8")],
+              [1, 1, true, true]);
         await stopFakes();
         r = await play("loads 10");
         check("a program busy with no window is a game loading: not taken as closed", [/stayed behind/.test(r.log), !!r.s && r.s.seconds >= 11], [false, true]);

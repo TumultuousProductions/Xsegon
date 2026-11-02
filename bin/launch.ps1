@@ -98,6 +98,9 @@ $runningFile = Join-Path $DataDir 'running.json'
 $errorFile   = Join-Path $DataDir 'last-error.json'
 $sessionFile = Join-Path $DataDir 'sessions.jsonl'
 $cmdFile     = Join-Path $DataDir 'last-launch.bat'
+# What runs is this launch's own copy: cmd reads a .bat on from where it stopped, so a
+# launcher left running (Wait-Program) would read on into the next launch's lines.
+$runFile     = Join-Path $DataDir "launch-$PID.bat"
 
 <#  Every game's last launch, ok or not, in data\launch-results.json: a game
     whose last launch failed is greyed out under NEEDS FIX wherever it shows
@@ -236,9 +239,16 @@ $line = '"' + $Exe.Replace('%', '%%') + '" ' + ([string]$Arguments).Replace('%',
     cmd.exe reads a batch file in the OEM code page, so a name with an accent
     reaches the game wrong. "chcp 65001" switches cmd to UTF-8 for the lines
     after it. No BOM: cmd would read one as part of the first command.     #>
-[System.IO.File]::WriteAllText($cmdFile,
-    "@echo off`r`nchcp 65001 >nul`r`ncd /d `"$workDir`"`r`n$line`r`n",
-    (New-Object System.Text.UTF8Encoding($false)))
+$batText = "@echo off`r`nchcp 65001 >nul`r`ncd /d `"$workDir`"`r`n$line`r`n"
+# An earlier launch's is taken away: a cmd still in it ends with its program and runs nothing more.
+Get-ChildItem -LiteralPath $DataDir -Filter 'launch-*.bat' -ErrorAction SilentlyContinue | Where-Object { $_.FullName -ne $runFile } | ForEach-Object {
+    $oldBat = $_
+    try { Remove-Item -LiteralPath $oldBat.FullName -Force -ErrorAction Stop }
+    catch { Write-Log 'LNCH' "could not take away $($oldBat.Name) of an earlier launch: $($_.Exception.Message)" }
+}
+foreach ($batFile in @($runFile, $cmdFile)) {
+    [System.IO.File]::WriteAllText($batFile, $batText, (New-Object System.Text.UTF8Encoding($false)))
+}
 
 @{
     gameId    = $GameId
@@ -471,7 +481,7 @@ try {
         <#  Load the chosen state over RetroArch's network commands, the way
             api\quit.php quits. If it is never sent, the state is still the
             current slot, and F4 loads it by hand.                             #>
-        $proc = Start-Process -FilePath $cmdFile -PassThru -WindowStyle Hidden
+        $proc = Start-Process -FilePath $runFile -PassThru -WindowStyle Hidden
         Step-Aside $proc
         $raExe = Join-Path (Split-Path $Exe -Parent) 'retroarch.exe'
         $deadline = (Get-Date).AddSeconds(25)
@@ -554,7 +564,7 @@ try {
             over and exits at once; with Steam closed it BECOMES Steam and
             stays open long after the game has gone. So it is started and
             left, and the game is found by its folder below.               #>
-        Start-Process -FilePath $cmdFile -WindowStyle Hidden | Out-Null
+        Start-Process -FilePath $runFile -WindowStyle Hidden | Out-Null
         $code = 0
     } elseif ($NetPort -gt 0) {
         <#  A RetroArch game with its network commands on: while it runs,
@@ -562,7 +572,7 @@ try {
             (GET_STATUS answers PLAYING, or PAUSED from its menu). Once it
             has said so, nothing more is asked, and how it ends later is a
             close (see A CLOSE IS NOT A CRASH below).                      #>
-        $proc = Start-Process -FilePath $cmdFile -PassThru -WindowStyle Hidden
+        $proc = Start-Process -FilePath $runFile -PassThru -WindowStyle Hidden
         Step-Aside $proc
         while (-not $proc.HasExited) {
             $status = Send-RetroArch 'GET_STATUS' 700
@@ -573,7 +583,7 @@ try {
         $proc.WaitForExit()
         $code = $proc.ExitCode
     } else {
-        $proc = Start-Process -FilePath $cmdFile -PassThru -WindowStyle Hidden
+        $proc = Start-Process -FilePath $runFile -PassThru -WindowStyle Hidden
         $null = $proc.Handle          # without it a finished process can forget its exit code
         Step-Aside $proc
         if ($Kind -ne 'retroarch') { Wait-Program $proc }      # RetroArch ends with its window
