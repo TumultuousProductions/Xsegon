@@ -7,6 +7,7 @@
  *  the panel to close. A look for Fill in custom's list has no bar (js\fill.js).
  */
 
+import { setAtWork } from "./atwork.js";
 import { reloadKeeping } from "./editors.js";
 import { showStrip } from "./launch.js";
 import { L, api, postJson } from "./log.js";
@@ -18,6 +19,10 @@ import { el, plural } from "./util.js";
 
 var TICK_MS = 1500;
 var SEEN = "xs-fill-seen";               // the job whose ending has been said, by its start time
+/* What closing Xsegon does to a pass today, said by the X's question (js\appwindow.js):
+   the server writes each game's name (bin\fill.php), and the pictures after that are the worker's own. */
+var FILL_ON_CLOSE = "If Xsegon closes now, the games it has not named yet get no pictures this time.";
+var FILL_GOES_ON = "It finishes the pictures by itself with Xsegon closed.";
 
 var bar = null, line = null, track = null, stopBtn = null;
 var timer = null, reloadWanted = false, firstFor = 0, hideT = null;
@@ -136,11 +141,12 @@ function stop() {
 }
 
 function handle(j) {
+  var w = j && j.state === "running" && j.mode !== "look" ? fillWords(j) : null;
+  setAtWork("fill", w ? { name: "Get Pictures", line: w[0], onClose: j.phase === "rest" || j.phase === "again" ? FILL_GOES_ON : FILL_ON_CLOSE } : null);
   if (!j || j.mode === "look") { over = true; tryReload(); stop(); if (bar) { bar.hidden = true; } return; }
   if (j.state === "running") {
     build();
     clearTimeout(hideT);
-    var w = fillWords(j);
     line.textContent = "Get Pictures: " + w[0];
     track.firstChild.style.width = Math.round(Math.max(0, Math.min(1, w[1])) * 100) + "%";
     stopBtn.hidden = false;

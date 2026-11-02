@@ -13,6 +13,7 @@
  *  reloaded mid-job has no follower left, which is why this can say it too.
  */
 
+import { setAtWork } from "./atwork.js";
 import { reloadKeeping } from "./editors.js";
 import { showStrip } from "./launch.js";
 import { L, api, postJson } from "./log.js";
@@ -75,6 +76,7 @@ function tryReload() {
 
 function paint(job, own) {
   var b = build(job);
+  setAtWork("job:" + job.key, job.state === "running" ? { name: job.name, line: job.line, onClose: job.onClose || "" } : null);
   if (job.state === "running") {
     clearTimeout(b.hideT);
     seenOver[job.key] = 0;
@@ -121,7 +123,9 @@ function handle(jobs) {
     if (job.state === "running" || (ran[job.key] === job.started && saidAt(job.key) !== job.started)) { owed = true; }
   });
   Object.keys(bars).forEach(function (key) {
-    if (!here[key] && !(key in ownStop) && !bars[key].node.classList.contains("ended")) { bars[key].node.hidden = true; }
+    if (here[key] || key in ownStop) { return; }
+    setAtWork("job:" + key, null);               // gone from the list: not at work
+    if (!bars[key].node.classList.contains("ended")) { bars[key].node.hidden = true; }
   });
   tryReload();
   // A tool that has just started a job is given a few reads to see it: a worker writes its first word a moment after it is asked for.
@@ -149,6 +153,7 @@ export function jobBar(job, onStop) {
    was for is no more (a list replaced while its rest was still coming). */
 export function jobBarHide(key) {
   var b = bars[key];
+  setAtWork("job:" + key, null);
   if (b) { clearTimeout(b.hideT); b.node.hidden = true; b.node.classList.add("ended"); }
 }
 

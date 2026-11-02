@@ -1,3 +1,4 @@
+import { leaveQuietly } from "./atwork.js";
 import { brandRows } from "./brand.js";
 import { confirmWindow } from "./confirm.js";
 import { paintDeletedList, paintHiddenList } from "./editors.js";
@@ -373,6 +374,7 @@ function paintSettings(res) {
       L("SET", "reset to defaults");
       api("api/settings.php?reset=1", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }).then(function (r) {
         if (!r.ok) { showStrip("not reset: " + (r.error || ""), true); return; }
+        leaveQuietly();
         location.reload();
       });
     } }, "Keep my settings");

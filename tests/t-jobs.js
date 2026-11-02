@@ -67,6 +67,9 @@ module.exports = async function (b, check) {
        ["Steam trailers", "running", "2 of 4 games, 1 trailer saved", 0.5, false],
        ["Move out of LaunchBox", "copying RetroArch: 512 MB of 2 GB", 0.25, true],
        ["ScreenScraper videos", "1 of 4 games, 1 video saved", 0.25, false]]);
+    check("and what closing Xsegon does to it, for the X's question",
+      [(row(three, "emumove") || {}).onClose, /^Its videos and manuals finish with Xsegon closed/.test((row(three, "screenscraper") || {}).onClose || "")],
+      ["It finishes by itself with Xsegon closed.", true]);
     check("and the status look says a job is at work, so any page brings the bars up", (await api("api/running.php")).jobs, true);
 
     /* ---- the bars: one each, stacked in the corner ------------------------ */

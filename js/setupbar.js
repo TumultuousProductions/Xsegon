@@ -5,6 +5,7 @@
  *  lighter look in js\launch.js.
  */
 
+import { setAtWork } from "./atwork.js";
 import { reloadKeeping } from "./editors.js";
 import { showStrip } from "./launch.js";
 import { L, api, logWarn } from "./log.js";
@@ -73,6 +74,10 @@ export function cornerBox() {
 }
 
 var bar = null, line = null, track = null, hideT = null;
+/* What closing Xsegon does to a download today, said by the X's question (js\appwindow.js):
+   bin\setup.ps1 needs no server, and RetroArch is set up on the server's next read of the job. */
+var SETUP_ON_CLOSE = { retroarch: "The download finishes with Xsegon closed, and RetroArch is set up the next time Xsegon is open.",
+                       cores: "The download finishes with Xsegon closed." };
 
 function build() {
   if (bar) { return; }
@@ -87,6 +92,8 @@ function build() {
 }
 
 export function paintSetupBar(job) {
+  setAtWork("setup", job && job.state === "running" ? { name: job.kind === "retroarch" ? "The RetroArch download" : "The cores download",
+    line: jobLine(job), onClose: SETUP_ON_CLOSE[job.kind === "retroarch" ? "retroarch" : "cores"] } : null);
   if (!job || job.state !== "running") {
     if (job && job.state === "done") {
       // A last green moment, also for a fetch that ended before the first

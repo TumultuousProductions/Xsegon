@@ -19,6 +19,11 @@ function post(body) {
 // The backup screen may have been closed while a window or the server was asked.
 function here() { return $editor.dataset.tool === "backup"; }
 
+/* A backup or a restore runs inside the server's request, so closing Xsegon
+   cuts it: the X's question says so while one is going (js\waitbar.js). */
+export var BACKUP_WORK = { name: "The backup", onClose: "Closing now cuts it off, and a backup cut short is not kept." };
+export var RESTORE_WORK = { name: "The restore", onClose: "Closing now cuts it off, and can leave your files half old and half new." };
+
 // A backup just made, in words: it is only ever said once every file in it has been read back.
 export function backupSaid(made, size) {
   return made.files + " files (" + size(made.bytes) + "), every one read back" + (made.large ? ", in the larger zip format" : "");
@@ -48,7 +53,7 @@ export function backupIoButtons(btns, size, repaint, inspect, report) {
       if (!dir || !here()) { return; }
       out.disabled = true;
       out.textContent = "Exporting...";
-      waitBar(btns, "Backing up your files", post({ action: "export", dir: dir })).then(function (r) {
+      waitBar(btns, "Backing up your files", post({ action: "export", dir: dir }), BACKUP_WORK).then(function (r) {
         if (!here()) { return; }
         if (!r.ok) { backupFailed("The backup was not exported", "could not export", r, report); repaint(); return; }
         sound("select");

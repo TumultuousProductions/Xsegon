@@ -14,6 +14,8 @@
  *  close asks the server (api\window.php). Keys and the pad treat the screen as
  *  an asking window (js\input.js), so nothing behind it hears a press.
  */
+
+import { leaveQuietly } from "./atwork.js";
 import { L, flushLog } from "./log.js";
 import { $offline } from "./state.js";
 import { el } from "./util.js";
@@ -86,6 +88,7 @@ function build() {
    own window is; one that stays open says how to close it by hand. */
 function closeWindow() {
   L("SRV", "Close Xsegon pressed while the server is not answering");
+  leaveQuietly();
   window.close();
   setTimeout(function () {
     var stayed = $offline.querySelector(".off-stayed");
