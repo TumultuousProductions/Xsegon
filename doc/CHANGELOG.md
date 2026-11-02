@@ -2,6 +2,10 @@
 
 Newest first: what changed for the person at the screen.
 
+## 2026-11-02
+
+- **Running from the source code, Xsegon finds PHP one folder further up.** A checkout kept in a subfolder of the folder PHP is in now starts, whatever version PHP has moved to, where it used to stop at "PHP could not be located". The newest php-* folder there is tried last, after everything Xsegon looked at before, so nobody's PHP changes. A downloaded copy carries its own PHP and is not affected.
+
 ## 2026-11-01
 
 - **Homebrew: free games made by fans, from their makers.** A new card on the consoles screen and a row in the Games menu, and an empty library offers it too. It starts with the 28 games of the N64brew Game Jam 2025 and the 2024 jam's collection, each with everyone who made it, what it was made with, its licence, its makers' own notes and warnings, and buttons to their website, GitHub, community and jam. Get fetches a game from its team's latest release, or the copy entered in the jam, checks it, and adds it to its console's list with its team as the developer. Xsegon hosts none of it. These games play in ares, which Get offers to fetch from its makers the first time; your other Nintendo 64 games stay as they are. Get brings a game's pictures too, its makers' own first and N64 Squid's screenshots where they have none, and each game's panel says whose they are. A copy you put there yourself finds the same pictures in its Media tab, by its name or file name.
