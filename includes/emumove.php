@@ -172,7 +172,7 @@ function xs_emumove_rows(array $table, string $dest): array
             // A copy cut short (Xsegon closed in the middle of it) is not "there": the next copy clears it first.
             'there' => $to !== '' && file_exists($to) && !is_file($to . '\\' . XS_EMUMOVE_MARK),
             'why' => $folder === '' ? 'its program lies loose in LaunchBox\'s folder, not in a folder of its own'
-                   : (!is_file($exe) ? 'it is not where the table says' : null),
+                   : (!xs_program_there($exe) ? 'it is not where the table says' : null),
         ];
     }
     return array_values($rows);

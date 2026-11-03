@@ -4,6 +4,8 @@
  *
  *   ?q= &platform=<console or @collection> &sort= &reverse= &grouped=
  *   &versions=all &added= &from= &lot=, and the filter switches read below
+ *   &quick=1   the page's first read at open: no drive is asked about a game's file, so it
+ *              waits on nothing; the read sent right after it looks as always (roadmap BW19)
  *
  * Read-only over data\library.json. Sort, group and filter come from
  * settings, never hardcoded: one code path with different parameters.
@@ -29,7 +31,11 @@ $cheatPicks = xs_cheats_read();
 $tagMap = xs_tags_read();
 
 $s   = xs_settings();
+// Quick: every game's file counts as there, as the status check reads them (BN1); the sweep after puts the marks right.
+$quick = ($_GET['quick'] ?? '') === '1';
+xs_drives_alone($quick);
 $lib = xs_library();
+xs_drives_alone(false);
 $games = $lib['games'] ?? [];
 // Hacks and the games still in doubt (includes\hackof.php), for the mark on each.
 $hackMarks = xs_hackof_marks($games);

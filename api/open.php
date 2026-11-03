@@ -35,6 +35,10 @@ $port   = (int) ($_SERVER['SERVER_PORT'] ?? 8099);
 if (xs_test_copy()) {
     xs_json(['ok' => true, 'opening' => true, 'dry' => true]);
 }
+// The fast lane first: started here it is up before the page's first read, which lands
+// on the main server otherwise, and holds everything behind it there (roadmap BW16).
+require_once __DIR__ . '/../includes/fastlane.php';
+xs_fast_lane_url();
 // Detached, like everything else this server starts: it is single-threaded,
 // and waiting on a browser to open would stall every other request.
 if (!xs_spawn_ps(xs_ps_call($script, ['Port' => $port]), ['hidden' => true])) {

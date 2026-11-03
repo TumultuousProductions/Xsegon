@@ -589,7 +589,7 @@ function xs_hack_programs(array $game, ?array $sum = null): array
             continue;
         }
         $out[] = ['id' => (string) $e['id'], 'title' => (string) $e['title'], 'platform' => xs_local_platform($e),
-                  'ready' => is_file($run), 'how' => $how];
+                  'ready' => xs_is_program($run) ? xs_program_there($run) : is_file($run), 'how' => $how];
     }
     usort($out, static fn(array $a, array $b): int => strcasecmp($a['title'], $b['title']));
     return $out;
