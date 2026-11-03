@@ -119,7 +119,8 @@ export function coverFrom(g) {
    scaling, and the cover there waits, through the second drawing from the full record. */
 export function flyIn(from) {
   land();
-  $details.classList.toggle("cover-in", !!from);
+  // On for a flight, off only as details goes (js\details.js): drawn again while open, it fades in no second time.
+  if (from) { $details.classList.add("cover-in"); }
   var img = from && $details.querySelector(".dleft img.cover");
   var to = img && (img.complete && img.naturalWidth ? drawn(img, img.naturalWidth, img.naturalHeight)
                                                     : drawn(img, from.img.naturalWidth, from.img.naturalHeight));

@@ -60,6 +60,7 @@ import { openAddChooser } from "./add.js";
 import { inApp, initWindowButtons, toggleStatus, watchScreen } from "./appwindow.js";
 import { initArtEditors } from "./art-editors.js";
 import { initAtWork } from "./atwork.js";
+import { initBump } from "./bump.js";
 import { initChrome } from "./chrome.js";
 import { attachSpin } from "./drag.js";
 import { closeEditor } from "./editors.js";
@@ -144,6 +145,7 @@ initWindowButtons();
 initAtWork();    // a close from outside the X while a job is at work: Chrome asks first
 watchScreen();   // a TV plugged in, or taken away: the window is opened again at that screen's size
 initInput();
+initBump();      // a key held at the end of the list, told apart from two presses
 
 // ---------- wiring ----------
 

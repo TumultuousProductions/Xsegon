@@ -7,24 +7,34 @@
     or a wheel kept going thuds once. The stretch rests with Settings > Feel >
     Animations off; the sound follows Sound's own switches.                  */
 
+import { moreComing } from "./more.js";
 import { rowsNode } from "./rows.js";
 import { thud } from "./sound.js";
-import { $body, $view, sel, view } from "./state.js";
+import { $body, $view, S, games, sel, view } from "./state.js";
 import { carNodes, wheelNodes } from "./views.js";
 
-// A press the same way sooner than this after the last is a key held down: it covers a key's first repeat (400 to 500 ms).
+// A turn the same way sooner than this after the last is one wheel kept going; a pad's press, this past its Hold before repeating.
 var HELD_MS = 650;
-var MOST = 0.05;          // the stretch at its fullest: the games 5% longer
+var keyAt = 0, keyHeld = false;
+var MOST = 0.05;         // the stretch at its fullest: the games 5% longer
 var PRESS = 1, TURN = 0.5; // a press pulls this much, a notch or a step of a spin this much more; the stretch is 1 - e^-pull of the most
 var LET_GO_MS = 120;      // nothing pulling for this long: let go
 var OUT = 0.045, BACK = 0.11;   // seconds: how quickly it stretches out, and springs back
 var lastAt = 0, lastWay = "";
 var on = null;            // the stretch under way
 
+// A key says itself whether it is held (its repeat), whatever Windows' delay: read before the page's own handler.
+export function initBump() {
+  window.addEventListener("keydown", function (e) { keyAt = Date.now(); keyHeld = e.repeat; }, true);
+}
+
 /* way: "up", "down", "left" or "right", as pressed or turned. turned: the mouse
    wheel or a spin, whose every notch pulls on, held or not. */
 export function bumpEnd(way, turned) {
-  var now = Date.now(), held = way === lastWay && now - lastAt < HELD_MS;
+  // No games, or more of the list still coming (js\more.js): no end to feel.
+  if (!games.length || ((way === "down" || way === "right") && moreComing())) { return; }
+  var now = Date.now(), padHold = Number((S.controller || {}).repeatDelayMs) || 400;
+  var held = !turned && now - keyAt < 100 ? keyHeld : way === lastWay && now - lastAt < (turned ? HELD_MS : Math.max(HELD_MS, padHold + 250));
   lastAt = now;
   lastWay = way;
   if (!held) { thud(); }
@@ -110,6 +120,8 @@ function frame(t) {
     var d = ((s - 1) * (e[1] - moved - st.pin)).toFixed(2) + "px";
     e[0].style.translate = st.y ? "0 " + d : d + " 0";
     e[0].style.scale = st.y ? "1 " + s.toFixed(4) : s.toFixed(4) + " 1";
+    // The wheel's chosen plate lands with a bounce of scale and translate, which a CSS animation would win: it lands as after a fast spin.
+    if (e[0].classList.contains("arrive")) { e[0].classList.add("spun"); }
   });
   st.raf = requestAnimationFrame(frame);
 }

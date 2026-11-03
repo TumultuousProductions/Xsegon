@@ -1698,6 +1698,8 @@ module.exports = async function (b, check) {
     const plain = (at[16] - at[6]) / 10;
     return { plain: Math.round(plain), quicker: Math.round(((at[51] - at[41]) / 10 / plain) * 100) / 100 };
   };
+  // The page read the gear's last Momentum (0) and keeps it: opened again, it reads the defaults just put back.
+  await b.goto(undefined, { keepView: true });
   await b.ev(`(s => { s.value = ""; s.dispatchEvent(new Event("change", { bubbles: true })); })(document.getElementById("platform"))`);
   for (const v of ["grid", "list"]) {
     const r = await longScroll(v);

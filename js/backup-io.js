@@ -54,13 +54,13 @@ export function backupIoButtons(btns, size, repaint, inspect, report) {
       out.disabled = true;
       out.textContent = "Exporting...";
       waitBar(btns, "Backing up your files", post({ action: "export", dir: dir }), BACKUP_WORK).then(function (r) {
-        if (!here()) { return; }
-        if (!r.ok) { backupFailed("The backup was not exported", "could not export", r, report); repaint(); return; }
+        // Said with the screen gone too (closed while it worked): an export's answer is never lost.
+        if (!r.ok) { backupFailed("The backup was not exported", "could not export", r, report); if (here()) { repaint(); } return; }
         sound("select");
         var miss = r.made.missed || [];
         if (miss.length) { showStrip("exported " + r.made.files + " files, but " + miss.length + " would not read and " + (miss.length === 1 ? "is" : "are") + " NOT in it: " + miss.slice(0, 5).join(", ") + ". Try again in a moment.", true); }
         else { showStrip("exported " + backupSaid(r.made, size) + ", to " + r.made.dir + "\\" + r.made.name, false); }
-        repaint();
+        if (here()) { repaint(); }
       });
     });
   });

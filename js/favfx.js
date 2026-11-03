@@ -13,6 +13,8 @@ function starInSight() {
   })[0] || null;
 }
 
+var starDone = null;                     // takes the last press's listeners off
+
 // on: the game has just become a favourite. Called after the repaint, which makes the star anew.
 export function starAnswers(on) {
   if ($body.classList.contains("no-anim")) { return; }
@@ -26,9 +28,22 @@ export function starAnswers(on) {
   b.style.transformOrigin = at.mid.x + "px " + at.mid.y + "px";
   void b.offsetWidth;                    // the same class again starts it again
   b.classList.add(cls);
-  var done = function () { b.classList.remove(cls); };
-  b.addEventListener("animationend", done, { once: true });
-  b.addEventListener("animationcancel", done, { once: true });
+  // The last press's end is not this one's: its cancel comes a frame after this press took its class away.
+  var want = on ? "xs-fav-on" : "xs-fav-off";
+  if (starDone) { starDone(); }
+  var done = function (e) {
+    if (e.animationName !== want) { return; }
+    b.classList.remove(cls);
+    off();
+  };
+  var off = function () {
+    b.removeEventListener("animationend", done);
+    b.removeEventListener("animationcancel", done);
+    if (starDone === off) { starDone = null; }
+  };
+  starDone = off;
+  b.addEventListener("animationend", done);
+  b.addEventListener("animationcancel", done);
   if (!on) { puff(b, at); }
 }
 

@@ -371,7 +371,7 @@ module.exports = async function (b, check) {
               [r.took < 35, !!r.s && r.s.exitCode, fs.existsSync(path.join(tmpData, "running.json"))], [true, 0, false]);
         check("the log says so, and the launcher is left running", [/xsfake-launcher\.exe stayed behind with no window, doing nothing, .*Exit Test taken as closed/.test(r.log), await fakeAlive()], [true, true]);
         // The launcher's cmd still waits in that launch's own .bat: the next launch runs its own and takes that one away.
-        const bats = () => fs.readdirSync(tmpData).filter((f) => /^launch-\d+\.bat$/i.test(f));
+        const bats = () => fs.readdirSync(tmpData).filter((f) => /^launch-\d+-\d+\.bat$/i.test(f));
         const left = bats();
         await runLauncher(["-Arguments", "/c exit 0"]);
         const next = bats();
