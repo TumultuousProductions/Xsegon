@@ -248,8 +248,8 @@ async function emulatorsOwnCheats(b, check) {
 
     const got = await ask();
     const emu = got.emu || { cheats: [] };
-    check("a PCSX2 game offers no RetroArch files, and its own emulator's cheats instead",
-      [(got.files || []).length, emu.emulator, emu.why, emu.file], [0, "PCSX2", null, "cheats\\ABCD1234.pnach"]);
+    check("a PCSX2 game offers no RetroArch files, and its own emulator's cheats instead, switched in the game's own file",
+      [(got.files || []).length, emu.emulator, emu.why, emu.file, emu.switch], [0, "PCSX2", null, "gamesettings\\SLUS-99999_ABCD1234.ini", true]);
     check("read from the game's own files: the ones that are on first, a name once however many times the file has it, and another game's left out",
       emu.cheats.map((c) => [c.name, c.on, c.copies, c.author]),
       [["Infinite Health", true, 2, "One"], ["All Stages", true, 1, "One"], ["Max Money", false, 1, "Two"]]);
@@ -272,26 +272,30 @@ async function emulatorsOwnCheats(b, check) {
       [await b.until(onFile, true), await b.until(`/cartridge consoles only for now, and .*Playstation 2 is not one of them/.test((document.querySelector("#details .dtab-pane.is-filecheck .cr-none") || {}).textContent || "")`, true, 6000)], [true, true]);
     await b.clickSel(`#details .dtab[data-tab="cheats"]`);
     const rowsNow = `[...document.querySelectorAll("#details .dtab-pane.is-cheats .ch-list .cr-row")].map((r) => [r.querySelector(".cr-name").textContent, r.classList.contains("on"), r.classList.contains("ro")])`;
-    check("and lists them, the ones that are on marked, none of them a switch",
-      await b.until(rowsNow, [["Infinite Health", true, true], ["All Stages", true, true], ["Max Money", false, true]], 9000),
-      [["Infinite Health", true, true], ["All Stages", true, true], ["Max Money", false, true]]);
-    check("saying whose they are, where they were read from, and where they are switched",
-      await b.ev(`(t => [/2 cheats are on for this game in PCSX2/.test(t), /read from cheats.ABCD1234\\.pnach/.test(t), /does not change them/.test(t), /Properties > Cheats/.test(t)])(document.querySelector("#details .dtab-pane .group-help").textContent)`),
+    check("and lists them, the ones that are on marked, each a switch (roadmap CA20)",
+      await b.until(rowsNow, [["Infinite Health", true, false], ["All Stages", true, false], ["Max Money", false, false]], 9000),
+      [["Infinite Health", true, false], ["All Stages", true, false], ["Max Money", false, false]]);
+    check("saying how many are on, whose they are, and where a press keeps a switch",
+      await b.ev(`(t => [/2 on for this game in PCSX2/.test(t), /gamesettings.SLUS-99999_ABCD1234\\.ini/.test(t), /A press switches one on or off/.test(t), /Properties window/.test(t)])(document.querySelector("#details .dtab-pane .group-help").textContent)`),
       [true, true, true, true]);
     check("in a box no taller than its three rows", await b.ev(`document.querySelector("#details .dtab-pane .ch-list").getBoundingClientRect().height < 200`), true);
     await b.shot("details-tab-cheats-pcsx2");
+    const ownIni = path.join(dir, "gamesettings", "SLUS-99999_ABCD1234.ini");
+    const iniWas = fs.readFileSync(ownIni, "utf8");
     await b.ev(`document.querySelectorAll("#details .dtab-pane .ch-list .cr-row")[2].click()`);
-    await b.key("ArrowDown"); await b.key("ArrowDown"); await b.key("Enter");
-    await sleep(300);
-    check("in that list the legend offers moving and the way back, and no selecting",
-      await b.ev(`(l => [l.includes("move"), l.includes("back to the tabs"), l.includes("select")])(${legend})`), [true, true, false]);
-    check("a press on one changes nothing, by the mouse or by Enter", [await b.ev(rowsNow + ".map((r) => r[1])"), await b.ev(`document.getElementById("details").hidden`)], [[true, true, false], false]);
+    check("a press on one switches it, kept at once in the game's own file",
+      [await b.until(rowsNow + ".find((r) => r[0] === 'Max Money')[1]", true, 6000), /\[Cheats\][^[]*Enable = Max Money/.test(fs.readFileSync(ownIni, "utf8"))], [true, true]);
+    check("in that list the legend offers moving, switching and the way back",
+      await b.ev(`(l => [l.includes("move"), l.includes("switch it"), l.includes("back to the tabs")])(${legend})`), [true, true, true]);
+    await b.ev(`[...document.querySelectorAll("#details .dtab-pane .ch-list .cr-row")].find((r) => r.querySelector(".cr-name").textContent === "Max Money").click()`);
+    check("pressed again it is off, and the game's file reads as it did", [await b.until(rowsNow + ".find((r) => r[0] === 'Max Money')[1]", false, 6000), fs.readFileSync(ownIni, "utf8")], [false, iniWas]);
     await b.ev(`(() => { const f = document.querySelector("#details .dtab-pane .ch-find input"); f.value = "50%"; f.dispatchEvent(new Event("input", { bubbles: true })); })()`);
     check("the find box looks in the names and what they say",
       await b.until(`[...document.querySelectorAll("#details .dtab-pane .ch-list .cr-row .cr-name")].map((x) => x.textContent)`, ["Max Money"], 4000), ["Max Money"]);
     await b.key("Escape"); await b.key("Escape");
     await b.until(`document.getElementById("details").hidden`, true);
-    check("nothing in the emulator's folder was written or touched by any of it", filesOf(dir), before);
+    check("nothing else in the emulator's folder was written or touched by any of it",
+      filesOf(dir).filter((f) => !f.startsWith("gamesettings")), before.filter((f) => !f.startsWith("gamesettings")));
 
     // ---- the answers that are not a list ----
     pcsx2Fixture(dir, rom, { global: true });
