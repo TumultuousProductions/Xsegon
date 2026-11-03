@@ -96,7 +96,7 @@ function xs_jobs_on_close(string $key): string
     return match ($key) {
         'unpack'        => 'Every archive is still unpacked, but Xsegon cannot add them to your games while it is closed: Scan for Games will offer them.',
         'fanmake'       => 'It is still made, but' . $notAdded . '.',
-        'homebrew'      => 'The game is still downloaded, but' . $notAdded . ', nor its pictures: Scan for Games will find it.',
+        'homebrew'      => 'The game is still downloaded, but' . $notAdded . ', nor its pictures: its Get adds it next time, fetching nothing again.',
         'screenscraper' => 'Its videos and manuals finish with Xsegon closed; covers it fetched are put in place the next time Xsegon is open.',
         'getall'        => 'What it has started carries on with Xsegon closed.',
         default         => 'It finishes by itself with Xsegon closed.',
@@ -506,7 +506,7 @@ function xs_jobs_stop(string $key): bool
         require_once __DIR__ . '/homebrew.php';
         if ((xs_hb_job()['state'] ?? '') === 'running') {
             @touch(xs_hb_stop_path());
-            xs_log('HBRW', 'get asked to stop: nothing is kept (the corner bar)');
+            xs_log('HBRW', 'get asked to stop (the corner bar): its end says what was kept');
         }
         return true;
     }

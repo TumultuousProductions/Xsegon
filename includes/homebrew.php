@@ -199,12 +199,48 @@ function xs_hb_dest(string $console): string
     return $dir . DIRECTORY_SEPARATOR . 'HomeBrew';
 }
 
+/** The file name Get gives a game: its name, less what Windows refuses in one. */
+function xs_hb_stem(string $name): string
+{
+    return trim((string) preg_replace('/[<>:"\/\\\\|?*\x00-\x1F]+/', ' ', $name));
+}
+
+/** The ids Get's copy of $g would take (xs_fm_scan_id), one for each ending a Nintendo 64 file comes in. */
+function xs_hb_ids(array $g): array
+{
+    $stem = xs_hb_stem((string) $g['name']);
+    return array_map(static fn (string $e): string => xs_fm_scan_id((string) $g['console'], $stem . '.' . $e), ['z64', 'v64', 'n64']);
+}
+
+/**
+ * The person's own copy of $g among $games: kept under the file name Get would give it, or with its
+ * name as title or file name. A second Get would only make a second copy, or write over theirs.
+ */
+function xs_hb_yours(array $g, array $games): ?array
+{
+    $ids = array_flip(xs_hb_ids($g));
+    $plain = static fn (string $s): string => (string) preg_replace('/[^a-z0-9]+/', '', strtolower($s));
+    $name = $plain((string) $g['name']);
+    foreach ($games as $lib) {
+        if (($lib['platform'] ?? '') !== $g['console']) {
+            continue;
+        }
+        if (isset($ids[(string) ($lib['id'] ?? '')]) || ($name !== '' && ($plain((string) ($lib['title'] ?? '')) === $name
+                || $plain(pathinfo((string) ($lib['romPath'] ?? ''), PATHINFO_FILENAME)) === $name))) {
+            return $lib;
+        }
+    }
+    return null;
+}
+
 /** Every listed game and where it stands here: the credit as the list has it, and the copy that is yours. */
 function xs_hb_states(array $games): array
 {
     $byId = [];
+    $byConsole = [];
     foreach ($games as $g) {
         $byId[(string) $g['id']] = $g;
+        $byConsole[(string) ($g['platform'] ?? '')][] = $g;
     }
     $got = xs_hb_got();
     $jams = (array) (xs_hb_doc()['jams'] ?? []);
@@ -213,8 +249,9 @@ function xs_hb_states(array $games): array
     foreach (xs_hb_list() as $id => $g) {
         $mine = null;
         $rec = is_array($got[$id] ?? null) ? $got[$id] : null;
-        if ($rec !== null && isset($byId[(string) ($rec['game'] ?? '')])) {
-            $lib = $byId[(string) $rec['game']];
+        $lib = $rec !== null ? ($byId[(string) ($rec['game'] ?? '')] ?? null) : null;
+        $lib = $lib ?? xs_hb_yours($g, $byConsole[(string) $g['console']] ?? []);
+        if ($lib !== null) {
             $mine = ['id' => (string) $lib['id'], 'title' => (string) $lib['title'], 'platform' => (string) $lib['platform'],
                      'local' => !empty($lib['local']), 'version' => (string) ($rec['version'] ?? '')];
         }
@@ -277,22 +314,33 @@ function xs_hb_start(string $id, bool $ares, ?string &$why = null): bool
         $why = (string) (xs_hb_job()['name'] ?? 'a game') . ' is on its way already: that has to finish first';
         return false;
     }
+    require_once __DIR__ . '/deleted.php';
     $had = (string) (xs_hb_got()[$id]['game'] ?? '');
-    if ($had !== '' && in_array($had, array_column(xs_library()['games'] ?? [], 'id'), true)) {
+    $games = xs_library()['games'] ?? [];
+    if ($had !== '' && in_array($had, array_column($games, 'id'), true)) {
         $why = $g['name'] . ' is in your library already';
         return false;
     }
-    // A hidden game is out of xs_library(), so it is asked for apart: a second Get would only make a second copy.
-    if ($had !== '' && isset(xs_hidden_games()[$had])) {
-        $why = $g['name'] . ' is in your library, hidden from Xsegon: Settings > Library shows it again';
+    $yours = xs_hb_yours($g, $games);
+    if ($yours !== null) {
+        $why = $g['name'] . ' is in your library already, as ' . (string) ($yours['title'] ?? '') . ' (' . basename((string) ($yours['romPath'] ?? '')) . ')';
         return false;
     }
-    // Fetched before but not taken into the library: the same.
+    // Hidden and deleted games are out of xs_library(), so they are asked for apart: a second Get would only make a second copy.
+    $ids = array_values(array_unique(array_filter(array_merge([$had], xs_hb_ids($g)))));
+    foreach ($ids as $gid) {
+        if (isset(xs_hidden_games()[$gid])) {
+            $why = $g['name'] . ' is in your library, hidden from Xsegon: Settings > Library shows it again';
+            return false;
+        }
+        if (isset(xs_deleted_ids()[$gid])) {
+            $why = $g['name'] . ' was deleted from Xsegon, its file kept: Settings > Library > Deleted from Xsegon puts it back';
+            return false;
+        }
+    }
+    // Fetched before and not yet taken in (Xsegon was closed as it was added): this Get adds that copy, fetching nothing again.
     $file = (string) (xs_hb_got()[$id]['file'] ?? '');
-    if ($file !== '' && is_file($file)) {
-        $why = $g['name'] . ' is at ' . $file . ' already, not in your library yet: Scan for Games brings it in';
-        return false;
-    }
+    $have = $file !== '' && is_file($file) ? $file : '';
     if (xs_curl_exe() === '') {
         $why = 'Windows\' own curl.exe is not on this PC (it comes with Windows 10 from 2018 on), and that is what downloads it';
         return false;
@@ -303,7 +351,7 @@ function xs_hb_start(string $id, bool $ares, ?string &$why = null): bool
         return false;
     }
     $job = ['state' => 'running', 'phase' => 'starting', 'started' => time(), 'game' => $id, 'name' => (string) $g['name'],
-            'console' => (string) $g['console'], 'ares' => $needs, 'bytes' => 0, 'total' => 0, 'said' => ''];
+            'console' => (string) $g['console'], 'ares' => $needs, 'have' => $have, 'bytes' => 0, 'total' => 0, 'said' => ''];
     @unlink(xs_hb_stop_path());
     if (!xs_write_json(xs_hb_job_path(), $job, $why)) {
         return false;
@@ -317,6 +365,6 @@ function xs_hb_start(string $id, bool $ares, ?string &$why = null): bool
         return false;
     }
     pclose($h);
-    xs_log('HBRW', 'get ' . $g['name'] . ' asked' . ($needs ? ', with ares' : ''));
+    xs_log('HBRW', 'get ' . $g['name'] . ' asked' . ($needs ? ', with ares' : '') . ($have !== '' ? ', to add the copy at ' . $have : ''));
     return true;
 }
