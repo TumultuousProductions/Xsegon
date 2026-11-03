@@ -66,6 +66,11 @@ module.exports = async function (b, check) {
   };
 
   await b.goto();
+  // The thud is the set's Move played slower: counted as it plays, with Xsegon's sounds on and unmuted for it.
+  const soundWas = await b.ev(`import("/js/sound.js").then((m) => { const was = [m.muted, m.SND.sounds]; m.setMuted(false); m.SND.sounds = true;
+    const real = HTMLMediaElement.prototype.play; window.__thuds = 0;
+    HTMLMediaElement.prototype.play = function () { if (this.playbackRate < 1) { window.__thuds++; } return real.apply(this, arguments); };
+    return was; })`);
   await b.openPlatform(con);
   for (const v of VIEWS) {
     if (v !== "wheel") { await b.setView(v); }
@@ -98,6 +103,32 @@ module.exports = async function (b, check) {
       await b.key("ArrowUp");
       check(v + ": and the arrows are the view's again: Up comes back to the first game", [down > 0, await b.until(S(`S.sel`), 0, 2000)], [true, 0]);
     }
+
+    /* Up past the first game (js\bump.js): the games in sight stretch away from the
+       end they ran into, held to it, along the view's own line, and the set's Move
+       plays low; at once again it is a key held; then they let go. */
+    let stopped = false;
+    for (let i = 0; i < 40 && !stopped; i++) {
+      const was = await b.ev(S(`S.sel`));
+      await b.key("ArrowUp");
+      stopped = (await b.ev(S(`S.sel`))) === was;
+    }
+    const thudsBefore = await b.ev(`window.__thuds`);
+    // Each game stretched: how far it moved along the line, how much longer it is along it, and across it.
+    const ax = v === "carousel" ? 0 : 1;
+    const stretched = `[...document.querySelectorAll("#view *")].filter((n) => n.style.scale).map((n) => {
+      const t = n.style.translate.split(" ").map(parseFloat), s = n.style.scale.split(" ").map(Number);
+      return [t[${ax}] || 0, s[${ax}], s[${1 - ax}]]; })`;
+    const pulled = await b.until(`(${stretched}).length > 0`, true, 600);
+    const seen = await b.ev(stretched);
+    check(v + ": Up past the first game stretches the games in sight " + (v === "carousel" ? "rightwards, held to the left" : "downwards, held to the top"),
+          [stopped, pulled, seen.every((x) => x[1] > 1 && x[2] === 1), seen.some((x) => x[0] > 0.5), seen.every((x) => x[0] > -0.5)],
+          [true, true, true, true, true]);
+    await b.key("ArrowUp");
+    check(v + ": with one thud, and a second Up straight after is a key held down: no second one",
+          [thudsBefore, await b.ev(`window.__thuds`)], [1, 1]);
+    check(v + ": and the games let go, nothing left on them", await b.until(`(${stretched}).length`, 0, 1500), 0);
+    await b.ev(`window.__thuds = 0`);
     if (SIDEWAYS.includes(v)) {
       await b.key("ArrowRight");
       check(v + ": Right steps to the next game", await b.until(S(`S.sel`), 1, 2000), 1);
@@ -124,4 +155,5 @@ module.exports = async function (b, check) {
   // Out of the box, Esc is what it always was: back to the consoles.
   await b.key("Escape");
   check("with the keys on the games, Esc still goes back to the consoles", await b.until(S(`S.sysStage`), "wall", 5000), "wall");
+  await b.ev(`import("/js/sound.js").then((m) => { m.setMuted(${!!soundWas[0]}); m.SND.sounds = ${soundWas[1] !== false}; })`);
 };

@@ -6,6 +6,7 @@
     presentation of one model: all read the same rows, differing in render()
     and how far a press moves. */
 
+import { bumpEnd } from "./bump.js";
 import { measureChrome } from "./chrome.js";
 import { dropDetails, openDetails } from "./details.js";
 import { dragAte } from "./drag.js";
@@ -419,7 +420,12 @@ function wireRowCard(n, i, r, c) {
 /* A step in the rows view: dx along a row, dy between rows (Infinity for
    the row's ends). The keys and the pad call this instead of move(). */
 export function navRows(dx, dy) {
-  if (!games.length || rowsStep(dx, dy) < 0) { return; }
+  if (!games.length) { return; }
+  if (rowsStep(dx, dy) < 0) {
+    // An end of the row, or the first or last row; Home and End (dx infinite) are not felt.
+    if (isFinite(dx)) { bumpEnd(dy ? (dy < 0 ? "up" : "down") : dx < 0 ? "left" : "right"); }
+    return;
+  }
   rowsMoved();
 }
 
@@ -516,14 +522,16 @@ export function rowStep(sign) {
   return best === -1 ? (sign > 0 ? flatNodes.length - 1 - sel : -sel) : best - sel;
 }
 
-export function move(delta) {
+/* way: the arrow or stick pressed ("up", "down", "left", "right"), so a press
+   past the end is felt (js\bump.js); turned: by a spin, which pulls on. */
+export function move(delta, way, turned) {
   if (!games.length) { return; }
   var next = Math.max(0, Math.min(games.length - 1, sel + delta));
   // Past the end, round to the other one, if that is what you asked for.
   if (next === sel && ctl("arrowsWrap", false) && delta !== 0) {
     next = delta > 0 ? 0 : games.length - 1;
   }
-  if (next === sel) { return; }
+  if (next === sel) { if (way) { bumpEnd(way, turned); } return; }
   goTo(next);
 }
 

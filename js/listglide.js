@@ -11,6 +11,7 @@
     and any other box. A key, a click, the scrollbar, or the selection
     bringing a row into view all stop a glide where it is. */
 
+import { bumpEnd } from "./bump.js";
 import { wheelGlide } from "./wheelscroll.js";
 
 var EASE = 0.07;        // seconds: how quickly a notch's distance is covered
@@ -52,7 +53,13 @@ export function listGlide(box, active) {
   }
 
   box.addEventListener("wheel", function (e) {
-    if (!active() || !wheelGlide() || e.ctrlKey || e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY) || !e.deltaY) { return; }
+    if (!active() || e.ctrlKey || e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY) || !e.deltaY) { return; }
+    // Turned on past the top or the bottom: each notch pulls the games out of their end (js\bump.js).
+    if (e.deltaY > 0 ? box.scrollTop >= max() - 1 : box.scrollTop <= 0) {
+      if (max() > 0) { e.preventDefault(); stop(); bumpEnd(e.deltaY > 0 ? "down" : "up", true); }
+      return;
+    }
+    if (!wheelGlide()) { return; }
     e.preventDefault();
     var px = e.deltaMode === 1 ? e.deltaY * 40 : e.deltaMode === 2 ? e.deltaY * box.clientHeight : e.deltaY;
     var now = performance.now();
