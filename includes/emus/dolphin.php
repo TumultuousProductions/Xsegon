@@ -12,14 +12,17 @@ const XS_DOLPHIN_XINPUT = ['Button A', 'Button B', 'Button X', 'Button Y', 'Pad 
     'Left X-', 'Left X+', 'Left Y-', 'Left Y+', 'Right X-', 'Right X+', 'Right Y-', 'Right Y+',
     'Motor L', 'Motor R', 'Battery'];
 
-/** The inputs of an expression that the pad named in Device does not have. Another device's (qualified) are not judged. */
+/**
+ * The inputs of an expression that the pad named in Device does not have. Another device's (qualified)
+ * are not judged, nor what is no input: True and False, a function's name before "(", a "$" variable.
+ */
 function xs_dolphin_missing(string $expr): array
 {
     $out = [];
-    preg_match_all('/`([^`]*)`|([A-Za-z][A-Za-z0-9_]*)/', $expr, $m, PREG_SET_ORDER);
+    preg_match_all('/`([^`]*)`|(?<![$\w])([A-Za-z][A-Za-z0-9_]*)(?![\w(])(?!\s+\()/', $expr, $m, PREG_SET_ORDER);
     foreach ($m as $t) {
         $name = $t[1] !== '' ? $t[1] : ($t[2] ?? '');
-        if ($name === '' || str_contains($name, ':')) {
+        if ($name === '' || str_contains($name, ':') || in_array(strtolower($name), ['true', 'false'], true)) {
             continue;
         }
         if (!in_array($name, XS_DOLPHIN_XINPUT, true)) {
@@ -68,6 +71,7 @@ function xs_dolphin_own_wiimote(string $home): ?array
     }
     $out = [];
     foreach ($sec as $k => $raw) {
+        $k = (string) $k;                              // a key of digits alone comes back a number
         if ($k === 'Device' || $k === 'Source') {
             continue;
         }
@@ -88,8 +92,8 @@ function xs_dolphin_sections(string $file): array
 {
     $out = [];
     $at = '';
-    foreach (is_file($file) ? (@file($file, FILE_IGNORE_NEW_LINES) ?: []) : [] as $l) {
-        if (preg_match('/^\[(.+)\]\s*$/', trim($l, " \t\xEF\xBB\xBF"), $m)) {
+    foreach (is_file($file) ? (@file($file, FILE_IGNORE_NEW_LINES) ?: []) : [] as $i => $l) {
+        if (preg_match('/^\[(.+)\]\s*$/', trim($i === 0 ? xs_emus_nobom($l) : $l), $m)) {
             $at = $m[1];
             $out[$at] = $out[$at] ?? [];
             continue;
@@ -99,11 +103,22 @@ function xs_dolphin_sections(string $file): array
     return $out;
 }
 
-/** The game INIs Dolphin layers for an ID: its shipped ones (the three-letter one, then the ID's) and the person's. */
-function xs_dolphin_inis(string $home, string $exe, string $id): array
+/**
+ * The game INIs Dolphin layers for an ID, in its order (Core\ConfigManager.cpp, GetGameIniFilenames): the
+ * system letter's, the three letters', the ID's, then the ID with the disc's revision ("GALE01r2"); the
+ * shipped ones and the person's alike. 'user' is the one Dolphin's Properties writes.
+ */
+function xs_dolphin_inis(string $home, string $exe, string $id, ?int $rev = null): array
 {
+    $names = [substr($id, 0, 1), substr($id, 0, 3), $id];
+    if ($rev !== null) {
+        $names[] = $id . 'r' . $rev;
+    }
     $sys = dirname($exe) . '\\Sys\\GameSettings\\';
-    return ['sys' => [$sys . substr($id, 0, 3) . '.ini', $sys . $id . '.ini'], 'user' => $home . '\\GameSettings\\' . $id . '.ini'];
+    $usr = $home . '\\GameSettings\\';
+    return ['sys' => array_map(static fn(string $n): string => $sys . $n . '.ini', $names),
+            'users' => array_map(static fn(string $n): string => $usr . $n . '.ini', $names),
+            'user' => $usr . $id . '.ini'];
 }
 
 /**
@@ -111,16 +126,20 @@ function xs_dolphin_inis(string $home, string $exe, string $id): array
  * 'desc', 'on', 'yours']]: on when a shipped or the person's _Enabled list names it and their
  * _Disabled list does not, as Dolphin's PatchEngine reads them.
  */
-function xs_dolphin_codes(string $home, string $exe, string $id): array
+function xs_dolphin_codes(string $home, string $exe, string $id, ?int $rev = null): array
 {
-    $files = xs_dolphin_inis($home, $exe, $id);
-    $sys = [];
-    foreach ($files['sys'] as $f) {
-        foreach (xs_dolphin_sections($f) as $s => $lines) {
-            $sys[$s] = array_merge($sys[$s] ?? [], $lines);
+    $files = xs_dolphin_inis($home, $exe, $id, $rev);
+    $layer = static function (array $list): array {
+        $all = [];
+        foreach ($list as $f) {
+            foreach (xs_dolphin_sections($f) as $s => $lines) {
+                $all[$s] = array_merge($all[$s] ?? [], $lines);
+            }
         }
-    }
-    $user = xs_dolphin_sections($files['user']);
+        return $all;
+    };
+    $sys = $layer($files['sys']);
+    $user = $layer($files['users']);
     $names = static fn(array $lines): array => array_values(array_filter(array_map('trim', $lines), static fn(string $l): bool => str_starts_with($l, '$')));
     $out = [];
     foreach (XS_DOLPHIN_CODES as $sec => $kind) {
@@ -134,9 +153,11 @@ function xs_dolphin_codes(string $home, string $exe, string $id): array
                     if ($cur !== null) {
                         $out[] = $cur;
                     }
-                    // Gecko names carry their author in brackets: "$16:9 Widescreen [Ralf]".
-                    $name = preg_replace('/\s*\[[^\]]*\]\s*$/', '', $t);
-                    $cur = ['name' => $name, 'kind' => $kind, 'section' => $sec, 'author' => preg_match('/\[([^\]]*)\]\s*$/', $t, $a) ? $a[1] : '',
+                    // Only Gecko names carry their author in brackets ("$16:9 Widescreen [Ralf]"); in the
+                    // others the brackets are the name's own, as their _Enabled lines write it ("$60 FPS [Nerdzilla]").
+                    $gecko = $sec === 'Gecko';
+                    $name = $gecko ? (string) preg_replace('/\s*\[[^\]]*\]\s*$/', '', $t) : $t;
+                    $cur = ['name' => $name, 'kind' => $kind, 'section' => $sec, 'author' => $gecko && preg_match('/\[([^\]]*)\]\s*$/', $t, $a) ? $a[1] : '',
                             'desc' => '', 'on' => isset($on[$name]) && !isset($off[$name]), 'yours' => $whose === 'user'];
                 } elseif ($cur !== null && str_starts_with($t, '*')) {
                     $cur['desc'] = trim($cur['desc'] . ' ' . trim(substr($t, 1)));
@@ -155,18 +176,30 @@ function xs_dolphin_codes(string $home, string $exe, string $id): array
  * writes it: a "$Name" line in [<section>_Enabled], or in [<section>_Disabled] for one Dolphin
  * ships on. A copy is kept first; refused while Dolphin is open. False with $why.
  */
-function xs_dolphin_code_switch(string $home, string $exe, string $id, string $sec, string $name, bool $on, ?string &$why = null): bool
+function xs_dolphin_code_switch(string $home, string $exe, string $id, string $sec, string $name, bool $on, ?string &$why = null, ?int $rev = null): bool
 {
-    if (!isset(XS_DOLPHIN_CODES[$sec]) || !str_starts_with($name, '$')) {
+    if (!isset(XS_DOLPHIN_CODES[$sec]) || !str_starts_with($name, '$') || preg_match('/[\r\n]/', $name)) {
         $why = 'no such patch or code';
         return false;
     }
+    // Only a name Dolphin lists for this game in that section: anything else would be a line it never reads.
+    $known = false;
+    foreach (xs_dolphin_codes($home, $exe, $id, $rev) as $c) {
+        $known = $known || ($c['section'] === $sec && $c['name'] === $name);
+    }
+    if (!$known) {
+        $why = 'Dolphin has no ' . XS_DOLPHIN_CODES[$sec] . ' named ' . ltrim($name, '$') . ' for this game';
+        return false;
+    }
     require_once __DIR__ . '/../emusetup.php';
+    if (!xs_es_may_write($home, $exe, $why)) {
+        return false;
+    }
     if (xs_tp_open($exe)) {
         $why = 'Dolphin is open; close it first, as it writes a game\'s settings again when it closes';
         return false;
     }
-    $files = xs_dolphin_inis($home, $exe, $id);
+    $files = xs_dolphin_inis($home, $exe, $id, $rev);
     $shipped = false;
     foreach ($files['sys'] as $f) {
         foreach (xs_dolphin_sections($f)[$sec . '_Enabled'] ?? [] as $l) {
@@ -174,24 +207,35 @@ function xs_dolphin_code_switch(string $home, string $exe, string $id, string $s
         }
     }
     $file = $files['user'];
-    $raw = is_file($file) ? (string) @file_get_contents($file) : '';
+    $raw = is_file($file) ? @file_get_contents($file) : '';
+    if (!is_string($raw)) {
+        $why = 'the game\'s settings file ' . $file . ' would not read just now, so it is left as it is';
+        return false;
+    }
     $eol = str_contains($raw, "\n") && !str_contains($raw, "\r\n") ? "\n" : "\r\n";
     $lines = $raw === '' ? [] : preg_split('/\r?\n/', rtrim($raw, "\r\n"));
     $lines = xs_es_list_line($lines, $sec . ($on ? '_Disabled' : '_Enabled'), $name, false);
     $lines = xs_es_list_line($lines, $sec . ($on ? '_Enabled' : '_Disabled'), $name, $on ? !$shipped : $shipped);
-    return xs_es_lines_put($file, $lines, $eol, $why);
+    return xs_es_lines_put($file, $lines, $eol, $why, $raw === '' || preg_match('/\n$/', $raw) === 1);
 }
 
-/** The ID Dolphin files a game under, read from its disc; null with $why. */
-function xs_dolphin_id(string $rom, ?string &$why = null): ?string
+/** The ID Dolphin files a game under and the disc's revision, read from its disc: ['id', 'rev']; null with $why. */
+function xs_dolphin_disc(string $rom, ?string &$why = null): ?array
 {
     require_once __DIR__ . '/../fanprojects.php';
-    $id = (xs_fan_disc_ids($rom)['ids'] ?? [])[0] ?? '';
+    $got = xs_fan_disc_ids($rom);
+    $id = ($got['ids'] ?? [])[0] ?? '';
     if (!preg_match('/^[A-Z0-9]{6}$/', $id)) {
         $why = 'the disc\'s ID could not be read from ' . basename($rom);
         return null;
     }
-    return $id;
+    return ['id' => $id, 'rev' => isset($got['version']) ? (int) $got['version'] : null];
+}
+
+/** The ID alone; null with $why. */
+function xs_dolphin_id(string $rom, ?string &$why = null): ?string
+{
+    return xs_dolphin_disc($rom, $why)['id'] ?? null;
 }
 
 return [
@@ -212,15 +256,25 @@ return [
             return ['rows' => [], 'source' => ['file' => null, 'read' => false,
                     'note' => 'Dolphin keeps its bindings in ' . $file . ', which is not there; its Controllers screen has them.']];
         }
-        $sec  = xs_emus_ini_section($file, $wii ? 'Wiimote1' : 'GCPad1', true);
+        if (xs_emus_unreadable($file)) {
+            return xs_emus_unread_controls('Dolphin', $file);
+        }
+        $name = $wii ? 'Wiimote1' : 'GCPad1';
+        if (!xs_emus_ini_has($file, $name)) {
+            return ['rows' => [], 'source' => ['file' => $file, 'read' => true,
+                    'note' => 'Dolphin\'s ' . basename($file) . ' has no player 1 ([' . $name . ']) yet; its Controllers screen sets one.']];
+        }
+        $sec  = xs_emus_ini_section($file, $name, true);
         $pad  = stripos((string) ($sec['Device'] ?? ''), 'XInput/') === 0;
         $rows = [];
         $dead = 0;
         foreach ($sec as $k => $raw) {
+            $k = (string) $k;                          // a key of digits alone comes back a number
             if (stripos($k, 'Calibration') !== false || stripos($k, 'Dead Zone') !== false) {
                 continue;
             }
-            $row = ['name' => $k, 'value' => trim($raw, '`"')];
+            // Every backtick out, so "`Button A` | `Button B`" reads as the two names it holds.
+            $row = ['name' => $k, 'value' => trim(str_replace('`', '', $raw), '"')];
             // Pointing, motion and shaking are a Wii Remote's own; a pad never has them, so only buttons and sticks are judged.
             $judged = $pad && $k !== 'Device' && str_contains($k, '/') && !preg_match('~(^|/)(IR|IMU|Tilt|Swing|Shake)~', $k);
             $gone = $judged ? xs_dolphin_missing($raw) : [];
@@ -271,21 +325,21 @@ return [
     ],
     // The Cheats tab (roadmap CA19): Dolphin's own patches and codes for the game, switched in its own INI.
     'codes'    => static function (string $home, string $exe, array $game, string $rom, ?string &$why): ?array {
-        $id = xs_dolphin_id($rom, $why);
-        return $id === null ? null : ['file' => 'GameSettings\\' . $id . '.ini', 'list' => xs_dolphin_codes($home, $exe, $id)];
+        $d = xs_dolphin_disc($rom, $why);
+        return $d === null ? null : ['file' => 'GameSettings\\' . $d['id'] . '.ini', 'list' => xs_dolphin_codes($home, $exe, $d['id'], $d['rev'])];
     },
     'codeSwitch' => static function (string $home, string $exe, array $game, string $rom, string $sec, string $name, bool $on, ?string &$why): bool {
-        $id = xs_dolphin_id($rom, $why);
-        return $id !== null && xs_dolphin_code_switch($home, $exe, $id, $sec, $name, $on, $why);
+        $d = xs_dolphin_disc($rom, $why);
+        return $d !== null && xs_dolphin_code_switch($home, $exe, $d['id'], $sec, $name, $on, $why, $d['rev']);
     },
     // Gecko and Action Replay codes run only with cheats on: on for this start alone, Dolphin.ini untouched.
     'launch'   => static function (string $home, string $exe, array $game, string $rom): string {
         $w = null;
-        $id = xs_dolphin_id($rom, $w);
-        if ($id === null || strtolower((string) (xs_emus_ini_section($home . '\\Config\\Dolphin.ini', 'Core')['EnableCheats'] ?? '')) === 'true') {
+        $d = xs_dolphin_disc($rom, $w);
+        if ($d === null || strtolower((string) (xs_emus_ini_section($home . '\\Config\\Dolphin.ini', 'Core')['EnableCheats'] ?? '')) === 'true') {
             return '';
         }
-        foreach (xs_dolphin_codes($home, $exe, $id) as $c) {
+        foreach (xs_dolphin_codes($home, $exe, $d['id'], $d['rev']) as $c) {
             if ($c['on'] && $c['section'] !== 'OnFrame') {
                 return '-C Dolphin.Core.EnableCheats=True';
             }

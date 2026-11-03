@@ -291,6 +291,19 @@ async function emulatorsOwnCheats(b, check) {
       await b.ev(`(l => [l.includes("move"), l.includes("switch it"), l.includes("back to the tabs")])(${legend})`), [true, true, true]);
     await b.ev(`[...document.querySelectorAll("#details .dtab-pane .ch-list .cr-row")].find((r) => r.querySelector(".cr-name").textContent === "Max Money").click()`);
     check("pressed again it is off, and the game's file reads as it did", [await b.until(rowsNow + ".find((r) => r[0] === 'Max Money')[1]", false, 6000), fs.readFileSync(ownIni, "utf8")], [false, iniWas]);
+    // By keys, as the pad does (CA26): switched off, Infinite Health sorts below All Stages, and the bar goes with it.
+    const selName = `(document.querySelector("#details .dtab-pane .ch-list .cr-row.sel .cr-name") || {}).textContent`;
+    await b.key("ArrowUp"); await b.key("ArrowUp");
+    await b.key("Enter");
+    check("Enter switches the row under the bar; the list sorts again and the bar stays on that row",
+      [await b.until(rowsNow, [["All Stages", true, false], ["Infinite Health", false, false], ["Max Money", false, false]], 6000), await b.ev(selName)],
+      [[["All Stages", true, false], ["Infinite Health", false, false], ["Max Money", false, false]], "Infinite Health"]);
+    check("and the tab counts what is on now", await b.until(tabNames + ".includes('Cheats (1)')", true, 4000), true);
+    await b.key("Enter");
+    // Back on, its line comes last in [Cheats], as PCSX2 writes a new one: the same cheats named, in any order.
+    const enables = (t) => (t.match(/^Enable = .*$/gm) || []).sort().join(" | ");
+    check("Enter again switches that same one back, the game's file naming the same cheats",
+      [await b.until(rowsNow + ".find((r) => r[0] === 'Infinite Health')[1]", true, 6000), await b.ev(selName), enables(fs.readFileSync(ownIni, "utf8"))], [true, "Infinite Health", enables(iniWas)]);
     await b.ev(`(() => { const f = document.querySelector("#details .dtab-pane .ch-find input"); f.value = "50%"; f.dispatchEvent(new Event("input", { bubbles: true })); })()`);
     check("the find box looks in the names and what they say",
       await b.until(`[...document.querySelectorAll("#details .dtab-pane .ch-list .cr-row .cr-name")].map((x) => x.textContent)`, ["Max Money"], 4000), ["Max Money"]);

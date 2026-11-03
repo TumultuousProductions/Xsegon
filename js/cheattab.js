@@ -1,12 +1,12 @@
 /*  The Cheats tab of a game's details (js\detailtabs.js). A RetroArch game gets the
     cheat picker (js\cheats.js); a standalone emulator whose cheats Xsegon can read
-    (includes\emucheats.php) gets its own list: PCSX2's read only, Dolphin's patches
-    and codes switched in the game's own settings file; any other game gets the
+    (includes\emucheats.php) gets its own list: Dolphin's and PCSX2's patches and
+    codes, switched in the game's own settings file; any other game gets the
     sentence saying why there is nothing. */
 
 import { cheatsInto } from "./cheats.js";
 import { setFact } from "./details.js";
-import { relabelTabs, setTabRows, tabPane, tabSays } from "./detailtabs.js";
+import { relabelTabs, setTabRows, tabGameId, tabPane, tabSays } from "./detailtabs.js";
 import { iconEl } from "./icons.js";
 import { showStrip } from "./launch.js";
 import { L, api, postJson } from "./log.js";
@@ -51,19 +51,29 @@ export function cheatsPane(pane, g) {
 }
 
 
-/* A standalone emulator's own cheats: the ones that are on first, then the
-   rest as its file has them. PCSX2's are only shown; one whose file in
-   includes\emus\ switches them (Dolphin, emu.switch) takes a press on a row,
-   kept at once in the game's own settings file, the row drawn from the answer. */
+/* How many are on, and with the game's cheats off in the emulator, what a press on one does. */
+function emuLead(emu) {
+  var s = (emu.on ? emu.on + " on" : "None on") + " for this game in " + emu.emulator + ".";
+  if (!emu.enabled) { s += " Cheats are switched off for it there: switching one on here switches them on for this game alone."; }
+  return s + (emu.switch
+    ? " " + emu.emulator + "'s own patches (widescreen, frame rate, fixes) and cheat codes, the ones it ships and any of yours. A press switches one on or off, kept in this game's own settings file, " + emu.file + ", as " + emu.emulator + "'s Properties window does."
+    : " These are " + emu.emulator + "'s own, read from " + emu.file + ". Xsegon shows them and does not change them: switch them in " + emu.emulator + ", under this game's Properties > Cheats.");
+}
+
+// "2 patches and 5 cheats": patches are the "patch" kind, the rest are codes.
+function emuCount(list) {
+  var p = list.filter(function (c) { return c.kind === "patch"; }).length, k = list.length - p;
+  return [p ? p + (p === 1 ? " patch" : " patches") : "", k ? k + (k === 1 ? " cheat" : " cheats") : ""].filter(Boolean).join(" and ");
+}
+
+/* A standalone emulator's own patches and cheats: patches first, the ones on at
+   the top of each. One whose file in includes\emus\ switches them (emu.switch)
+   takes a press on a row, kept at once in the game's own settings file, the
+   list drawn again from the answer with the bar still on that row. */
 function emuCheats(pane, g, emu) {
   L("CHEAT", "tab " + g.title + " (" + emu.emulator + ": " + emu.on + " on of " + emu.cheats.length + ")");
   var inner = el("div", "ch-inner ch-tab");
-  var lead = emu.enabled
-    ? (emu.on ? emu.on + " on" : "None on") + " for this game in " + emu.emulator + "."
-    : "Cheats are switched off for this game in " + emu.emulator + ".";
-  inner.appendChild(el("p", "group-help", lead + (emu.switch
-    ? " " + emu.emulator + "'s own patches (widescreen, frame rate, fixes) and cheat codes, the ones it ships and any of yours. A press switches one on or off, kept in this game's own settings file, " + emu.file + ", as " + emu.emulator + "'s Properties window does."
-    : " These are " + emu.emulator + "'s own, read from " + emu.file + ". Xsegon shows them and does not change them: switch them in " + emu.emulator + ", under this game's Properties > Cheats.")));
+  inner.appendChild(el("p", "group-help", emuLead(emu)));
 
   var seek = el("div", "set-find ch-find");
   seek.appendChild(iconEl("find-ico", "search"));
@@ -100,21 +110,35 @@ function emuCheats(pane, g, emu) {
   // A press on a row: kept at once, and the list drawn again from what the server then reads.
   function flip(i) {
     var c = shown[i];
-    if (!c || switching) { return; }
+    if (!c) { return; }
+    if (switching) { L("CHEAT", c.name + " pressed while another is being switched: let go"); return; }
     switching = true;
     sound("select");
+    L("CHEAT", "switch " + c.name + " (" + c.section + ") " + (c.on ? "off" : "on") + " for " + g.title);
+    var cheatsWere = emu.enabled;
     postJson("api/cheats.php", { id: g.id, emuCode: { section: c.section, key: c.key, on: !c.on } }).then(function (res) {
       switching = false;
       if (!res.ok || !res.emu) { showStrip(c.name + " was not switched: " + (res.error || "no answer"), true); return; }
-      emu = res.emu;
-      relabelTabs({ cheats: emu.on });
-      setFact("cheats", cheatsFact(emu.on, emu.cheats.length));
-      lead0.textContent = (emu.on ? emu.on + " on" : "None on") + " for this game in " + emu.emulator + "." + lead0.textContent.replace(/^[^.]*\./, "");
-      paint();
+      var now = res.emu;
+      L("CHEAT", c.name + " switched: " + now.on + " on of " + now.cheats.length);
+      // The count is the emulator's own for either label (cheatsTabLabel, details.js), so 0 reads as 0.
+      relabelTabs({ cheats: now.on, emuCheats: now.on }, g.id);
+      if (tabGameId() === g.id) { setFact("cheats", cheatsFact(now.on, now.cheats.length)); }
+      // Cheats turned on for the game bring back any its file already named.
+      var more = now.cheats.filter(function (x) { return x.kind !== "patch" && x.on; }).length - 1;
+      if (!cheatsWere && now.enabled && !c.on && c.kind !== "patch" && more > 0) {
+        showStrip("With cheats on for this game, " + more + (more === 1 ? " more it already listed is" : " more it already listed are") + " on as well: switch any off here", false);
+      }
+      if (!list.isConnected) { return; }             // another tab or game by now: the tab reads afresh when it opens again
+      emu = now;
+      lead0.textContent = emuLead(emu);
+      paint(c);
     });
   }
   var lead0 = inner.firstChild;
-  function paint() {
+  // keep: the row the bar stays on, wherever the new order puts it.
+  function paint(keep) {
+    if (!list.isConnected) { return; }               // the find box's wait ending after the tab was left
     var q = box.value.trim().toLowerCase();
     list.textContent = "";
     cells = [];
@@ -135,7 +159,11 @@ function emuCheats(pane, g, emu) {
     });
     foot.textContent = q
       ? cells.length + " of " + emu.cheats.length + " match “" + box.value.trim() + "”."
-      : emu.cheats.length + (emu.cheats.length === 1 ? " cheat" : " cheats") + " in " + emu.file + ".";
+      : emuCount(emu.cheats) + " for this game.";
+    if (keep) {
+      var k = shown.findIndex(function (c) { return c.section === keep.section && c.key === keep.key; });
+      if (k >= 0) { at = k; }
+    }
     focusAt(Math.min(at, cells.length - 1));
   }
   var wait;

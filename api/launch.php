@@ -735,13 +735,14 @@ if (!xs_spawn_ps($command)) {
 if ($padCall !== null && !xs_spawn_ps($padCall)) {
     xs_log('LNCH', 'the controller helper for ' . $shown['title'] . ' could not be started: the game plays on the keyboard alone');
 }
-if ($padLeave !== null && !xs_spawn_ps($padLeave)) {
-    xs_log('LNCH', 'the held Xbox button\'s helper for ' . $shown['title'] . ' could not be started: the game is left from the emulator\'s own window');
-}
 // Marked running at once, not in a second when PowerShell is up, so a second
 // press meanwhile is refused (xs_game_running); the launcher replaces it.
 xs_write_json(xs_data_path('running.json'), ['gameId' => $shown['id'], 'title' => $shown['title'],
     'platform' => $game['platform'], 'startedAt' => date('c'), 'pending' => true]);
+// After the mark: started first, it would hold the mark back until after the launcher's own record, which the mark would then overwrite.
+if ($padLeave !== null && !xs_spawn_ps($padLeave)) {
+    xs_log('LNCH', 'the held Xbox button\'s helper for ' . $shown['title'] . ' could not be started: the game is left from the emulator\'s own window');
+}
 
 xs_json([
     'ok'       => true,

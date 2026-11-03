@@ -18,6 +18,13 @@ function xs_emus(): array
     if ($all === null) {
         $all = [];
         foreach (glob(__DIR__ . DIRECTORY_SEPARATOR . 'emus' . DIRECTORY_SEPARATOR . '*.php') ?: [] as $f) {
+            // A key is one lower-case word: a copy ("pcsx2 - Copy.php") would declare its functions twice, a fatal error.
+            if (!preg_match('/^[a-z0-9]+\.php$/', basename($f))) {
+                if (function_exists('xs_log')) {
+                    xs_log('EMUS', basename($f) . ' in includes\\emus is not an emulator file\'s name (one lower-case word), so it is left out');
+                }
+                continue;
+            }
             $e = require $f;
             if (is_array($e) && !empty($e['exes'])) {
                 $all[basename($f, '.php')] = $e + ['key' => basename($f, '.php')];
@@ -63,13 +70,36 @@ function xs_emus_appdata(string $sub): string
     return (string) getenv('APPDATA') . DIRECTORY_SEPARATOR . $sub;
 }
 
+/** A file that is there but would not read: said so, never taken for an empty one. */
+function xs_emus_unreadable(string $file): bool
+{
+    return is_file($file) && @file_get_contents($file, false, null, 0, 1) === false;
+}
+
+/** A line with the byte order mark a file can start with taken off: only those three bytes together, at the start. */
+function xs_emus_nobom(string $line): string
+{
+    return str_starts_with($line, "\xEF\xBB\xBF") ? substr($line, 3) : $line;
+}
+
+/** Whether an ini has a [Section] at all, so "no such section" is told from "nothing in it". */
+function xs_emus_ini_has(string $file, string $section): bool
+{
+    foreach (@file($file, FILE_IGNORE_NEW_LINES) ?: [] as $line) {
+        if (preg_match('/^\[(.+)\]$/', trim(xs_emus_nobom($line)), $m) && strcasecmp(trim($m[1]), $section) === 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /** One [Section] of a flat ini, as ordered key => value pairs; $raw keeps the quotes and backticks round a value. */
 function xs_emus_ini_section(string $file, string $section, bool $raw = false): array
 {
     $out = [];
     $in = false;
     foreach (@file($file, FILE_IGNORE_NEW_LINES) ?: [] as $line) {
-        $line = trim($line, " \t\xEF\xBB\xBF");
+        $line = trim(xs_emus_nobom($line));
         if (preg_match('/^\[(.+)\]$/', $line, $m)) {
             $in = strcasecmp(trim($m[1]), $section) === 0;
             continue;
@@ -84,6 +114,13 @@ function xs_emus_ini_section(string $file, string $section, bool $raw = false): 
         $out[trim(substr($line, 0, $eq))] = trim(substr($line, $eq + 1), $raw ? " \t" : " \t`\"");
     }
     return $out;
+}
+
+/** The answer of a controls reader for a file that is there but would not read. */
+function xs_emus_unread_controls(string $name, string $file): array
+{
+    return ['rows' => [], 'source' => ['file' => $file, 'read' => false,
+            'note' => $name . '\'s settings file ' . $file . ' is there but would not read just now (held by another program, or not allowed): nothing is shown rather than a guess.']];
 }
 
 /** One value of a toml file's [section], as written; null when it is not there. */
@@ -118,8 +155,11 @@ function xs_emu_leave(array $e, string $home): array
 {
     if (($e['leave'] ?? 'xsegon') === 'xsegon') {
         $on = xs_emus_pad_leave_on();
+        // As bin\padleave.ps1 hears it: let go between 2 and 5 seconds (longer is a pad being switched off).
         return ['by' => 'xsegon', 'on' => $on, 'words' => $on
-            ? 'Hold the Xbox button for 2 seconds: Xsegon closes ' . $e['name'] . ' and comes back. ' . $e['name'] . ' has no pad press of its own for that.'
+            ? 'Hold the Xbox button for 2 seconds and let go, with the game in front: Xsegon closes ' . $e['name'] . ' as its own X button would, and comes back. '
+              . 'If ' . $e['name'] . ' asks first, answer it there; if it will not close, the same hold again a few seconds later ends it, without it saving its settings. '
+              . 'A hold of 5 seconds or more does nothing, as it switches the pad off. ' . $e['name'] . ' has no pad press of its own for that.'
             : $e['name'] . ' has no pad press that leaves a game, and Xsegon\'s held Xbox button is off (Settings > Launching > Leave a game by holding the Xbox button).'];
     }
     return ['by' => 'own', 'on' => true, 'words' => ($e['leave'])($home)];

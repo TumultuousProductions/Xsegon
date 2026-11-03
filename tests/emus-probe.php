@@ -5,12 +5,33 @@
 //   php emus-probe.php --packs <exe> <title> <rom>      a game's graphic packs, read only
 //   php emus-probe.php --codes <exe> <rom>              a game's patches and codes, read only
 //   php emus-probe.php --code <exe> <rom> <section> <$Name> <1|0>   one switched (XSEGON_DATA set)
-//   php emus-probe.php --round <exe> <rom> <title> <platform>
+//   php emus-probe.php --round <exe> <rom> <title> <platform> [<launch args>]
 //                       Set up, a dry start, two starts and Put back, in stand-in folders only:
 //                       XSEGON_DATA must name the test's own data folder
+//   php emus-probe.php --on <exe> | --off <exe> | --start <exe> <rom> <title> <platform> <launch args> <1|0>
+//                       one step of that, so a test can change the folders between them (XSEGON_DATA set)
 declare(strict_types=1);
 require __DIR__ . '/../includes/boot.php';
 require __DIR__ . '/../includes/emus.php';
+if (in_array($argv[1] ?? '', ['--on', '--off', '--start'], true)) {
+    if ((string) getenv('XSEGON_DATA') === '') {
+        exit('{"error":"XSEGON_DATA is not set"}');
+    }
+    require __DIR__ . '/../includes/emusetup.php';
+    $exe = (string) $argv[2];
+    $e = xs_emu_of($exe);
+    if ($argv[1] === '--start') {
+        $got = xs_es_for_launch(['title' => $argv[4], 'platform' => $argv[5]],
+                                ['exe' => $exe, 'rom' => $argv[3], 'kind' => 'emulator', 'args' => $argv[6] ?? ''], ($argv[7] ?? '1') === '1');
+        echo json_encode($got + ['rec' => xs_es_rec($e['key'])], JSON_UNESCAPED_SLASHES);
+        exit;
+    }
+    $why = null;
+    $said = null;
+    $ok = $argv[1] === '--on' ? xs_es_on($e, $exe, $why, $said) : xs_es_off($e, $exe, $why, $said);
+    echo json_encode(['ok' => $ok, 'why' => $why, 'said' => $said, 'rec' => xs_es_rec($e['key'])], JSON_UNESCAPED_SLASHES);
+    exit;
+}
 if (($argv[1] ?? '') === '--keys') {
     echo json_encode(array_map(static fn(array $e): array => $e['exes'], xs_emus()));
     exit;
@@ -49,7 +70,7 @@ if (($argv[1] ?? '') === '--round') {
     [, , $exe, $rom, $title, $platform] = $argv;
     $e = xs_emu_of($exe);
     $game = ['title' => $title, 'platform' => $platform];
-    $launch = ['exe' => $exe, 'rom' => $rom, 'kind' => 'emulator'];
+    $launch = ['exe' => $exe, 'rom' => $rom, 'kind' => 'emulator', 'args' => $argv[6] ?? ''];
     $out = [];
     $why = null;
     $out['on'] = xs_es_on($e, $exe, $why);

@@ -16,6 +16,9 @@ return [
             return ['rows' => [], 'source' => ['file' => null, 'read' => false,
                     'note' => 'xemu drives a standard pad by itself, the Xbox controller one to one; there is no settings file to read yet.']];
         }
+        if (xs_emus_unreadable($file)) {
+            return xs_emus_unread_controls('xemu', $file);
+        }
         $text = (string) @file_get_contents($file);
         $rows = [];
         $in = false;
@@ -28,7 +31,8 @@ return [
             if ($in && $line !== '' && $line[0] === '[') {
                 break;
             }
-            if ($in && preg_match('/^([^=]+)=\s*(.+)$/', $line, $m)) {
+            // A quoted value, or a bare one up to a comment: "port1 = '0300...' # my pad".
+            if ($in && preg_match('/^([^=#]+)=\s*("[^"]*"|\'[^\']*\'|[^#\s]+)/', $line, $m)) {
                 $rows[] = ['name' => trim($m[1]), 'value' => trim($m[2], " '\"")];
             }
         }
