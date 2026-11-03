@@ -92,6 +92,7 @@ return [
         return ['rows' => $rows, 'source' => ['file' => $file, 'read' => true,
                 'note' => 'Eden\'s own words, read from its player lines: the Switch control on the left, the pad input on the right. A Switch A on an Xbox pad\'s B is the Switch\'s place for it.']];
     },
+    'setupLater' => 'Not yet: Eden takes a game\'s own controls only through a profile it loads by name, which is not proven here yet. Your own bindings in Eden are what its games use.',
     'leave'    => static function (string $home): string {
         $file = $home . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'qt-config.ini';
         $ui   = xs_emus_ini_section($file, 'UI');

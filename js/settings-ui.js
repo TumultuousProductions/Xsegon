@@ -2,6 +2,7 @@ import { leaveQuietly } from "./atwork.js";
 import { brandRows } from "./brand.js";
 import { confirmWindow } from "./confirm.js";
 import { paintDeletedList, paintHiddenList } from "./editors.js";
+import { emuSetupPage } from "./emusetup.js";
 import { gamesdbRow } from "./gamesdbrow.js";
 import { paintHelp, paintHelpHere } from "./help.js";
 import { iconEl } from "./icons.js";
@@ -295,6 +296,7 @@ function paintSettings(res) {
     if (group === "gamecontrols") { padMapPage(part("RetroArch (Gamepad)"), function () { awayFor(openPadGameHelp); }); seeController(part("RetroArch (Gamepad)")); }   // your buttons per console (js\padmap.js)
     if (group === "gamecontrols") { padKeysPage(part("RetroArch (Keyboard)")); }   // your keys per console (js\padkeys.js)
     if (group === "gamecontrols") { hotkeysPage(part("RetroArch (Hotkeys and turbo)")); }   // how to leave, pause, turbo (js\rahotkeys.js)
+    if (group === "gamecontrols") { emuSetupPage(part("Other emulators")); }   // Dolphin, Cemu and the rest (js\emusetup.js)
     // Import and Thumbs are library chores done once in a while, so they live
     // on the Library page rather than in the masthead.
     if (group === "debug") {

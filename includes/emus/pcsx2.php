@@ -28,4 +28,5 @@ return [
                 'note' => 'PCSX2\'s own words: DualShock button on the left, the pad input it listens to on the right.']];
     },
     'leave'    => 'xsegon',
+    'setupLater' => 'Not yet: PCSX2 names a pad by SDL\'s number for it that day (SDL-0 one day, SDL-3 another), so a profile written once could point at the wrong pad. Your own bindings in PCSX2 are what its games use.',
 ];
