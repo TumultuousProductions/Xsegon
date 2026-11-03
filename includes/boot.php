@@ -1053,7 +1053,7 @@ function xs_heartbeat(): void
 /**
  * The game running now, from data\running.json, or null. api\launch.php writes a
  * "pending" one at once so a second press is caught; bin\launch.ps1 adds its PID.
- * A pending one past 30 seconds never started. $askWindows checks the PID (a tasklist).
+ * A pending one past 30 seconds never started. $askWindows checks the PID with Windows.
  */
 function xs_game_running(bool $askWindows = false): ?array
 {
@@ -1123,8 +1123,13 @@ function xs_pid_alive(int $pid, int $since = 0): bool
     if ($pid <= 0) {
         return false;
     }
-    $out = @shell_exec('tasklist /FI "PID eq ' . $pid . '" /NH /FO CSV 2>NUL');
-    if (!is_string($out) || !str_contains($out, '"' . $pid . '"')) {
+    // tasklist only when Windows cannot be asked directly: it takes 2 s on a PC with 500 processes.
+    $runs = xs_pid_running($pid);
+    if ($runs === null) {
+        $out = @shell_exec('tasklist /FI "PID eq ' . $pid . '" /NH /FO CSV 2>NUL');
+        $runs = is_string($out) && str_contains($out, '"' . $pid . '"');
+    }
+    if (!$runs) {
         return false;
     }
     if ($since <= 0) {
@@ -1138,6 +1143,37 @@ function xs_pid_alive(int $pid, int $since = 0): bool
     xs_log('JOB', 'process ' . $pid . ' is alive but was started at ' . date('H:i:s', $born) . ', after what it was kept for ('
         . date('H:i:s', $since) . '): another program has that number now');
     return false;
+}
+
+/**
+ * Whether process $pid runs, asked of Windows through FFI (a fraction of a millisecond); null
+ * whenever unsure (no FFI, a process it may not open or that is gone, any error), and the
+ * caller asks tasklist as before.
+ */
+function xs_pid_running(int $pid): ?bool
+{
+    if (PHP_OS_FAMILY !== 'Windows' || !extension_loaded('FFI') || $pid <= 0) {
+        return null;
+    }
+    try {
+        $k = FFI::cdef('
+            typedef void* HANDLE;
+            HANDLE OpenProcess(uint32_t access, int inherit, uint32_t pid);
+            int GetExitCodeProcess(HANDLE h, uint32_t* code);
+            int CloseHandle(HANDLE h);
+        ', 'kernel32.dll');
+        $h = $k->OpenProcess(0x1000, 0, $pid);            // PROCESS_QUERY_LIMITED_INFORMATION: read only
+        if ($h === null || FFI::isNull($h)) {
+            return null;
+        }
+        $code = $k->new('uint32_t');
+        $ok = $k->GetExitCodeProcess($h, FFI::addr($code));
+        $k->CloseHandle($h);
+        // 259 is STILL_ACTIVE; any other code is one that has ended.
+        return $ok ? $code->cdata === 259 : null;
+    } catch (Throwable $e) {
+        return null;
+    }
 }
 
 /**

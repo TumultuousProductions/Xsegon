@@ -41,10 +41,10 @@ function routine() {
   routineN++;
   if (Date.now() - lastLineAt >= LIVE_EVERY_MS) { L("LIVE", "still here"); }
 }
-// The last thing the person did, so a BUG line says what led to it.
-var lastDid = "";
+// The last thing the person did, so a BUG or LAG line says what led to it.
+var lastDid = "", lastDidAt = 0;
 export function L(code, detail) {
-  if (code === "NAV" || code === "CLK" || code === "KEY" || code === "PAD") { lastDid = code + " " + String(detail).slice(0, 60); }
+  if (code === "NAV" || code === "CLK" || code === "KEY" || code === "PAD") { lastDid = code + " " + String(detail).slice(0, 60); lastDidAt = Date.now(); }
   if (!LOG_ON) { return; }
   var text = detail === undefined ? "" : String(detail).slice(0, code === "BUG" ? 600 : 300);
   // The cut can land in the middle of an emoji, and half of one makes the
@@ -250,6 +250,31 @@ export function initLog() {
   // A key or a click makes the next request yours, for "working..." below.
   document.addEventListener("keydown", heardInput, true);
   document.addEventListener("pointerdown", heardInput, true);
+  watchFreezes();
+}
+
+/* FREEZES. One piece of the page's own work that holds it a quarter second
+   or more (the browser's long tasks) is a LAG line: how long, and what was
+   done in the two seconds before. The server's lines cannot show this kind of
+   lag. A line every two seconds at most; the ones between are counted onto it. */
+var LAG_MS = 250, LAG_EVERY_MS = 2000;
+function watchFreezes() {
+  if (typeof PerformanceObserver === "undefined") { return; }
+  var lastAt = 0, held = 0, heldMs = 0;
+  try {
+    new PerformanceObserver(function (list) {
+      list.getEntries().forEach(function (e) {
+        if (e.duration < LAG_MS) { return; }
+        if (Date.now() - lastAt < LAG_EVERY_MS) { held++; heldMs = Math.max(heldMs, e.duration); return; }
+        lastAt = Date.now();
+        L("LAG", "the page was busy " + Math.round(e.duration) + "ms" +
+          (Date.now() - lastDidAt < 2000 + e.duration ? " after " + lastDid : ", nothing pressed just before") +
+          (held ? "; " + held + " more since the last, the longest " + Math.round(heldMs) + "ms" : ""));
+        held = 0;
+        heldMs = 0;
+      });
+    }).observe({ type: "longtask", buffered: true });
+  } catch (e) { /* this browser has no long-task timing: nothing to say */ }
 }
 
 /* "Working...": a click that seems to do nothing is the worst kind of slow.

@@ -35,6 +35,7 @@ $ErrorActionPreference = 'Stop'
 $root       = Split-Path -Parent $PSScriptRoot
 $profileDir = Join-Path $root 'data\browser-profile'
 . (Join-Path $PSScriptRoot 'xsbrowser.ps1')
+. (Join-Path $PSScriptRoot 'warm.ps1')
 
 # --- already open? bring it forward ----------------------------------------
 $proc = Get-XsegonBrowser $root
@@ -127,6 +128,8 @@ $scaleFlag = Format-XsegonScaleFlag $drawn.by
 if ($scaleFlag) { $flags += $scaleFlag }
 
 $started = Start-Process -FilePath $browser -ArgumentList $flags -PassThru
+# While the browser starts, the files the page is built from are read eight at a time (bin\warm.ps1).
+$warm = Start-XsegonWarm $root
 # Written down for window.ps1 and the next open. On some PCs this process ends
 # at once and the window lives in another, so the watchdog and window.ps1 look
 # for the real one, and the log names the browser and version.
@@ -151,4 +154,5 @@ if ($started) {
 } else {
     Write-XsegonLine $root 'WIN' 'the app window did not start'
 }
+Wait-XsegonWarm $root $warm
 'opened'

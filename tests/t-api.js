@@ -1293,6 +1293,16 @@ module.exports = async function (b, check) {
         check("with no start time to compare, alive is alive, as before", probe(flags, napper.pid, 0).alive, true);
         const none = probe(flags, 999999, nowSec);
         check("and no such process is still no", [none.born, none.alive], [null, false]);
+        // tasklist takes 2 s on a PC with 500 processes; Windows asked directly, a fraction of a millisecond.
+        check("with FFI Windows itself says a process runs, with no tasklist waited on", [mine.running, mine.ms < 500], [true, true]);
+        check("one Windows cannot open (no such number) is left to tasklist, as before", none.running, null);
+        napper.kill();
+        let ended = null;
+        for (const end = Date.now() + 5000; Date.now() < end;) {
+          ended = probe(flags, napper.pid, nowSec);
+          if (!ended.alive) { break; }
+        }
+        check("one that has ended is no, whether Windows says ended or leaves it to tasklist", [ended.running === true, ended.alive], [false, false]);
       }
     } finally {
       try { napper.kill(); } catch (e) { /* already gone */ }

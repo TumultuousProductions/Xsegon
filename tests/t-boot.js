@@ -215,6 +215,12 @@ module.exports = async function (b, check) {
       if (goneId) { await api("api/local.php", { id: goneId, remove: true }); }
     }
 
+    /* ---- a freeze is written down, with what was pressed just before ----- */
+    await sleep(2100);                                    // past the start's own LAG lines, a line every 2 s at most
+    await b.ev(`import("/js/log.js").then((m) => { m.L("CLK", "Xsegon test press"); setTimeout(() => { const t = performance.now(); while (performance.now() - t < 400) { } }, 0); })`);
+    const LAG = /P LAG\s+the page was busy \d+ms after CLK Xsegon test press/;
+    check("one piece of the page's work over a quarter second is a LAG line, with what was pressed just before", has(await thisStart(LAG), LAG), true);
+
     /* ---- something changed since: one redraw, from the fresh answer ------- */
     const lib = await api("api/library.php?grouped=0");
     const g = lib.games.find((x) => !x.favourite);
