@@ -3716,6 +3716,11 @@ body.offline-now .saver { display: none; }
 .ed-row.ctl-unset .ctl-val { color: var(--faint); }
 .ctl-dead .ctl-sub { color: var(--warn); }
 .ctl-leave.ctl-unset { color: var(--faint); }
+/* A Wii U game's Graphic packs tab (js\emupackstab.js): On in the good colour, Off dimmed; a pack the next download deletes warns. */
+.gp-row .ctl-val { word-break: normal; color: var(--faint); }
+.gp-row.gp-on .ctl-val { color: var(--good); }
+.gp-late { color: var(--warn); }
+.gp-open { margin: 14px 0 4px; }
 /* The same hotkeys in Settings > Controls (js\rahotkeys.js): read-only rows,
    the value where a control would sit; one that is not set is dimmed. */
 .set-body .opt.hkrow { grid-template-columns: calc(26px * var(--fs)) minmax(0, 1fr) minmax(0, 38%); }
