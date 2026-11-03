@@ -183,6 +183,23 @@ module.exports = async function (b, check) {
     check("and comes to rest with the legend standing on the strip", await b.until(onStrip, true, 3000), true);
     await b.ev(`document.getElementById("strip").hidden = true`);
     check("and glides back down when the strip goes", await b.until(`${stripRoom} === 0 && ${onFloor}`, true, 3000), true);
+    /* Scrolled by the wheel while the strip glides in, the grid stays where it was
+       put: the chosen game kept in sight is for a grid nobody moves (roadmap CD3). */
+    await b.ev(`document.querySelector("#view .tile.sel").scrollIntoView({ block: "nearest" })`);
+    await b.settled();
+    const mid = await b.ev(`(r => ({ x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) }))(document.getElementById("view").getBoundingClientRect())`);
+    await say("a message that comes while the grid is scrolled");
+    for (let i = 0; i < 4; i++) {
+      await b.send("Input.dispatchMouseEvent", { type: "mouseWheel", x: mid.x, y: mid.y, deltaX: 0, deltaY: 400 });
+      await sleep(60);
+    }
+    const put = await b.ev(`document.getElementById("view").scrollTop`);
+    await b.until(onStrip, true, 3000);
+    await sleep(400);                    // past the glide's end, where the pull back came
+    check("scrolled by the wheel while it glides in, the grid stays where it was put, not back on the chosen game",
+          await b.ev(`((v, s) => v.scrollTop >= ${put} && (s.getBoundingClientRect().bottom < v.getBoundingClientRect().top))(document.getElementById("view"), document.querySelector("#view .tile.sel"))`), true);
+    await b.ev(`document.getElementById("strip").hidden = true`);
+    await b.until(`${stripRoom} === 0`, true, 3000);
   } finally {
     await b.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] });
   }
