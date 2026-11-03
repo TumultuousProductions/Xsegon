@@ -58,7 +58,7 @@ function xs_emulators_view(array $table): array
             'key'      => $key,
             'name'     => $p['name'],
             'exe'      => $p['exe'],
-            'there'    => is_file($p['exe']),
+            'there'    => xs_program_there((string) $p['exe']),
             'consoles' => $consoles,
             'plays'    => $started,
             'kind'     => xs_emu_is_retroarch($table, (string) $key) ? 'retroarch' : 'other',

@@ -194,6 +194,26 @@ module.exports = async function (b, check) {
     const wallAt = tail.findIndex((l) => /P NAV\s+the wall/.test(l)), readAt = tail.findIndex((l) => /P API\s+GET library\.php/.test(l));
     check("the consoles are up before the library has answered", [wallAt >= 0, readAt >= 0, wallAt < readAt], [true, true, true]);
     check("the page says the fresh library is in", await b.ev(`window.XSEGON.libraryFresh`), true);
+    check("the opening read is the quick one, and the sweep reads again after it (roadmap BW19)",
+      [tail.some((l) => /P API\s+GET library\.php\?quick=1&/.test(l)), tail.filter((l) => /P API\s+GET library\.php\?/.test(l)).length >= 2], [true, true]);
+
+    /* ---- a program that is gone: the quick read waits on no file, the sweep marks it --- */
+    const made = await api("api/local.php", { set: { title: "Xsegon Test Gone Program", platform: "Xsegon Test Platform", run: "C:\\xsegon-test-nowhere\\gone.exe" } });
+    const goneId = made.id || (made.game || {}).id;
+    try {
+      const row = async (q) => (((await api("api/library.php?grouped=0&q=" + encodeURIComponent("Xsegon Test Gone Program") + q)).games || [])[0] || {});
+      const quickRow = await row("&quick=1"), sweptRow = await row("");
+      check("a program that is gone: the quick read counts it as there, the read after it says it is not",
+        [quickRow.playable, sweptRow.playable, /^not found: /.test(sweptRow.why || "")], [true, false, true]);
+      // Kept with its mark, the copy is what the sweep answers again: nothing is drawn twice at the next start.
+      await b.goto(BASE + "/");
+      await b.goto(BASE + "/");
+      const again = await thisStart(CURRENT);
+      check("with it in last time's copy, the next start draws nothing again: no mark taken away and put back",
+        [has(again, DRAWN), has(again, CURRENT), again.some((l) => /out of date|the sweep found a game/.test(l))], [true, true, false]);
+    } finally {
+      if (goneId) { await api("api/local.php", { id: goneId, remove: true }); }
+    }
 
     /* ---- something changed since: one redraw, from the fresh answer ------- */
     const lib = await api("api/library.php?grouped=0");

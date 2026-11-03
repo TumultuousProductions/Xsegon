@@ -80,7 +80,7 @@ function xs_emuset_rows(array $table, string $platform): array
             'name'    => (string) ($table['programs'][$key]['name'] ?? $key),
             // Two builds of one emulator are told apart by where they are.
             'folder'  => basename(dirname(str_replace('\\', '/', $exe))),
-            'there'   => is_file($exe),
+            'there'   => xs_program_there($exe),
             'usual'   => $usual !== null && ($usual['program'] ?? '') === $key,
         ];
     }

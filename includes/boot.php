@@ -657,12 +657,27 @@ function xs_drive_of(string $path): string
     return preg_match('/^(\\\\\\\\[^\\\\]+\\\\[^\\\\]+)/', $p, $m) ? $m[1] : '';
 }
 
-/** is_file, is_dir or scandir of a path, its time counted on its drive. The look under way is known while it waits. */
+/**
+ * A program (.exe, .com, .bat, .cmd). PHP's is_file opens the file, and Windows Defender checks a
+ * program each time one is opened after a while, 10 to 750 ms; file_exists opens nothing (roadmap BW14).
+ */
+function xs_is_program(string $path): bool
+{
+    return (bool) preg_match('/\.(exe|com|bat|cmd)$/i', $path);
+}
+
+/** Whether a program is there, without opening it. A folder of that name counts as there, a case too rare to pay an open for. */
+function xs_program_there(string $path): bool
+{
+    return $path !== '' && @file_exists($path);
+}
+
+/** is_file, is_dir or scandir of a path, its time counted on its drive; a program's is_file asks file_exists. The look under way is known while it waits. */
 function xs_look(string $how, string $path): mixed
 {
     $t = microtime(true);
     $GLOBALS['xs_look_now'] = [$path, $t];
-    $got  = $how === 'scandir' ? @scandir($path) : ($how === 'is_dir' ? @is_dir($path) : is_file($path));
+    $got  = $how === 'scandir' ? @scandir($path) : ($how === 'is_dir' ? @is_dir($path) : ($how === 'is_file' && xs_is_program($path) ? xs_program_there($path) : is_file($path)));
     $took = microtime(true) - $t;
     $GLOBALS['xs_look_now'] = null;
     $d = xs_drive_of($path);

@@ -2,7 +2,8 @@
 /**
  * The fast lane, from the main server's side; router-fast.php says what it is.
  *
- * Started when the page loads (index.php), however the main server was started.
+ * Started as the app window is opened (api\open.php), so it is up for the page's first read,
+ * and when the page loads (index.php) if it is not running, however the main server was started.
  * bin\fastlane.ps1 stops it when the main server ends. The page is told of it only once
  * it proves to be this folder's own lane; a port held by anything else is left alone.
  */

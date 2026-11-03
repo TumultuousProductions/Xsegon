@@ -105,7 +105,9 @@ function sendRead(ask) {
   var mine = ++readNo;
   readOut = Date.now();
   sentAsk = { seq: ask.seq, query: ask.query };
-  var fresh = api("api/library.php?" + ask.query);
+  // The opening read is the quick one, which waits on no drive; the sweep follows it (bootLoad).
+  // First in the query, so the log's line, which keeps a query's first 60 letters, says so.
+  var fresh = api("api/library.php?" + (ask.boot ? "quick=1&" : "") + ask.query);
   // The opening read draws from last time's copy first (js/bootcopy.js).
   var drawn = ask.boot ? bootLoad(ask.query, fresh, ask.seq, ask.draw)
                        : fresh.then(function (data) { took(data, ask.seq, ask.draw); });
@@ -133,49 +135,80 @@ function sendRead(ask) {
       no answer       the copy stays up, and the usual line says the games
                       could not be read
     With nothing kept (a first start, another view, a new build) this is the
-    ordinary first load. XSEGON.libraryFresh is false from the moment a copy
-    is drawn until the fresh answer has been dealt with: the tests wait on it,
-    so none of them reads a screen that is about to change. */
+    ordinary first load. The fresh answer is the quick read, which looked at no
+    game's file, so it waits on nothing: drawn only when no copy was, since over
+    a copy it would take away the marks the sweep then puts back. The sweep reads
+    again, looking (sweep). XSEGON.libraryFresh is false from the start until the
+    sweep has been dealt with: the tests wait on it, so none of them reads a
+    screen that is about to change. */
 function bootLoad(query, fresh, seq, draw) {
-  var shown = null, freshIn = false;
+  var shown = null, freshIn = false, fromCopy = false;
+  window.XSEGON.libraryFresh = false;
   var first = bootRead(query).then(function (kept) {
     if (!kept || freshIn || seq !== loadSeq) { return false; }
     shown = kept.text;
-    window.XSEGON.libraryFresh = false;
+    fromCopy = true;
     L("BOOT", "drawn from last time's copy (" + kept.data.games.length + " games) while the library is read");
     took(kept.data, seq, draw);
     return true;
   });
-  var later = fresh.then(function (data) {
+  // The quick read in: drawn when no copy was. What waits on the opening read waits on this, never on the sweep.
+  var quick = fresh.then(function (data) {
     freshIn = true;
     return first.then(function () {
-      var text = data && data.ok ? bootSave(query, data) : null;
-      if (shown === null || text === null) { took(data, seq, draw); }
-      else if (text === shown) { L("BOOT", "last time's copy was current: nothing to draw again"); }
-      else if (seq !== loadSeq) { L("BOOT", "last time's copy was out of date, and a newer read has already replaced it"); }
-      else { swapIn(data, seq); }
-      window.XSEGON.libraryFresh = true;
+      if (!data || !data.ok) { took(data, seq, draw); return false; }   // said on screen as always; the copy, if any, stays up
+      if (shown === null) {
+        took(data, seq, draw);
+        shown = JSON.stringify(data);
+      }
+      return true;
     });
   });
+  var later = quick.then(function (ok) { return ok ? sweep(query, seq, shown, fromCopy) : null; })
+    .then(function () { window.XSEGON.libraryFresh = true; });
   later.catch(function (e) { window.XSEGON.libraryFresh = true; bug("the opening library read", e); });
-  return first.then(function (drawn) { return drawn ? undefined : later; });
+  return first.then(function (drawn) { return drawn ? undefined : quick.then(function () { return undefined; }); });
+}
+
+/* The quiet sweep right after the opening read (roadmap BW19): the same read, now looking at
+   every game's file, a program's without opening it, so one that is gone gets its mark. Kept
+   as next time's copy, and drawn only where it differs from what is on screen: last time's
+   copy, or the quick read when there was none. */
+function sweep(query, seq, shownText, fromCopy) {
+  var t0 = Date.now();
+  var what = fromCopy ? "last time's copy" : "the quick read";
+  return api("api/library.php?" + query).then(function (data) {
+    if (!data || !data.ok) {
+      L("BOOT", "the sweep after the opening read got no answer: " + what + " stays on screen");
+      if (data && fromCopy) { took(data, seq, false); }                 // the copy's games could not be read again: said
+      return;
+    }
+    var text = bootSave(query, data);
+    if (seq !== loadSeq) { L("BOOT", what + " was swept, and a newer read has already replaced it"); return; }
+    if (text === shownText) {
+      L("BOOT", fromCopy ? "last time's copy was current: nothing to draw again" : "the sweep found every game as the quick read drew it, in " + (Date.now() - t0) + " ms");
+      return;
+    }
+    swapIn(data, seq, fromCopy ? null : "the sweep found a game's file gone or back, in " + (Date.now() - t0) + " ms");
+  });
 }
 
 /* The fresh answer over an out-of-date copy: everything read again, drawn
-   once, and your place kept (the console you were on, or the game). */
-function swapIn(data, seq) {
+   once, and your place kept (the console you were on, or the game). why,
+   when given, is what the log says changed. */
+function swapIn(data, seq, why) {
   var keep = games[sel] ? games[sel].id : null;
   took(data, seq, false);
   if (sysStage === "wall") {
     repaintWall();
-    L("BOOT", "last time's copy was out of date: the consoles drawn again from the fresh library");
+    L("BOOT", (why || "last time's copy was out of date") + ": the consoles drawn again from the fresh library");
     return;
   }
   var i = keep === null ? -1 : games.findIndex(function (g) { return g.id === keep; });
   if (i >= 0) { setSel(i); }
   render();
   if (!$details.hidden && games[sel]) { openDetails(); }
-  L("BOOT", "last time's copy was out of date: drawn again from the fresh library" + (i >= 0 ? ", on the same game" : ""));
+  L("BOOT", (why || "last time's copy was out of date") + ": drawn again from the fresh library" + (i >= 0 ? ", on the same game" : ""));
 }
 
 /* One answer from api/library.php, taken in and (unless draw is false, or

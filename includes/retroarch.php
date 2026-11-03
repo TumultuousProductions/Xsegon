@@ -79,7 +79,7 @@ function ra_exe_from_library(array $library): ?string
         if (!empty($g['launch']['exe']) && ($g['launch']['kind'] ?? '') === 'retroarch') {
             $dir = dirname($g['launch']['exe']);
             $exe = $dir . DIRECTORY_SEPARATOR . 'retroarch.exe';
-            return is_file($exe) ? $exe : null;
+            return xs_program_there($exe) ? $exe : null;
         }
     }
     return null;
