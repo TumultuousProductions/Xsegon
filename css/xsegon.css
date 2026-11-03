@@ -3721,6 +3721,9 @@ body.offline-now .saver { display: none; }
 .gp-row.gp-on .ctl-val { color: var(--good); }
 .gp-late { color: var(--warn); }
 .gp-open { margin: 14px 0 4px; }
+/* The bar on a pack, as on a cheat; out of the list it is not shown. */
+.gp-row.sel { background: linear-gradient(90deg, rgba(var(--cyan-rgb), .3), rgba(var(--cyan-rgb), 0)); }
+.dtab-pane:not(.in) .gp-row.sel:not(:hover) { background: none; }
 /* The same hotkeys in Settings > Controls (js\rahotkeys.js): read-only rows,
    the value where a control would sit; one that is not set is dimmed. */
 .set-body .opt.hkrow { grid-template-columns: calc(26px * var(--fs)) minmax(0, 1fr) minmax(0, 38%); }
@@ -4139,6 +4142,11 @@ body.high-contrast .set-tab + .set-tab { border-top-color: rgba(255, 255, 255, .
 .set-body .set-sect > .setup-hold { margin: 0; }
 .set-body .set-sect > .setup-hold .opt { margin: 0; }
 .set-body .set-sect > .setup-hold .mt-note { margin-left: 14px; margin-right: 14px; }
+/* So are the Other emulators rows (js\emusetup.js), which arrive inside a box of their own. */
+.set-body .set-sect > .emus-rows { margin: 0; }
+.set-body .set-sect > .emus-rows .opt { margin: 0; }
+.set-body .set-sect > .emus-rows .opt:last-child { border-bottom: 0; }
+.set-body .set-sect > .emus-rows > .hint { display: block; margin: 10px 14px; }
 body.high-contrast .set-body .set-sect { border-color: var(--rule-hi); }
 body.high-contrast .set-body .set-sect > .opt { border-bottom-color: rgba(255, 255, 255, .28); }
 

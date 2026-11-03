@@ -192,7 +192,7 @@ function xs_read_json_settled(string $path, $fallback = null)
 const XS_YOURS_JSON = ['settings.json', 'emulators.json', 'overrides.json', 'cores.json', 'emu-choice.json', 'hack-choice.json', 'hack-about.json', 'cheats.json', 'cheats-used.json', 'pad-remaps.json',
                        'player-remaps.json', 'game-remaps.json', 'pad-keys.json', 'ra-hotkeys.json', 'game-hotkeys.json',
                        'favourites.json', 'my-ratings.json', 'notes.json', 'hack-of.json', 'accompanied.json', 'tags.json', 'fix-marks.json', 'hidden.json', 'deleted.json', 'art-hidden.json',
-                       'local-games.json', 'scanned-games.json', 'history-seeded.json', 'wanted.json'];
+                       'local-games.json', 'scanned-games.json', 'history-seeded.json', 'wanted.json', 'emu-setup.json'];
 
 function xs_is_yours(string $path): bool
 {

@@ -22,6 +22,9 @@ return [
             return ['rows' => [], 'source' => ['file' => null, 'read' => false,
                     'note' => 'Xenia has written no settings file yet; it reads an Xbox pad as the 360 pad, button for button.']];
         }
+        if (xs_emus_unreadable($file)) {
+            return xs_emus_unread_controls('Xenia', $file);
+        }
         $hid = strtolower((string) (xs_emus_toml_value($file, 'HID', 'hid') ?? 'any'));
         // "any" tries SDL first, as Canary's own start-up does (app\xenia_main.cc).
         $how = ['any' => 'SDL', 'sdl' => 'SDL', 'xinput' => 'XInput', 'keyboard' => 'the keyboard only', 'winkey' => 'the keyboard only', 'nop' => 'nothing'][$hid] ?? $hid;

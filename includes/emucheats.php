@@ -99,12 +99,12 @@ function xs_pcsx2_game(array $game): ?array
     return [$exe, (string) ($launch['rom'] ?? '')];
 }
 
-/** PCSX2's cheats for the game file $rom, as xs_emucheats() gives them. */
-function xs_pcsx2_cheats(string $exe, string $rom): array
+/** PCSX2's cheats for the game file $rom, as xs_emucheats() gives them; $home, when given, is the folder its switch writes in. */
+function xs_pcsx2_cheats(string $exe, string $rom, ?string $home = null): array
 {
     $out = ['emulator' => 'PCSX2', 'why' => null, 'enabled' => false, 'on' => 0,
             'file' => '', 'folder' => '', 'cheats' => []];
-    $home = xs_pcsx2_home($exe);
+    $home ??= xs_pcsx2_home($exe);
     if ($home === null) {
         $out['why'] = 'the folder PCSX2 keeps its settings in was not found';
         return $out;

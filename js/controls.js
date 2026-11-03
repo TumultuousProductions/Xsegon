@@ -62,8 +62,9 @@ function paint(g, res) {
   setEditorOnClose(null);
   var inner = toolFrame("CONTROLS", { base: "cr-inner", close: "Close (esc)" });
 
-  inner.appendChild(el("p", "group-help", g.title + "  ·  " + g.platform + ", through " + (res.via || "its emulator")
-    + ". Read from the emulator's own files and never written: changing these stays its own settings screen."));
+  inner.appendChild(el("p", "group-help", g.title + "  ·  " + g.platform + ", through " + (res.via || "its emulator") + ". " + (res.setUp
+    ? "Set up by Xsegon (Settings > RetroArch + Emulator Controls > Other emulators): from its first start there, this game uses Xsegon's own profiles, Xsegon Player 1 to 4, one pad each. Below are the emulator's own, which its other games use."
+    : "Read from the emulator's own files and never written: changing these stays its own settings screen.")));
 
   if (hot) {
     head(inner, "Leaving and pausing a game");

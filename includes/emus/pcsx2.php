@@ -13,6 +13,12 @@ function xs_pcsx2_game_code(string $home, string $rom, ?string &$why = null): ?a
     $code = xs_pcsx2_code(xs_pcsx2_folder($ini, $home, 'Cache', 'cache') . '\\gamelist.cache', $rom);
     if ($code === null) {
         $why = 'PCSX2 has not listed this game yet, so its code is not known. Open PCSX2 once with this game in its list and look here again';
+        return null;
+    }
+    // Both go into a file's name: letters, digits and hyphens only, as PCSX2's own are.
+    if (!preg_match('/^[A-Za-z0-9-]{1,32}$/', (string) $code[0]) || !preg_match('/^[0-9A-Fa-f]{8}$/', (string) $code[1])) {
+        $why = 'PCSX2\'s game list names this game in a way Xsegon does not use for a file name';
+        return null;
     }
     return $code;
 }
@@ -58,7 +64,14 @@ return [
         $file = $home . DIRECTORY_SEPARATOR . 'inis' . DIRECTORY_SEPARATOR . 'PCSX2.ini';
         if (!is_file($file)) {
             return ['rows' => [], 'source' => ['file' => null, 'read' => false,
-                    'note' => 'PCSX2 keeps its bindings in inis\\PCSX2.ini, which is not there; Settings > Controllers has them.']];
+                    'note' => 'PCSX2 keeps its bindings in ' . $file . ', which is not there; Settings > Controllers has them.']];
+        }
+        if (xs_emus_unreadable($file)) {
+            return xs_emus_unread_controls('PCSX2', $file);
+        }
+        if (!xs_emus_ini_has($file, 'Pad1')) {
+            return ['rows' => [], 'source' => ['file' => $file, 'read' => true,
+                    'note' => 'PCSX2\'s settings have no first pad ([Pad1]) yet; Settings > Controllers sets one.']];
         }
         $rows = [];
         foreach (xs_emus_ini_section($file, 'Pad1') as $k => $v) {
@@ -95,7 +108,7 @@ return [
             $list[] = ['name' => $p['name'], 'section' => 'Patches', 'kind' => 'patch', 'author' => $p['author'], 'desc' => $p['desc'],
                        'on' => isset($en[$p['name']]) && !isset($dis[$p['name']]), 'yours' => $p['yours']];
         }
-        $cheats = xs_pcsx2_cheats($exe, $rom);
+        $cheats = xs_pcsx2_cheats($exe, $rom, $home);    // the folder the switch writes in, so the list reads the same one
         foreach ($cheats['cheats'] as $c) {
             if (!str_starts_with($c['name'], 'Cheats with no name')) {
                 $list[] = ['name' => $c['name'], 'section' => 'Cheats', 'kind' => 'cheat', 'author' => $c['author'], 'desc' => $c['desc'],
@@ -111,6 +124,9 @@ return [
             return false;
         }
         require_once __DIR__ . '/../emusetup.php';
+        if (!xs_es_may_write($home, $exe, $why)) {
+            return false;
+        }
         if (xs_tp_open($exe)) {
             $why = 'PCSX2 is open; close it first, as it writes a game\'s settings again when it closes';
             return false;
@@ -120,7 +136,11 @@ return [
             return false;
         }
         $file = $home . '\\gamesettings\\' . $code[0] . '_' . $code[1] . '.ini';
-        $raw = is_file($file) ? (string) @file_get_contents($file) : '';
+        $raw = is_file($file) ? @file_get_contents($file) : '';
+        if (!is_string($raw)) {
+            $why = 'the game\'s settings file ' . $file . ' would not read just now, so it is left as it is';
+            return false;
+        }
         $eol = str_contains($raw, "\r\n") || $raw === '' ? "\r\n" : "\n";
         $lines = $raw === '' ? [] : preg_split('/\r?\n/', rtrim($raw, "\r\n"));
         $own = xs_pcsx2_ini($file);
@@ -136,7 +156,7 @@ return [
             $lines = xs_es_list_line($lines, 'EmuCore', 'EnableCheats = false', false);
             $lines = xs_es_list_line($lines, 'EmuCore', 'EnableCheats = true', true);
         }
-        return xs_es_lines_put($file, $lines, $eol, $why);
+        return xs_es_lines_put($file, $lines, $eol, $why, $raw === '' || preg_match('/\n$/', $raw) === 1);
     },
     'setupLater' => 'Not yet: PCSX2 names a pad by SDL\'s number for it that day (SDL-0 one day, SDL-3 another), so a profile written once could point at the wrong pad. Your own bindings in PCSX2 are what its games use.',
 ];

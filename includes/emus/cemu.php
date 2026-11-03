@@ -63,11 +63,6 @@ function xs_cemu_name_key(string $s): string
 }
 
 /**
- * A Wii U game's title ID, for its own profile's name: its name found in the graphic packs Cemu
- * downloaded (each pack's path starts with the game's name, its titleIds list every region's),
- * and the region from the file name told by the profile Cemu ships for each ID. Null with $why.
- */
-/**
  * Every graphic pack Cemu would load (graphicPacks\, downloaded and the person's own), from its
  * rules.txt: ['file', 'rel' (as settings.xml names it), 'ids' (lower case), 'path', 'name',
  * 'description', 'default']. Read once a request.
@@ -80,29 +75,63 @@ function xs_cemu_rules(string $home): array
     }
     $out = [];
     $root = $home . '\\graphicPacks';
-    $it = is_dir($root) ? new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS)) : [];
-    foreach ($it as $f) {
-        if (strcasecmp($f->getFilename(), 'rules.txt') !== 0) {
-            continue;
+    try {
+        // A folder that will not open, or goes while it is walked (Cemu's Download latest), is passed over.
+        $it = is_dir($root) ? new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS),
+                                                            RecursiveIteratorIterator::LEAVES_ONLY, RecursiveIteratorIterator::CATCH_GET_CHILD) : [];
+        foreach ($it as $f) {
+            if (strcasecmp($f->getFilename(), 'rules.txt') !== 0) {
+                continue;
+            }
+            $t = (string) @file_get_contents($f->getPathname(), false, null, 0, 8192);
+            // Only [Definition] says what a pack is; presets below it have their own name lines.
+            $def = (string) preg_replace('/\n\[(?!Definition\])[\s\S]*$/', '', str_replace("\r", '', $t));
+            // A comment can end the line: "titleIds = 0005000010145C00 # USA".
+            if (!preg_match('/^\s*titleIds\s*=\s*([0-9A-Fa-f,\s]+?)\s*(?:[#;].*)?$/m', $def, $ids)) {
+                continue;
+            }
+            $get = static fn(string $k): string => preg_match('/^\s*' . $k . '\s*=\s*"?([^"\n]*)"?\s*$/mi', $def, $m) ? trim($m[1]) : '';
+            $out[] = ['file' => $f->getPathname(),
+                      'rel' => 'graphicPacks/' . str_replace('\\', '/', substr($f->getPathname(), strlen($root) + 1)),
+                      'ids' => array_values(array_filter(array_map('strtolower', preg_split('/[,\s]+/', trim($ids[1])) ?: []))),
+                      'path' => $get('path'), 'name' => $get('name'), 'description' => $get('description'),
+                      'default' => in_array(strtolower($get('default')), ['1', 'true'], true)];
         }
-        $t = (string) @file_get_contents($f->getPathname(), false, null, 0, 8192);
-        // Only [Definition] says what a pack is; presets below it have their own name lines.
-        $def = (string) preg_replace('/\n\[(?!Definition\])[\s\S]*$/', '', str_replace("\r", '', $t));
-        if (!preg_match('/^\s*titleIds\s*=\s*([0-9A-Fa-f,\s]+)$/m', $def, $ids)) {
-            continue;
+    } catch (\Throwable $e) {
+        if (function_exists('xs_log')) {
+            xs_log('PACK', 'Cemu\'s graphic packs were read up to a folder that would not open (' . $e->getMessage() . '): ' . count($out) . ' pack(s) read');
         }
-        $get = static fn(string $k): string => preg_match('/^\s*' . $k . '\s*=\s*"?([^"\n]*)"?\s*$/mi', $def, $m) ? trim($m[1]) : '';
-        $out[] = ['file' => $f->getPathname(),
-                  'rel' => 'graphicPacks/' . str_replace('\\', '/', substr($f->getPathname(), strlen($root) + 1)),
-                  'ids' => array_values(array_filter(array_map('strtolower', preg_split('/[,\s]+/', trim($ids[1])) ?: []))),
-                  'path' => $get('path'), 'name' => $get('name'), 'description' => $get('description'),
-                  'default' => in_array(strtolower($get('default')), ['1', 'true'], true)];
     }
     return $memo[$home] = $out;
 }
 
+/** An unpacked game's own title ID, from meta\meta.xml beside its code\ folder; null for an image or when it will not read. */
+function xs_cemu_meta_id(string $rom): ?string
+{
+    if (!preg_match('~[\\\\/]code[\\\\/][^\\\\/]+\.rpx$~i', $rom)) {
+        return null;
+    }
+    require_once __DIR__ . '/../drives.php';
+    if (xs_drive_stuck($rom) !== null) {
+        return null;
+    }
+    $meta = dirname($rom, 2) . DIRECTORY_SEPARATOR . 'meta' . DIRECTORY_SEPARATOR . 'meta.xml';
+    $t = is_file($meta) ? (string) @file_get_contents($meta, false, null, 0, 65536) : '';
+    return preg_match('~<title_id[^>]*>\s*([0-9A-Fa-f]{16})\s*</title_id>~', $t, $m) ? strtolower($m[1]) : null;
+}
+
+/**
+ * A Wii U game's title ID, for its own profile's name: an unpacked game's own meta.xml first; else its
+ * name found in the graphic packs Cemu downloaded (each pack's path starts with the game's name, its
+ * titleIds list every region's), and the region from the file name told by the profile Cemu ships
+ * for each ID. Null with $why.
+ */
 function xs_cemu_title_id(string $home, string $exe, string $title, string $rom, ?string &$why = null): ?string
 {
+    $own = xs_cemu_meta_id($rom);
+    if ($own !== null) {
+        return $own;
+    }
     $names = [];
     foreach (xs_cemu_rules($home) as $r) {
         if (preg_match('~^([^/]+)/~', $r['path'], $p)) {
@@ -247,6 +276,11 @@ return [
     'packs'    => static function (string $home, string $exe, array $game, string $rom, ?string &$why): ?array {
         $id = xs_cemu_title_id($home, $exe, (string) ($game['title'] ?? ''), $rom, $why);
         if ($id === null) {
+            return null;
+        }
+        // Unread, every pack would show as its default: not a guess to show.
+        if (xs_emus_unreadable($home . '\\settings.xml')) {
+            $why = 'Cemu\'s settings.xml, which says which packs are on, would not read just now';
             return null;
         }
         $set = xs_cemu_packs_set($home);

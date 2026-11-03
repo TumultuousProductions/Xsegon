@@ -36,7 +36,10 @@ return [
               . DIRECTORY_SEPARATOR . 'global' . DIRECTORY_SEPARATOR . 'Default.yml';
         if (!is_file($file)) {
             return ['rows' => [], 'source' => ['file' => null, 'read' => false,
-                    'note' => 'RPCS3 keeps its bindings under config\\input_configs; Pads in its own window has them.']];
+                    'note' => 'RPCS3 keeps its bindings in ' . $file . ', which is not there; Pads in its own window has them.']];
+        }
+        if (xs_emus_unreadable($file)) {
+            return xs_emus_unread_controls('RPCS3', $file);
         }
         $rows = [];
         foreach (xs_rpcs3_player1($file) as $k => $v) {
@@ -48,9 +51,13 @@ return [
                 'note' => 'RPCS3\'s own words: PS3 control on the left, the pad input on the right.']];
     },
     'setup'    => [
-        'words' => 'Xsegon writes an input file of its own, Xsegon, with your own player 1 copied to players 2, 3 and 4, each on the next Xbox pad, and hands it to RPCS3 at each launch with --input-config. RPCS3\'s own Default stays as it is.',
+        'words' => 'Xsegon writes an input file of its own, Xsegon, with your own player 1 copied to players 2, 3 and 4, each on the next Xbox pad, and hands it to RPCS3 at each launch. RPCS3\'s own Default stays as it is.',
         'own'   => static function (string $home, string $exe, ?string &$why): ?array {
             $file = $home . '\\config\\input_configs\\global\\Default.yml';
+            if (xs_emus_unreadable($file)) {
+                $why = 'RPCS3\'s input settings (' . $file . ') would not read just now; nothing was written';
+                return null;
+            }
             $text = (string) @file_get_contents($file);
             // The blocks, "Player N Input:" to the next; player 1's pad copied to 2 to 4.
             $parts = preg_split('/^(?=Player \d Input:)/m', $text) ?: [];
@@ -80,13 +87,24 @@ return [
             }
             return [$home . '\\config\\input_configs\\global\\Xsegon.yml' => $out];
         },
-        // Read only with --no-gui, which Xsegon's launches of RPCS3 carry.
-        'args'  => static fn(string $home, string $exe): string => '--input-config Xsegon',
+        // RPCS3 takes --input-config only beside --no-gui and stops otherwise (rpcs3\main.cpp): none without it.
+        'args'  => static function (string $home, string $exe, string $args, ?string &$why): string {
+            if (!preg_match('/(^|\s)--no-gui(\s|$)/', $args)) {
+                $why = 'Xsegon\'s input file not handed over: RPCS3 reads it only when it starts without its window (--no-gui), which this launch does not have';
+                return '';
+            }
+            return '--input-config Xsegon';
+        },
     ],
     'leave'    => static function (string $home): string {
-        $p1 = xs_rpcs3_player1($home . '\\config\\input_configs\\global\\Default.yml');
-        $ps = (string) ($p1['PS Button'] ?? '');
-        $on = $ps === 'Guide' ? 'the Xbox button' : ($ps !== '' ? $ps : 'the PS button');
-        return 'Press ' . $on . ' (the PS button) for RPCS3\'s home menu, then Exit Game there.';
+        $file = $home . '\\config\\input_configs\\global\\Default.yml';
+        if (!is_file($file)) {
+            return 'RPCS3 has no pad set yet (Pads in its window sets one); on a pad, the PS button opens its home menu, with Exit Game there.';
+        }
+        $ps = (string) (xs_rpcs3_player1($file)['PS Button'] ?? '');
+        if ($ps === '' || strcasecmp($ps, 'None') === 0) {
+            return 'RPCS3\'s PS button is on no press of your pad, so its home menu, with Exit Game, is reached from the keyboard; Pads in its window sets it.';
+        }
+        return 'Press ' . ($ps === 'Guide' ? 'the Xbox button' : $ps) . ' (the PS button) for RPCS3\'s home menu, then Exit Game there.';
     },
 ];

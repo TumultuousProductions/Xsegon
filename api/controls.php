@@ -112,6 +112,7 @@ $remap = null;
 $gameMap = null;        // RetroArch only: the game's own buttons set in Xsegon
 $hotkeys = null;        // RetroArch only: the presses that leave, pause and save (includes\rahotkeys.php)
 $leave = null;          // the other emulators: how a game is left with a pad (includes\emus.php)
+$setUp = false;         // the other emulators: Settings has set this one up, so its games name Xsegon's profiles
 $source = ['file' => null, 'read' => false, 'note' => ''];
 
 /* ---- RetroArch: the full read ------------------------------------------- */
@@ -206,14 +207,27 @@ if ($name === 'retroarch.exe' || ($launch['kind'] ?? '') === 'retroarch') {
 
 /* ---- the other emulators: each one's own file says (includes\emus\) ----- */
 elseif (($emu = xs_emu_of($exe)) !== null) {
+    // The copy the game starts in today, as a launch finds it (an old LaunchBox copy left in the record is not it).
+    if ($id !== '') {
+        require_once __DIR__ . '/../includes/emulators.php';
+        $s = xs_settings();
+        $now = (string) (xs_emu_repoint($launch, xs_emulators(xs_norm_path((string) ($s['paths']['launchbox'] ?? ''))), $platform)['exe'] ?? '');
+        if ($now !== '' && xs_emu_of($now) !== null) {
+            $exe = $now;
+            $emu = xs_emu_of($now);
+        }
+    }
     $home  = xs_emu_home($emu, $exe);
     $read  = ($emu['controls'])($home, $platform);
     $rows  = $read['rows'];
     $source = $read['source'];
     $leave = xs_emu_leave($emu, $home);
+    // Set up in Settings: from its first start the game names Xsegon's own profiles, not the ones read here.
+    require_once __DIR__ . '/../includes/emusetup.php';
+    $setUp = !empty($emu['setup']) && !empty(xs_es_rec($emu['key'])['on']);
 } else {
     $source['note'] = ($via !== '' ? $via : basename($exe)) . ' keeps its bindings in its own settings screen; Xsegon does not know where it keeps them.';
 }
 
 xs_json(['ok' => true, 'title' => $title, 'platform' => $platform, 'via' => $via,
-         'source' => $source, 'rows' => $rows, 'remap' => $remap, 'gameMap' => $gameMap, 'hotkeys' => $hotkeys, 'leave' => $leave]);
+         'source' => $source, 'rows' => $rows, 'remap' => $remap, 'gameMap' => $gameMap, 'hotkeys' => $hotkeys, 'leave' => $leave, 'setUp' => $setUp]);

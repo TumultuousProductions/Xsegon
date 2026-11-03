@@ -10,7 +10,9 @@ declare(strict_types=1);
 const XS_EDEN_XBOX = [0 => 'A', 1 => 'B', 2 => 'X', 3 => 'Y', 4 => 'LB', 5 => 'RB', 6 => 'Back', 7 => 'Start',
     8 => 'Left stick press', 9 => 'Right stick press', 10 => 'Xbox button'];
 
-const XS_EDEN_TYPES = ['Pro Controller', 'Joy-Con pair', 'Left Joy-Con', 'Right Joy-Con', 'Handheld'];
+// Settings::ControllerType's order, as player_N_type numbers it.
+const XS_EDEN_TYPES = ['Pro Controller', 'Joy-Con pair', 'Left Joy-Con', 'Right Joy-Con', 'Handheld', 'GameCube controller',
+    'Poké Ball Plus', 'NES controller', 'SNES controller', 'N64 controller', 'Sega Genesis controller'];
 
 /** A binding in plain words: "B" for an Xbox pad's button 1, "D-pad up", "LT"; the raw text where it cannot tell. */
 function xs_eden_input(string $v): string
@@ -42,14 +44,18 @@ function xs_eden_input(string $v): string
     return trim($v, '"');
 }
 
-/** The person's player 1 inputs for Home, Minus and Plus, for saying a shortcut in their pad's words. */
-function xs_eden_pad_words(string $file, string $seq): string
+/** The person's player 1 inputs for Home, Minus and Plus, for saying a shortcut in their pad's words; $unset gets the ones on no button. */
+function xs_eden_pad_words(string $file, string $seq, ?array &$unset = null): string
 {
     $c = xs_emus_ini_section($file, 'Controls');
     $words = [];
+    $unset = [];
     foreach (explode('+', $seq) as $b) {
         $k = 'player_0_button_' . strtolower($b);
         $w = isset($c[$k]) ? xs_eden_input((string) $c[$k]) : '';
+        if ($w === 'not set') {
+            $unset[] = $b;
+        }
         $words[] = $w !== '' && $w !== 'not set' ? $w : $b;
     }
     return implode(' and ', $words);
@@ -65,6 +71,13 @@ return [
         if (!is_file($file)) {
             return ['rows' => [], 'source' => ['file' => null, 'read' => false,
                     'note' => 'Eden keeps its bindings in ' . $file . ', which is not there; Emulation > Configure > Controls in Eden sets them.']];
+        }
+        if (xs_emus_unreadable($file)) {
+            return xs_emus_unread_controls('Eden', $file);
+        }
+        if (!xs_emus_ini_has($file, 'Controls')) {
+            return ['rows' => [], 'source' => ['file' => $file, 'read' => true,
+                    'note' => 'Eden\'s settings have no controls yet; Emulation > Configure > Controls in Eden sets them.']];
         }
         $c = xs_emus_ini_section($file, 'Controls');
         $type = (int) ($c['player_0_type'] ?? 0);
@@ -86,7 +99,8 @@ return [
         for ($n = 1; $n < 8; $n++) {
             if (strtolower((string) ($c['player_' . $n . '_connected'] ?? 'false')) === 'true') {
                 $t = (int) ($c['player_' . $n . '_type'] ?? 0);
-                $rows[] = ['name' => 'Player ' . ($n + 1), 'value' => (XS_EDEN_TYPES[$t] ?? 'type ' . $t) . ', on ' . xs_eden_input((string) ($c['player_' . $n . '_button_a'] ?? '')) . ' for A'];
+                $a = xs_eden_input((string) ($c['player_' . $n . '_button_a'] ?? ''));
+                $rows[] = ['name' => 'Player ' . ($n + 1), 'value' => (XS_EDEN_TYPES[$t] ?? 'type ' . $t) . ($a === 'not set' ? ', A on no button' : ', ' . $a . ' for A')];
             }
         }
         return ['rows' => $rows, 'source' => ['file' => $file, 'read' => true,
@@ -95,10 +109,17 @@ return [
     'setupLater' => 'Not yet: Eden takes a game\'s own controls only through a profile it loads by name, which is not proven here yet. Your own bindings in Eden are what its games use.',
     'leave'    => static function (string $home): string {
         $file = $home . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'qt-config.ini';
+        if (!is_file($file)) {
+            return 'Eden has no settings file yet (' . $file . '); as it comes, Home+Minus on player 1\'s controller closes Eden, once a controller is set in its Controls.';
+        }
         $ui   = xs_emus_ini_section($file, 'UI');
         $exit = (string) ($ui['Shortcuts\\Main%20Window\\Exit%20Eden\\Controller_KeySeq'] ?? 'Home+Minus');
         $stop = (string) ($ui['Shortcuts\\Main%20Window\\Stop%20Emulation\\Controller_KeySeq'] ?? 'L+Plus+Minus');
-        $words = ($exit !== '' ? $exit . ' closes Eden (on your pad: ' . xs_eden_pad_words($file, $exit) . ')' : 'No pad press closes Eden')
+        $unset = [];
+        $pad = $exit !== '' ? xs_eden_pad_words($file, $exit, $unset) : '';
+        $words = ($exit === '' ? 'No pad press closes Eden'
+                 : ($unset ? $exit . ' closes Eden, but ' . implode(' and ', $unset) . (count($unset) === 1 ? ' is' : ' are') . ' on no button of your pad, so it is reached from the keyboard'
+                           : $exit . ' closes Eden (on your pad: ' . $pad . ')'))
                . ($stop !== '' ? '; ' . $stop . ' stops the game and leaves Eden open' : '') . '.';
         // confirmStop: 0 asks always, 1 asks by game, 2 never (src\qt_common\uisettings.h).
         if ((string) ($ui['confirmStop'] ?? '0') !== '2') {
