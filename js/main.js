@@ -167,10 +167,13 @@ document.getElementById("btn-random").addEventListener("click", randomGame);
 setInterval(checkIdle, 10000);
 $viewsel.addEventListener("change", function () { setView($viewsel.value); });
 
+// A spin past the first or last game is felt as a press is (js\bump.js): down the wheel, across the carousel.
+function spinWay(d) { return view === "carousel" ? (d > 0 ? "right" : "left") : (d > 0 ? "down" : "up"); }
+
 // Spin by grabbing: wheels vertically, carousels horizontally.
 attachSpin($view,
   function () { return view === "carousel" ? "x" : "y"; },
-  function (d) { move(d); },
+  function (d) { move(d, spinWay(d), true); },
   function () { return view === "wheel" || view === "carousel"; });
 attachSpin($syswall,
   function () { return sysStyle() === "wheel" ? "y" : "x"; },
@@ -178,7 +181,7 @@ attachSpin($syswall,
   function () { return sysStage === "wall"; });
 
 // And by scrolling, at the Speed set and with the Momentum set (js\wheelscroll.js).
-var viewScroll = spinScroller(function (d) { move(d); }, function () { return view === "wheel" || view === "carousel"; });
+var viewScroll = spinScroller(function (d) { move(d, spinWay(d), true); }, function () { return view === "wheel" || view === "carousel"; });
 var sysScroll = spinScroller(function (d) { moveSys(d); }, function () { return sysStage === "wall"; });
 $view.addEventListener("wheel", function (e) {
   if (!ctl("wheelTurns", true)) { return; }

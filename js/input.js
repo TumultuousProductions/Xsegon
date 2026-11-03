@@ -318,12 +318,12 @@ function onKey(e) {
     return;
   }
 
-  if (e.key === "ArrowDown")       { move(rowStep(1)); e.preventDefault(); }
-  else if (e.key === "ArrowUp")    { move(rowStep(-1)); e.preventDefault(); }
+  if (e.key === "ArrowDown")       { move(rowStep(1), "down"); e.preventDefault(); }
+  else if (e.key === "ArrowUp")    { move(rowStep(-1), "up"); e.preventDefault(); }
   // The carousel runs sideways, so left and right are its natural keys; up
   // and down still work there too.
-  else if (e.key === "ArrowRight" && (view === "grid" || view === "shelf" || view === "carousel")) { move(1); e.preventDefault(); }
-  else if (e.key === "ArrowLeft"  && (view === "grid" || view === "shelf" || view === "carousel")) { move(-1); e.preventDefault(); }
+  else if (e.key === "ArrowRight" && (view === "grid" || view === "shelf" || view === "carousel")) { move(1, "right"); e.preventDefault(); }
+  else if (e.key === "ArrowLeft"  && (view === "grid" || view === "shelf" || view === "carousel")) { move(-1, "left"); e.preventDefault(); }
   /* In the list, left and right move the TABLE, not the selection: with more
      columns than fit, the ones off the right edge otherwise need a mouse, and
      a pad has no way to reach them at all. */
@@ -640,8 +640,8 @@ export function pollPad() {
       L("PAD", (d === 2 ? "down" : d === -2 ? "up" : d > 0 ? "right" : "left") + " " + (sysStage === "wall" ? "wall" : view));
       if (onWall) { moveSys(d); }
       else if (view === "rows") { navRows(d === 2 || d === -2 ? 0 : d, d === 2 ? 1 : d === -2 ? -1 : 0); }
-      else if (d === 2 || d === -2) { move(rowStep(d > 0 ? 1 : -1)); }
-      else { move(d); }
+      else if (d === 2 || d === -2) { move(rowStep(d > 0 ? 1 : -1), d > 0 ? "down" : "up"); }
+      else { move(d, d > 0 ? "right" : "left"); }
     }
 
     // A list that says loading has nothing on screen to walk or play: only B is heard.

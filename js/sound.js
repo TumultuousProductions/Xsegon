@@ -53,6 +53,25 @@ export function sound(name, setOverride) {
   } catch (e) { /* a missing sound set is not worth an error */ }
 }
 
+/* The end of a list (js\bump.js): the set's own Move, lower and slower, a soft
+   thud; a set has no sound of its own for it. */
+var THUD_RATE = 0.6;
+export function thud() {
+  if (!SND.sounds || muted || volume <= 0) { return; }
+  try {
+    var set = SND.soundSet || "Xsegon", key = set + "/move-low", a = sounds[key];
+    if (!a) {
+      a = sounds[key] = new Audio("api/sound.php?name=move&set=" + encodeURIComponent(set));
+      a.preservesPitch = false;
+    }
+    a.defaultPlaybackRate = a.playbackRate = THUD_RATE;   // a load puts the rate back to the default
+    a.volume = gain(volume) * 0.8;
+    a.currentTime = 0;
+    var p = a.play();
+    if (p && p.catch) { p.catch(function () {}); }
+  } catch (e) { /* a missing sound set is not worth an error */ }
+}
+
 // A set whose files changed under the same names reads them again next time.
 // Hover too, under every set: yours is not tied to one.
 export function forgetSounds(set) {
