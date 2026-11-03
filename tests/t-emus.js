@@ -143,6 +143,27 @@ module.exports = async function (b, check) {
     check("emus: RPCS3's starts are handed it", rr.first.args, "--input-config Xsegon");
     check("emus: Put back leaves RPCS3's folder exactly as it was", JSON.stringify(tree(path.join(fx, "rpcs3"))), JSON.stringify(rBefore));
     check("emus: the setup's record is in the group's own data folder", fs.existsSync(path.join(data, "emu-setup.json")), true);
+
+    /* A Wii U game's graphic packs (CA18): the ones for its title ID, on as settings.xml says,
+       and one written after Cemu's download said to be the person's own, which the next download deletes. */
+    const dl = path.join(fx, "cemu", "graphicPacks", "downloadedGraphicPacks");
+    put("cemu/graphicPacks/downloadedGraphicPacks/version.txt", "Cemu Graphic Packs: v970");
+    put("cemu/graphicPacks/downloadedGraphicPacks/MarioKart8/Graphics/rules.txt", "[Definition]\ntitleIds = 000500001010EC00,000500001010ED00\nname = Graphic Options\npath = \"Mario Kart 8/Graphics\"\n\n[Preset]\nname = 1080p\n");
+    put("cemu/graphicPacks/downloadedGraphicPacks/MarioKart8/Mods/Mine/rules.txt", "[Definition]\ntitleIds = 000500001010EC00\nname = Mine\npath = \"Mario Kart 8/Mods/Mine\"\n");
+    put("cemu/graphicPacks/downloadedGraphicPacks/Other/rules.txt", "[Definition]\ntitleIds = 0005000010199999\nname = Another game's\npath = \"Other/Graphics\"\n");
+    const old = new Date(Date.now() - 3600 * 1000);
+    ["version.txt", "MarioKart8/Graphics/rules.txt", "MarioKart8/Mods/X/rules.txt", "Other/rules.txt"].forEach((f) => fs.utimesSync(path.join(dl, f), old, old));
+    put("cemu/settings.xml", "<content><GraphicPack><Entry filename=\"graphicPacks/downloadedGraphicPacks/MarioKart8/Graphics/rules.txt\"/>"
+      + "<Entry filename=\"graphicPacks/downloadedGraphicPacks/MarioKart8/Mods/X/rules.txt\" disabled=\"true\"/></GraphicPack></content>");
+    const gp = JSON.parse(execFileSync(phpExe, [path.join(ROOT, "tests", "emus-probe.php"), "--packs", path.join(fx, "cemu", "Cemu.exe"), "Mario Kart 8", "Mario Kart 8 (USA).wux"], { encoding: "utf8" })).got || { packs: [] };
+    const pk = (n) => gp.packs.find((p) => p.name === n) || {};
+    check("emus: the packs for the game's title ID alone", gp.packs.map((p) => p.name).sort().join(","), "Graphic Options,Mine,X");
+    check("emus: a preset's name is not taken for the pack's", pk("Graphic Options").kind, "Graphics");
+    check("emus: a pack settings.xml switches on reads on", pk("Graphic Options").on, true);
+    check("emus: one it switches off reads off", pk("X").on, false);
+    check("emus: a pack written after the download is the person's own, said to be at risk", pk("Mine").late && pk("Mine").own, true);
+    check("emus: the downloaded ones are not", !!(pk("Graphic Options").late || pk("X").late), false);
+    check("emus: the set on the PC is named", gp.set, "Cemu Graphic Packs: v970");
   } finally {
     fs.rmSync(fx, { recursive: true, force: true });
   }

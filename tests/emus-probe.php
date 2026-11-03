@@ -2,6 +2,7 @@
 // Used by tests\t-emus.js: what includes\emus\ reads for one emulator program, nothing written.
 //   php emus-probe.php <exe> [<platform>]     its home, controls and way out
 //   php emus-probe.php --keys                 every emulator file's key and program names
+//   php emus-probe.php --packs <exe> <title> <rom>      a game's graphic packs, read only
 //   php emus-probe.php --round <exe> <rom> <title> <platform>
 //                       Set up, a dry start, two starts and Put back, in stand-in folders only:
 //                       XSEGON_DATA must name the test's own data folder
@@ -10,6 +11,14 @@ require __DIR__ . '/../includes/boot.php';
 require __DIR__ . '/../includes/emus.php';
 if (($argv[1] ?? '') === '--keys') {
     echo json_encode(array_map(static fn(array $e): array => $e['exes'], xs_emus()));
+    exit;
+}
+if (($argv[1] ?? '') === '--packs') {
+    [, , $exe, $title, $rom] = $argv;
+    $e = xs_emu_of($exe);
+    $why = null;
+    $got = ($e['packs'])(xs_emu_home($e, $exe), $exe, ['title' => $title], $rom, $why);
+    echo json_encode(['got' => $got, 'why' => $why], JSON_UNESCAPED_SLASHES);
     exit;
 }
 if (($argv[1] ?? '') === '--round') {

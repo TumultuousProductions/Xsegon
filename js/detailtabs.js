@@ -16,6 +16,7 @@ import { accPane, accTabLabel } from "./acctab.js";
 import { achPane, achTabLabel } from "./achtab.js";
 import { cheatsPane, cheatsTabLabel } from "./cheattab.js";
 import { aboutPane } from "./details.js";
+import { emuPacksFor, emuPacksPane, emuPacksTabLabel } from "./emupackstab.js";
 import { fileCheckPane, fileCheckTabLabel } from "./filecheck.js";
 import { hacksPane, hacksTabLabel } from "./hackstab.js";
 import { paintHelp } from "./help.js";
@@ -46,6 +47,8 @@ function dtabs(g) {
   if (g && g.ach) { t.push({ key: "achievements", label: achTabLabel, build: achPane, file: "its achievements" }); }
   // Only a game of a console whose emulator here loads texture packs.
   if (texPacksFor(g)) { t.push({ key: "texpacks", label: texPacksTabLabel, build: texPacksPane, file: "its texture packs" }); }
+  // A Wii U game in Cemu: the community's graphic packs for it (js\emupackstab.js).
+  if (emuPacksFor(g)) { t.push({ key: "graphicpacks", label: emuPacksTabLabel, build: emuPacksPane }); }
   // Only a card holding several versions gets the tab: one file is nothing
   // to choose between. row says it builds from the row, with no full record.
   if (g && g.versions && g.versions.length > 1) { t.push({ key: "versions", label: versionsTabLabel, build: versionsPane, row: true }); }

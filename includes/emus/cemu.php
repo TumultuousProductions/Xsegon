@@ -67,24 +67,48 @@ function xs_cemu_name_key(string $s): string
  * downloaded (each pack's path starts with the game's name, its titleIds list every region's),
  * and the region from the file name told by the profile Cemu ships for each ID. Null with $why.
  */
+/**
+ * Every graphic pack Cemu would load (graphicPacks\, downloaded and the person's own), from its
+ * rules.txt: ['file', 'rel' (as settings.xml names it), 'ids' (lower case), 'path', 'name',
+ * 'description', 'default']. Read once a request.
+ */
+function xs_cemu_rules(string $home): array
+{
+    static $memo = [];
+    if (isset($memo[$home])) {
+        return $memo[$home];
+    }
+    $out = [];
+    $root = $home . '\\graphicPacks';
+    $it = is_dir($root) ? new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS)) : [];
+    foreach ($it as $f) {
+        if (strcasecmp($f->getFilename(), 'rules.txt') !== 0) {
+            continue;
+        }
+        $t = (string) @file_get_contents($f->getPathname(), false, null, 0, 8192);
+        // Only [Definition] says what a pack is; presets below it have their own name lines.
+        $def = (string) preg_replace('/\n\[(?!Definition\])[\s\S]*$/', '', str_replace("\r", '', $t));
+        if (!preg_match('/^\s*titleIds\s*=\s*([0-9A-Fa-f,\s]+)$/m', $def, $ids)) {
+            continue;
+        }
+        $get = static fn(string $k): string => preg_match('/^\s*' . $k . '\s*=\s*"?([^"\n]*)"?\s*$/mi', $def, $m) ? trim($m[1]) : '';
+        $out[] = ['file' => $f->getPathname(),
+                  'rel' => 'graphicPacks/' . str_replace('\\', '/', substr($f->getPathname(), strlen($root) + 1)),
+                  'ids' => array_values(array_filter(array_map('strtolower', preg_split('/[,\s]+/', trim($ids[1])) ?: []))),
+                  'path' => $get('path'), 'name' => $get('name'), 'description' => $get('description'),
+                  'default' => in_array(strtolower($get('default')), ['1', 'true'], true)];
+    }
+    return $memo[$home] = $out;
+}
+
 function xs_cemu_title_id(string $home, string $exe, string $title, string $rom, ?string &$why = null): ?string
 {
-    static $names = null;
-    if ($names === null) {
-        $names = [];
-        $it = is_dir($home . '\\graphicPacks')
-            ? new RecursiveIteratorIterator(new RecursiveDirectoryIterator($home . '\\graphicPacks', FilesystemIterator::SKIP_DOTS)) : [];
-        foreach ($it as $f) {
-            if (strcasecmp($f->getFilename(), 'rules.txt') !== 0) {
-                continue;
-            }
-            $t = (string) @file_get_contents($f->getPathname(), false, null, 0, 4096);
-            if (preg_match('/^\s*titleIds\s*=\s*([0-9A-Fa-f,\s]+)$/m', $t, $ids) && preg_match('/^\s*path\s*=\s*"([^"\/]+)\//m', $t, $p)) {
-                $k = xs_cemu_name_key($p[1]);
-                foreach (preg_split('/[,\s]+/', trim($ids[1])) ?: [] as $id) {
-                    if (preg_match('/^00050000[0-9A-Fa-f]{8}$/', $id)) {
-                        $names[$k][strtolower($id)] = true;
-                    }
+    $names = [];
+    foreach (xs_cemu_rules($home) as $r) {
+        if (preg_match('~^([^/]+)/~', $r['path'], $p)) {
+            foreach ($r['ids'] as $id) {
+                if (preg_match('/^00050000[0-9a-f]{8}$/', $id)) {
+                    $names[xs_cemu_name_key($p[1])][$id] = true;
                 }
             }
         }
@@ -114,6 +138,17 @@ function xs_cemu_title_id(string $home, string $exe, string $title, string $rom,
     }
     $why = 'which region\'s copy of ' . $title . ' this is could not be told from its file name and Cemu\'s own game profiles';
     return null;
+}
+
+/** Which packs settings.xml switches: [rel path (lower case) => true for on, false for switched off]. Read only. */
+function xs_cemu_packs_set(string $home): array
+{
+    $out = [];
+    preg_match_all('~<Entry\s+filename="([^"]+)"([^>]*)>~i', (string) @file_get_contents($home . '\\settings.xml'), $m, PREG_SET_ORDER);
+    foreach ($m as $e) {
+        $out[strtolower(str_replace('\\', '/', html_entity_decode($e[1])))] = !preg_match('/disabled\s*=\s*"true"/i', $e[2]);
+    }
+    return $out;
 }
 
 /** The profile Cemu ships for a title, whatever the case of its name; null when it ships none. */
@@ -207,4 +242,35 @@ return [
             return ['file' => $home . '\\gameProfiles\\' . $id . '.ini', 'section' => 'Controller', 'set' => $set, 'from' => xs_cemu_shipped($exe, $id)];
         },
     ],
+    /* A game's graphic packs (roadmap CA18): shown, never switched here. They are switched in
+       settings.xml, Cemu's one file for every game, so the person does it in Cemu (CA17). */
+    'packs'    => static function (string $home, string $exe, array $game, string $rom, ?string &$why): ?array {
+        $id = xs_cemu_title_id($home, $exe, (string) ($game['title'] ?? ''), $rom, $why);
+        if ($id === null) {
+            return null;
+        }
+        $set = xs_cemu_packs_set($home);
+        $mark = $home . '\\graphicPacks\\downloadedGraphicPacks\\version.txt';
+        $got = is_file($mark) ? (int) filemtime($mark) : 0;
+        $packs = [];
+        foreach (xs_cemu_rules($home) as $r) {
+            if (!in_array($id, $r['ids'], true)) {
+                continue;
+            }
+            $bits = explode('/', $r['path']);
+            $kind = count($bits) > 2 ? $bits[1] : (count($bits) === 2 ? $bits[1] : 'Pack');
+            $state = $set[strtolower($r['rel'])] ?? null;
+            $downloaded = stripos($r['rel'], 'graphicPacks/downloadedGraphicPacks/') === 0;
+            // Written there after Cemu's download (it writes the whole set in a second, version.txt last):
+            // the person's own, which the next download deletes.
+            $late = $downloaded && $got > 0 && (int) @filemtime($r['file']) > $got + 60;
+            $packs[] = ['name' => $r['name'] !== '' ? $r['name'] : end($bits), 'kind' => $kind, 'description' => $r['description'],
+                        'on' => $state ?? $r['default'], 'own' => !$downloaded || $late, 'late' => $late, 'folder' => dirname($r['file'])];
+        }
+        usort($packs, static fn(array $a, array $b): int => [$a['kind'], $a['name']] <=> [$b['kind'], $b['name']]);
+        return ['titleId' => $id, 'packs' => $packs,
+                'set' => is_file($mark) ? trim((string) @file_get_contents($mark)) : '',
+                'where' => 'In Cemu: Options > Graphic packs, then ' . (string) ($game['title'] ?? 'the game') . ' in the list on the left. Download latest there brings newer packs.',
+                'whose' => 'The community\'s graphic packs for Cemu (github.com/cemu-project/cemu_graphic_packs), free for anyone to use (CC0).'];
+    },
 ];
