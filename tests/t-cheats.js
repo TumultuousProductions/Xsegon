@@ -285,6 +285,8 @@ async function emulatorsOwnCheats(b, check) {
     await b.ev(`document.querySelectorAll("#details .dtab-pane .ch-list .cr-row")[2].click()`);
     check("a press on one switches it, kept at once in the game's own file",
       [await b.until(rowsNow + ".find((r) => r[0] === 'Max Money')[1]", true, 6000), /\[Cheats\][^[]*Enable = Max Money/.test(fs.readFileSync(ownIni, "utf8"))], [true, true]);
+    await b.key("ArrowDown");                          // into the list, as the pad goes: Down from the tabs
+    await sleep(300);
     check("in that list the legend offers moving, switching and the way back",
       await b.ev(`(l => [l.includes("move"), l.includes("switch it"), l.includes("back to the tabs")])(${legend})`), [true, true, true]);
     await b.ev(`[...document.querySelectorAll("#details .dtab-pane .ch-list .cr-row")].find((r) => r.querySelector(".cr-name").textContent === "Max Money").click()`);

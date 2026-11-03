@@ -249,9 +249,9 @@ module.exports = async function (b, check) {
     await b.ev(`(t => t.indexOf("Xsegon Controls") >= 0 && t.indexOf("RetroArch + Emulator Controls") === t.indexOf("Xsegon Controls") + 1)([...document.querySelectorAll("#settings .set-tab .tab-label")].map(n => n.textContent))`), true);
   await b.ev(`${tabFor("/^RetroArch \\+ Emulator Controls/")}.click()`);
   await b.until(pageNow, "gamecontrols");
-  check("RetroArch + Emulator Controls holds the controls inside games, each heading naming RetroArch",
-    await b.ev(`[...document.querySelectorAll("${rctl} .sect-name")].map(n => n.textContent).join("|")`), RB + "|" + RK + "|" + RH);
-  check("and says other emulators and Steam games keep their own", await b.ev(`/Other emulators and Steam games keep their controls in their own settings/.test(document.querySelector("${rctl} .group-help").textContent)`), true);
+  check("RetroArch + Emulator Controls holds the controls inside games, RetroArch's headings first, then the other emulators (CA15)",
+    await b.ev(`[...document.querySelectorAll("${rctl} .sect-name")].map(n => n.textContent).join("|")`), RB + "|" + RK + "|" + RH + "|Other emulators");
+  check("and says what Other emulators holds, and that Steam games keep their own", await b.ev(`(t => /Under Other emulators, how a game in Dolphin, Cemu and the rest is left with the pad/.test(t) && /Steam games keep their controls in Steam/.test(t))(document.querySelector("${rctl} .group-help").textContent)`), true);
   check("and has no way back to Xsegon Controls on it: the one way across is from Xsegon Controls", await b.ev(`[...document.querySelectorAll("${rctl} .opt button")].some(x => /^Go there/.test(x.textContent))`), false);
   check("its name on the side list is two lines, RetroArch + Emulator, then Controls",
     await b.ev(`(t => [...t.querySelectorAll(".tl")].map(n => [n.textContent.trim(), Math.round(n.getBoundingClientRect().height / parseFloat(getComputedStyle(n).lineHeight))]))(${tabFor("/^RetroArch/")})`),
