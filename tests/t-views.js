@@ -1950,4 +1950,131 @@ module.exports = async function (b, check) {
   await sleep(300);
   check("nor when no game has a box at all", await b.ev(`document.getElementById("saver").hidden`));
   await b.goto();                        // the games as the server has them again
+
+  /* ---- the cover flies into details and back (js\coverfly.js) ----
+     Motion on: under the suite's reduced motion nothing flies. Each flight is
+     stopped at its two ends, measured there, then let go. */
+  const viewWas = (await api("api/settings.php")).settings.view;
+  await api("api/settings.php", { view: { heroPanel: true, gridImage: "box" } });
+  await b.goto();
+  const FLY = `const near = (x, y) => Math.abs(x - y) <= 2;
+    const inside = (c, s, nw, nh) => c.left >= s.left - 1 && c.right <= s.right + 1 && c.top >= s.top - 1 && c.bottom <= s.bottom + 1 &&
+      (near(c.width, s.width) || near(c.height, s.height)) && Math.abs(c.width / c.height - nw / nh) < 0.03;
+    const box = (i) => { const t = i.getBoundingClientRect(); return { x: t.left + i.clientLeft, y: t.top + i.clientTop, w: i.clientWidth }; };
+    const onBox = (c, t) => near(c.left, t.x) && near(c.top, t.y) && near(c.width, t.w);
+    const ends = (a) => { a.pause(); a.currentTime = 0; const r0 = a.effect.target.getBoundingClientRect();
+      a.currentTime = a.effect.getComputedTiming().duration; return [r0, a.effect.target.getBoundingClientRect()]; };
+    const flying = () => (c => c && c.getAnimations()[0])(document.querySelector(".cover-fly"));
+    const seen = (i) => i.hidden ? i.parentNode.querySelector("video.snap") : i;`;
+  /* Opening: the picture `src` names, or the snap playing in its place, is left
+     from; the cover in details is landed on. Read before details is opened,
+     since opening stops the snap. */
+  const flyIn = (src) => b.ev(`import("/js/details.js").then((D) => { ${FLY}
+    const im = document.querySelector(${JSON.stringify(src)}), video = im.hidden, s = seen(im).getBoundingClientRect(), nw = im.naturalWidth, nh = im.naturalHeight;
+    D.openDetails();
+    const a = flying(), cov = document.querySelector("#details .dleft img.cover");
+    if (!a) { return null; }
+    const out = { video: video, waits: getComputedStyle(cov).visibility, fades: document.getElementById("details").getAnimations().map((x) => x.animationName).join(),
+                  ms: Math.round(a.effect.getComputedTiming().duration) };
+    const [r0, r1] = ends(a);
+    out.leaves = inside(r0, s, nw, nh);
+    out.lands = onBox(r1, box(cov));
+    a.finish();
+    return out;
+  })`);
+  // Closing: from details' cover, or its snap, back onto the picture `src` names.
+  const flyBack = (src) => b.ev(`import("/js/details.js").then((D) => { ${FLY}
+    const cov = document.querySelector("#details .dleft img.cover"), video = cov.hidden, t = video ? seen(cov).getBoundingClientRect() : box(cov);
+    D.closeDetails();
+    const a = flying(), im = document.querySelector(${JSON.stringify(src)});
+    if (!a) { return null; }
+    const out = { video: video, hid: getComputedStyle(im).visibility };
+    const [r0, r1] = ends(a);
+    out.leaves = video ? inside(r0, t, cov.naturalWidth, cov.naturalHeight) : onBox(r0, t);
+    out.lands = inside(r1, im.getBoundingClientRect(), im.naturalWidth, im.naturalHeight);
+    a.finish();
+    return out;
+  })`);
+  const landed = `!document.querySelector(".cover-fly") && !document.querySelector(".cover-away") && !document.getElementById("details").classList.contains("cover-hid")`;
+  const coverIn = `(i => !!i && i.complete && i.naturalWidth > 0)(document.querySelector("#details .dleft img.cover"))`;
+  const snapIn = (where) => `(v => !!v && !v.paused && !!v.offsetParent)(document.querySelector("${where} video.snap"))`;
+  // A game with a box, and a video where one has both.
+  const withArt = () => b.ev(`Promise.all([import("/js/state.js"), import("/js/views.js")]).then(([St, V]) => {
+    const both = St.games.findIndex((g) => g.hasArt && g.hasVideo);
+    V.move((both >= 0 ? both : St.games.findIndex((g) => g.hasArt)) - St.sel);
+    const g = St.games[St.sel]; return { title: g.title, video: !!g.hasVideo && St.S.video.enabled !== false };
+  })`);
+  const still = `import("/js/details.js").then((D) => { D.openDetails(); const r = [!!document.querySelector(".cover-fly"), document.getElementById("details").classList.contains("cover-in")];
+    D.closeDetails(); r.push(!!document.querySelector(".cover-fly"), !!document.querySelector(".cover-away")); return r; })`;
+  await b.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "no-preference" }] });
+  try {
+    await b.openPlatform("Nintendo 64");
+    const flown = await withArt();
+    check("the wheel's info panel shows a box to fly from",
+      await b.until(`(i => !!i && i.complete && i.naturalWidth > 0)(document.querySelector("#hero img.hero-art"))`, true, 8000), true);
+    await b.settled();
+    const fromWheel = await flyIn("#hero img.hero-art");
+    check("opening details from the wheel, a copy of the info panel's box flies", !!fromWheel, true);
+    if (fromWheel) {
+      check("leaving from the picture as the panel draws it, or the video playing in its place", fromWheel.leaves, true);
+      check("and landing on the cover in details", fromWheel.lands, true);
+      check("which waits under it, while details fades in rather than scaling", [fromWheel.waits, fromWheel.fades], ["hidden", "xs-fade"]);
+      check("in the stylesheet's time, 340 ms", fromWheel.ms, 340);
+    }
+    check("once landed nothing is left: the copy gone, the cover shown",
+      await b.until(`${landed} && getComputedStyle(document.querySelector("#details .dleft img.cover")).visibility`, "visible", 4000), "visible");
+    await b.ev(`import("/js/log.js").then(m => m.flushLog())`);
+    const said = "details " + flown.title + ", its cover flying in from the info panel";   // the code is padded: "NAV  details"
+    check("and the log says where it flew from", await apiUntil(async () => (await api("api/log.php?tail=200")).lines.some((l) => /\bNAV\b/.test(l) && l.includes(said))), true);
+
+    check("details' own cover has come, to fly back from", await b.until(coverIn, true, 8000), true);
+    const toWheel = await flyBack("#hero img.hero-art");
+    check("closing, it flies back", !!toWheel, true);
+    if (toWheel) {
+      check("from the cover in details, or the video playing in its place", toWheel.leaves, true);
+      check("to the info panel's picture, which waits hidden under it", [toWheel.lands, toWheel.hid], [true, "hidden"]);
+    }
+    check("and once there the picture is shown again, with nothing left", await b.until(`${landed} && getComputedStyle(document.querySelector("#hero img.hero-art")).visibility`, "visible", 4000), "visible");
+
+    // A video snap stands in the picture's place and hides it: the box flies from inside the video instead.
+    if (flown.video) {
+      check("the info panel plays the game's video", await b.until(snapIn("#hero"), true, 12000), true);
+      const fromSnap = await flyIn("#hero img.hero-art");
+      check("opening details while it plays, the box leaves from inside the video", !!fromSnap && fromSnap.video && fromSnap.leaves && fromSnap.lands, true);
+      await b.until(landed, true, 4000);
+      check("details plays it in the cover's place", await b.until(snapIn("#details"), true, 12000), true);
+      const backSnap = await flyBack("#hero img.hero-art");
+      check("and closing while it plays there, the box flies back from inside that video", !!backSnap && backSnap.video && backSnap.leaves && backSnap.lands, true);
+      await b.until(landed, true, 4000);
+    }
+
+    await b.setView("grid");
+    await withArt();
+    check("the grid's chosen tile shows its box",
+      await b.until(`(i => !!i && i.complete && i.naturalWidth > 0)(document.querySelector("#view .tile.sel img.shot.as-box"))`, true, 8000), true);
+    await b.settled();
+    const fromGrid = await flyIn("#view .tile.sel img.shot.as-box");
+    check("from the grid it leaves from the chosen tile's box, as large as the tile is lifted", !!fromGrid && fromGrid.leaves, true);
+    check("and lands on the cover", !!fromGrid && fromGrid.lands, true);
+    await b.until(landed, true, 4000);
+    await b.until(coverIn, true, 8000);
+    // Into a start (a dry one: lib.js): the cover flying back is put down at once, so the pulse is seen on it.
+    const toPlay = await b.ev(`Promise.all([import("/js/details.js"), import("/js/launch.js"), import("/js/state.js")]).then(([D, Lc, St]) => {
+      D.closeDetails();
+      const r = [!!document.querySelector(".cover-fly")];
+      Lc.launchNow(St.games[St.sel], null);
+      return r.concat([!!document.querySelector(".cover-fly"), !!document.querySelector(".cover-away"), document.querySelector("#view .tile.sel").classList.contains("launching")]);
+    })`);
+    check("closing into a start, the cover flying back is put down at once and the pulse is on the tile", toPlay, [true, false, false, true]);
+    await b.until(`import("/js/state.js").then((St) => St.busy)`, false, 8000);
+
+    await b.ev(`document.body.classList.add("no-anim"), true`);
+    check("with Animations off nothing flies, in or out", await b.ev(still), [false, false, false, false]);
+  } finally {
+    await b.ev(`document.body.classList.remove("no-anim"), true`).catch(() => {});
+    await b.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] });
+    await api("api/settings.php", { view: { heroPanel: viewWas.heroPanel !== false, gridImage: viewWas.gridImage || "box" } });
+  }
+  check("nor where Windows asks for less motion", await b.ev(still), [false, false, false, false]);
+  await b.goto();
 };

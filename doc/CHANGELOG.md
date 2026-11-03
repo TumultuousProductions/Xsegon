@@ -2,6 +2,10 @@
 
 Newest first: what changed for the person at the screen.
 
+## 2026-11-03
+
+- **A game's box flies into its details.** Open a game's details and its box travels from where it stood, the grid's tile, the carousel's card, a Rows card or the picture beside the list, the wheel and the shelf, to its place in details, while details fades in under it. Back sends it home the same way. Where the game's video is playing in the picture's place, the box leaves from inside the video. A press of Play from details does not fly it back: the press is shown on the game as before. It moves only where the view shows that game's box art, and not at all with Settings > Feel > Animations off, or where Windows is set to show fewer animations. It takes about a third of a second; `--cover-fly` in Your own stylesheet sets another time, or 0ms for none.
+
 ## 2026-11-02
 
 - **Closing Xsegon says what is still going.** Press the X while Get Pictures, an unpack, a download, the Runs check, a backup or any job in the corner is at work, and the question names each one, how far it is, and what closing does to it today: an unpack still unpacks but cannot add the games, a restore cut short can leave your files half old and half new, the Runs check carries on by itself. Keep Xsegon open, or Close Xsegon. It asks even with Ask before closing Xsegon switched off, but only while something is at work. Closed another way, with Alt+F4 or from the taskbar, Chrome's own "Leave site?" box comes up first while something is at work. Xsegon's own closes and reloads, and F5, are not asked about.

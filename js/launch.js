@@ -1,4 +1,5 @@
 import { inApp } from "./appwindow.js";
+import { land } from "./coverfly.js";
 import { closeEditor, setEditorOnClose, toolFrame } from "./editors.js";
 import { askEmulator, needsEmulator } from "./emuhelp.js";
 import { askHardcore } from "./hardcoreask.js";
@@ -145,6 +146,7 @@ export function openStates(g) {
    carousel's cards live on their own transforms, so there the pulse lands
    on the image inside rather than the positioned node. */
 function pulseLaunch() {
+  land();                                  // a cover on its way back from details is put down, so the pulse is seen on it
   if ($body.classList.contains("no-anim")) { return; }
   var n = null;
   if (view === "wheel") { n = $hero.querySelector("img"); }
