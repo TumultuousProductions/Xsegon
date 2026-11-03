@@ -29,6 +29,57 @@ function xs_dolphin_missing(string $expr): array
     return array_values(array_unique($out));
 }
 
+// A GameCube pad on an Xbox pad as Dolphin itself ships it (Sys\Profiles\GCPad\SDL Gamepad.ini, 2512).
+const XS_DOLPHIN_GCPAD = ['Buttons/A' => '`Button A`', 'Buttons/B' => '`Button B`', 'Buttons/X' => '`Button X`', 'Buttons/Y' => '`Button Y`',
+    'Buttons/Z' => '`Shoulder R`', 'Buttons/Start' => '`Start`',
+    'Main Stick/Up' => '`Left Y+`', 'Main Stick/Down' => '`Left Y-`', 'Main Stick/Left' => '`Left X-`', 'Main Stick/Right' => '`Left X+`',
+    'C-Stick/Up' => '`Right Y+`', 'C-Stick/Down' => '`Right Y-`', 'C-Stick/Left' => '`Right X-`', 'C-Stick/Right' => '`Right X+`',
+    'Triggers/L' => '`Trigger L`', 'Triggers/R' => '`Trigger R`', 'Triggers/L-Analog' => '`Trigger L`', 'Triggers/R-Analog' => '`Trigger R`',
+    'D-Pad/Up' => '`Pad N`', 'D-Pad/Down' => '`Pad S`', 'D-Pad/Left' => '`Pad W`', 'D-Pad/Right' => '`Pad E`', 'Rumble/Motor' => '`Motor L` | `Motor R`'];
+
+// A Wii Remote and Nunchuk on an Xbox pad, for a Dolphin that has none set: the pointer on the right stick.
+const XS_DOLPHIN_WIIMOTE = ['Buttons/A' => '`Button A`', 'Buttons/B' => '`Button B`', 'Buttons/1' => '`Button Y`', 'Buttons/2' => '`Button X`',
+    'Buttons/-' => '`Back`', 'Buttons/+' => '`Start`', 'Buttons/Home' => '`Guide`',
+    'D-Pad/Up' => '`Pad N`', 'D-Pad/Down' => '`Pad S`', 'D-Pad/Left' => '`Pad W`', 'D-Pad/Right' => '`Pad E`',
+    'IR/Up' => '`Right Y+`', 'IR/Down' => '`Right Y-`', 'IR/Left' => '`Right X-`', 'IR/Right' => '`Right X+`',
+    'Shake/X' => '`Shoulder R`', 'Shake/Y' => '`Shoulder R`', 'Shake/Z' => '`Shoulder R`', 'Extension' => 'Nunchuk',
+    'Nunchuk/Buttons/C' => '`Shoulder L`', 'Nunchuk/Buttons/Z' => '`Trigger L`',
+    'Nunchuk/Stick/Up' => '`Left Y+`', 'Nunchuk/Stick/Down' => '`Left Y-`', 'Nunchuk/Stick/Left' => '`Left X-`', 'Nunchuk/Stick/Right' => '`Left X+`'];
+
+// Names an older Dolphin or a hand wrote that this one does not know, as it names the same input.
+const XS_DOLPHIN_RENAME = ['Button BACK' => 'Back', 'Button START' => 'Start', 'Button GUIDE' => 'Guide'];
+
+/** A profile file: [Profile], the pad as Device, then the bindings written as given (Dolphin's backticks in them). */
+function xs_dolphin_profile(int $pad, array $bind): string
+{
+    $out = ['[Profile]', 'Device = XInput/' . $pad . '/Gamepad'];
+    foreach ($bind as $k => $v) {
+        $out[] = $k . ' = ' . $v;
+    }
+    return implode("\r\n", $out) . "\r\n";
+}
+
+/** The person's own Wii Remote 1 as a profile's bindings, the names Dolphin does not know put right; null when none is set. */
+function xs_dolphin_own_wiimote(string $home): ?array
+{
+    $sec = xs_emus_ini_section($home . '\\Config\\WiimoteNew.ini', 'Wiimote1', true);
+    if (stripos((string) ($sec['Device'] ?? ''), 'XInput/') !== 0) {
+        return null;
+    }
+    $out = [];
+    foreach ($sec as $k => $raw) {
+        if ($k === 'Device' || $k === 'Source') {
+            continue;
+        }
+        $fix = [];
+        foreach (XS_DOLPHIN_RENAME as $from => $to) {
+            $fix['`' . $from . '`'] = '`' . $to . '`';
+        }
+        $out[$k] = strtr($raw, $fix);
+    }
+    return $out;
+}
+
 return [
     'name'     => 'Dolphin',
     'exes'     => ['dolphin'],
@@ -73,4 +124,35 @@ return [
         return ['rows' => $rows, 'source' => ['file' => $file, 'read' => true, 'note' => $note]];
     },
     'leave'    => 'xsegon',
+    'setup'    => [
+        'words' => 'Xsegon writes profiles of its own, Xsegon Player 1 to 4, one pad each: the GameCube pad as Dolphin ships it for an Xbox pad, and your own Wii Remote and Nunchuk with any name Dolphin does not know put right. Each game gets them in its own settings file the first time Xsegon starts it. Dolphin\'s own controller settings stay as they are.',
+        'own'   => static function (string $home, string $exe, ?string &$why): ?array {
+            if (!is_dir($home . '\\Config')) {
+                $why = 'Dolphin has no settings folder yet (' . $home . '\\Config): open Dolphin once first';
+                return null;
+            }
+            $wii = xs_dolphin_own_wiimote($home) ?? XS_DOLPHIN_WIIMOTE;
+            $out = [];
+            for ($n = 1; $n <= 4; $n++) {
+                $out[$home . '\\Config\\Profiles\\GCPad\\Xsegon Player ' . $n . '.ini'] = xs_dolphin_profile($n - 1, XS_DOLPHIN_GCPAD);
+                $out[$home . '\\Config\\Profiles\\Wiimote\\Xsegon Player ' . $n . '.ini'] = xs_dolphin_profile($n - 1, $wii);
+            }
+            return $out;
+        },
+        'game'  => static function (string $home, string $exe, array $game, string $rom, ?string &$why): ?array {
+            require_once __DIR__ . '/../fanprojects.php';
+            $ids = xs_fan_disc_ids($rom);
+            $id = $ids['ids'][0] ?? '';
+            if (!preg_match('/^[A-Z0-9]{6}$/', $id)) {
+                $why = 'the disc\'s ID could not be read from ' . basename($rom);
+                return null;
+            }
+            $wii = stripos((string) ($game['platform'] ?? ''), 'wii') !== false;
+            $set = [];
+            for ($n = 1; $n <= 4; $n++) {
+                $set[($wii ? 'WiimoteProfile' : 'PadProfile') . $n] = 'Xsegon Player ' . $n;
+            }
+            return ['file' => $home . '\\GameSettings\\' . $id . '.ini', 'section' => 'Controls', 'set' => $set];
+        },
+    ],
 ];

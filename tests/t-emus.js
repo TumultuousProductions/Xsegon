@@ -90,6 +90,59 @@ module.exports = async function (b, check) {
     check("emus: PCSX2 is left by Xsegon's held Xbox button", ps2.leave.by, "xsegon");
     put("none/portable.ini", "");
     check("emus: a folder with no settings file says where it looks", /not there/.test(probe(path.join(fx, "none", "pcsx2-qt.exe")).controls.source.note), true);
+
+    /* Set up (CA15): Xsegon's own profiles, a game's own file at its first start and never twice,
+       nothing at a dry start, and Put back leaving every file as it was. XSEGON_DATA is the
+       group's own data folder, so the record and the kept copies never reach data\. */
+    const data = path.join(fx, "data");
+    fs.mkdirSync(data, { recursive: true });
+    const round = (exe, rom, title, platform) => JSON.parse(execFileSync(phpExe,
+      [path.join(ROOT, "tests", "emus-probe.php"), "--round", exe, rom, title, platform],
+      { encoding: "utf8", env: Object.assign({}, process.env, { XSEGON_DATA: data }) }));
+    const tree = (dir) => {
+      const out = {};
+      const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).forEach((f) => {
+        const p = path.join(d, f.name);
+        if (f.isDirectory()) { walk(p); } else { out[path.relative(dir, p)] = fs.readFileSync(p, "utf8"); }
+      });
+      walk(dir);
+      return out;
+    };
+    fs.mkdirSync(path.join(fx, "dolphin", "User", "GameSettings"), { recursive: true });
+    const disc = path.join(fx, "GM4E01.iso");
+    fs.writeFileSync(disc, Buffer.concat([Buffer.from("GM4E01"), Buffer.alloc(0x16), Buffer.from([0xC2, 0x33, 0x9F, 0x3D]), Buffer.alloc(64)]));
+    const dBefore = tree(path.join(fx, "dolphin"));
+    const dr = round(path.join(fx, "dolphin", "Dolphin.exe"), disc, "Mario Kart Double Dash", "Nintendo GameCube");
+    const dOwn = (n) => Object.keys(dr.own).find((p) => p.endsWith(n)) || "";
+    check("emus: Set up writes Dolphin's eight Xsegon profiles", Object.keys(dr.own).length, 8);
+    check("emus: Dolphin's GameCube profile is the layout Dolphin ships", /Buttons\/Z = `Shoulder R`/.test(dr.own[dOwn("GCPad\\Xsegon Player 1.ini")] || ""), true);
+    check("emus: player 2's profile is on the second pad", /Device = XInput\/1\/Gamepad/.test(dr.own[dOwn("GCPad\\Xsegon Player 2.ini")] || ""), true);
+    check("emus: a dry start writes no game file", dr.dryGames, 0);
+    check("emus: the first start names the profiles in the game's own file", /\[Controls\][\s\S]*PadProfile1 = Xsegon Player 1/.test(Object.values(dr.games)[0] || ""), true);
+    check("emus: the second start writes nothing again", dr.second.said, "game lines there already");
+    check("emus: Put back leaves Dolphin's folder exactly as it was", JSON.stringify(tree(path.join(fx, "dolphin"))), JSON.stringify(dBefore));
+
+    // Cemu: the title ID by the packs' name and the shipped profile's region; the game's file starts as that profile.
+    put("cemu/graphicPacks/downloadedGraphicPacks/MarioKart8/Mods/X/rules.txt", "[Definition]\ntitleIds = 000500001010EC00,000500001010ED00\nname = X\npath = \"Mario Kart 8/Mods/X\"\n");
+    put("cemu/gameProfiles/default/000500001010ec00.ini", "# Mario Kart 8 (USA)\n\n[Graphics]\nGPUBufferCacheAccuracy = 1\n");
+    put("cemu/gameProfiles/default/000500001010ED00.ini", "# Mario Kart 8 (EUR)\n");
+    const cBefore = tree(path.join(fx, "cemu"));
+    const cr = round(path.join(fx, "cemu", "Cemu.exe"), "E:\\wii U\\Mario Kart 8 (USA) (En,Fr,Es).wux", "Mario Kart 8", "Wii U");
+    const cGame = Object.keys(cr.games)[0] || "";
+    check("emus: Cemu's game file is named by the USA title ID", path.basename(cGame), "000500001010ec00.ini");
+    check("emus: it starts as the profile Cemu ships, so its fixes stay", /^# Mario Kart 8 \(USA\)[\s\S]*GPUBufferCacheAccuracy = 1[\s\S]*\[Controller\][\s\S]*controller2 = Xsegon Player 2/.test(cr.games[cGame] || ""), true);
+    check("emus: players 2 to 4 are Pro Controllers", Object.entries(cr.own).filter(([p, t]) => /Player [234]\.xml$/.test(p) && /<type>Wii U Pro Controller<\/type>/.test(t)).length, 3);
+    check("emus: player 1 is the person's own GamePad", /<type>Wii U GamePad<\/type>/.test(Object.entries(cr.own).find(([p]) => /Player 1\.xml$/.test(p))[1]), true);
+    check("emus: Put back leaves Cemu's folder exactly as it was", JSON.stringify(tree(path.join(fx, "cemu"))), JSON.stringify(cBefore));
+
+    // RPCS3: its own file with player 1 copied to 2 to 4, handed over at each start; Default untouched.
+    const rBefore = tree(path.join(fx, "rpcs3"));
+    const rr = round(path.join(fx, "rpcs3", "rpcs3.exe"), "E:\\ps3\\EBOOT.BIN", "Heavenly Sword", "Sony Playstation 3");
+    const yml = Object.values(rr.own)[0] || "";
+    check("emus: RPCS3's Xsegon file has players 1 to 4 on pads 1 to 4", (yml.match(/Device: XInput Controller \d/g) || []).join(","), "Device: XInput Controller 1,Device: XInput Controller 2,Device: XInput Controller 3,Device: XInput Controller 4");
+    check("emus: RPCS3's starts are handed it", rr.first.args, "--input-config Xsegon");
+    check("emus: Put back leaves RPCS3's folder exactly as it was", JSON.stringify(tree(path.join(fx, "rpcs3"))), JSON.stringify(rBefore));
+    check("emus: the setup's record is in the group's own data folder", fs.existsSync(path.join(data, "emu-setup.json")), true);
   } finally {
     fs.rmSync(fx, { recursive: true, force: true });
   }

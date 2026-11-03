@@ -40,4 +40,5 @@ return [
     },
     'leave'    => static fn(string $home): string =>
         'Press the Xbox button, or Back and Start together, for xemu\'s menu, then Exit there.',
+    'setupNone' => 'xemu gives each pad plugged in a free port by itself, the Xbox controller button for button.',
 ];

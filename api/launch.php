@@ -568,6 +568,20 @@ if ($appendLines) {
     $launch['args'] = '--appendconfig="' . $cfg . '" ' . $launch['args'];
 }
 
+/* A standalone emulator Settings has set up (includes\emusetup.php): the game's own file names
+   Xsegon's profiles from its first start, and the emulator gets any options the setup adds. */
+$emuSetup = null;
+if (($launch['kind'] ?? '') === 'emulator' && empty($launch['local'])) {
+    require_once __DIR__ . '/../includes/emusetup.php';
+    $emuSetup = xs_es_for_launch($game, $launch, !$dry);
+    if ($emuSetup['args'] !== '') {
+        $launch['args'] = $emuSetup['args'] . ' ' . $launch['args'];
+    }
+    if ($emuSetup['args'] === '' && $emuSetup['said'] === '') {
+        $emuSetup = null;
+    }
+}
+
 /* A BIOS file this game wants and does not have never stops the launch (a
    table can be wrong): the launcher says so only if the game fails to start. */
 $failHint = null;
@@ -682,6 +696,7 @@ if ($dry) {
              'padKeys' => $padKeys,                         // a Flashpoint game's controller as its keys
              'padCall' => $padCall,
              'padLeave' => $padLeave,                       // the held Xbox button's helper, for an emulator with no pad way out
+             'emuSetup' => $emuSetup,                       // what a set-up emulator's game file and options get
              'raFix' => $raFix]);                           // what was found wrong in RetroArch's settings, and where it would be put right
 }
 
@@ -704,7 +719,8 @@ xs_log('LNCH', $shown['title'] . ' via ' . $launch['via'] . ' exe=' . basename($
        . ($texRead > 0 ? ' texread=' . round($texRead / 1048576) . 'MB' : '')
        . ($follow !== null ? ' follow=' . basename((string) $follow['dir']) : '')
        . ($padKeys !== null ? ' padkeys=' . $padKeys['map'] . ($padKeys['fullScreen'] !== '' ? ' full=' . $padKeys['fullScreen'] : '') : '')
-       . ($padLeave !== null ? ' padleave=on' : ''));
+       . ($padLeave !== null ? ' padleave=on' : '')
+       . ($emuSetup !== null ? ' emusetup=' . ($emuSetup['said'] !== '' ? $emuSetup['said'] : 'on') : ''));
 // Detached: this returns now, the game runs on.
 if (!xs_spawn_ps($command)) {
     xs_fail('could not start the launcher', 500);

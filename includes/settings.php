@@ -598,7 +598,7 @@ function xs_settings_schema(): array
             '_label' => 'RetroArch + Emulator Controls',
             // Its name on the side list, in two lines: in one it wraps to three.
             '_tab'   => "RetroArch + Emulator\nControls",
-            '_help'  => 'The controls inside your games, for the games RetroArch plays: your buttons and keys for each console, and RetroArch\'s hotkeys for leaving, pausing, saving and turbo. Other emulators and Steam games keep their controls in their own settings, and Xsegon does not change those.',
+            '_help'  => 'The controls inside your games, for the games RetroArch plays: your buttons and keys for each console, and RetroArch\'s hotkeys for leaving, pausing, saving and turbo. Under Other emulators, how a game in Dolphin, Cemu and the rest is left with the pad, and Set up, which gives their games Xsegon\'s own controller profiles without changing the emulator\'s own settings. Steam games keep their controls in Steam.',
         ],
         'window' => [
             '_label' => 'Window',

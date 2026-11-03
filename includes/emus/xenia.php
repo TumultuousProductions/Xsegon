@@ -32,4 +32,5 @@ return [
         return ['rows' => $rows, 'source' => ['file' => $file, 'read' => true, 'note' => $note]];
     },
     'leave'    => 'xsegon',
+    'setupNone' => 'Xenia reads an Xbox pad as the Xbox 360 pad, button for button, players 1 to 4 in the order the pads were plugged in.',
 ];
