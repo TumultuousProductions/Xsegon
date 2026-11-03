@@ -157,13 +157,12 @@ module.exports = async function (b, check) {
     check("a game of yours hidden from Xsegon is not fetched again: Get says it is hidden, and where it shows again",
       [whileHidden.ok, /is in your library, hidden from Xsegon: Settings > Library shows it again/.test(whileHidden.error || "")], [false, true]);
 
-    // On the disk but not taken into the library: Get says where it is and fetches no second copy.
-    const gotFile = path.join(DATA, "homebrew-got.json"), gotWas = fs.readFileSync(gotFile, "utf8");
-    fs.writeFileSync(gotFile, JSON.stringify(Object.assign(JSON.parse(gotWas), { "t-fall": { game: "xs-scan-notinlibrary", version: "", file: made.file, at: 1 } })));
-    const twice = await api("api/homebrew.php", { get: "t-fall" });
-    fs.writeFileSync(gotFile, gotWas);
-    check("a game on the disk that the library did not take in is not fetched again: Get says where it is",
-      [twice.ok, /is at .* already, not in your library yet: Scan for Games brings it in/.test(twice.error || "")], [false, true]);
+    // Deleted from Xsegon, its file and its row kept: Get says where it comes back, as Scan for Games never offers it again.
+    await api("api/deleted.php", { action: "delete", ids: [made.id], confirm: "1" });
+    const whileDeleted = await api("api/homebrew.php", { get: "t-rel" });
+    await api("api/deleted.php", { action: "restore", id: made.id });
+    check("a game of yours deleted from Xsegon is not fetched again: Get says where it is put back",
+      [whileDeleted.ok, /was deleted from Xsegon, its file kept: Settings > Library > Deleted from Xsegon puts it back/.test(whileDeleted.error || "")], [false, true]);
 
     // No release to take: the copy entered in the jam, its size and SHA-1 checked.
     put("https://drive.google.com/uc", fromJam);
@@ -172,12 +171,36 @@ module.exports = async function (b, check) {
     check("no release from the team: the copy entered in the jam, said to be that",
       [fall && fall.state, ((fall && fall.made) || {}).version, !!(fall && fall.made) && hash("sha1", fs.readFileSync(fall.made.file))], ["done", "jam copy", hash("sha1", fromJam)]);
 
+    // Fetched before and not taken in (Xsegon closed as it was added): Get adds that copy, and fetches nothing again.
+    const fallId = ((fall && fall.made) || {}).id, fallFile = ((fall && fall.made) || {}).file;
+    await api("api/scan.php", { action: "remove", id: fallId });
+    put("https://drive.google.com/uc", page);            // were it fetched again, it would fail its checks
+    const resumed = await api("api/homebrew.php", { get: "t-fall" });
+    const back = await ended();
+    const n64Back = (await api("api/library.php?platform=" + encodeURIComponent(N64) + "&grouped=0")).games || [];
+    check("a game fetched before that the library did not take in: Get adds that copy, and fetches nothing again",
+      [resumed.ok, back && back.state, ((back && back.made) || {}).file, n64Back.some((g) => g.id === fallId), fs.existsSync(fallFile) && hash("sha1", fs.readFileSync(fallFile))],
+      [true, "done", fallFile, true, hash("sha1", fromJam)]);
+
     put("https://drive.google.com/uc", fromJam);
     await api("api/homebrew.php", { get: "t-sum" });
     const sum = await ended();
     check("a file that is not the one the list names: nothing is kept, and it says why, and where to go",
       [sum && sum.state, /other than the file the list names/.test((sum && sum.error) || ""), /Its own page has it/.test((sum && sum.error) || ""),
        fs.existsSync(path.join(games, N64, "HomeBrew", "Wrong Sum Game.z64"))], ["failed", true, true, false]);
+
+    // A copy of the person's own, by its name: the page has it as theirs, and Get makes no second one nor writes over it.
+    const scanFile = path.join(DATA, "scanned-games.json"), scanWas = fs.readFileSync(scanFile, "utf8");
+    const ownCopy = path.join(fix, "own", "wrong_sum_game.z64");
+    fs.mkdirSync(path.dirname(ownCopy), { recursive: true });
+    fs.writeFileSync(ownCopy, rom(0x66));
+    fs.writeFileSync(scanFile, JSON.stringify(JSON.parse(scanWas).concat([
+      { id: "xs-scan-hbown0000000", title: "Wrong Sum Game", platform: N64, rom: ownCopy, added: new Date().toISOString() }])));
+    const ownMine = ((await list())["t-sum"] || {}).mine;
+    const ownGet = await api("api/homebrew.php", { get: "t-sum" });
+    fs.writeFileSync(scanFile, scanWas);
+    check("a copy of your own by its name is yours on the page, and Get says so and fetches nothing",
+      [ownMine && ownMine.id, ownGet.ok, /is in your library already, as Wrong Sum Game \(wrong_sum_game\.z64\)/.test(ownGet.error || "")], ["xs-scan-hbown0000000", false, true]);
 
     put("https://drive.google.com/uc", page);
     await api("api/homebrew.php", { get: "t-page" });

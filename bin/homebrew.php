@@ -9,7 +9,8 @@
  * at by Windows Defender and offered for the console without taking it over. Then the game: the
  * team's latest release, else the copy entered in the jam, checked, written to the console's
  * HomeBrew folder and taken in by the main server as Scan for Games takes a game in, with its
- * team as its developer so the credit stays with it.
+ * team as its developer so the credit stays with it. A copy fetched before and not taken in
+ * (Xsegon closed as it was added) is added without being fetched again.
  */
 declare(strict_types=1);
 
@@ -46,6 +47,7 @@ $part = xs_data_path('homebrew.download');
 register_shutdown_function(static function () use (&$job, $save, $part): void {
     @unlink($part);
     @unlink($part . '.err');
+    @unlink($part . '.zip');                 // ares' archive, should its check or its unpack have died on it
     if (($job['state'] ?? '') === 'running') {
         $job['state'] = 'failed';
         $job['error'] = 'it stopped on a fault: the log has it';
@@ -63,6 +65,13 @@ $end = static function (string $state, string $words) use (&$job, $save, $name):
     exit(0);
 };
 $stopped = static fn (): bool => is_file(xs_hb_stop_path());
+// What a stop leaves: ares, once it is set up here, stays for the next Get; a copy fetched before stays to be added.
+$aresMade = false;
+$have = (string) ($job['have'] ?? '');
+$stopSaid = static function () use (&$aresMade, $have): string {
+    return 'stopped: ' . ($have !== '' ? 'the copy at ' . $have . ' stays for the next Get to add'
+        : ($aresMade ? 'ares is kept, set up for the next Get, and nothing of the game was' : 'nothing was kept'));
+};
 $ask = static function (string $path, array $body) use ($server): ?array {
     if ($server === '') {
         return null;
@@ -101,7 +110,7 @@ if (!empty($job['ares'])) {
     }
     if (!$fetch((string) $rel['url'], (string) $rel['file'], (int) $rel['size'], $why)) {
         if ($why === 'stopped') {
-            $end('failed', 'stopped: nothing was kept');
+            $end('failed', $stopSaid());
         }
         $end('failed', 'ares ' . $why);
     }
@@ -112,11 +121,13 @@ if (!empty($job['ares'])) {
     $job['phase'] = 'checking';
     $save();
     $zip = $part . '.zip';
-    @rename($part, $zip);
+    if (!@rename($part, $zip)) {
+        $end('failed', 'ares came, but could not be set aside to be checked (' . xs_file_error_reason() . '), so nothing was kept');
+    }
     $said = xs_unpack_defender_scan($zip, $what, static fn (): bool => !$stopped());
     if ($said === 'stopped') {
         @unlink($zip);
-        $end('failed', 'stopped: nothing was kept');
+        $end('failed', $stopSaid());
     }
     if ($said === 'found') {
         @unlink($zip);
@@ -137,115 +148,160 @@ if (!empty($job['ares'])) {
     }
     $table = xs_emulators();
     unset($table['mine']);
+    // A key the person's own ares holds, its file out of reach just now (a drive unplugged), stays theirs.
     $key = xs_emu_key($exe);
+    for ($i = 2; isset($table['programs'][$key]) && (string) ($table['programs'][$key]['exe'] ?? '') !== $exe; $i++) {
+        $key = xs_emu_key($exe) . '-' . $i;
+    }
     $table['programs'][$key] = ['name' => 'ares', 'exe' => $exe, 'args' => XS_HB_ARES_ARGS, 'noQuotes' => false];
     xs_hb_ares_offer($table, $console, $key);
     if (!xs_emulators_write($table, $why)) {
         $end('failed', 'ares is on the PC but could not go in the emulator table: ' . (string) $why);
     }
-    xs_log('HBRW', 'ares ' . $rel['tag'] . ' set up in ' . $dir);
+    $aresMade = true;
+    xs_log('HBRW', 'ares ' . $rel['tag'] . ' set up in ' . $dir . ' as ' . $key);
 }
 
 // ---- the game: the team's latest release, else the copy entered in the jam ----------------
-$file = is_array($g['file'] ?? null) ? $g['file'] : [];
-$version = '';
-$got = false;
-$whyNot = '';
-if (is_string($file['release'] ?? null)) {
-    $job['phase'] = 'asking';
-    $save();
-    $rel = xs_fm_release((string) $g['repo'], '', $file['release'], $why);
-    if ($rel === null) {
-        $whyNot = (string) $why;
-    } elseif (!$fetch((string) $rel['url'], (string) $rel['file'], (int) $rel['size'], $why)) {
-        if ($why === 'stopped') {
-            $end('failed', 'stopped: nothing was kept');
+if ($have !== '') {
+    // Fetched before, not yet in the library: that copy is added, and nothing is fetched again.
+    $out = $have;
+    $version = (string) (xs_hb_got()[(string) $job['game']]['version'] ?? '');
+    xs_log('HBRW', 'get ' . $name . ': adding the copy fetched before, ' . $out);
+} else {
+    $file = is_array($g['file'] ?? null) ? $g['file'] : [];
+    $version = '';
+    $got = false;
+    $whyNot = '';
+    if (is_string($file['release'] ?? null)) {
+        $job['phase'] = 'asking';
+        $save();
+        $rel = xs_fm_release((string) $g['repo'], '', $file['release'], $why);
+        if ($rel === null) {
+            $whyNot = (string) $why;
+        } elseif (!$fetch((string) $rel['url'], (string) $rel['file'], (int) $rel['size'], $why)) {
+            if ($why === 'stopped') {
+                $end('failed', $stopSaid());
+            }
+            $whyNot = (string) $why;
+        } elseif ((int) filesize($part) !== (int) $rel['size'] || (($rel['sha256'] ?? '') !== '' && hash_file('sha256', $part) !== strtolower((string) $rel['sha256']))) {
+            $whyNot = 'it came from GitHub with other contents than GitHub lists';
+        } else {
+            $got = true;
+            $version = (string) $rel['tag'];
         }
-        $whyNot = (string) $why;
-    } elseif ((int) filesize($part) !== (int) $rel['size'] || (($rel['sha256'] ?? '') !== '' && hash_file('sha256', $part) !== strtolower((string) $rel['sha256']))) {
-        $whyNot = 'it came from GitHub with other contents than GitHub lists';
-    } else {
-        $got = true;
-        $version = (string) $rel['tag'];
+        if (!$got) {
+            xs_log('HBRW', 'get ' . $name . ': the team\'s release did not come: ' . $whyNot);
+        }
+    }
+    if (!$got && is_array($file['drive'] ?? null)) {
+        $d = $file['drive'];
+        if (!$fetch('https://drive.google.com/uc?export=download&id=' . $d['id'], $name, (int) $d['size'], $why)) {
+            if ($why === 'stopped') {
+                $end('failed', $stopSaid());
+            }
+            $whyNot = (string) $why;
+        } elseif ((int) filesize($part) !== (int) $d['size'] || sha1_file($part) !== strtolower((string) $d['sha1'])) {
+            // Google can answer with a page of its own in place of the file.
+            $whyNot = 'the jam\'s folder sent something other than the file the list names';
+        } else {
+            $got = true;
+            $version = 'jam copy';
+        }
     }
     if (!$got) {
-        xs_log('HBRW', 'get ' . $name . ': the team\'s release did not come: ' . $whyNot);
+        $end('failed', $name . ' did not come: ' . ($whyNot !== '' ? $whyNot : 'nothing names a place for it') . '. Its own page has it: the buttons beside the game open it');
     }
-}
-if (!$got && is_array($file['drive'] ?? null)) {
-    $d = $file['drive'];
-    if (!$fetch('https://drive.google.com/uc?export=download&id=' . $d['id'], $name, (int) $d['size'], $why)) {
-        if ($why === 'stopped') {
-            $end('failed', 'stopped: nothing was kept');
-        }
-        $whyNot = (string) $why;
-    } elseif ((int) filesize($part) !== (int) $d['size'] || sha1_file($part) !== strtolower((string) $d['sha1'])) {
-        // Google can answer with a page of its own in place of the file.
-        $whyNot = 'the jam\'s folder sent something other than the file the list names';
-    } else {
-        $got = true;
-        $version = 'jam copy';
+
+    $fh = @fopen($part, 'rb');
+    $head = $fh ? (string) fread($fh, 4) : '';
+    if ($fh) {
+        fclose($fh);
     }
-}
-if (!$got) {
-    $end('failed', $name . ' did not come: ' . ($whyNot !== '' ? $whyNot : 'nothing names a place for it') . '. Its own page has it: the buttons beside the game open it');
-}
+    $ending = $console === 'Nintendo 64' ? xs_hb_n64_ending($head) : null;
+    if ($ending === null) {
+        $end('failed', 'what came for ' . $name . ' is no ' . $console . ' game, so it was not kept');
+    }
+    if ($stopped()) {
+        $end('failed', $stopSaid());
+    }
 
-$fh = @fopen($part, 'rb');
-$head = $fh ? (string) fread($fh, 4) : '';
-if ($fh) {
-    fclose($fh);
+    // ---- into the console's HomeBrew folder ---------------------------------------------------
+    $job['phase'] = 'writing';
+    $save();
+    $dir = xs_hb_dest($console);
+    if (!is_dir($dir) && !@mkdir($dir, 0777, true) && !is_dir($dir)) {
+        $end('failed', 'the folder ' . $dir . ' could not be made (' . xs_file_error_reason() . ')');
+    }
+    $size = (int) filesize($part);
+    $free = (float) @disk_free_space($dir);
+    if ($free > 0 && $free < $size * 1.1) {
+        $end('failed', 'there is not enough room on ' . $dir . ': ' . $name . ' needs ' . round($size / 1048576) . ' MB');
+    }
+    $stem = xs_hb_stem($name);
+    $out = $dir . DIRECTORY_SEPARATOR . $stem . '.' . $ending;
+    for ($n = 2; is_file($out) && $n < 100; $n++) {
+        $out = $dir . DIRECTORY_SEPARATOR . $stem . ' (' . $n . ').' . $ending;
+    }
+    if (!@copy($part, $out)) {
+        $reason = xs_file_error_reason();
+        @unlink($out);                       // the name was free, so what is there is the cut copy
+        $end('failed', $name . ' could not be written to ' . $dir . ' (' . $reason . ')');
+    }
+    @unlink($part);
+    xs_log('HBRW', 'get ' . $name . ' ' . $version . ': wrote ' . $out);
 }
-$ending = $console === 'Nintendo 64' ? xs_hb_n64_ending($head) : null;
-if ($ending === null) {
-    $end('failed', 'what came for ' . $name . ' is no ' . $console . ' game, so it was not kept');
+if ($stopped()) {
+    if ($have === '') {
+        @unlink($out);
+    }
+    $end('failed', $stopSaid());
 }
-
-// ---- into the console's HomeBrew folder ---------------------------------------------------
-$job['phase'] = 'writing';
-$save();
-$dir = xs_hb_dest($console);
-if (!is_dir($dir) && !@mkdir($dir, 0777, true) && !is_dir($dir)) {
-    $end('failed', 'the folder ' . $dir . ' could not be made (' . xs_file_error_reason() . ')');
-}
-$size = (int) filesize($part);
-$free = (float) @disk_free_space($dir);
-if ($free > 0 && $free < $size * 1.1) {
-    $end('failed', 'there is not enough room on ' . $dir . ': ' . $name . ' needs ' . round($size / 1048576) . ' MB');
-}
-$stem = trim((string) preg_replace('/[<>:"\/\\\\|?*\x00-\x1F]+/', ' ', $name));
-$out = $dir . DIRECTORY_SEPARATOR . $stem . '.' . $ending;
-for ($n = 2; is_file($out) && $n < 100; $n++) {
-    $out = $dir . DIRECTORY_SEPARATOR . $stem . ' (' . $n . ').' . $ending;
-}
-if (!@copy($part, $out)) {
-    $end('failed', $name . ' could not be written to ' . $dir . ' (' . xs_file_error_reason() . ')');
-}
-@unlink($part);
-xs_log('HBRW', 'get ' . $name . ' ' . $version . ': wrote ' . $out);
 
 // ---- into the library, its makers named on it ---------------------------------------------
 $job['phase'] = 'adding';
 $save();
 $id = xs_fm_scan_id($console, $out);
 // What Get brought, for the page and the next Get; kept also when the library did not take it in, so it is not fetched twice.
-$remember = static function () use ($g, $id, $version, $out): void {
+$remember = static function () use ($g, $id, $version, $out, $name): void {
     $kept = xs_hb_got();
     $kept[(string) $g['id']] = ['game' => $id, 'version' => $version, 'file' => $out, 'at' => time()];
-    xs_write_json(xs_hb_got_path(), $kept);
+    if (!xs_write_json(xs_hb_got_path(), $kept, $why)) {
+        xs_log('HBRW', 'get ' . $name . ': what came was not noted in homebrew-got.json: ' . (string) $why);
+    }
 };
 $took = $ask('/api/scan.php', ['action' => 'accept', 'games' => [['id' => $id, 'title' => $name, 'platform' => $console, 'rom' => $out]]]);
-$in = ($took['ok'] ?? false) && ((int) ($took['added'] ?? 0) > 0 || ($took['skipped'][0]['why'] ?? '') === 'already accepted before');
+$before = ($took['skipped'][0]['why'] ?? '') === 'already accepted before';
+if ($before) {
+    // Taken in before at another file: a game of the person's own under the same file name, left as it is.
+    require_once __DIR__ . '/../includes/scan.php';
+    $norm = static fn (string $p): string => strtolower(str_replace('/', '\\', $p));
+    foreach (xs_scan_read() as $e) {
+        if ((string) ($e['id'] ?? '') === $id && $norm((string) ($e['rom'] ?? '')) !== $norm($out)) {
+            if ($have === '') {
+                @unlink($out);
+            }
+            $end('failed', 'your ' . $console . ' list has a game under the same file name already, ' . (string) $e['rom']
+                . ': nothing was written onto it, and ' . $name . ' was not kept');
+        }
+    }
+}
+$in = ($took['ok'] ?? false) && ((int) ($took['added'] ?? 0) > 0 || $before);
 if (!$in) {
     $remember();
     $job['made'] = ['id' => null, 'file' => $out, 'version' => $version];
     $end('done', $name . ' is at ' . $out . ', but it is not in your library yet ('
-        . (string) ($took['error'] ?? ($took['skipped'][0]['why'] ?? 'Xsegon did not answer')) . '): Scan for Games will find it');
+        . (string) ($took['error'] ?? ($took['skipped'][0]['why'] ?? 'Xsegon did not answer')) . '): Get adds it, and fetches nothing again');
 }
-// The first of each kind that comes; a picture that does not come costs the game nothing.
+// The first of each kind that comes; a picture that does not come costs the game nothing. A stop leaves the rest out.
 $picsBy = [];
+$cut = false;
 foreach (xs_hb_art($g) as $kind => $list) {
     foreach ($list as $it) {
+        if ($stopped()) {
+            $cut = true;
+            break 2;
+        }
         if ($kind === 'video') {
             if ($fetch((string) $it['url'], (string) $name, 0, $why) && video_own_store($id, $part, $why) !== null) {
                 $picsBy[$it['by']] = true;
@@ -283,4 +339,5 @@ if ($aresKey !== null) {
 }
 $remember();
 $job['made'] = ['id' => $id, 'file' => $out, 'version' => $version];
-$end('done', $name . ' is in your ' . $console . ' list' . ($version !== '' ? ' (' . $version . ')' : '') . ': ' . $out);
+$end('done', $name . ' is in your ' . $console . ' list' . ($version !== '' ? ' (' . $version . ')' : '') . ': ' . $out
+    . ($cut ? ' (stopped before all its pictures came)' : ''));

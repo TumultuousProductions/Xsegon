@@ -124,9 +124,11 @@ function hbLoad() {
 }
 
 function hbGet(g, ares) {
-  if (HB.getting) { return; }
+  if (HB.getting || HB.asking) { return; }
+  HB.asking = true;                      // a second press before the answer is the same press, not a refused one
   L("HBRW", "get " + g.name + " pressed" + (ares ? ", with ares" : ""));
   postJson("api/homebrew.php", { get: g.id, ares: !!ares }).then(function (r) {
+    HB.asking = false;
     if (!r || !r.ok) {
       showStrip(g.name + " was not fetched: " + ((r && r.error) || "no answer"), true);
       sound("back");
@@ -151,9 +153,12 @@ function hbAskAres(g) {
 function hbFollow(id) {
   HB.getting = id;
   clearInterval(HB.followT);
+  var missed = 0;
   HB.followT = setInterval(function () {
     api("api/homebrew.php?job=1").then(function (r) {
-      if (r && r.ok && r.job && r.job.state === "running") { return; }
+      if (r && r.ok && r.job && r.job.state === "running") { missed = 0; return; }
+      // One ask with no answer is no end: the Get may well still be at work. Thirty seconds of none is.
+      if ((!r || !r.ok) && ++missed < 15) { return; }
       clearInterval(HB.followT);
       HB.getting = null;
       load({ noDraw: true });            // the library has a game more, and the screens behind this one must know it
