@@ -142,6 +142,7 @@ module.exports = async function (b, check) {
   await b.contextMenu("#view .tile.sel");
   await b.menuItem(/(Favourite|Unfavourite)/);
   check("favourite toggled", await b.until(`document.querySelector("#view .tile.sel").classList.contains("fav")`, !id), !id);
+  check("with no star in sight, none out of sight answers", await b.ev(`!document.querySelector(".favbtn.spin, .favbtn.dim, .fav-ghost")`), true);
   await b.settled();
   await b.contextMenu("#view .tile.sel");
   await b.menuItem(/(Favourite|Unfavourite)/);
@@ -152,6 +153,43 @@ module.exports = async function (b, check) {
   await b.key(" ");
   check("Space opens details", await b.until(`!document.getElementById("details").hidden`));
   check("details shows the cover", await b.until(`(i => !!i && i.complete && i.naturalWidth > 0)(document.querySelector("#details img"))`, true, 6000));
+  await b.settled();
+
+  /* The favourite star answers its press (js\favfx.js): on, one turn and then a
+     tenth larger and back; off, the lit star puffs away in wisps where it stood
+     while the empty one fades in. Each read two frames after the press. */
+  const STAR = `document.querySelector("#details .favbtn")`;
+  const starQuiet = `!document.querySelector(".fav-ghost, .fav-smoke, #details .favbtn.spin, #details .favbtn.dim")`;
+  const starWasOn = await b.ev(`${STAR}.classList.contains("on")`);
+  const press = (read) => b.ev(`new Promise((done) => { const n = ${STAR}, t = document.createRange(); t.selectNodeContents(n); const was = t.getBoundingClientRect();
+    n.click(); requestAnimationFrame(() => requestAnimationFrame(() => done((${read})(n, was)))); })`);
+  if (starWasOn) { await b.ev(`${STAR}.click()`); await b.until(starQuiet, true, 3000); }
+  const named = (n) => `${n}.getAnimations().filter((a) => a.animationName)`;   // not the colour easing a button has
+  const spun = await press(`(n) => { const a = ${named("n")}[0]; if (!a) { return null; }
+    const out = { name: a.animationName, ms: a.effect.getComputedTiming().duration, turns: a.effect.getKeyframes().some((k) => /rotate\\(360deg\\)/.test(k.transform)) };
+    a.pause(); a.currentTime = out.ms * 0.82; const m = new DOMMatrix(getComputedStyle(n).transform); out.peak = Math.round(Math.hypot(m.a, m.b) * 100) / 100;
+    a.currentTime = out.ms * 0.3; const h = new DOMMatrix(getComputedStyle(n).transform); out.midTurn = Math.round(Math.hypot(h.a, h.b) * 100) / 100 === 1 && Math.abs(h.b) > 0.1;
+    a.finish(); return out; }`);
+  check("favouriting from its star, the star turns once", !!spun && [spun.name, spun.turns, spun.midTurn], ["xs-fav-on", true, true]);
+  check("then stands a tenth larger, and back, in 620 ms", !!spun && [spun.peak, spun.ms], [1.1, 620]);
+  check("and is left as it was", await b.until(`!${STAR}.classList.contains("spin") && getComputedStyle(${STAR}).transform`, "none", 3000), "none");
+  const puffed = await press(`(n, was) => { const g = document.querySelector(".fav-ghost"); if (!g) { return null; }
+    g.getAnimations().forEach((a) => { a.pause(); a.currentTime = 0; });
+    const t = document.createRange(); t.selectNodeContents(g); const at = t.getBoundingClientRect(), near = (x, y) => Math.abs(x - y) <= 1;
+    const out = { onStar: near(at.left, was.left) && near(at.top, was.top) && near(at.width, was.width), lit: g.textContent, wisps: document.querySelectorAll(".fav-smoke").length,
+                  empty: n.textContent, fades: (${named("n")}[0] || {}).animationName || "" };
+    document.getAnimations().forEach((a) => { const x = a.effect && a.effect.target; if (x && (x === n || x.classList.contains("fav-ghost") || x.classList.contains("fav-smoke"))) { a.finish(); } });
+    return out; }`);
+  check("unfavouriting, the lit star goes up in a puff where it stood", !!puffed && [puffed.onStar, puffed.lit, puffed.wisps], [true, "★", 6]);
+  check("while the empty star fades in under it", !!puffed && [puffed.empty, puffed.fades], ["☆", "xs-fav-off"]);
+  check("and nothing of the puff is left", await b.until(starQuiet, true, 3000), true);
+  await b.ev(`document.body.classList.add("no-anim"), true`);
+  check("with Animations off the star answers in neither way",
+    [await press(`(n) => [${named("n")}.length, !!document.querySelector(".fav-ghost")]`), await press(`(n) => [${named("n")}.length, !!document.querySelector(".fav-ghost, .fav-smoke")]`)],
+    [[0, false], [0, false]]);
+  await b.ev(`document.body.classList.remove("no-anim"), true`);
+  if (starWasOn) { await b.ev(`${STAR}.click()`); }
+  await b.until(starQuiet, true, 3000);
   await b.settled();
   await b.key("Escape");
   check("Esc closes details", await b.until(`document.getElementById("details").hidden`));

@@ -5,6 +5,7 @@ import { openDocs } from "./docs.js";
 import { askEmulator, needsEmulator } from "./emuhelp.js";
 import { dropExtPage } from "./extensions.js";
 import { dropFanPage } from "./fanprojects.js";
+import { starAnswers } from "./favfx.js";
 import { openGameButtons } from "./gamebtns.js";
 import { paintHelp } from "./help.js";
 import { dropHbPage } from "./homebrew.js";
@@ -143,18 +144,10 @@ export function toggleFav(g) {
     render();
     showStrip("Favourite not saved: " + (r.error || "the server said no"), true);
   });
-  // A press deserves an answer: whichever star is on screen pops once.
+  // A press deserves an answer: the star in sight spins on or puffs out (js\favfx.js).
   // After the repaint, because render() just rebuilt the node it lives on.
-  if (g.favourite && !$body.classList.contains("no-anim")) {
-    requestAnimationFrame(function () {
-      var b = document.querySelector("#details .favbtn") || document.querySelector(".favbtn");
-      if (!b) { return; }
-      b.classList.remove("pop");
-      void b.offsetWidth;                  // restart the animation
-      b.classList.add("pop");
-      setTimeout(function () { b.classList.remove("pop"); }, 420);
-    });
-  }
+  var on = g.favourite;
+  requestAnimationFrame(function () { starAnswers(on); });
 }
 
 /* What else came in the box, under the facts: the side of the

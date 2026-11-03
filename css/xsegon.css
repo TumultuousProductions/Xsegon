@@ -4389,9 +4389,28 @@ body.no-anim .panel-inner, body.no-anim #details { animation: none; }
 #details.cover-hid .dleft > :is(.cover, .cover-fix) { visibility: hidden; }
 .cover-away { visibility: hidden !important; }
 
-@keyframes xs-pop { 0% { transform: scale(1); } 40% { transform: scale(1.45) rotate(8deg); } 100% { transform: scale(1); } }
-.favbtn.pop { animation: xs-pop 340ms ease-out; }
-body.no-anim .favbtn.pop { animation: none; }
+/* The favourite star (js\favfx.js): on, one turn and then a tenth larger and
+   back; off, the empty star fades in while the lit one puffs away over it. */
+@keyframes xs-fav-on {
+  0%   { transform: rotate(0deg) scale(1); animation-timing-function: cubic-bezier(.45, 0, .2, 1); }
+  65%  { transform: rotate(360deg) scale(1); animation-timing-function: ease-out; }
+  82%  { transform: rotate(360deg) scale(1.1); animation-timing-function: ease-in-out; }
+  100% { transform: rotate(360deg) scale(1); }
+}
+@keyframes xs-fav-off {
+  0%, 35% { opacity: 0; transform: scale(.6); }
+  100%    { opacity: 1; transform: none; }
+}
+.favbtn.spin { animation: xs-fav-on 620ms; }
+.favbtn.dim  { animation: xs-fav-off 520ms ease-out; }
+body.no-anim .favbtn.spin, body.no-anim .favbtn.dim { animation: none; }
+.fav-ghost, .fav-smoke { position: fixed; z-index: 44; pointer-events: none; }
+.fav-smoke { z-index: 43; }               /* from behind the star */
+.fav-ghost {
+  display: flex; align-items: center; justify-content: center; line-height: 1;
+  color: var(--warn); text-shadow: 0 0 12px rgba(251, 191, 36, .6);
+}
+.fav-smoke { border-radius: 50%; background: radial-gradient(circle, var(--off) 0%, transparent 70%); }
 
 @keyframes xs-launch {
   0%   { box-shadow: 0 0 0 rgba(var(--cyan-rgb), 0); }
