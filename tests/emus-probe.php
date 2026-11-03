@@ -30,7 +30,7 @@ if (($argv[1] ?? '') === '--codes' || ($argv[1] ?? '') === '--code') {
         $ok = ($e['codeSwitch'])($home, $exe, [], $rom, $argv[4], $argv[5], $argv[6] === '1', $why);
     }
     echo json_encode(['ok' => $ok, 'why' => $why, 'codes' => ($e['codes'])($home, $exe, [], $rom, $why),
-                      'launch' => ($e['launch'])($home, $exe, [], $rom)], JSON_UNESCAPED_SLASHES);
+                      'launch' => isset($e['launch']) ? ($e['launch'])($home, $exe, [], $rom) : ''], JSON_UNESCAPED_SLASHES);
     exit;
 }
 if (($argv[1] ?? '') === '--packs') {

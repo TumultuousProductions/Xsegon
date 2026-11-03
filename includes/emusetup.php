@@ -190,6 +190,68 @@ function xs_es_ini_unset(array $rec, ?string &$why = null): bool
     return xs_tp_put($file, $text, $why);
 }
 
+/**
+ * A list section's line: taken out of [section] and, with $add, put back once at its end,
+ * the section made at the file's end when there is none. A section left empty goes with its
+ * header. Dolphin's "$Name" lists and PCSX2's repeated "Enable = Name" lines are both this.
+ */
+function xs_es_list_line(array $lines, string $section, string $line, bool $add): array
+{
+    $head = null;
+    $end = count($lines);
+    foreach ($lines as $i => $l) {
+        if (preg_match('/^\[(.+)\]\s*$/', trim($l), $m)) {
+            if ($head !== null) {
+                $end = $i;
+                break;
+            }
+            if ($m[1] === $section) {
+                $head = $i;
+            }
+        }
+    }
+    if ($head !== null) {
+        for ($i = $end - 1; $i > $head; $i--) {
+            if (preg_replace('/\s*=\s*/', ' = ', trim($lines[$i])) === preg_replace('/\s*=\s*/', ' = ', $line)) {
+                array_splice($lines, $i, 1);
+                $end--;
+            }
+        }
+    }
+    if ($add) {
+        if ($head === null) {
+            array_push($lines, '[' . $section . ']', $line);
+        } else {
+            while ($end - 1 > $head && trim($lines[$end - 1]) === '') {
+                $end--;
+            }
+            array_splice($lines, $end, 0, [$line]);
+        }
+    } elseif ($head !== null) {
+        $empty = true;
+        for ($i = $head + 1; $i < $end; $i++) {
+            $empty = $empty && trim($lines[$i]) === '';
+        }
+        if ($empty) {
+            array_splice($lines, $head, $end - $head);   // the header and the blank lines under it
+        }
+    }
+    return $lines;
+}
+
+/** A game file's lines written back, a copy kept first; no lines left, no file, as before anything was switched. */
+function xs_es_lines_put(string $file, array $lines, string $eol, ?string &$why = null): bool
+{
+    if (is_file($file) && !xs_es_keep($file)) {
+        $why = 'the game\'s settings file as it was could not be kept';
+        return false;
+    }
+    if (trim(implode('', $lines)) === '') {
+        return !is_file($file) || @unlink($file);
+    }
+    return xs_tp_put($file, implode($eol, $lines) . $eol, $why);
+}
+
 /** The program a standalone emulator runs from, from the emulator table: [key => exe], the console's default first. */
 function xs_es_programs(): array
 {

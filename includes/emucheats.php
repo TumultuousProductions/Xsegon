@@ -1,9 +1,10 @@
 <?php
 /**
- * Xsegon - the cheats a standalone emulator keeps for a game, read only.
+ * Xsegon - the cheats and patches a standalone emulator keeps for a game.
  *
- * A standalone emulator keeps its own cheats; Xsegon only shows what there is and which
- * are on (RetroArch's are switched in includes\cheats.php). PCSX2 for now.
+ * A standalone emulator keeps its own; its file in includes\emus\ reads them ('codes') and
+ * switches one in the game's own settings file ('codeSwitch'), PCSX2's and Dolphin's so far
+ * (RetroArch's are switched in includes\cheats.php). The readers below are PCSX2's.
  *
  * PCSX2 2.x keeps two files a game, both named by the game's code:
  *     cheats\<SERIAL>_<CRC>.pnach or cheats\<CRC>.pnach   a [Name] section a cheat
@@ -12,7 +13,7 @@
  * Which code a game file has is in PCSX2's own list of the games it has
  * scanned, cache\gamelist.cache, so no game is opened to find out.
  *
- * Nothing here writes. An answer that cannot be read is no answer (null, or
+ * The readers write nothing. An answer that cannot be read is no answer (null, or
  * a `why`), never a guess.
  */
 declare(strict_types=1);
@@ -31,11 +32,7 @@ require_once __DIR__ . '/emulators.php';
  */
 function xs_emucheats(array $game): ?array
 {
-    $pcsx2 = xs_pcsx2_game($game);
-    if ($pcsx2 !== null) {
-        return xs_pcsx2_cheats($pcsx2[0], $pcsx2[1]);
-    }
-    // An emulator whose file in includes\emus\ reads its codes, and switches them ('switch' => true).
+    // An emulator whose file in includes\emus\ reads its codes, and switches them ('switch' => true): PCSX2, Dolphin.
     $at = xs_emucodes_at($game);
     if ($at === null) {
         return null;
@@ -47,11 +44,13 @@ function xs_emucheats(array $game): ?array
         return ['emulator' => $e['name'], 'why' => $why, 'enabled' => true, 'on' => 0, 'file' => '', 'cheats' => []];
     }
     $rows = array_map(static fn(array $c): array => ['name' => ltrim($c['name'], '$'), 'key' => $c['name'], 'section' => $c['section'],
-        'kind' => $c['kind'], 'author' => $c['author'], 'desc' => $c['desc'], 'on' => $c['on'], 'copies' => 1], $got['list']);
+        'kind' => $c['kind'], 'author' => $c['author'], 'desc' => $c['desc'], 'on' => $c['on'], 'copies' => $c['copies'] ?? 1], $got['list']);
     // Patches first (widescreen, frame rate, fixes), then the codes, the ones on at the top of each.
-    usort($rows, static fn(array $a, array $b): int => [$a['section'] !== 'OnFrame', !$a['on']] <=> [$b['section'] !== 'OnFrame', !$b['on']]);
-    return ['emulator' => $e['name'], 'why' => $rows ? null : $e['name'] . ' has no patches or codes for this game', 'enabled' => true,
-            'switch' => true, 'on' => count(array_filter($rows, static fn(array $r): bool => $r['on'])), 'file' => $got['file'], 'cheats' => $rows];
+    $patch = static fn(array $r): bool => $r['kind'] === 'patch';
+    usort($rows, static fn(array $a, array $b): int => [!$patch($a), !$a['on']] <=> [!$patch($b), !$b['on']]);
+    return ['emulator' => $e['name'], 'why' => $rows ? null : ($got['why'] ?? $e['name'] . ' has no patches or codes for this game'),
+            'enabled' => $got['enabled'] ?? true, 'switch' => true, 'on' => count(array_filter($rows, static fn(array $r): bool => $r['on'])),
+            'file' => $got['file'], 'cheats' => $rows];
 }
 
 /** [emulator file, exe, rom] when the game starts in an emulator whose file reads its codes, else null. */

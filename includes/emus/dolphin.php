@@ -177,54 +177,9 @@ function xs_dolphin_code_switch(string $home, string $exe, string $id, string $s
     $raw = is_file($file) ? (string) @file_get_contents($file) : '';
     $eol = str_contains($raw, "\n") && !str_contains($raw, "\r\n") ? "\n" : "\r\n";
     $lines = $raw === '' ? [] : preg_split('/\r?\n/', rtrim($raw, "\r\n"));
-    // The "$Name" line out of one section and, when $add, into another, made at the end if it is not there.
-    $place = static function (array $lines, string $section, bool $add) use ($name): array {
-        $head = null;
-        $end = count($lines);
-        foreach ($lines as $i => $l) {
-            if (preg_match('/^\[(.+)\]\s*$/', trim($l), $m)) {
-                if ($head !== null) {
-                    $end = $i;
-                    break;
-                }
-                if ($m[1] === $section) {
-                    $head = $i;
-                }
-            }
-        }
-        if ($head !== null) {
-            for ($i = $end - 1; $i > $head; $i--) {
-                if (trim($lines[$i]) === $name) {
-                    array_splice($lines, $i, 1);
-                    $end--;
-                }
-            }
-        }
-        if ($add) {
-            if ($head === null) {
-                array_push($lines, '[' . $section . ']', $name);
-            } else {
-                while ($end - 1 > $head && trim($lines[$end - 1]) === '') {
-                    $end--;
-                }
-                array_splice($lines, $end, 0, [$name]);
-            }
-        } elseif ($head !== null && ($head + 1 >= count($lines) || str_starts_with(trim($lines[$head + 1]), '['))) {
-            array_splice($lines, $head, 1);             // a list left empty goes with its header
-        }
-        return $lines;
-    };
-    $lines = $place($lines, $sec . ($on ? '_Disabled' : '_Enabled'), false);
-    $lines = $place($lines, $sec . ($on ? '_Enabled' : '_Disabled'), $on ? !$shipped : $shipped);
-    if (is_file($file) && !xs_es_keep($file)) {
-        $why = 'the game\'s settings file as it was could not be kept';
-        return false;
-    }
-    // Nothing left in it: no file, as before anything was switched.
-    if (trim(implode('', $lines)) === '') {
-        return !is_file($file) || @unlink($file);
-    }
-    return xs_tp_put($file, implode($eol, $lines) . $eol, $why);
+    $lines = xs_es_list_line($lines, $sec . ($on ? '_Disabled' : '_Enabled'), $name, false);
+    $lines = xs_es_list_line($lines, $sec . ($on ? '_Enabled' : '_Disabled'), $name, $on ? !$shipped : $shipped);
+    return xs_es_lines_put($file, $lines, $eol, $why);
 }
 
 /** The ID Dolphin files a game under, read from its disc; null with $why. */

@@ -189,6 +189,29 @@ module.exports = async function (b, check) {
     codes("--code", dexe, disc, "Gecko", "$16:9 Widescreen", "0");
     check("emus: both switched back, the game's own file is gone, as before", fs.existsSync(userIni), false);
     check("emus: a name that is not a code is refused", codes("--code", dexe, disc, "Gecko", "no dollar", "1").ok, false);
+
+    /* PCSX2's patches and cheats (CA20): the game's file pulled out of a patches.zip by Windows' tar,
+       the cheats as PCSX2's own list has them, a patch switched on and off in the game's own file. */
+    const { pcsx2Fixture } = require("./t-cheats");
+    const p2 = path.join(fx, "pcsx2b");
+    const p2rom = "Z:\\ps2\\A Game (USA).iso";
+    pcsx2Fixture(p2, p2rom, { global: true, own: true });
+    fs.mkdirSync(path.join(p2, "resources"), { recursive: true });
+    fs.writeFileSync(path.join(fx, "SLUS-99999_ABCD1234.pnach"), "gametitle=A Game\n\n[Widescreen 16:9]\ngsaspectratio=16:9\nauthor=nemesis2000\npatch=1,EE,0032b448,word,3c013f40\n\n[No-Interlacing]\nauthor=asasega\npatch=1,EE,00100000,word,00000000\n");
+    execFileSync(path.join(process.env.SystemRoot || "C:\\Windows", "System32", "tar.exe"), ["-a", "-cf", path.join(p2, "resources", "patches.zip"), "-C", fx, "SLUS-99999_ABCD1234.pnach"]);
+    const p2exe = path.join(p2, "pcsx2-qt.exe");
+    const p2ini = path.join(p2, "gamesettings", "SLUS-99999_ABCD1234.ini");
+    const p2was = fs.readFileSync(p2ini, "utf8");
+    const q0 = codes("--codes", p2exe, p2rom);
+    const q = (r, n) => ((r.codes || {}).list || []).find((c) => c.name === n) || {};
+    check("emus: PCSX2's patches from its zip and its cheats", ((q0.codes || {}).list || []).map((c) => c.kind + ":" + c.name).join(","),
+      "patch:Widescreen 16:9,patch:No-Interlacing,cheat:Infinite Health,cheat:All Stages,cheat:Max Money");
+    check("emus: a patch's author is read, and it is off", [q(q0, "Widescreen 16:9").author, q(q0, "Widescreen 16:9").on], ["nemesis2000", false]);
+    const q1 = codes("--code", p2exe, p2rom, "Patches", "Widescreen 16:9", "1");
+    check("emus: switched on, in the game's own file as PCSX2 writes it", [q(q1, "Widescreen 16:9").on, /\[Patches\]\r?\nEnable = Widescreen 16:9/.test(fs.readFileSync(p2ini, "utf8"))], [true, true]);
+    codes("--code", p2exe, p2rom, "Patches", "Widescreen 16:9", "0");
+    check("emus: switched off again, the game's file reads as it did", fs.readFileSync(p2ini, "utf8"), p2was);
+    check("emus: a PCSX2 name with a line break in it is refused", codes("--code", p2exe, p2rom, "Cheats", "Max\nMoney", "1").ok, false);
   } finally {
     fs.rmSync(fx, { recursive: true, force: true });
   }
