@@ -1,4 +1,5 @@
 import { cheatsFact } from "./cheattab.js";
+import { coverFrom, coverLeaving, flyIn, flyOut, land } from "./coverfly.js";
 import { detailTabs, detailTabsOff, openTab, tabPane } from "./detailtabs.js";
 import { openDocs } from "./docs.js";
 import { askEmulator, needsEmulator } from "./emuhelp.js";
@@ -477,11 +478,13 @@ function paintStates(g) {
 }
 
 export function openDetails() {
-  if (games[sel]) { L("NAV", "details " + games[sel].title); }
   var g = games[sel];
   if (!g) { return; }
   // Surprise me from over the Fan projects page: the details stand over every game, never over the page or the consoles.
-  if ((dropFanPage() || dropHbPage() || dropExtPage() || dropTpPage()) && sysStage === "wall") { startOnAllGames(); }
+  var dropped = dropFanPage() || dropHbPage() || dropExtPage() || dropTpPage();
+  if (dropped && sysStage === "wall") { startOnAllGames(); }
+  var from = dropped ? null : coverFrom(g);           // read while the view is still on the screen
+  L("NAV", "details " + g.title + (from ? ", its cover flying in from " + from.where : ""));
   sound("select");
 
   buildDetails(g, null);
@@ -489,6 +492,7 @@ export function openDetails() {
   $toolbar.hidden = true;
   $details.hidden = false;
   paintHelp("details");
+  flyIn(from);
 
   api("api/game.php?id=" + encodeURIComponent(g.id)).then(function (res) {
     // Only fill in if these details are still the ones on screen.
@@ -505,6 +509,7 @@ export function openDetails() {
 export function dropDetails() {
   if ($details.hidden) { return false; }
   L("NAV", "details put away by a view change");
+  land();
   detailTabsOff();
   $details.hidden = true;
   $main.hidden = false;
@@ -514,6 +519,7 @@ export function dropDetails() {
 
 export function closeDetails() {
   if ($details.hidden) { return false; }
+  var from = coverLeaving();
   detailTabsOff();
   $details.hidden = true;
   $main.hidden = false;
@@ -521,5 +527,6 @@ export function closeDetails() {
   sound("back");
   paintHelp(sysStage === "inside" ? "inside" : "browse");
   armBrowse();                           // ends the details snap, waits on the wheel's
+  flyOut(games[sel], from);
   return true;
 }

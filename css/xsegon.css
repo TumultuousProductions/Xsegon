@@ -4377,6 +4377,18 @@ body.no-anim .padbtn.catching { animation: none; }
 #details:not([hidden]) { animation: xs-arrive 170ms ease-out; }
 body.no-anim .panel-inner, body.no-anim #details { animation: none; }
 
+/* The cover between the games and their details (js\coverfly.js): a copy
+   travels while the panel fades in under it, and the picture it stands for
+   waits. --cover-fly is its time; 0ms leaves it still. */
+.cover-fly {
+  position: fixed; z-index: 44; margin: 0;
+  transform-origin: 0 0; pointer-events: none;
+  box-shadow: 0 18px 46px rgba(0, 0, 0, .5);
+}
+#details.cover-in:not([hidden]) { animation: xs-fade var(--cover-fly, 340ms) ease-out; }
+#details.cover-hid .dleft > :is(.cover, .cover-fix) { visibility: hidden; }
+.cover-away { visibility: hidden !important; }
+
 @keyframes xs-pop { 0% { transform: scale(1); } 40% { transform: scale(1.45) rotate(8deg); } 100% { transform: scale(1); } }
 .favbtn.pop { animation: xs-pop 340ms ease-out; }
 body.no-anim .favbtn.pop { animation: none; }
