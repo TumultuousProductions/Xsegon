@@ -156,6 +156,15 @@ $id   = xs_id_or_fail($body['id'] ?? '');
 if ($game === null) {
     xs_fail('unknown game', 404);
 }
+// A standalone emulator's own patch or code, switched in its own game file (includes\emucheats.php).
+if (isset($body['emuCode']) && is_array($body['emuCode'])) {
+    $c = $body['emuCode'];
+    $why = null;
+    if (!xs_emucode_switch($game, (string) ($c['section'] ?? ''), (string) ($c['key'] ?? ''), !empty($c['on']), $why)) {
+        xs_fail((string) $why, 409);
+    }
+    xs_json(['ok' => true, 'emu' => xs_emucheats($game)]);
+}
 // What each version had before, for the log; then the same choice on every one.
 $had = xs_cheats_read();
 $before = [];

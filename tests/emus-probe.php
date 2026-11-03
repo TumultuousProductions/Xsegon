@@ -3,6 +3,8 @@
 //   php emus-probe.php <exe> [<platform>]     its home, controls and way out
 //   php emus-probe.php --keys                 every emulator file's key and program names
 //   php emus-probe.php --packs <exe> <title> <rom>      a game's graphic packs, read only
+//   php emus-probe.php --codes <exe> <rom>              a game's patches and codes, read only
+//   php emus-probe.php --code <exe> <rom> <section> <$Name> <1|0>   one switched (XSEGON_DATA set)
 //   php emus-probe.php --round <exe> <rom> <title> <platform>
 //                       Set up, a dry start, two starts and Put back, in stand-in folders only:
 //                       XSEGON_DATA must name the test's own data folder
@@ -11,6 +13,24 @@ require __DIR__ . '/../includes/boot.php';
 require __DIR__ . '/../includes/emus.php';
 if (($argv[1] ?? '') === '--keys') {
     echo json_encode(array_map(static fn(array $e): array => $e['exes'], xs_emus()));
+    exit;
+}
+if (($argv[1] ?? '') === '--codes' || ($argv[1] ?? '') === '--code') {
+    // --codes <exe> <rom>: a game's patches and codes; --code <exe> <rom> <section> <$Name> <1|0>: one switched.
+    // Switching writes the stand-in's game INI and keeps a copy in XSEGON_DATA, which must be set.
+    [, $mode, $exe, $rom] = $argv;
+    $e = xs_emu_of($exe);
+    $home = xs_emu_home($e, $exe);
+    $why = null;
+    $ok = null;
+    if ($mode === '--code') {
+        if ((string) getenv('XSEGON_DATA') === '') {
+            exit('{"error":"XSEGON_DATA is not set"}');
+        }
+        $ok = ($e['codeSwitch'])($home, $exe, [], $rom, $argv[4], $argv[5], $argv[6] === '1', $why);
+    }
+    echo json_encode(['ok' => $ok, 'why' => $why, 'codes' => ($e['codes'])($home, $exe, [], $rom, $why),
+                      'launch' => ($e['launch'])($home, $exe, [], $rom)], JSON_UNESCAPED_SLASHES);
     exit;
 }
 if (($argv[1] ?? '') === '--packs') {

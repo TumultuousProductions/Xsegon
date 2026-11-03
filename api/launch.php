@@ -574,6 +574,12 @@ $emuSetup = null;
 if (($launch['kind'] ?? '') === 'emulator' && empty($launch['local'])) {
     require_once __DIR__ . '/../includes/emusetup.php';
     $emuSetup = xs_es_for_launch($game, $launch, !$dry);
+    // What the emulator's own file adds to this start (Dolphin's cheats, when a code is on).
+    $emuFile = xs_emu_of((string) $launch['exe']);
+    if ($emuFile !== null && isset($emuFile['launch'])) {
+        $more = ($emuFile['launch'])(xs_emu_home($emuFile, (string) $launch['exe']), (string) $launch['exe'], $game, (string) ($launch['rom'] ?? ''));
+        $emuSetup['args'] = trim($emuSetup['args'] . ' ' . $more);
+    }
     if ($emuSetup['args'] !== '') {
         $launch['args'] = $emuSetup['args'] . ' ' . $launch['args'];
     }

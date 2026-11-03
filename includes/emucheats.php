@@ -32,7 +32,55 @@ require_once __DIR__ . '/emulators.php';
 function xs_emucheats(array $game): ?array
 {
     $pcsx2 = xs_pcsx2_game($game);
-    return $pcsx2 !== null ? xs_pcsx2_cheats($pcsx2[0], $pcsx2[1]) : null;
+    if ($pcsx2 !== null) {
+        return xs_pcsx2_cheats($pcsx2[0], $pcsx2[1]);
+    }
+    // An emulator whose file in includes\emus\ reads its codes, and switches them ('switch' => true).
+    $at = xs_emucodes_at($game);
+    if ($at === null) {
+        return null;
+    }
+    [$e, $exe, $rom] = $at;
+    $why = null;
+    $got = ($e['codes'])(xs_emu_home($e, $exe), $exe, $game, $rom, $why);
+    if ($got === null) {
+        return ['emulator' => $e['name'], 'why' => $why, 'enabled' => true, 'on' => 0, 'file' => '', 'cheats' => []];
+    }
+    $rows = array_map(static fn(array $c): array => ['name' => ltrim($c['name'], '$'), 'key' => $c['name'], 'section' => $c['section'],
+        'kind' => $c['kind'], 'author' => $c['author'], 'desc' => $c['desc'], 'on' => $c['on'], 'copies' => 1], $got['list']);
+    // Patches first (widescreen, frame rate, fixes), then the codes, the ones on at the top of each.
+    usort($rows, static fn(array $a, array $b): int => [$a['section'] !== 'OnFrame', !$a['on']] <=> [$b['section'] !== 'OnFrame', !$b['on']]);
+    return ['emulator' => $e['name'], 'why' => $rows ? null : $e['name'] . ' has no patches or codes for this game', 'enabled' => true,
+            'switch' => true, 'on' => count(array_filter($rows, static fn(array $r): bool => $r['on'])), 'file' => $got['file'], 'cheats' => $rows];
+}
+
+/** [emulator file, exe, rom] when the game starts in an emulator whose file reads its codes, else null. */
+function xs_emucodes_at(array $game): ?array
+{
+    require_once __DIR__ . '/emus.php';
+    $launch = $game['launch'] ?? null;
+    if (!is_array($launch) || !empty($launch['local']) || ($launch['kind'] ?? '') !== 'emulator') {
+        return null;
+    }
+    $s = xs_settings();
+    $launch = xs_emu_repoint($launch, xs_emulators(xs_norm_path((string) ($s['paths']['launchbox'] ?? ''))), (string) ($game['platform'] ?? ''));
+    $exe = (string) ($launch['exe'] ?? '');
+    $e = $exe !== '' ? xs_emu_of($exe) : null;
+    return $e !== null && isset($e['codes']) ? [$e, $exe, (string) ($launch['rom'] ?? '')] : null;
+}
+
+/** One of those codes on or off, through its emulator's own file. False with $why. */
+function xs_emucode_switch(array $game, string $section, string $name, bool $on, ?string &$why = null): bool
+{
+    $at = xs_emucodes_at($game);
+    if ($at === null || !isset($at[0]['codeSwitch'])) {
+        $why = 'this game\'s emulator has no codes Xsegon switches';
+        return false;
+    }
+    [$e, $exe, $rom] = $at;
+    $ok = ($e['codeSwitch'])(xs_emu_home($e, $exe), $exe, $game, $rom, $section, $name, $on, $why);
+    xs_log('CHEAT', $game['title'] . ' in ' . $e['name'] . ': ' . $name . ' ' . ($on ? 'on' : 'off') . ($ok ? '' : ' refused: ' . $why));
+    return $ok;
 }
 
 /** [PCSX2's exe, the game's file] when PCSX2 is what starts this game, else null. */
