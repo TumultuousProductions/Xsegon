@@ -500,11 +500,12 @@ export function openDetails() {
    else (a view change, the way to the consoles): the masthead's view dropdown stays live
    while details is open. Main and the bar come back; the caller then shows or hides them. */
 export function dropDetails() {
+  land();                                // a flight back from details still in the air goes with the view it flew to
   if ($details.hidden) { return false; }
   L("NAV", "details put away by a view change");
-  land();
   detailTabsOff();
   $details.hidden = true;
+  $details.classList.remove("cover-in");
   $main.hidden = false;
   $toolbar.hidden = false;
   return true;
@@ -515,6 +516,7 @@ export function closeDetails() {
   var from = coverLeaving();
   detailTabsOff();
   $details.hidden = true;
+  $details.classList.remove("cover-in");
   $main.hidden = false;
   $toolbar.hidden = false;
   sound("back");

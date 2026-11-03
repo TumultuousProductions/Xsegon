@@ -76,7 +76,8 @@ function tryReload() {
 
 function paint(job, own) {
   var b = build(job);
-  setAtWork("job:" + job.key, job.state === "running" ? { name: job.name, line: job.line, onClose: job.onClose || "" } : null);
+  // atWork false: a bar whose job loses nothing to a close, kept out of the close question.
+  setAtWork("job:" + job.key, job.state === "running" && job.atWork !== false ? { name: job.name, line: job.line, onClose: job.onClose || "" } : null);
   if (job.state === "running") {
     clearTimeout(b.hideT);
     seenOver[job.key] = 0;

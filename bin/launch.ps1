@@ -99,8 +99,9 @@ $errorFile   = Join-Path $DataDir 'last-error.json'
 $sessionFile = Join-Path $DataDir 'sessions.jsonl'
 $cmdFile     = Join-Path $DataDir 'last-launch.bat'
 # What runs is this launch's own copy: cmd reads a .bat on from where it stopped, so a
-# launcher left running (Wait-Program) would read on into the next launch's lines.
-$runFile     = Join-Path $DataDir "launch-$PID.bat"
+# launcher left running (Wait-Program) would read on into the next launch's lines. Named
+# for the start time too: Windows hands a later launch the same process id in time.
+$runFile     = Join-Path $DataDir ("launch-{0}-{1}.bat" -f $PID, [DateTime]::UtcNow.Ticks)
 
 <#  Every game's last launch, ok or not, in data\launch-results.json: a game
     whose last launch failed is greyed out under NEEDS FIX wherever it shows

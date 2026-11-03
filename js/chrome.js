@@ -105,10 +105,11 @@ export function initChrome() {
   document.documentElement.addEventListener("transitionend", function (e) {
     if (e.target === document.documentElement && e.propertyName === "--strip-h") { keepChosen(); keepSel = false; }
   });
-  // The wheel turned over the list, or a press in it, while the strip glides: the person is moving it, and it stays where they put it.
+  /* The wheel turned over the list, or its scrollbar taken, while the strip glides: the person
+     is moving it, and it stays where they put it. A click on a game chooses it, and that one is kept in sight. */
   if ($view) {
     $view.addEventListener("wheel", function () { keepSel = false; }, { passive: true });
-    $view.addEventListener("pointerdown", function () { keepSel = false; });
+    $view.addEventListener("pointerdown", function (e) { if (e.target === $view) { keepSel = false; } });
   }
   if (window.ResizeObserver) {
     var ro = new ResizeObserver(measureChrome);

@@ -62,9 +62,11 @@ export function listGlide(box, active, quickens) {
 
   box.addEventListener("wheel", function (e) {
     if (!active() || e.ctrlKey || e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY) || !e.deltaY) { return; }
-    // Turned on past the top or the bottom: each notch pulls the games out of their end (js\bump.js).
+    // Turned on past the top or the bottom, a list that fits whole too: each notch pulls the games out of their end (js\bump.js).
     if (e.deltaY > 0 ? box.scrollTop >= max() - 1 : box.scrollTop <= 0) {
-      if (max() > 0) { e.preventDefault(); stop(); bumpEnd(e.deltaY > 0 ? "down" : "up", true); }
+      e.preventDefault();
+      stop();
+      bumpEnd(e.deltaY > 0 ? "down" : "up", true);
       return;
     }
     if (!wheelGlide()) { return; }

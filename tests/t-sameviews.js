@@ -106,12 +106,15 @@ module.exports = async function (b, check) {
 
     /* Up past the first game (js\bump.js): the games in sight stretch away from the
        end they ran into, held to it, along the view's own line, and the set's Move
-       plays low; at once again it is a key held; then they let go. */
+       plays low; the key's own repeat is a key held; then they let go, and a fresh
+       press is felt again. Where it stands is the game and, in Rows, the row: a game
+       can stand in two rows, so a step up a row may leave the game as it was. */
+    const where = S(`S.sel + "|" + [...document.querySelectorAll(".rrow")].findIndex((r) => r.classList.contains("cur"))`);
     let stopped = false;
     for (let i = 0; i < 40 && !stopped; i++) {
-      const was = await b.ev(S(`S.sel`));
+      const was = await b.ev(where);
       await b.key("ArrowUp");
-      stopped = (await b.ev(S(`S.sel`))) === was;
+      stopped = (await b.ev(where)) === was;
     }
     const thudsBefore = await b.ev(`window.__thuds`);
     // Each game stretched: how far it moved along the line, how much longer it is along it, and across it.
@@ -124,10 +127,13 @@ module.exports = async function (b, check) {
     check(v + ": Up past the first game stretches the games in sight " + (v === "carousel" ? "rightwards, held to the left" : "downwards, held to the top"),
           [stopped, pulled, seen.every((x) => x[1] > 1 && x[2] === 1), seen.some((x) => x[0] > 0.5), seen.every((x) => x[0] > -0.5)],
           [true, true, true, true, true]);
-    await b.key("ArrowUp");
-    check(v + ": with one thud, and a second Up straight after is a key held down: no second one",
+    await b.ev(`document.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowUp", code: "ArrowUp", repeat: true, bubbles: true, cancelable: true }))`);
+    check(v + ": with one thud, and the key's own repeat is a key held down: no second one",
           [thudsBefore, await b.ev(`window.__thuds`)], [1, 1]);
     check(v + ": and the games let go, nothing left on them", await b.until(`(${stretched}).length`, 0, 1500), 0);
+    await b.key("ArrowUp");
+    check(v + ": a fresh press at the end is felt again, whatever the time since the last", await b.until(`window.__thuds`, 2, 1000), 2);
+    await b.until(`(${stretched}).length`, 0, 1500);
     await b.ev(`window.__thuds = 0`);
     if (SIDEWAYS.includes(v)) {
       await b.key("ArrowRight");

@@ -147,10 +147,14 @@ function ask(c) {
   });
 }
 
+// More of this list is still to come: the last game drawn is not its end (js\bump.js).
+export function moreComing() { return !!coming && !coming.done; }
+
+// Closing loses nothing of it (the list is read again at the next open), so the close question leaves it out.
 function bar(c, over) {
   if (!over && Date.now() - barAt < 200) { return; }
   barAt = Date.now();
-  jobBar({ key: BAR_KEY, name: "Loading the rest of your games", started: c.began, stop: false,
+  jobBar({ key: BAR_KEY, name: "Loading the rest of your games", started: c.began, stop: false, atWork: false,
            state: over ? (c.failed ? "stopped" : "done") : "running",
            line: thousands(games.length) + " of " + thousands(c.total), frac: c.total ? games.length / c.total : null });
 }

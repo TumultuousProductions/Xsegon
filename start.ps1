@@ -95,7 +95,9 @@ $pathPhp  = if (Get-Command php -ErrorAction SilentlyContinue) { (Get-Command ph
 # subfolder of the folder PHP is in, through whatever version PHP has moved to.
 $above    = Split-Path $myApps -Parent
 $abovePhp = if ($above -and -not (Test-Path -LiteralPath $ownPhp) -and -not (Test-Path -LiteralPath $knownPhp)) {
-    Get-ChildItem -LiteralPath $above -Directory -Filter 'php-*' -ErrorAction SilentlyContinue | Sort-Object Name -Descending |
+    # By version, not by name: by name php-8.5.9 comes before php-8.5.12.
+    Get-ChildItem -LiteralPath $above -Directory -Filter 'php-*' -ErrorAction SilentlyContinue |
+        Sort-Object { ($_.Name -replace '^php-(\d+(\.\d+){0,3}).*$', '$1') -as [version] } -Descending |
         ForEach-Object { Join-Path $_.FullName 'php.exe' } | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
 }
 
