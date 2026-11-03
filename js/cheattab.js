@@ -1,13 +1,16 @@
 /*  The Cheats tab of a game's details (js\detailtabs.js). A RetroArch game gets the
     cheat picker (js\cheats.js); a standalone emulator whose cheats Xsegon can read
-    (PCSX2, includes\emucheats.php) gets its own list, read only since the files are
-    that emulator's; any other game gets the sentence saying why there is nothing. */
+    (includes\emucheats.php) gets its own list: PCSX2's read only, Dolphin's patches
+    and codes switched in the game's own settings file; any other game gets the
+    sentence saying why there is nothing. */
 
 import { cheatsInto } from "./cheats.js";
 import { setFact } from "./details.js";
 import { relabelTabs, setTabRows, tabPane, tabSays } from "./detailtabs.js";
 import { iconEl } from "./icons.js";
-import { L, api } from "./log.js";
+import { showStrip } from "./launch.js";
+import { L, api, postJson } from "./log.js";
+import { sound } from "./sound.js";
 import { el } from "./util.js";
 
 export function cheatsTabLabel(g, full) {
@@ -49,15 +52,18 @@ export function cheatsPane(pane, g) {
 
 
 /* A standalone emulator's own cheats: the ones that are on first, then the
-   rest as its file has them. Nothing here is a switch. */
+   rest as its file has them. PCSX2's are only shown; one whose file in
+   includes\emus\ switches them (Dolphin, emu.switch) takes a press on a row,
+   kept at once in the game's own settings file, the row drawn from the answer. */
 function emuCheats(pane, g, emu) {
   L("CHEAT", "tab " + g.title + " (" + emu.emulator + ": " + emu.on + " on of " + emu.cheats.length + ")");
   var inner = el("div", "ch-inner ch-tab");
   var lead = emu.enabled
-    ? (emu.on ? emu.on + (emu.on === 1 ? " cheat is" : " cheats are") + " on" : "No cheat is on") + " for this game in " + emu.emulator + "."
+    ? (emu.on ? emu.on + " on" : "None on") + " for this game in " + emu.emulator + "."
     : "Cheats are switched off for this game in " + emu.emulator + ".";
-  inner.appendChild(el("p", "group-help", lead + " These are " + emu.emulator + "'s own, read from " + emu.file
-    + ". Xsegon shows them and does not change them: switch them in " + emu.emulator + ", under this game's Properties > Cheats."));
+  inner.appendChild(el("p", "group-help", lead + (emu.switch
+    ? " " + emu.emulator + "'s own patches (widescreen, frame rate, fixes) and cheat codes, the ones it ships and any of yours. A press switches one on or off, kept in this game's own settings file, " + emu.file + ", as " + emu.emulator + "'s Properties window does."
+    : " These are " + emu.emulator + "'s own, read from " + emu.file + ". Xsegon shows them and does not change them: switch them in " + emu.emulator + ", under this game's Properties > Cheats.")));
 
   var seek = el("div", "set-find ch-find");
   seek.appendChild(iconEl("find-ico", "search"));
@@ -79,27 +85,52 @@ function emuCheats(pane, g, emu) {
     i = Math.max(0, Math.min(cells.length - 1, i));
     at = i;
     cells.forEach(function (c, k) { c.classList.toggle("sel", k === i); });
-    setTabRows(pane, {
+    setTabRows(pane, emu.switch ? {
+      cells: cells, at: i, find: box, word: "switch it",
+      move: function (d) { focusAt(at + d); },
+      choose: function () { flip(at); }
+    } : {
       cells: cells, at: i, find: box, look: true,       // to look at: nothing in it is a switch
       move: function (d) { focusAt(at + d); },
       choose: function () { /* nothing to choose */ }
     });
     if (cells[i]) { cells[i].scrollIntoView({ block: "nearest", inline: "nearest" }); }
   }
+  var shown = [], switching = false;
+  // A press on a row: kept at once, and the list drawn again from what the server then reads.
+  function flip(i) {
+    var c = shown[i];
+    if (!c || switching) { return; }
+    switching = true;
+    sound("select");
+    postJson("api/cheats.php", { id: g.id, emuCode: { section: c.section, key: c.key, on: !c.on } }).then(function (res) {
+      switching = false;
+      if (!res.ok || !res.emu) { showStrip(c.name + " was not switched: " + (res.error || "no answer"), true); return; }
+      emu = res.emu;
+      relabelTabs({ cheats: emu.on });
+      setFact("cheats", cheatsFact(emu.on, emu.cheats.length));
+      lead0.textContent = (emu.on ? emu.on + " on" : "None on") + " for this game in " + emu.emulator + "." + lead0.textContent.replace(/^[^.]*\./, "");
+      paint();
+    });
+  }
+  var lead0 = inner.firstChild;
   function paint() {
     var q = box.value.trim().toLowerCase();
     list.textContent = "";
     cells = [];
+    shown = [];
     emu.cheats.forEach(function (c) {
       if (q && (c.name + " " + c.desc).toLowerCase().indexOf(q) < 0) { return; }
-      var line = el("div", "cr-row ro" + (c.on ? " on" : ""));
+      var line = el("div", "cr-row" + (emu.switch ? "" : " ro") + (c.on ? " on" : ""));
       line.appendChild(iconEl("cr-ico", c.on ? "check" : "disc"));
       var name = el("span", "cr-name", c.name);
       name.title = c.desc || c.name;                   // a name cut short by the column is read here
       line.appendChild(name);
-      line.appendChild(el("span", "cr-tag", [c.on ? "on" : "", c.author, c.copies > 1 ? c.copies + " under this name" : ""].filter(Boolean).join("  ·  ")));
+      line.appendChild(el("span", "cr-tag", [c.on ? "on" : "", c.kind || "", c.author, c.copies > 1 ? c.copies + " under this name" : ""].filter(Boolean).join("  ·  ")));
       line.addEventListener("mouseenter", function () { focusAt(cells.indexOf(line)); });
+      if (emu.switch) { line.addEventListener("click", function () { flip(cells.indexOf(line)); }); }
       cells.push(line);
+      shown.push(c);
       list.appendChild(line);
     });
     foot.textContent = q

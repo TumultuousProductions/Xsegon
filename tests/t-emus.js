@@ -164,6 +164,31 @@ module.exports = async function (b, check) {
     check("emus: a pack written after the download is the person's own, said to be at risk", pk("Mine").late && pk("Mine").own, true);
     check("emus: the downloaded ones are not", !!(pk("Graphic Options").late || pk("X").late), false);
     check("emus: the set on the PC is named", gp.set, "Cemu Graphic Packs: v970");
+
+    /* Dolphin's patches and codes (CA19): read from its shipped INIs (the three-letter one and the
+       ID's) and the game's own, switched in the game's own as its Properties window writes them. */
+    put("dolphin/Sys/GameSettings/GM4.ini", "[OnFrame]\r\n$Shared fix\r\n0x80001234:dword:0x60000000\r\n[OnFrame_Enabled]\r\n$Shared fix\r\n");
+    put("dolphin/Sys/GameSettings/GM4E01.ini", "# GM4E01 - Mario Kart: Double Dash!!\r\n[Gecko]\r\n$16:9 Widescreen [Ralf]\r\n04000000 00000000\r\n*Wider picture\r\n[ActionReplay]\r\n$Everything Unlocked\r\n023BC1C0 0003FFFF\r\n");
+    const dexe = path.join(fx, "dolphin", "Dolphin.exe");
+    const codes = (...a) => JSON.parse(execFileSync(phpExe, [path.join(ROOT, "tests", "emus-probe.php"), ...a],
+      { encoding: "utf8", env: Object.assign({}, process.env, { XSEGON_DATA: data }) }));
+    const userIni = path.join(fx, "dolphin", "User", "GameSettings", "GM4E01.ini");
+    const c0 = codes("--codes", dexe, disc);
+    const cn = (r, n) => ((r.codes || {}).list || []).find((c) => c.name === n) || {};
+    check("emus: Dolphin's patches and codes from both shipped files", ((c0.codes || {}).list || []).map((c) => c.name).join(","), "$Shared fix,$16:9 Widescreen,$Everything Unlocked");
+    check("emus: a patch Dolphin ships on reads on", cn(c0, "$Shared fix").on, true);
+    check("emus: a Gecko code's author and note are read", cn(c0, "$16:9 Widescreen").author + " / " + cn(c0, "$16:9 Widescreen").desc, "Ralf / Wider picture");
+    check("emus: with no code on, the start gets no cheats switch", c0.launch, "");
+    const c1 = codes("--code", dexe, disc, "Gecko", "$16:9 Widescreen", "1");
+    check("emus: a code switched on is on", cn(c1, "$16:9 Widescreen").on, true);
+    check("emus: it is written as Dolphin writes it", fs.readFileSync(userIni, "utf8").replace(/\r/g, ""), "[Gecko_Enabled]\n$16:9 Widescreen\n");
+    check("emus: with a code on, that start turns cheats on, for itself only", c1.launch, "-C Dolphin.Core.EnableCheats=True");
+    const c2 = codes("--code", dexe, disc, "OnFrame", "$Shared fix", "0");
+    check("emus: a patch Dolphin ships on, switched off, goes in the disabled list", cn(c2, "$Shared fix").on === false && /\[OnFrame_Disabled\]\r?\n\$Shared fix/.test(fs.readFileSync(userIni, "utf8")), true);
+    codes("--code", dexe, disc, "OnFrame", "$Shared fix", "1");
+    codes("--code", dexe, disc, "Gecko", "$16:9 Widescreen", "0");
+    check("emus: both switched back, the game's own file is gone, as before", fs.existsSync(userIni), false);
+    check("emus: a name that is not a code is refused", codes("--code", dexe, disc, "Gecko", "no dollar", "1").ok, false);
   } finally {
     fs.rmSync(fx, { recursive: true, force: true });
   }
