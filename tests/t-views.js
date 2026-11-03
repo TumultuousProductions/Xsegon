@@ -1683,6 +1683,42 @@ module.exports = async function (b, check) {
   check("and the Acceleration the window set is saved", await apiUntil(async () => (await api("api/settings.php")).settings.controller.wheelAccel === 6));
   await api("api/settings.php", { controller: { wheelGlide: 4, wheelAccel: 5 } });   // the defaults again, for what follows
 
+  /* ---- a long scroll in List and Grid speeds up (js\listglide.js, roadmap CD5) ----
+     Kept up for over a second, each notch goes further, a fifth at most by two
+     seconds; a pause starts again at the plain speed. Shelf, and Acceleration 0,
+     stay plain. 52 notches 50 ms apart, the scroll read before each: the
+     distance a notch over notches 6 to 16 (plain, the ease caught up) and 41 to
+     51 (at its fastest). */
+  const longScroll = async (v) => {
+    await b.setView(v);
+    await b.settled();
+    const at = await b.ev(`new Promise(done => { const box = document.getElementById("view"), at = []; let i = 0; box.scrollTop = 0;
+      const f = () => { at.push(box.scrollTop); box.dispatchEvent(new WheelEvent("wheel", { deltaY: 100, bubbles: true, cancelable: true }));
+        if (++i < 52) { setTimeout(f, 50); } else { setTimeout(() => done(at), 400); } }; setTimeout(f, 400); })`);
+    const plain = (at[16] - at[6]) / 10;
+    return { plain: Math.round(plain), quicker: Math.round(((at[51] - at[41]) / 10 / plain) * 100) / 100 };
+  };
+  await b.ev(`(s => { s.value = ""; s.dispatchEvent(new Event("change", { bubbles: true })); })(document.getElementById("platform"))`);
+  for (const v of ["grid", "list"]) {
+    const r = await longScroll(v);
+    check(v + ": a long scroll goes notch for notch for its first second, then a fifth further a notch",
+          [r.plain >= 95 && r.plain <= 105, r.quicker >= 1.15 && r.quicker <= 1.25], [true, true]);
+    if (v === "grid") {
+      const again = await longScroll(v);
+      check("grid: and after a pause it starts again at the plain speed", again.plain >= 95 && again.plain <= 105, true);
+    }
+  }
+  const shelf = await longScroll("shelf");
+  check("shelf: a long scroll stays notch for notch", shelf.quicker >= 0.95 && shelf.quicker <= 1.05, true);
+  await api("api/settings.php", { controller: { wheelAccel: 0 } });
+  await b.goto(undefined, { keepView: true });
+  await b.ev(`(s => { s.value = ""; s.dispatchEvent(new Event("change", { bubbles: true })); })(document.getElementById("platform"))`);
+  const off = await longScroll("grid");
+  check("grid: with Acceleration at 0 a long scroll stays notch for notch", off.quicker >= 0.95 && off.quicker <= 1.05, true);
+  await api("api/settings.php", { controller: { wheelAccel: 5 } });
+  await b.goto(undefined, { keepView: true });
+  await b.setView("wheel");
+
   /* ---- 1P / 2P on the games (view.showPlayers) ----
      Off for everyone new; on, the wheel shows it in each plate's top right
      and the carousel under the chosen game's title. */

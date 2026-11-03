@@ -202,7 +202,8 @@ $syswall.addEventListener("pointerdown", sysScroll.stop);
 wireWheelGear();                           // the gear on the game wheel: Speed and Momentum
 applyViewSizes();                          // how big the grid and the shelf are drawn (js\viewsize.js)
 wireHoverSound($view);                     // a game, and a button, sound as the pointer comes onto them (js\sound.js)
-listGlide($view, function () { return view === "list" || view === "grid" || view === "shelf"; });   // a little give to the list's scroll (js\listglide.js)
+listGlide($view, function () { return view === "list" || view === "grid" || view === "shelf"; },   // a little give to the list's scroll (js\listglide.js)
+  function () { return view === "list" || view === "grid"; });
 document.getElementById("btn-contrast").addEventListener("click", toggleContrast);
 // + asks which kind of adding first: a folder full of games, or one by hand.
 document.getElementById("btn-add").addEventListener("click", openAddChooser);
