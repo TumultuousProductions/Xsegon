@@ -2552,7 +2552,8 @@ body.no-anim .hero-art-frame.snap-fit { transition: none; }
      the picture frame above gives up the difference. */
   height: 260px;
   display: flex; flex-direction: column;
-  overflow: hidden;
+  /* A little past its edge: the favourite star's bounce reaches above the top. */
+  overflow: clip; overflow-clip-margin: 6px;
 }
 .hero h3 {
   display: flex; align-items: flex-start; gap: 8px; flex: 0 0 auto;
@@ -4406,19 +4407,21 @@ body.no-anim .panel-inner, body.no-anim #details { animation: none; }
 #details.cover-hid .dleft > :is(.cover, .cover-fix) { visibility: hidden; }
 .cover-away { visibility: hidden !important; }
 
-/* The favourite star (js\favfx.js): on, one turn and then a tenth larger and
-   back; off, the empty star fades in while the lit one puffs away over it. */
+/* The favourite star (js\favfx.js): on, one turn about its upright like a coin,
+   then a bounce; off, the empty star fades in while the lit one puffs away over it. */
 @keyframes xs-fav-on {
-  0%   { transform: rotate(0deg) scale(1); animation-timing-function: cubic-bezier(.45, 0, .2, 1); }
-  65%  { transform: rotate(360deg) scale(1); animation-timing-function: ease-out; }
-  82%  { transform: rotate(360deg) scale(1.1); animation-timing-function: ease-in-out; }
-  100% { transform: rotate(360deg) scale(1); }
+  0%   { transform: perspective(90px) rotateY(0deg) scale(1); animation-timing-function: cubic-bezier(.45, 0, .2, 1); }
+  42%  { transform: perspective(90px) rotateY(360deg) scale(1); animation-timing-function: ease-out; }
+  58%  { transform: perspective(90px) rotateY(360deg) scale(1.45); animation-timing-function: ease-in-out; }
+  74%  { transform: perspective(90px) rotateY(360deg) scale(.88); animation-timing-function: ease-in-out; }
+  88%  { transform: perspective(90px) rotateY(360deg) scale(1.06); animation-timing-function: ease-in-out; }
+  100% { transform: perspective(90px) rotateY(360deg) scale(1); }
 }
 @keyframes xs-fav-off {
   0%, 35% { opacity: 0; transform: scale(.6); }
   100%    { opacity: 1; transform: none; }
 }
-.favbtn.spin { animation: xs-fav-on 620ms; }
+.favbtn.spin { animation: xs-fav-on 1000ms; }
 .favbtn.dim  { animation: xs-fav-off 520ms ease-out; }
 body.no-anim .favbtn.spin, body.no-anim .favbtn.dim { animation: none; }
 .fav-ghost, .fav-smoke { position: fixed; z-index: 44; pointer-events: none; }

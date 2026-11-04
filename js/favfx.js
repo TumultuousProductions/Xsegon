@@ -1,5 +1,5 @@
-/*  The favourite star's answer to a press: on, it turns once and swells a
-    tenth before settling back; off, the lit star left where it stood goes up
+/*  The favourite star's answer to a press: on, it turns once about its upright
+    and bounces, larger and back; off, the lit star left where it stood goes up
     in a puff of smoke and the empty one fades in under it. Off with Settings
     > Feel > Animations.                                                    */
 
