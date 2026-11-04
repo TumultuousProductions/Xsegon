@@ -155,8 +155,8 @@ module.exports = async function (b, check) {
   check("details shows the cover", await b.until(`(i => !!i && i.complete && i.naturalWidth > 0)(document.querySelector("#details img"))`, true, 6000));
   await b.settled();
 
-  /* The favourite star answers its press (js\favfx.js): on, one turn and then a
-     tenth larger and back; off, the lit star puffs away in wisps where it stood
+  /* The favourite star answers its press (js\favfx.js): on, one turn about its
+     upright and then a bounce; off, the lit star puffs away in wisps where it stood
      while the empty one fades in. Each read two frames after the press. */
   const STAR = `document.querySelector("#details .favbtn")`;
   const starQuiet = `!document.querySelector(".fav-ghost, .fav-smoke, #details .favbtn.spin, #details .favbtn.dim")`;
@@ -166,12 +166,14 @@ module.exports = async function (b, check) {
   if (starWasOn) { await b.ev(`${STAR}.click()`); await b.until(starQuiet, true, 3000); }
   const named = (n) => `${n}.getAnimations().filter((a) => a.animationName)`;   // not the colour easing a button has
   const spun = await press(`(n) => { const a = ${named("n")}[0]; if (!a) { return null; }
-    const out = { name: a.animationName, ms: a.effect.getComputedTiming().duration, turns: a.effect.getKeyframes().some((k) => /rotate\\(360deg\\)/.test(k.transform)) };
-    a.pause(); a.currentTime = out.ms * 0.82; const m = new DOMMatrix(getComputedStyle(n).transform); out.peak = Math.round(Math.hypot(m.a, m.b) * 100) / 100;
-    a.currentTime = out.ms * 0.3; const h = new DOMMatrix(getComputedStyle(n).transform); out.midTurn = Math.round(Math.hypot(h.a, h.b) * 100) / 100 === 1 && Math.abs(h.b) > 0.1;
+    const out = { name: a.animationName, ms: a.effect.getComputedTiming().duration, turns: a.effect.getKeyframes().some((k) => /rotateY\\(360deg\\)/.test(k.transform)) };
+    const size = (at) => { a.currentTime = out.ms * at; const m = new DOMMatrix(getComputedStyle(n).transform); return Math.round(Math.hypot(m.a, m.b) * 100) / 100; };
+    a.pause(); out.bounce = [size(0.58), size(0.74), size(0.88)];
+    // Turned about its upright, it narrows and shows its back but never leans.
+    a.currentTime = out.ms * 0.2; const h = new DOMMatrix(getComputedStyle(n).transform); out.midTurn = !h.is2D && h.a < 0.99 && Math.abs(h.b) < 0.01 && Math.abs(h.c) < 0.01;
     a.finish(); return out; }`);
-  check("favouriting from its star, the star turns once", !!spun && [spun.name, spun.turns, spun.midTurn], ["xs-fav-on", true, true]);
-  check("then stands a tenth larger, and back, in 620 ms", !!spun && [spun.peak, spun.ms], [1.1, 620]);
+  check("favouriting from its star, the star turns once about its upright", !!spun && [spun.name, spun.turns, spun.midTurn], ["xs-fav-on", true, true]);
+  check("then bounces, nearly half larger, under its size and a little over, in 1000 ms", !!spun && [spun.bounce, spun.ms], [[1.45, 0.88, 1.06], 1000]);
   check("and is left as it was", await b.until(`!${STAR}.classList.contains("spin") && getComputedStyle(${STAR}).transform`, "none", 3000), "none");
   const puffed = await press(`(n, was) => { const g = document.querySelector(".fav-ghost"); if (!g) { return null; }
     g.getAnimations().forEach((a) => { a.pause(); a.currentTime = 0; });
